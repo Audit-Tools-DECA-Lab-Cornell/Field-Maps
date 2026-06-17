@@ -14,7 +14,7 @@ import { SyncQueueTab } from "./SyncQueueTab";
 const TABS: { id: BottomPanelTab; label: string }[] = [
 	{ id: "activity", label: "Activity" },
 	{ id: "sync_queue", label: "Sync Queue" },
-	{ id: "analytics", label: "Analytics" }
+	{ id: "analytics", label: "Region Health" }
 ];
 
 export function BottomOperationsPanel() {

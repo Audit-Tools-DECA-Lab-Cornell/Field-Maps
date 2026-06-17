@@ -1,59 +1,221 @@
-const STEPS = [
-	"Select a parcel",
-	"Review inspection history",
-	"Edit attributes or boundary",
-	"Save changes locally",
-	"Sync to operations system"
+"use client";
+
+import { useOperationsStore } from "@/state/useOperationsStore";
+
+interface BriefingSection {
+	severity: "error" | "warning" | "info";
+	title: string;
+	items: {
+		id: string;
+		entityType: "parcel" | "asset";
+		label: string;
+		detail: string;
+		action: string;
+	}[];
+}
+
+const BRIEFING: BriefingSection[] = [
+	{
+		severity: "error",
+		title: "Failed sync — blocks dispatch",
+		items: [
+			{
+				id: "P-105",
+				entityType: "parcel",
+				label: "P-105 · Pump House Almonds",
+				detail: "Maintenance task rejected — missing maintenance category",
+				action: "Open parcel"
+			}
+		]
+	},
+	{
+		severity: "warning",
+		title: "Awaiting supervisor review",
+		items: [
+			{
+				id: "P-106",
+				entityType: "parcel",
+				label: "P-106 · Old Vineyard Edge",
+				detail: "Boundary draft (area Δ −0.70 ac) — possible overlap with P-104",
+				action: "Review boundary"
+			}
+		]
+	},
+	{
+		severity: "warning",
+		title: "Overdue inspections",
+		items: [
+			{
+				id: "P-102",
+				entityType: "parcel",
+				label: "P-102 · East Tomato Row",
+				detail: "Overdue 5d — low-pressure condition unverified",
+				action: "Inspect parcel"
+			},
+			{
+				id: "P-106",
+				entityType: "parcel",
+				label: "P-106 · Old Vineyard Edge",
+				detail: "Overdue 7d — parcel blocked, irrigation offline",
+				action: "Open parcel"
+			}
+		]
+	},
+	{
+		severity: "info",
+		title: "Offline / blocked assets",
+		items: [
+			{
+				id: "A-006",
+				entityType: "asset",
+				label: "A-006 · Soil Sensor E-9",
+				detail: "No telemetry 18h — battery or radio fault · P-102",
+				action: "Inspect asset"
+			},
+			{
+				id: "A-009",
+				entityType: "asset",
+				label: "A-009 · Access Gate Canal",
+				detail: "Blocked by storm debris — crew access denied · P-103",
+				action: "Inspect asset"
+			},
+			{
+				id: "A-007",
+				entityType: "asset",
+				label: "A-007 · Soil Sensor V-2",
+				detail: "Offline since irrigation shutdown on blocked parcel · P-106",
+				action: "Inspect asset"
+			}
+		]
+	}
 ];
 
-export function EmptyInspector() {
-	return (
-		<div style={{ padding: "20px 16px" }}>
-			<h2 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>No parcel selected</h2>
-			<p
-				style={{
-					margin: "6px 0 0",
-					fontSize: 12.5,
-					color: "var(--text-2)",
-					lineHeight: 1.5
-				}}>
-				Select a parcel or field asset to review details, inspections, and pending changes.
-			</p>
+const SEVERITY_FG: Record<BriefingSection["severity"], string> = {
+	error: "var(--red-fg)",
+	warning: "var(--amber-fg)",
+	info: "var(--text-3)"
+};
 
-			<div className="fo-kicker" style={{ marginTop: 22, marginBottom: 10 }}>
-				Workflow
+const SEVERITY_BG: Record<BriefingSection["severity"], string> = {
+	error: "var(--red-bg)",
+	warning: "var(--amber-bg)",
+	info: "var(--surface-2)"
+};
+
+const SEVERITY_BD: Record<BriefingSection["severity"], string> = {
+	error: "var(--red-bd)",
+	warning: "var(--amber-bd)",
+	info: "var(--border)"
+};
+
+export function EmptyInspector() {
+	const selectParcel = useOperationsStore(s => s.selectParcel);
+	const selectAsset = useOperationsStore(s => s.selectAsset);
+
+	const handleAction = (id: string, entityType: "parcel" | "asset") => {
+		if (entityType === "parcel") selectParcel(id, { focus: true });
+		else selectAsset(id);
+	};
+
+	return (
+		<div style={{ padding: "14px 14px" }}>
+			<div style={{ marginBottom: 14 }}>
+				<div className="fo-kicker" style={{ marginBottom: 3 }}>
+					Operations briefing
+				</div>
+				<div style={{ fontSize: 11.5, color: "var(--text-3)" }} suppressHydrationWarning>
+					Central Valley · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+				</div>
 			</div>
-			<ol
-				style={{
-					listStyle: "none",
-					margin: 0,
-					padding: 0,
-					display: "flex",
-					flexDirection: "column",
-					gap: 10
-				}}>
-				{STEPS.map((label, i) => (
-					<li key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-						<span
+
+			<div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+				{BRIEFING.map(section => (
+					<div key={section.title}>
+						<div
 							style={{
-								display: "inline-flex",
+								display: "flex",
 								alignItems: "center",
-								justifyContent: "center",
-								width: 22,
-								height: 22,
-								borderRadius: 99,
-								background: "var(--accent-tint)",
-								color: "var(--accent)",
-								fontSize: 11.5,
-								fontWeight: 700,
-								flex: "none"
+								gap: 6,
+								marginBottom: 5
 							}}>
-							{i + 1}
-						</span>
-						<span style={{ fontSize: 12.5, color: "var(--text-2)" }}>{label}</span>
-					</li>
+							<span
+								style={{
+									width: 6,
+									height: 6,
+									borderRadius: 99,
+									background: SEVERITY_FG[section.severity],
+									flex: "none"
+								}}
+							/>
+							<span
+								style={{
+									fontSize: 10.5,
+									fontWeight: 700,
+									textTransform: "uppercase",
+									letterSpacing: "0.06em",
+									color: SEVERITY_FG[section.severity]
+								}}>
+								{section.title}
+							</span>
+						</div>
+
+						<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+							{section.items.map((item, i) => (
+								<div
+									key={`${item.id}-${i}`}
+									role="button"
+									tabIndex={0}
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "space-between",
+										gap: 10,
+										padding: "8px 10px",
+										background: SEVERITY_BG[section.severity],
+										border: `1px solid ${SEVERITY_BD[section.severity]}`,
+										borderRadius: "var(--r-md)",
+										cursor: "pointer"
+									}}
+									onClick={() => handleAction(item.id, item.entityType)}
+									onKeyDown={e => e.key === "Enter" && handleAction(item.id, item.entityType)}>
+									<div style={{ minWidth: 0 }}>
+										<div
+											className="fo-mono"
+											style={{
+												fontSize: 11.5,
+												fontWeight: 700,
+												color: "var(--text)",
+												marginBottom: 2
+											}}>
+											{item.label}
+										</div>
+										<div
+											style={{
+												fontSize: 11,
+												color: "var(--text-3)",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												whiteSpace: "nowrap"
+											}}>
+											{item.detail}
+										</div>
+									</div>
+									<button
+										type="button"
+										className="fo-chip"
+										style={{ flex: "none", fontSize: 10.5, whiteSpace: "nowrap" }}
+										onClick={e => {
+											e.stopPropagation();
+											handleAction(item.id, item.entityType);
+										}}>
+										{item.action} →
+									</button>
+								</div>
+							))}
+						</div>
+					</div>
 				))}
-			</ol>
+			</div>
 		</div>
 	);
 }

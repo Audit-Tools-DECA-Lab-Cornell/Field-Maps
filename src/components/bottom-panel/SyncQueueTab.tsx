@@ -12,6 +12,33 @@ import { isSyncable } from "@/lib/syncSimulation";
 import { useOperationsStore } from "@/state/useOperationsStore";
 import type { SyncEvent } from "@/types/domain";
 
+function rowImpact(e: SyncEvent): { chip: string; color: string; bg: string; bd: string } | null {
+	if (e.status === "failed")
+		return {
+			chip: "Blocks sync",
+			color: "var(--red-fg)",
+			bg: "var(--red-bg)",
+			bd: "var(--red-bd)"
+		};
+	if (e.status === "local_draft")
+		return {
+			chip: "Supervisor review",
+			color: "var(--purple-fg)",
+			bg: "var(--purple-bg)",
+			bd: "var(--purple-bd)"
+		};
+	return null;
+}
+
+function whatToFix(e: SyncEvent): string | null {
+	if (e.status !== "failed") return null;
+	if (e.changeType === "maintenance_task_create" && e.errorMessage?.toLowerCase().includes("category"))
+		return "Add maintenance category, then retry.";
+	if (e.changeType === "geometry_update")
+		return e.errorMessage ?? "Review boundary validation, resubmit.";
+	return e.errorMessage ?? null;
+}
+
 export function SyncQueueTab() {
 	const syncEvents = useOperationsStore(s => s.syncEvents);
 	const retrySyncEvent = useOperationsStore(s => s.retrySyncEvent);
@@ -44,12 +71,12 @@ export function SyncQueueTab() {
 				<table className="fo-table">
 					<thead>
 						<tr>
-							<th>Status</th>
+							<th>Status / impact</th>
 							<th>Entity</th>
 							<th>Change</th>
 							<th>Created</th>
 							<th>Last attempt</th>
-							<th style={{ width: "30%" }}>Summary</th>
+							<th style={{ width: "30%" }}>Summary / fix</th>
 							<th style={{ textAlign: "right" }}>Action</th>
 						</tr>
 					</thead>
@@ -58,6 +85,8 @@ export function SyncQueueTab() {
 							const isOpen = !!expanded[e.id];
 							const isFailed = e.status === "failed";
 							const canRetry = isSyncable(e);
+							const impact = rowImpact(e);
+							const fix = whatToFix(e);
 							return (
 								<EventRowGroup
 									key={e.id}
@@ -66,6 +95,8 @@ export function SyncQueueTab() {
 									isFailed={isFailed}
 									canRetry={canRetry}
 									isSyncing={isSyncing}
+									impact={impact}
+									fix={fix}
 									onToggle={() => toggleExpanded(e.id)}
 									onRetry={() => retrySyncEvent(e.id)}
 									onResolve={() => resolveSyncEvent(e.id)}
@@ -108,6 +139,8 @@ function EventRowGroup({
 	isFailed,
 	canRetry,
 	isSyncing,
+	impact,
+	fix,
 	onToggle,
 	onRetry,
 	onResolve,
@@ -118,16 +151,44 @@ function EventRowGroup({
 	isFailed: boolean;
 	canRetry: boolean;
 	isSyncing: boolean;
+	impact: { chip: string; color: string; bg: string; bd: string } | null;
+	fix: string | null;
 	onToggle: () => void;
 	onRetry: () => void;
 	onResolve: () => void;
 	onDiscard: () => void;
 }) {
+	const rowBg =
+		event.status === "failed"
+			? "color-mix(in srgb, var(--red) 5%, var(--surface))"
+			: event.status === "local_draft"
+				? "color-mix(in srgb, var(--purple) 5%, var(--surface))"
+				: undefined;
+
 	return (
 		<>
-			<tr>
+			<tr style={{ background: rowBg }}>
 				<td>
-					<SyncBadge status={event.status} />
+					<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+						<SyncBadge status={event.status} />
+						{impact && (
+							<span
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									padding: "1px 6px",
+									borderRadius: 99,
+									fontSize: 10,
+									fontWeight: 700,
+									background: impact.bg,
+									border: `1px solid ${impact.bd}`,
+									color: impact.color,
+									whiteSpace: "nowrap"
+								}}>
+								{impact.chip}
+							</span>
+						)}
+					</div>
 				</td>
 				<td style={{ fontWeight: 600 }}>{event.entityLabel}</td>
 				<td style={{ color: "var(--text-2)" }}>{changeTypeLabel[event.changeType]}</td>
@@ -148,7 +209,7 @@ function EventRowGroup({
 						title={event.summary}>
 						{event.summary}
 					</div>
-					{isFailed && event.errorMessage && (
+					{fix && (
 						<div
 							style={{
 								color: "var(--red-fg)",
@@ -158,8 +219,8 @@ function EventRowGroup({
 								textOverflow: "ellipsis",
 								whiteSpace: "nowrap"
 							}}
-							title={event.errorMessage}>
-							{event.errorMessage}
+							title={fix}>
+							⊗ {fix}
 						</div>
 					)}
 				</td>
@@ -199,7 +260,7 @@ function EventRowGroup({
 				</td>
 			</tr>
 			{isOpen && (
-				<tr>
+				<tr style={{ background: rowBg }}>
 					<td colSpan={7} style={{ background: "var(--surface-2)" }}>
 						<div style={{ padding: "2px 0 6px" }}>
 							<div className="fo-kicker" style={{ marginBottom: 6 }}>
