@@ -4,7 +4,7 @@
 		{
 			"name": "fieldops",
 			"runtimeExecutable": "pnpm",
-			"runtimeArgs": ["-C", "fieldops-parcel-editor", "dev"],
+			"runtimeArgs": ["-C", ".", "dev"],
 			"port": 3000
 		}
 	]
