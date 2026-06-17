@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "skills": {
+    "arcgis-3d-layers": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-3d-layers/SKILL.md",
+      "computedHash": "7803eca843438afca2096475ab203c9a9bc20759069271030abd225cf2dcffda"
+    },
+    "arcgis-advanced-layers": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-advanced-layers/SKILL.md",
+      "computedHash": "820a2753796bc583c3cfd6b38e64132d06e25ab3872428b9e7e81ea6b57fb412"
+    },
+    "arcgis-ai-components": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-ai-components/SKILL.md",
+      "computedHash": "80e118d4a046c7bfe1deaaa19f3a52363002917293e8e07a21ea0d04053866c1"
+    },
+    "arcgis-arcade": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-arcade/SKILL.md",
+      "computedHash": "0c5d27696bd993615f190a50322c19f12829b822f2097b5ef0ee291d9ffa3882"
+    },
+    "arcgis-authentication": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-authentication/SKILL.md",
+      "computedHash": "182098b31aa2d0d00dc7b6b6b7ee2b2a7eb6562fec187c3b725a14e404525cc5"
+    },
+    "arcgis-charts": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-charts/SKILL.md",
+      "computedHash": "121ab82e7743877550237bac9b70e9d1a1ea84fab59e009a18ec1344e77c3e71"
+    },
+    "arcgis-cim-symbols": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-cim-symbols/SKILL.md",
+      "computedHash": "42b7b4f2e8f17efd1131b6eac7f513ddbbd570d09a0505e14ac0c51184fe1db6"
+    },
+    "arcgis-coding-components": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-coding-components/SKILL.md",
+      "computedHash": "f53781069d6733f97171de09f757e9e6393851074b59d8997f595b18f1a65a02"
+    },
+    "arcgis-coordinates-projection": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-coordinates-projection/SKILL.md",
+      "computedHash": "4210bf4fd8abd0d06f7ff0bc7ce6c6db61d81a9ac288c3a2136f33a7ca9ef7df"
+    },
+    "arcgis-core-maps": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-core-maps/SKILL.md",
+      "computedHash": "0461d6fdb0eb0e43c8f710fc21c925f07a158989ed129e516015178fc5a8d214"
+    },
+    "arcgis-core-utilities": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-core-utilities/SKILL.md",
+      "computedHash": "19b04a4d9a0ce2917f6648fa164e043d50cc9ff64d543769f9ef53644c4ba177"
+    },
+    "arcgis-custom-rendering": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-custom-rendering/SKILL.md",
+      "computedHash": "2bfdf1b6faf72f97e4655d42f4ac1cc62d2acdff80d63899044a204bf16a9324"
+    },
+    "arcgis-editing": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-editing/SKILL.md",
+      "computedHash": "0bd420c32d97ad8bee157385dbcc50d380c635614f5ff214aa8073250e368477"
+    },
+    "arcgis-embeddable-maps": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-embeddable-maps/SKILL.md",
+      "computedHash": "99f97c610a475bac4a68553c63932f1aea625339010e6542fb4a295352f84fe1"
+    },
+    "arcgis-feature-effects": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-feature-effects/SKILL.md",
+      "computedHash": "4131b5ac6408a5b5bd6ce6bc32c90c8e4472cc17263ce450bf561d849d5fe9b2"
+    },
+    "arcgis-geometry-operations": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-geometry-operations/SKILL.md",
+      "computedHash": "a80223923534026abe2b6a1e5399e3fa1816c8826559c911314acc69ae93ee78"
+    },
+    "arcgis-imagery": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-imagery/SKILL.md",
+      "computedHash": "66f0df094ed78f8a9dc272481d4a0a97472c0047ca7f1dd20e9bd269e429e98f"
+    },
+    "arcgis-interaction": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-interaction/SKILL.md",
+      "computedHash": "22a1d8aff5adf6bd0c332c117e476f1af01e57cbb55253286638f2c2469a91b5"
+    },
+    "arcgis-knowledge-graphs": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-knowledge-graphs/SKILL.md",
+      "computedHash": "ad78956d31ca767d22573e02c6bc3010e220e2aed99c49c88d0ac3bd653ae9d5"
+    },
+    "arcgis-layers": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-layers/SKILL.md",
+      "computedHash": "66de09586d980d587ef02f085ecb05f0ed20eaf6bdeb123b85cb0e6ed55041fc"
+    },
+    "arcgis-map-tools": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-map-tools/SKILL.md",
+      "computedHash": "ef408013a72066898bf4355e5aa9cae30d47c39934660207454a8c6e81817b13"
+    },
+    "arcgis-performance": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-performance/SKILL.md",
+      "computedHash": "6d7d5a310c9326a3be3a8834980f47fb6651d2771ae69be8430f7471919bac19"
+    },
+    "arcgis-popup-templates": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-popup-templates/SKILL.md",
+      "computedHash": "abadf43df321dd0e053b05eae4d0ef746758a26ca5743b7e2f7a5b45f1064db1"
+    },
+    "arcgis-portal-content": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-portal-content/SKILL.md",
+      "computedHash": "ee16d369607291bd1093494d5c734947e878ff3697124b4ea9c74f3a7e3ec972"
+    },
+    "arcgis-rest-services": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-rest-services/SKILL.md",
+      "computedHash": "62eda2b73aac0d7a08e1376f76cecff8de31d1682f792ebc5150a8f426ff1713"
+    },
+    "arcgis-scene-environment": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-scene-environment/SKILL.md",
+      "computedHash": "c6f083693c601aa1cc610b07ab5ac0cfae8d789e119b5125031553036ad3b4e0"
+    },
+    "arcgis-smart-mapping": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-smart-mapping/SKILL.md",
+      "computedHash": "380b79646137e14f9390d68a57e12d29071da702ed225907d751a9871e386638"
+    },
+    "arcgis-spatial-analysis": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-spatial-analysis/SKILL.md",
+      "computedHash": "557289dca136f52b3d5b693877c17c31c11b99e96c41ef30de6fa461ec7fd3e1"
+    },
+    "arcgis-starter-app": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-starter-app/SKILL.md",
+      "computedHash": "735dc07855e3d04d7ce0018fc2e9dfbe0efd002c7c40b422d9e1e7787674a916"
+    },
+    "arcgis-tables-forms": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-tables-forms/SKILL.md",
+      "computedHash": "cb48297277bf63753b982dd2d16672f477a6920487e32244ada99e1035b89537"
+    },
+    "arcgis-time-animation": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-time-animation/SKILL.md",
+      "computedHash": "e1bada60f484c893e43f8fe5957ff8c9a9288fb72eff14eec2d76498052f9a37"
+    },
+    "arcgis-utility-networks": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-utility-networks/SKILL.md",
+      "computedHash": "36695752162eae2ee741fae57652b8e4499e513af2cb1d1e2665c3de06919093"
+    },
+    "arcgis-visualization": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-visualization/SKILL.md",
+      "computedHash": "b7042cee55edb0ab40e60100a60fe8a35420430b67e286d56540dc1483319d89"
+    },
+    "arcgis-widgets-advanced": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-widgets-advanced/SKILL.md",
+      "computedHash": "c823f40bcd8db3afad3295019dfbf85af21c8a541b5803bae9737153c59ff91c"
+    },
+    "arcgis-widgets-ui": {
+      "source": "saschabrunnerch/arcgis-maps-sdk-js-ai-context",
+      "sourceType": "github",
+      "skillPath": "skills/arcgis-widgets-ui/SKILL.md",
+      "computedHash": "9e936d7f556426ea289d54a63054030c82af420a072e9b8f989c6f0e5a78b37d"
+    }
+  }
+}

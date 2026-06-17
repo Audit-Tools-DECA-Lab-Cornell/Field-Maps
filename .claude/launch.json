@@ -1,0 +1,11 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "fieldops",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["-C", "fieldops-parcel-editor", "dev"],
+			"port": 3000
+		}
+	]
+}
