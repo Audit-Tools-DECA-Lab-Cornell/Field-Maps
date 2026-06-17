@@ -3,8 +3,8 @@
 import { Button } from "@/components/shared/Button";
 import { Icon } from "@/components/shared/Icon";
 import type { QuickFilter } from "@/lib/filters";
-import { pendingSyncCount } from "@/lib/filters";
 import { useOperationsStore } from "@/state/useOperationsStore";
+import type { SyncEvent } from "@/types/domain";
 
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
@@ -30,6 +30,57 @@ function useAppMode() {
 	return { label: "Review Mode", tone: "var(--gray)" };
 }
 
+function SyncCountDisplay({
+	syncEvents,
+	connectivity
+}: {
+	syncEvents: SyncEvent[];
+	connectivity: "online" | "offline";
+}) {
+	const pending = syncEvents.filter(e => e.status === "pending").length;
+	const failed = syncEvents.filter(e => e.status === "failed").length;
+	const draft = syncEvents.filter(e => e.status === "local_draft").length;
+	const total = pending + failed + draft;
+
+	if (total === 0) return null;
+
+	return (
+		<span
+			style={{
+				display: "flex",
+				alignItems: "center",
+				gap: 6,
+				fontSize: 11.5,
+				fontWeight: 600
+			}}>
+			{pending > 0 && (
+				<span style={{ color: "var(--amber-fg)" }}>
+					{pending} pending
+				</span>
+			)}
+			{pending > 0 && (failed > 0 || draft > 0) && (
+				<span style={{ color: "var(--border-strong)" }}>·</span>
+			)}
+			{failed > 0 && (
+				<span style={{ color: "var(--red-fg)" }}>
+					{failed} failed
+				</span>
+			)}
+			{failed > 0 && draft > 0 && (
+				<span style={{ color: "var(--border-strong)" }}>·</span>
+			)}
+			{draft > 0 && (
+				<span style={{ color: "var(--purple-fg)" }}>
+					{draft} draft
+				</span>
+			)}
+			{connectivity === "offline" && (
+				<span style={{ color: "var(--text-3)", fontSize: 10.5 }}>(queued offline)</span>
+			)}
+		</span>
+	);
+}
+
 export function TopBar() {
 	const search = useOperationsStore(s => s.search);
 	const setSearch = useOperationsStore(s => s.setSearch);
@@ -42,8 +93,20 @@ export function TopBar() {
 	const mapMode = useOperationsStore(s => s.selection.mapMode);
 	const mode = useAppMode();
 
-	const pending = pendingSyncCount(syncEvents);
-	const nothingToSync = pending === 0;
+	const hasSyncable = syncEvents.some(
+		e => (e.status === "pending" || e.status === "failed") && connectivity === "online"
+	);
+	const nothingToSync =
+		syncEvents.filter(e => e.status === "pending" || e.status === "failed").length === 0;
+
+	const syncLabel =
+		connectivity === "offline"
+			? "Offline — queued"
+			: isSyncing
+				? "Syncing…"
+				: nothingToSync
+					? "All synced"
+					: "Sync changes";
 
 	return (
 		<header className="fo-topbar">
@@ -173,10 +236,14 @@ export function TopBar() {
 
 				<div style={{ flex: 1 }} />
 
-				<span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 600 }}>{pending} pending</span>
-				<Button variant="primary" onClick={syncAll} disabled={nothingToSync || isSyncing}>
-					<Icon name="sync" size={14} />
-					{isSyncing ? "Syncing…" : nothingToSync ? "All synced" : "Sync changes"}
+				<SyncCountDisplay syncEvents={syncEvents} connectivity={connectivity} />
+
+				<Button
+					variant="primary"
+					onClick={syncAll}
+					disabled={!hasSyncable || isSyncing || connectivity === "offline"}>
+					<Icon name="sync" size={14} className={isSyncing ? "fo-pulse" : ""} />
+					{syncLabel}
 				</Button>
 			</div>
 		</header>

@@ -41,6 +41,57 @@ interface InspectionFormState {
 	inspectionDate: string;
 }
 
+interface ImpactPreview {
+	text: string;
+	tone: "green" | "amber" | "orange" | "red";
+	detail?: string;
+}
+
+function getImpactPreview(result: InspectionResult | "", accessCondition: AccessCondition | ""): ImpactPreview | null {
+	if (!result) return null;
+	switch (result) {
+		case "passed":
+			return {
+				tone: "green",
+				text: "Parcel status → Healthy.",
+				detail: "No follow-up required. Change queued for sync."
+			};
+		case "monitor":
+			return {
+				tone: "amber",
+				text: "Parcel status → Inspection due.",
+				detail: "A re-inspection reminder will be queued in 30 days."
+			};
+		case "follow_up_required":
+			return {
+				tone: "orange",
+				text: "Parcel status → Maintenance required.",
+				detail: "A maintenance follow-up task will be queued for the assigned technician."
+			};
+		case "blocked":
+			return {
+				tone: "red",
+				text: "Parcel will be marked Blocked.",
+				detail:
+					!accessCondition || accessCondition === "clear"
+						? "Access condition and notes are required before this can sync."
+						: "Parcel locked for field entry. Coordinator review required before sync."
+			};
+		default:
+			return null;
+	}
+}
+
+const TONE_STYLES: Record<
+	"green" | "amber" | "orange" | "red",
+	{ bg: string; bd: string; fg: string }
+> = {
+	green: { bg: "var(--green-bg)", bd: "var(--green-bd)", fg: "var(--green-fg)" },
+	amber: { bg: "var(--amber-bg)", bd: "var(--amber-bd)", fg: "var(--amber-fg)" },
+	orange: { bg: "var(--orange-bg)", bd: "var(--orange-bd)", fg: "var(--orange-fg)" },
+	red: { bg: "var(--red-bg)", bd: "var(--red-bd)", fg: "var(--red-fg)" }
+};
+
 export function InspectionForm() {
 	const parcel = useOperationsStore(selectSelectedParcel);
 	const saveInspection = useOperationsStore(s => s.saveInspection);
@@ -63,6 +114,9 @@ export function InspectionForm() {
 
 	const update = <K extends keyof InspectionFormState>(key: K, value: InspectionFormState[K]) =>
 		setDraft(d => ({ ...d, [key]: value }));
+
+	const impact = getImpactPreview(draft.result, draft.accessCondition);
+	const impactStyles = impact ? TONE_STYLES[impact.tone] : null;
 
 	return (
 		<div>
@@ -237,6 +291,30 @@ export function InspectionForm() {
 					/>
 				</div>
 			</div>
+
+			{/* impact preview */}
+			{impact && impactStyles && (
+				<div
+					style={{
+						margin: "0 14px 12px",
+						padding: "8px 10px",
+						background: impactStyles.bg,
+						border: `1px solid ${impactStyles.bd}`,
+						borderRadius: "var(--r-md)"
+					}}>
+					<div className="fo-kicker" style={{ marginBottom: 4 }}>
+						Impact preview
+					</div>
+					<div style={{ fontSize: 12.5, fontWeight: 650, color: impactStyles.fg }}>
+						{impact.text}
+					</div>
+					{impact.detail && (
+						<div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 3 }}>
+							{impact.detail}
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* footer */}
 			<div

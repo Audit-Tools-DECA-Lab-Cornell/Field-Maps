@@ -5,8 +5,14 @@ import { assetMarkerStyle, parcelStatusSwatch } from "@/lib/mapStyles";
 import type { AssetType, ParcelStatus } from "@/types/domain";
 
 const STATUSES: ParcelStatus[] = ["healthy", "inspection_due", "maintenance_required", "blocked", "inactive"];
-
 const ASSET_TYPES: AssetType[] = ["pump_station", "irrigation_valve", "soil_sensor", "access_gate", "maintenance_flag"];
+
+const SYNC_STATES: { label: string; color: string; shape: "circle" | "square" }[] = [
+	{ label: "Pending sync", color: "var(--amber-fg)", shape: "square" },
+	{ label: "Failed sync", color: "var(--red-fg)", shape: "square" },
+	{ label: "Local draft", color: "var(--purple-fg)", shape: "square" },
+	{ label: "Supervisor review", color: "var(--purple)", shape: "square" }
+];
 
 export function MapLegend() {
 	return (
@@ -31,6 +37,29 @@ export function MapLegend() {
 					</div>
 				))}
 			</div>
+
+			<div
+				className="fo-kicker"
+				style={{ margin: "9px 0 6px", paddingTop: 8, borderTop: "1px solid var(--border)" }}>
+				Layer health
+			</div>
+			<div style={{ display: "grid", gap: 3 }}>
+				{SYNC_STATES.map(s => (
+					<div key={s.label} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+						<span
+							style={{
+								width: 9,
+								height: 9,
+								borderRadius: 2,
+								background: s.color,
+								flex: "none"
+							}}
+						/>
+						<span style={{ fontSize: 11, color: "var(--text-2)" }}>{s.label}</span>
+					</div>
+				))}
+			</div>
+
 			<div
 				className="fo-kicker"
 				style={{ margin: "9px 0 6px", paddingTop: 8, borderTop: "1px solid var(--border)" }}>
@@ -43,9 +72,9 @@ export function MapLegend() {
 							className={`fo-marker ${t === "maintenance_flag" ? "fo-marker--flag" : ""}`}
 							style={{
 								background: assetMarkerStyle[t].color,
-								width: 15,
-								height: 15,
-								fontSize: 9,
+								width: 14,
+								height: 14,
+								fontSize: 8,
 								borderWidth: 1.5
 							}}>
 							{assetMarkerStyle[t].glyph}
