@@ -93,20 +93,22 @@ export function TopBar() {
 	const mapMode = useOperationsStore(s => s.selection.mapMode);
 	const mode = useAppMode();
 
-	const hasSyncable = syncEvents.some(
-		e => (e.status === "pending" || e.status === "failed") && connectivity === "online"
-	);
-	const nothingToSync =
-		syncEvents.filter(e => e.status === "pending" || e.status === "failed").length === 0;
+	const pendingCount = syncEvents.filter(e => e.status === "pending").length;
+	const failedCount = syncEvents.filter(e => e.status === "failed").length;
+	const draftCount = syncEvents.filter(e => e.status === "local_draft").length;
+	const hasSyncable =
+		(pendingCount > 0 || failedCount > 0) && connectivity === "online";
 
 	const syncLabel =
 		connectivity === "offline"
 			? "Offline — queued"
 			: isSyncing
 				? "Syncing…"
-				: nothingToSync
-					? "All synced"
-					: "Sync changes";
+				: pendingCount === 0 && failedCount === 0 && draftCount > 0
+					? `${draftCount} draft${draftCount !== 1 ? "s" : ""} — review required`
+					: pendingCount === 0 && failedCount === 0
+						? "All synced"
+						: "Sync changes";
 
 	return (
 		<header className="fo-topbar">
@@ -241,7 +243,7 @@ export function TopBar() {
 				<Button
 					variant="primary"
 					onClick={syncAll}
-					disabled={!hasSyncable || isSyncing || connectivity === "offline"}>
+					disabled={!hasSyncable || isSyncing}>
 					<Icon name="sync" size={14} className={isSyncing ? "fo-pulse" : ""} />
 					{syncLabel}
 				</Button>

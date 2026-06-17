@@ -7,11 +7,11 @@ import type { AssetType, ParcelStatus } from "@/types/domain";
 const STATUSES: ParcelStatus[] = ["healthy", "inspection_due", "maintenance_required", "blocked", "inactive"];
 const ASSET_TYPES: AssetType[] = ["pump_station", "irrigation_valve", "soil_sensor", "access_gate", "maintenance_flag"];
 
-const SYNC_STATES: { label: string; color: string; shape: "circle" | "square" }[] = [
-	{ label: "Pending sync", color: "var(--amber-fg)", shape: "square" },
-	{ label: "Failed sync", color: "var(--red-fg)", shape: "square" },
-	{ label: "Local draft", color: "var(--purple-fg)", shape: "square" },
-	{ label: "Supervisor review", color: "var(--purple)", shape: "square" }
+const SYNC_STATES: { label: string; color: string }[] = [
+	{ label: "Pending sync", color: "var(--amber-fg)" },
+	{ label: "Failed sync", color: "var(--red-fg)" },
+	{ label: "Local draft", color: "var(--purple-fg)" },
+	{ label: "Supervisor review", color: "var(--purple)" }
 ];
 
 export function MapLegend() {

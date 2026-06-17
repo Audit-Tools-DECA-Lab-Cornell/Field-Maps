@@ -46,9 +46,8 @@ function whatToFix(e: SyncEvent): string | null {
 		if (e.changeType === "maintenance_task_create" && e.errorMessage?.toLowerCase().includes("category")) {
 			return "Add a maintenance category to the task, then retry.";
 		}
-		if (e.changeType === "geometry_update") {
-			return "Geometry validation failed — review boundary and resubmit.";
-		}
+		if (e.changeType === "geometry_update")
+			return e.errorMessage ?? "Geometry validation failed — review boundary and resubmit.";
 		if (e.errorMessage) {
 			return e.errorMessage;
 		}

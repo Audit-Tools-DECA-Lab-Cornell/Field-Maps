@@ -1,5 +1,6 @@
 "use client";
 
+import { TODAY } from "@/lib/dateFormat";
 import { operationalSummary } from "@/lib/filters";
 import { useOperationsStore } from "@/state/useOperationsStore";
 
@@ -67,10 +68,9 @@ export function AnalyticsTab() {
 	const failedSyncs = syncEvents.filter(e => e.status === "failed").length;
 	const localDrafts = syncEvents.filter(e => e.status === "local_draft").length;
 	const offlineAssets = assets.filter(a => a.properties.status === "offline").length;
-	const overdueInspections = parcels.filter(p => {
-		const today = new Date().toISOString().slice(0, 10);
-		return p.properties.nextInspectionDue < today && p.properties.status !== "inactive";
-	}).length;
+	const overdueInspections = parcels.filter(p =>
+		p.properties.nextInspectionDue < TODAY && p.properties.status !== "inactive"
+	).length;
 
 	const MAINTENANCE_MAX = 6;
 

@@ -123,7 +123,7 @@ export function EmptyInspector() {
 				<div className="fo-kicker" style={{ marginBottom: 3 }}>
 					Operations briefing
 				</div>
-				<div style={{ fontSize: 11.5, color: "var(--text-3)" }}>
+				<div style={{ fontSize: 11.5, color: "var(--text-3)" }} suppressHydrationWarning>
 					Central Valley · {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
 				</div>
 			</div>

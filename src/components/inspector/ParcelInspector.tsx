@@ -7,7 +7,7 @@ import { Button } from "@/components/shared/Button";
 import { FieldRow } from "@/components/shared/FieldRow";
 import { Icon } from "@/components/shared/Icon";
 import { Section } from "@/components/shared/Panel";
-import { daysOverdue, formatDate } from "@/lib/dateFormat";
+import { daysOverdue, formatDate, TODAY } from "@/lib/dateFormat";
 import { cropLabel, irrigationLabel } from "@/lib/labels";
 import { deriveParcelWarnings } from "@/lib/validation";
 import { selectAssetsForParcel, selectSelectedParcel, useOperationsStore } from "@/state/useOperationsStore";
@@ -29,7 +29,7 @@ function deriveOperationalCase(
 	const pid = p.parcelId;
 
 	const relatedEvents = syncEvents.filter(
-		e => e.entityId === parcel.id || e.entityLabel.startsWith(pid)
+		e => e.entityId === parcel.id || e.entityLabel.startsWith(pid + " ")
 	);
 	const failedEvent = relatedEvents.find(e => e.status === "failed");
 	const draftEvent = relatedEvents.find(e => e.status === "local_draft");
@@ -69,7 +69,7 @@ function deriveOperationalCase(
 	if (overdue > 0) {
 		dueState = { label: `Overdue ${overdue}d`, tone: "var(--red-fg)" };
 	} else {
-		const today = new Date().toISOString().slice(0, 10);
+		const today = TODAY;
 		if (p.nextInspectionDue === today) {
 			dueState = { label: "Due today", tone: "var(--amber-fg)" };
 		} else if (p.nextInspectionDue > today) {
