@@ -3,9 +3,12 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
+import { PwaRegister } from "@/components/app-shell/PwaRegister";
+
 export const metadata: Metadata = {
-	title: "FieldOps Parcel Editor — Northstar Ag Operations",
-	description: "Internal GIS operations prototype for farm parcel inspection, editing, and sync workflows."
+	title: "FieldOps Offline Collector — Northstar Ag Operations",
+	description: "Offline field data collection prototype with QGIS exports and ArcGIS Feature Service handoff.",
+	manifest: "/manifest.webmanifest"
 };
 
 export default function RootLayout({
@@ -15,7 +18,10 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" className="h-full" data-theme="petrol">
-			<body className="min-h-full">{children}</body>
+			<body className="min-h-full">
+				{children}
+				<PwaRegister />
+			</body>
 		</html>
 	);
 }

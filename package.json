@@ -1,13 +1,13 @@
 {
 	"name": "FieldOps Parcel Editor",
-	"description": "A prototype for a field operations parcel editor",
+	"description": "Offline field collection prototype with QGIS and ArcGIS handoff",
 	"author": "@pratyush1712",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/pratyush1712/fieldops-parcel-editor"
+		"url": "https://github.com/pratyush1712/ArcGIS"
 	},
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"private": true,
 	"type": "module",
 	"engines": {

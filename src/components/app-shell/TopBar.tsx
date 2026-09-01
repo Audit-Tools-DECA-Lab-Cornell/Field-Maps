@@ -3,6 +3,7 @@
 import { Button } from "@/components/shared/Button";
 import { Icon } from "@/components/shared/Icon";
 import type { QuickFilter } from "@/lib/filters";
+import { useCaptureStore } from "@/state/useCaptureStore";
 import { useOperationsStore } from "@/state/useOperationsStore";
 import type { SyncEvent } from "@/types/domain";
 
@@ -53,27 +54,11 @@ function SyncCountDisplay({
 				fontSize: 11.5,
 				fontWeight: 600
 			}}>
-			{pending > 0 && (
-				<span style={{ color: "var(--amber-fg)" }}>
-					{pending} pending
-				</span>
-			)}
-			{pending > 0 && (failed > 0 || draft > 0) && (
-				<span style={{ color: "var(--border-strong)" }}>·</span>
-			)}
-			{failed > 0 && (
-				<span style={{ color: "var(--red-fg)" }}>
-					{failed} failed
-				</span>
-			)}
-			{failed > 0 && draft > 0 && (
-				<span style={{ color: "var(--border-strong)" }}>·</span>
-			)}
-			{draft > 0 && (
-				<span style={{ color: "var(--purple-fg)" }}>
-					{draft} draft
-				</span>
-			)}
+			{pending > 0 && <span style={{ color: "var(--amber-fg)" }}>{pending} pending</span>}
+			{pending > 0 && (failed > 0 || draft > 0) && <span style={{ color: "var(--border-strong)" }}>·</span>}
+			{failed > 0 && <span style={{ color: "var(--red-fg)" }}>{failed} failed</span>}
+			{failed > 0 && draft > 0 && <span style={{ color: "var(--border-strong)" }}>·</span>}
+			{draft > 0 && <span style={{ color: "var(--purple-fg)" }}>{draft} draft</span>}
 			{connectivity === "offline" && (
 				<span style={{ color: "var(--text-3)", fontSize: 10.5 }}>(queued offline)</span>
 			)}
@@ -82,6 +67,7 @@ function SyncCountDisplay({
 }
 
 export function TopBar() {
+	const openCaptureWorkspace = useCaptureStore(s => s.openWorkspace);
 	const search = useOperationsStore(s => s.search);
 	const setSearch = useOperationsStore(s => s.setSearch);
 	const syncEvents = useOperationsStore(s => s.syncEvents);
@@ -96,8 +82,7 @@ export function TopBar() {
 	const pendingCount = syncEvents.filter(e => e.status === "pending").length;
 	const failedCount = syncEvents.filter(e => e.status === "failed").length;
 	const draftCount = syncEvents.filter(e => e.status === "local_draft").length;
-	const hasSyncable =
-		(pendingCount > 0 || failedCount > 0) && connectivity === "online";
+	const hasSyncable = (pendingCount > 0 || failedCount > 0) && connectivity === "online";
 
 	const syncLabel =
 		connectivity === "offline"
@@ -240,10 +225,12 @@ export function TopBar() {
 
 				<SyncCountDisplay syncEvents={syncEvents} connectivity={connectivity} />
 
-				<Button
-					variant="primary"
-					onClick={syncAll}
-					disabled={!hasSyncable || isSyncing}>
+				<Button variant="subtle" onClick={openCaptureWorkspace}>
+					<Icon name="pin" size={14} />
+					Open field collector
+				</Button>
+
+				<Button variant="primary" onClick={syncAll} disabled={!hasSyncable || isSyncing}>
 					<Icon name="sync" size={14} className={isSyncing ? "fo-pulse" : ""} />
 					{syncLabel}
 				</Button>

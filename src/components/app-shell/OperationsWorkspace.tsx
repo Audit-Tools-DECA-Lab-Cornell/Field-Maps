@@ -1,12 +1,12 @@
 "use client";
 
 import { BottomOperationsPanel } from "@/components/bottom-panel/BottomOperationsPanel";
+import { FieldCaptureWorkspace } from "@/components/capture/FieldCaptureWorkspace";
 import { RightInspector } from "@/components/inspector/RightInspector";
 import { MapWorkspace } from "@/components/map/MapWorkspace";
 import { LeftSidebar } from "@/components/sidebar/LeftSidebar";
 import { useOperationsStore } from "@/state/useOperationsStore";
 
-import { MobileGate } from "./MobileGate";
 import { ThemeController } from "./ThemeController";
 import { Toaster } from "./Toaster";
 import { TopBar } from "./TopBar";
@@ -54,7 +54,7 @@ export function OperationsWorkspace() {
 
 				<Toaster />
 			</div>
-			<MobileGate />
+			<FieldCaptureWorkspace />
 		</>
 	);
 }
