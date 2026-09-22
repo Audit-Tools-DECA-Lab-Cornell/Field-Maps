@@ -67,7 +67,8 @@ column.
   package format is implied.
 - GPS accuracy has a place in the record and is stored as `null`: this build asks for no location
   permission, so there is no accuracy to record beside the hand-placed coordinates. Hand
-  placement is authoritative and is never overwritten.
+  placement is authoritative and is never overwritten. MapLibre declares the Android location
+  permissions in its own manifest; `app.json` blocks both, so the published app declares none.
 
 ## Run
 

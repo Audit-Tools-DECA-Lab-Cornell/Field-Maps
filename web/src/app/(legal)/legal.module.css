@@ -1,0 +1,269 @@
+/*
+ * Public policy pages for the FieldMaps mobile collector. They use the collector's Nocturne
+ * palette rather than the operations console themes, so the pages match the app a Play Store
+ * visitor installs. Light mode follows the visitor's system setting.
+ */
+
+.page {
+	--legal-bg: #161826;
+	--legal-surface: #1d1f2e;
+	--legal-rule: rgba(255, 255, 255, 0.1);
+	--legal-text: #e9e9ed;
+	--legal-text-2: #b2b6ca;
+	--legal-text-3: #9397ab;
+	--legal-accent: #b5abfc;
+	--legal-accent-line: #796cbf;
+	--legal-attention-bg: #3a2f22;
+	--legal-attention-line: #d9a86c;
+	--legal-attention-text: #e8bd85;
+
+	min-height: 100dvh;
+	background: var(--legal-bg);
+	color: var(--legal-text);
+	font-size: 16px;
+	line-height: 1.65;
+}
+
+@media (prefers-color-scheme: light) {
+	.page {
+		--legal-bg: #f7f7fb;
+		--legal-surface: #ffffff;
+		--legal-rule: rgba(22, 24, 38, 0.12);
+		--legal-text: #1b1d2b;
+		--legal-text-2: #45485a;
+		--legal-text-3: #5f6275;
+		--legal-accent: #5d5294;
+		--legal-accent-line: #796cbf;
+		--legal-attention-bg: #fbf1e3;
+		--legal-attention-line: #b9803c;
+		--legal-attention-text: #6b4516;
+	}
+}
+
+.inner {
+	width: 100%;
+	max-width: 46rem;
+	margin: 0 auto;
+	padding: 0 1rem;
+}
+
+.header {
+	border-bottom: 1px solid var(--legal-rule);
+}
+
+.headerRow {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem 1.5rem;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+}
+
+.brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	color: var(--legal-text);
+	font-weight: 600;
+	font-size: 1.05rem;
+	text-decoration: none;
+}
+
+.brand img {
+	border-radius: 22%;
+}
+
+.nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1.25rem;
+	font-size: 0.95rem;
+}
+
+.nav a {
+	color: var(--legal-text-2);
+	text-decoration: none;
+	padding: 0.25rem 0;
+}
+
+.nav a:hover,
+.nav a:focus-visible {
+	color: var(--legal-accent);
+	text-decoration: underline;
+}
+
+.main {
+	padding-top: 2.5rem;
+	padding-bottom: 4rem;
+}
+
+.main h1 {
+	font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.35rem);
+	line-height: 1.2;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	margin: 0;
+}
+
+.meta {
+	color: var(--legal-text-3);
+	font-size: 0.95rem;
+	margin: 0.5rem 0 0;
+}
+
+.lead {
+	color: var(--legal-text-2);
+	font-size: 1.1rem;
+	margin: 1.5rem 0 0;
+}
+
+.main h2 {
+	font-size: 1.3rem;
+	line-height: 1.3;
+	font-weight: 620;
+	margin: 2.75rem 0 0.75rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--legal-rule);
+	scroll-margin-top: 1rem;
+}
+
+.main h3 {
+	font-size: 1.05rem;
+	font-weight: 620;
+	margin: 1.5rem 0 0.4rem;
+}
+
+.main p,
+.main ul,
+.main ol {
+	margin: 0.75rem 0 0;
+}
+
+.main ul,
+.main ol {
+	padding-left: 1.4rem;
+}
+
+/* Tailwind's reset removes list markers; policy lists need them back. */
+.main ul {
+	list-style: disc;
+}
+
+.main ol {
+	list-style: decimal;
+}
+
+.main li::marker {
+	color: var(--legal-text-3);
+}
+
+.main li + li {
+	margin-top: 0.4rem;
+}
+
+.main a {
+	color: var(--legal-accent);
+	text-underline-offset: 0.2em;
+}
+
+.main strong {
+	font-weight: 620;
+}
+
+.summary {
+	margin-top: 2rem;
+	padding: 1.25rem 1.25rem 1.25rem 1.4rem;
+	background: var(--legal-surface);
+	border-left: 3px solid var(--legal-accent-line);
+	border-radius: 0 10px 10px 0;
+}
+
+.summary h2 {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 1.05rem;
+}
+
+.draft {
+	margin-top: 1.75rem;
+	padding: 1rem 1.25rem;
+	background: var(--legal-attention-bg);
+	border: 1px solid var(--legal-attention-line);
+	border-radius: 10px;
+	color: var(--legal-attention-text);
+	font-size: 0.95rem;
+}
+
+.draft p {
+	margin: 0;
+}
+
+.draft ul {
+	margin: 0.5rem 0 0;
+	padding-left: 1.25rem;
+	list-style: disc;
+}
+
+.missing {
+	padding: 0 0.3em;
+	border-radius: 4px;
+	background: var(--legal-attention-bg);
+	color: var(--legal-attention-text);
+	font-style: normal;
+}
+
+.tableWrap {
+	margin-top: 1rem;
+	overflow-x: auto;
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.95rem;
+}
+
+.table th,
+.table td {
+	text-align: left;
+	vertical-align: top;
+	padding: 0.65rem 0.75rem 0.65rem 0;
+	border-bottom: 1px solid var(--legal-rule);
+}
+
+.table th {
+	color: var(--legal-text-3);
+	font-weight: 600;
+	font-size: 0.85rem;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.table td:first-child {
+	font-weight: 600;
+	min-width: 9rem;
+}
+
+.footer {
+	border-top: 1px solid var(--legal-rule);
+	padding: 1.5rem 0 2.5rem;
+	color: var(--legal-text-3);
+	font-size: 0.9rem;
+}
+
+.footer p {
+	margin: 0;
+}
+
+@media (max-width: 520px) {
+	.main {
+		padding-top: 1.75rem;
+	}
+
+	.table td:first-child {
+		min-width: 7rem;
+	}
+}

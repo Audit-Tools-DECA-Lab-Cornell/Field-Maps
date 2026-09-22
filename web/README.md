@@ -51,6 +51,12 @@ Use QGIS to author the project and QFieldSync to package offline layers and a ba
 
 Keep the local-first collection model, export GeoJSON/CSV for simple handoff, and add adapters for ArcGIS Feature Services or QGIS Server WFS transactions when automatic sync is justified.
 
+## Public policy pages
+
+`/privacy` and `/privacy/delete-data` are the privacy policy and data deletion pages for the native mobile collector, for its Google Play listing. They live in `src/app/(legal)/`, use the collector's Nocturne palette, and are prerendered as static pages. Every statement was checked against the mobile, backend and database code; update the pages before the app collects anything new.
+
+Facts only the operator can supply — organisation, contact email, retention period, deletion time — are `null` in `src/app/(legal)/policy.ts`. Until each is filled in, the pages show a visible draft notice and inline "to be confirmed" markers.
+
 ## Run locally
 
 ```bash
