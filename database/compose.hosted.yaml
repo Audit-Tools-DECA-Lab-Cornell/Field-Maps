@@ -1,0 +1,15 @@
+name: fieldops-hosted
+
+services:
+    api:
+        build: ../backend
+        ports:
+            - "127.0.0.1:8000:8000"
+        volumes:
+            - ../backend/config.hosted.json:/app/config.local.json:ro
+            - fieldops_api_secrets:/run/fieldops-secrets:ro
+
+volumes:
+    fieldops_api_secrets:
+        external: true
+        name: fieldops_hosted_api_secrets
