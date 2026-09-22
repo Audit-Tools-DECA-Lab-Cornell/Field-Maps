@@ -122,9 +122,10 @@ def test_a_valid_submission_prepares_a_readable_archive() -> None:
 
 
 def test_preparing_the_same_submission_twice_yields_the_same_bytes() -> None:
-    moment = prepare(submission()).manifest.prepared_at
-    first = prepare(submission(), now=moment)
-    second = prepare(submission(), now=moment)
+    # No clock is injected: the archive carries no timestamp, so its digest is a content
+    # identity and the same submission prepared tomorrow is byte-identical to today's.
+    first = prepare(submission())
+    second = prepare(submission())
 
     assert first.archive == second.archive
     assert first.archive_sha256 == second.archive_sha256
@@ -270,3 +271,15 @@ def test_a_project_declaring_entities_is_refused() -> None:
 
     with pytest.raises(PackageError, match="entities"):
         prepare(submission(project_file=project_file(hostile)))
+
+
+def test_the_coordinate_step_reports_the_projects_own_crs_without_blocking_on_it() -> None:
+    # Drawing over Web Mercator tiles is the documented way to trace a site, so a project CRS
+    # that is not WGS 84 is recorded, not refused. The exported geometry is what ships.
+    document = qgis_document(vector_layer("ground") + vector_layer("zones"))
+
+    prepared = prepare(submission(project_file=project_file(document)))
+
+    check = find(prepared.checks, "coordinate-reference")
+    assert check.state == "passed"
+    assert "EPSG:26910" in check.detail

@@ -14,6 +14,12 @@ class Settings(BaseModel):
     database_tls: bool = False
     database_ca_file: Path | None = None
     database_tls_strict: bool = True
+    browser_origins: tuple[HttpUrl, ...] = ()
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        """Origins the browser may call this API from, without the trailing slash a URL carries."""
+        return [str(origin).rstrip("/") for origin in self.browser_origins]
 
     @model_validator(mode="after")
     def validate_identity_provider(self) -> Self:

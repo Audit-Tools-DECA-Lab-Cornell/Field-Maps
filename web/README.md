@@ -55,6 +55,26 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). No API key, account or network is needed: the default map base is bundled vector geometry, and the street tile base is the only thing on any screen that fetches.
 
+## Connect it to the API
+
+One screen talks to the API: base map upload. It reads a single public variable.
+
+```bash
+cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
+```
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_FIELDMAPS_API_URL` | The API's origin, no trailing slash — `http://127.0.0.1:8000` locally, `https://api.example.org` deployed |
+
+`NEXT_PUBLIC_` variables are compiled into the browser bundle, so this one is public by construction. Never put a token or key beside it. Next.js reads `.env.local` at build time, so restart `pnpm dev` after changing it; on Vercel, set it in **Project → Settings → Environment Variables** and redeploy, since a running deployment will not pick it up.
+
+Leave it unset and the screen says so: it assembles the package and downloads the submission rather than pretending to upload it.
+
+The API must also name this origin. Browsers preflight a cross-origin request that carries an `Authorization` header, and the API allows no origin by default, so add the web origin to `browser_origins` in `backend/config.local.json` — see [the API README](../backend/README.md). Miss that step and the upload fails in the browser's network layer before the API is reached.
+
+Uploading needs an access token for an account with the **manager** role on the project. There is no web sign-in yet, so the screen has a field to paste one; that is a stopgap and is marked as one.
+
 Quality checks:
 
 ```bash

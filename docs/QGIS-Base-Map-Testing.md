@@ -120,13 +120,13 @@ This stores your site as a prepared, versioned package the API can serve. It doe
 3. Pick the site and the form version, attach `ground.json` and `zones.json` (both required) plus `paths.json`, `trees.json` and your `.qgz` if you have them, and paste an access token for an account with the **manager** role on the project.
 4. Submit. The server runs five checks and shows each one:
 
-   | Check                | What it means                                                                             |
-   | -------------------- | ----------------------------------------------------------------------------------------- |
-   | Layers present       | `ground` and `zones` are there and parse as GeoJSON                                       |
-   | Layer sources        | every layer the project file names has geometry in the upload                             |
-   | Coordinate reference | every position is inside WGS 84 and the project declares EPSG:4326                        |
-   | Imagery licence      | a network tile source blocks unless its host is allow-listed; institution-held files pass |
-   | Derived geometry     | zones become boxes and the site gets a padded extent                                      |
+   | Check                | What it means                                                                                                                                                                                             |
+   | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Layers present       | `ground` and `zones` are there and parse as GeoJSON                                                                                                                                                       |
+   | Layer sources        | every layer the project file names has geometry in the upload                                                                                                                                             |
+   | Coordinate reference | every position is inside WGS 84, and no layer declares another CRS. The project's own CRS is reported, not enforced: Part 1 has you draw over Web Mercator tiles, and what ships is the exported geometry |
+   | Imagery licence      | a network tile source blocks unless its host is allow-listed; institution-held files pass                                                                                                                 |
+   | Derived geometry     | zones become boxes and the site gets a padded extent                                                                                                                                                      |
 
    A blocked package is still stored with its reasons; it just will not download.
 

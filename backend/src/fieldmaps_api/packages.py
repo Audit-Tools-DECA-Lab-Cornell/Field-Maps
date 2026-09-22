@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import json
 import zipfile
-from datetime import UTC, datetime
 from hashlib import sha256
 from io import BytesIO
 from typing import ClassVar, Final, Literal
@@ -132,7 +131,6 @@ class Manifest(BaseModel):
     format: int = PACKAGE_FORMAT
     site_code: str
     form_version: str
-    prepared_at: datetime
     extent: Extent
     centre: tuple[float, float]
     zones: tuple[Zone, ...]
@@ -166,7 +164,6 @@ def prepare(
     submission: PackageSubmission,
     *,
     permitted_tile_hosts: frozenset[str] = NO_PERMITTED_HOSTS,
-    now: datetime | None = None,
 ) -> PreparedPackage:
     """Run every check, then build the archive. Blocking checks still return their reasons."""
     checks: list[PreparationCheck] = []
@@ -174,7 +171,7 @@ def prepare(
 
     project = _read_source_project(submission.project_file, checks)
     _check_layer_sources(submission, project, checks)
-    _check_coordinate_reference(submission, checks)
+    _check_coordinate_reference(submission, project, checks)
     _check_imagery_licence(project, permitted_tile_hosts, checks)
 
     zones = _derive_zones(submission.layers["zones"])
@@ -191,7 +188,6 @@ def prepare(
     manifest = Manifest(
         site_code=submission.site_code,
         form_version=submission.form_version,
-        prepared_at=now or datetime.now(UTC),
         extent=extent,
         centre=extent.centre(),
         zones=zones,
@@ -240,9 +236,7 @@ def _read_source_project(
         )
         return None
     if len(supplied.content) > MAX_PROJECT_BYTES:
-        message = (
-            f"The project file is over the {MAX_PROJECT_BYTES // 1024 // 1024} MB ceiling"
-        )
+        message = f"The project file is over the {MAX_PROJECT_BYTES // 1024 // 1024} MB ceiling"
         raise PackageError(message)
     try:
         root = qgis_project.parse(qgis_project.read_document(supplied.content))
@@ -318,7 +312,9 @@ def _require_layers(submission: PackageSubmission) -> None:
 
 
 def _check_coordinate_reference(
-    submission: PackageSubmission, checks: list[PreparationCheck]
+    submission: PackageSubmission,
+    project: SourceProject | None,
+    checks: list[PreparationCheck],
 ) -> None:
     # Coordinate ranges were already enforced by the GeoJSON models, so anything projected has
     # failed before reaching here. What is left is a collection that declares another CRS while
@@ -340,13 +336,17 @@ def _check_coordinate_reference(
             )
         )
         return
+    # The project's own CRS is a display choice — tracing over Web Mercator tiles is the
+    # documented way to draw a site — so it is reported rather than enforced. What ships is the
+    # exported geometry, and that is in WGS 84 or it did not get this far.
+    declared_project = f"; project drawn in {project.crs}" if project and project.crs else ""
     checks.append(
         PreparationCheck(
             step="coordinate-reference",
             state="passed",
             detail=(
                 f"{len(submission.layers)} layers in WGS 84 longitude/latitude, "
-                "as the database and the collector both read"
+                f"as the database and the collector both read{declared_project}"
             ),
         )
     )

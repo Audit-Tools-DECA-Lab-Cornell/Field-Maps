@@ -4,6 +4,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Query, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from jwt import PyJWKClient
 from sqlalchemy.exc import SQLAlchemyError
@@ -64,6 +65,18 @@ def create_app(
         await engine.dispose()
 
     app = FastAPI(title="FieldMaps API", version="0.1.0", lifespan=lifespan)
+    # The management application runs on its own origin and sends an Authorization header, so
+    # every call it makes is preflighted. Named origins only: a wildcard here would let any page
+    # a manager has open spend their token.
+    if configuration.allowed_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=configuration.allowed_origins,
+            allow_methods=["GET", "POST", "PUT"],
+            allow_headers=["authorization", "content-type"],
+            expose_headers=["etag"],
+            max_age=600,
+        )
 
     @app.exception_handler(SQLAlchemyError)
     async def database_error(_request: Request, _error: SQLAlchemyError) -> JSONResponse:
@@ -105,14 +118,13 @@ def create_app(
     return app
 
 
-
-
 def register_package_routes(
     app: FastAPI,
     sessions: async_sessionmaker[AsyncSession],
     authenticate: Authentication,
 ) -> None:
     """Site packages: preparing one, listing them, and handing the archive to a device."""
+
     @app.post("/v1/projects/{project_id}/packages", status_code=201)
     async def prepare(
         project_id: UUID,
