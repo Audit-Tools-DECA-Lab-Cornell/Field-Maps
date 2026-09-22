@@ -3,6 +3,8 @@
 !pyproject.toml
 !uv.lock
 !config.local.json
+!config.hosted.json
+!config.render.json
 !src/
 !src/**
 !tests/
