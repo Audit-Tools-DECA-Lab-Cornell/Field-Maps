@@ -32,7 +32,8 @@
         {
           "initialOrientation": "DEFAULT"
         }
-      ]
+      ],
+      "./plugins/with-large-screen-orientation"
     ],
     "experiments": {
       "typedRoutes": true

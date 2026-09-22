@@ -33,7 +33,12 @@ export default function SiteBriefScreen() {
   if (!sitePackage || !form || !zone)
     return (
       <PageScreen>
-        <LinkAction label="← Studies" muted onPress={() => router.replace("/")} />
+        <LinkAction
+          label="← Studies"
+          muted
+          onPress={() => router.replace("/")}
+          style={{ alignSelf: "flex-start" }}
+        />
         <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
           Open a study first
         </Text>
@@ -45,7 +50,12 @@ export default function SiteBriefScreen() {
 
   return (
     <PageScreen>
-      <LinkAction label="← Studies" muted onPress={() => router.navigate("/")} />
+      <LinkAction
+        label="← Studies"
+        muted
+        onPress={() => router.navigate("/")}
+        style={{ alignSelf: "flex-start" }}
+      />
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
         {sitePackage.name}
       </Text>
@@ -105,6 +115,7 @@ export default function SiteBriefScreen() {
                 : "This is a fresh observation period"
             }
             onPress={toggleFreshPeriod}
+            style={{ alignSelf: "flex-start" }}
           />
         </AccentNote>
       </View>
@@ -135,6 +146,7 @@ export default function SiteBriefScreen() {
             <LinkAction
               label={notesOpen ? "Hide the list" : "Read them"}
               onPress={() => setNotesOpen(!notesOpen)}
+              style={{ alignSelf: "flex-start" }}
             />
           </AttentionNote>
           {notesOpen && (

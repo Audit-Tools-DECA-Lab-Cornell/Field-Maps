@@ -60,7 +60,12 @@ export default function ReviewScreen() {
   let lastAct = "";
   return (
     <PageScreen>
-      <LinkAction label="← Keep answering" muted onPress={back} />
+      <LinkAction
+        label="← Keep answering"
+        muted
+        onPress={back}
+        style={{ alignSelf: "flex-start" }}
+      />
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
         Before you save
       </Text>

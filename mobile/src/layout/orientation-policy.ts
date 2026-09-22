@@ -10,8 +10,20 @@
 
 export type OrientationLock = "free" | "landscape";
 
+/** The `expo-screen-orientation` lock a rule becomes on this device. */
+export type NativeLock = "LANDSCAPE" | "ALL" | "DEFAULT";
+
 export function orientationLock(tablet: boolean, landscapeHolds: number): OrientationLock {
   return tablet && landscapeHolds > 0 ? "landscape" : "free";
+}
+
+/**
+ * An iPad has no right way up, so free there includes upside-down portrait. Everywhere else free
+ * is the platform default: all but upside-down on iPhone, the sensor's choice on Android.
+ */
+export function nativeLock(lock: OrientationLock, ios: boolean, tablet: boolean): NativeLock {
+  if (lock === "landscape") return "LANDSCAPE";
+  return ios && tablet ? "ALL" : "DEFAULT";
 }
 
 export type OrientationController = {
@@ -24,21 +36,25 @@ export type OrientationController = {
 /**
  * Native lock calls are asynchronous, and a screen can focus and blur faster than one settles.
  * Calls are therefore chained and each decides what to apply only when its turn comes, so the
- * last state always wins regardless of which caller asked first. A failed call leaves nothing
- * recorded as applied, so the next reconcile tries again.
+ * last state always wins regardless of which caller asked first. Whether the device counts as a
+ * tablet is read at that moment too, so a foldable that changes screens is re-evaluated on the
+ * next reconcile. A failed call leaves nothing recorded as applied, so the next reconcile tries
+ * again.
  */
 export function createOrientationController(
-  apply: (lock: OrientationLock) => Promise<void>,
+  apply: (lock: NativeLock) => Promise<void>,
   isTablet: () => boolean,
+  ios: boolean,
 ): OrientationController {
   let holds = 0;
-  let applied: OrientationLock | null = null;
+  let applied: NativeLock | null = null;
   let queue: Promise<void> = Promise.resolve();
 
   function reconcile(): Promise<void> {
     queue = queue
       .then(async () => {
-        const wanted = orientationLock(isTablet(), holds);
+        const tablet = isTablet();
+        const wanted = nativeLock(orientationLock(tablet, holds), ios, tablet);
         if (wanted === applied) return;
         applied = null;
         await apply(wanted);

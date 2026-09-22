@@ -57,7 +57,12 @@ export default function AccountScreen() {
 
   return (
     <PageScreen>
-      <LinkAction label="← Studies" muted onPress={() => router.navigate("/")} />
+      <LinkAction
+        label="← Studies"
+        muted
+        onPress={() => router.navigate("/")}
+        style={{ alignSelf: "flex-start" }}
+      />
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
         Account and synchronisation
       </Text>

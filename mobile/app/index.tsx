@@ -148,7 +148,9 @@ export default function AssignmentsScreen() {
       </View>
 
       <View style={{ height: space.wide }} />
-      <Chip label="Offline first · nothing is fetched on the field screen" tone="muted" />
+      <View style={{ alignSelf: "flex-start" }}>
+        <Chip label="Offline first · nothing is fetched on the field screen" tone="muted" />
+      </View>
     </PageScreen>
   );
 }

@@ -104,15 +104,21 @@ pnpm ios     # or pnpm android
 
 Orientation follows the device everywhere except the field map on a tablet, which is held in
 landscape while it is focused and released when another screen — review, records — takes over
-(`src/layout/orientation.ts`, rule and ordering in `orientation-policy.ts`). Phones are never locked.
-On iPad the lock needs `ios.requireFullScreen`. The app launches in the device's orientation
-(`initialOrientation: "DEFAULT"`); a build made before this change launches in landscape until it
-is rebuilt, and the root releases that lock as soon as JavaScript loads. If the orientation module
-is missing, orientation is left free rather than the app refusing to open.
+(`src/layout/orientation.ts`, rule and ordering in `orientation-policy.ts`). Phones are never locked,
+and an iPad may also turn upside down. A screen size change, such as a foldable opening, is
+re-evaluated. On iPad the lock needs `ios.requireFullScreen`. The app launches in the device's
+orientation (`initialOrientation: "DEFAULT"`, an iOS-only setting); an iOS build made before this
+change launches in landscape until it is rebuilt, and the root releases that lock as soon as
+JavaScript loads. If the orientation module is missing from the build, orientation is left free
+rather than the app refusing to open.
 
-Android 16 and newer ignore orientation locks on large screens (smallest width 600dp or more) for
-apps targeting API 36, which this build does. On such a tablet the field map is not held in
-landscape; it falls back to the stacked portrait layout when the tablet is upright.
+Android 16 ignores orientation locks on large screens (smallest width 600dp or more) for apps
+targeting API 36, which this build does. `plugins/with-large-screen-orientation.js` declares
+Google's documented opt-out, `android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY`, so
+the tablet map lock still holds; it takes effect after `expo prebuild` and a rebuild. The opt-out
+stops applying once the app targets API 37, and then the field map falls back to its stacked
+portrait layout on an upright Android tablet. iPadOS windowed multitasking (Stage Manager) does
+not rotate a locked app either.
 
 `eas.json` also provides `development`, `simulator`, and `preview` profiles. Cloud builds have not been created; account/project configuration and physical-iOS signing remain setup tasks. The identifier `com.fieldmaps.collector.dev` is a development placeholder.
 
@@ -130,7 +136,7 @@ duplicate-ID protection, refusal to downgrade a newer schema, and the version 2 
 migration that adds the draft table without touching existing records. They do not substitute for
 device testing of Expo’s native SQLite adapter.
 
-Current automated verification, September 22, 2026: **92 Vitest cases** across thirteen files —
+Current automated verification, September 22, 2026: **94 Vitest cases** across thirteen files —
 the previous 28 for storage, sync and account identity, plus form-definition validation, engine
 visibility and pruning, the question-stack reducer, draft persistence and recovery, queueing by
 form version, the account and study an observation is bound to, the account a recovered
@@ -213,6 +219,7 @@ encryption configuration. Use test data for this development slice.
 | `src/layout/` | The per-screen orientation rule and the tablet/phone layout decisions |
 | `src/components/` | Nocturne chrome primitives, the question panel, and screen frames |
 | `src/theme.ts` | Nocturne tokens, copied from the design system's own stylesheet |
+| `plugins/` | Local config plugins: the Android 16 large-screen orientation opt-out |
 
 The SQLite schema is at version 3: version 1 created the observation table, version 2 added the
 account-scoped queue columns, and version 3 adds `observation_drafts`. Migrations run forward

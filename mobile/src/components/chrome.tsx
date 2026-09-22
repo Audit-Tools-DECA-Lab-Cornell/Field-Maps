@@ -128,11 +128,13 @@ export function LinkAction({
   onPress,
   muted = false,
   disabled = false,
+  style,
 }: {
   readonly label: string;
   readonly onPress: () => void;
   readonly muted?: boolean;
   readonly disabled?: boolean;
+  readonly style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Pressable
@@ -140,12 +142,15 @@ export function LinkAction({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => ({
-        minHeight: touchTarget,
-        justifyContent: "center",
-        paddingVertical: space.tight,
-        opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
-      })}
+      style={({ pressed }) => [
+        {
+          minHeight: touchTarget,
+          justifyContent: "center",
+          paddingVertical: space.tight,
+          opacity: disabled ? 0.45 : pressed ? 0.7 : 1,
+        },
+        style,
+      ]}
     >
       <Text
         style={[textStyles.detail, { color: muted ? colors.neutral400 : colors.accent300 }]}

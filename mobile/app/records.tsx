@@ -52,6 +52,7 @@ export default function RecordsScreen() {
         label={sitePackage ? "← Back to the map" : "← Studies"}
         muted
         onPress={() => router.navigate(sitePackage ? "/field" : "/")}
+        style={{ alignSelf: "flex-start" }}
       />
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
         On this device
