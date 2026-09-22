@@ -7,9 +7,11 @@ one-handed, often in sun. This app is independent of the Next.js prototype in `.
 app's dependencies and lockfile.
 
 The interface follows `../designs/Riverside Collector v2.dc.html` and the Nocturne design
-system in `../designs/_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/`. Tablet landscape
-(1024×768) is the primary target, then phone landscape (844×390); phone portrait stacks the map
-over the panel.
+system in `../designs/_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/`. On the field map,
+tablet landscape (1024×768) is the primary target, then phone landscape (844×390); phone portrait
+stacks the map over the panel. Every other screen runs in portrait or landscape on both, and its
+content spans the full window width — a deliberate departure from the design file's 600px reading
+column.
 
 ## What is implemented
 
@@ -100,9 +102,17 @@ EXPO_NO_DOTENV=1 pnpm exec expo prebuild
 pnpm ios     # or pnpm android
 ```
 
-Tablets are locked to landscape, which on iPad also requires `ios.requireFullScreen`. Phones open
-in landscape and may be turned upright. If the orientation module is missing, orientation is left
-free rather than the app refusing to open.
+Orientation follows the device everywhere except the field map on a tablet, which is held in
+landscape while it is focused and released when another screen — review, records — takes over
+(`src/layout/orientation.ts`, rule and ordering in `orientation-policy.ts`). Phones are never locked.
+On iPad the lock needs `ios.requireFullScreen`. The app launches in the device's orientation
+(`initialOrientation: "DEFAULT"`); a build made before this change launches in landscape until it
+is rebuilt, and the root releases that lock as soon as JavaScript loads. If the orientation module
+is missing, orientation is left free rather than the app refusing to open.
+
+Android 16 and newer ignore orientation locks on large screens (smallest width 600dp or more) for
+apps targeting API 36, which this build does. On such a tablet the field map is not held in
+landscape; it falls back to the stacked portrait layout when the tablet is upright.
 
 `eas.json` also provides `development`, `simulator`, and `preview` profiles. Cloud builds have not been created; account/project configuration and physical-iOS signing remain setup tasks. The identifier `com.fieldmaps.collector.dev` is a development placeholder.
 
@@ -120,12 +130,13 @@ duplicate-ID protection, refusal to downgrade a newer schema, and the version 2 
 migration that adds the draft table without touching existing records. They do not substitute for
 device testing of Expo’s native SQLite adapter.
 
-Current automated verification, September 22, 2026: **84 Vitest cases** across twelve files —
+Current automated verification, September 22, 2026: **92 Vitest cases** across thirteen files —
 the previous 28 for storage, sync and account identity, plus form-definition validation, engine
 visibility and pruning, the question-stack reducer, draft persistence and recovery, queueing by
 form version, the account and study an observation is bound to, the account a recovered
-draft may be resumed under, the atomic save that retires its draft, and map clustering, nudging and scale. TypeScript, Biome, and iOS and Android Metro
-exports all pass.
+draft may be resumed under, the atomic save that retires its draft, map clustering, nudging and scale, and
+which screens may rotate on which device. TypeScript, Biome on `src/` and the changed routes, and
+iOS and Android Metro exports pass.
 
 Standing build note, carried forward from the shell: a local Release build previously failed on
 Finder metadata attached to a generated `ExpoModulesJSI.framework` in the Desktop workspace. No
@@ -153,8 +164,10 @@ Native acceptance scenario for this version:
    assignments list with the answers intact.
 7. Save a practice (`shell-v1`) record while signed in and connected: confirm it drains with no
    send button. Confirm an instrument record stays on the device and says why.
-8. Check tablet landscape-only, phone landscape and portrait, and confirm 844×390 has no
-   horizontal scroll.
+8. On a tablet held upright, confirm the assignments, brief, records and account screens are
+   portrait and fill the width; open the field map and confirm it turns to landscape; open Review
+   and confirm it follows the device again. Check phone landscape and portrait on every screen,
+   and confirm 844×390 has no horizontal scroll.
 
 ## Boundaries
 
@@ -197,7 +210,7 @@ encryption configuration. Use test data for this development slice.
 | `src/storage/` | SQLite schema, observation repository, draft store, and focused-screen reads |
 | `src/auth/` | Secure session persistence and offline account identity |
 | `src/sync/` | Upload protocol, scheduling, and verified receipts |
-| `src/layout/` | Orientation preference and the tablet/phone layout decisions |
+| `src/layout/` | The per-screen orientation rule and the tablet/phone layout decisions |
 | `src/components/` | Nocturne chrome primitives, the question panel, and screen frames |
 | `src/theme.ts` | Nocturne tokens, copied from the design system's own stylesheet |
 

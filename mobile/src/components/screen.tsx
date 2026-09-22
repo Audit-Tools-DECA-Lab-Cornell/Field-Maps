@@ -1,7 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLayout } from "../layout/use-layout";
 import { useFieldSession } from "../session/provider";
 import { colors, space } from "../theme";
 import { ScreenFooter } from "./chrome";
@@ -30,9 +29,8 @@ export function Screen({ children }: PropsWithChildren) {
   );
 }
 
-/** A reading screen: left-aligned, hugging the left edge, with whitespace kept on the right. */
+/** A reading screen: its content spans the full width of the window in either orientation. */
 export function PageScreen({ children }: PropsWithChildren) {
-  const layout = useLayout();
   return (
     <Screen>
       <ScrollView
@@ -42,7 +40,6 @@ export function PageScreen({ children }: PropsWithChildren) {
           paddingTop: space.base,
           paddingBottom: space.wide,
           width: "100%",
-          maxWidth: layout.wide ? 620 : undefined,
         }}
       >
         {children}

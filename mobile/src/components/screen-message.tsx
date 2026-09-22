@@ -21,7 +21,7 @@ export function ScreenMessage({
       <Text selectable style={[textStyles.title, { color: colors.text }]}>
         {title}
       </Text>
-      <Text selectable style={[textStyles.body, { color: colors.neutral400, maxWidth: 520 }]}>
+      <Text selectable style={[textStyles.body, { color: colors.neutral400 }]}>
         {detail}
       </Text>
     </View>

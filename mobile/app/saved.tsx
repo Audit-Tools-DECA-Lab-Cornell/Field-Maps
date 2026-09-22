@@ -25,7 +25,7 @@ export default function SavedScreen() {
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.base + 3 }]}>
         {heldOnly ? "Saved to the device" : "Saved and queued"}
       </Text>
-      <View style={{ marginTop: 7, maxWidth: 460 }}>
+      <View style={{ marginTop: 7 }}>
         <Prose tone="body">
           {heldOnly
             ? form?.status === "draft"

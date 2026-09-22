@@ -61,7 +61,7 @@ export default function AccountScreen() {
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
         Account and synchronisation
       </Text>
-      <View style={{ marginTop: space.tight, maxWidth: 520 }}>
+      <View style={{ marginTop: space.tight }}>
         <Prose tone="body">
           {!configured
             ? "Practice mode: records stay on this device. Your project connection needs to be configured before signing in."

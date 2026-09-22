@@ -6,6 +6,7 @@ import { QuestionPanel } from "../src/components/question-panel";
 import { Screen } from "../src/components/screen";
 import { observationSummary } from "../src/domain/build-observation";
 import { visibleQuestions } from "../src/forms/engine";
+import { useLandscapeOnTablet } from "../src/layout/orientation";
 import { useLayout } from "../src/layout/use-layout";
 import { FieldMap, type MapRecord } from "../src/maps/field-map";
 import { shortLabel, useFieldSession } from "../src/session/provider";
@@ -15,6 +16,7 @@ import { colors, space, textStyles } from "../src/theme";
 const AUTO_ADVANCE_MS = 160;
 
 export default function FieldScreen() {
+  useLandscapeOnTablet();
   const layout = useLayout();
   const session = useFieldSession();
   const { records } = useObservations();
