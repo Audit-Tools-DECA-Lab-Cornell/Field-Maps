@@ -402,7 +402,7 @@ export const FORM_VERSIONS: readonly FormVersion[] = [
 		publishedAt: null,
 		recordCount: 0,
 		variableCount: includedCount,
-		note: "The first versioned instrument slice. It renders and saves on the device, but records are held there: the API accepts only shell-v1, and the flagged rows below are unresolved."
+		note: "The first versioned instrument slice. It renders and saves on the device, but records are held there: the API accepts only shell-v1, and the flagged rows below are unresolved. The observations this workspace shows are a preview of what this version will hold once it is published — the database has none of them."
 	}
 ];
 

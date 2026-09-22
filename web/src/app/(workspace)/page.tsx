@@ -47,7 +47,7 @@ export default function OverviewPage() {
 			<div className="px-gutter pb-page">
 				<AttentionNote
 					title="These screens read local fixtures, not the database"
-					body="The collector’s uploads are real and QGIS reads them, but this application has not been connected to the API. Every record, count and chart below is generated in the browser from a fixed seed. Nothing here has been written anywhere.">
+					body="The collector’s uploads are real and QGIS reads them, but this application has not been connected to the API. Every record, count and chart below is generated in the browser from a fixed seed, previewing how this workspace will read once janet-test-v1 is published — the database itself holds two shell-v1 practice records today. Nothing here has been written anywhere.">
 					<div className="mt-tight">
 						<LinkAction href="/qgis">See what is actually connected</LinkAction>
 					</div>

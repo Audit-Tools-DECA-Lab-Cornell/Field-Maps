@@ -2,6 +2,7 @@ import { PageHeader, StatTile } from "@/components/app-shell/PageHeader";
 import { VariableLibrary } from "@/components/instrument/VariableLibrary";
 import { AttentionNote, Chip, FadeRule, Prose, SecondaryAction, SectionLabel } from "@/components/nocturne/chrome";
 import { BLOCKING_FLAGS, DISPLAY_RULES, DRAFT_VERSION, FORM_VERSIONS, VARIABLES } from "@/data/instrument";
+import { OBSERVATIONS, PREVIEWED_VERSION } from "@/data/observations";
 import { PROJECT } from "@/data/project";
 import { formatCount, formatDate, plural } from "@/lib/format";
 
@@ -86,6 +87,13 @@ export default function InstrumentPage() {
 									<span className="tnum">{formatCount(version.variableCount)}</span> variables ·{" "}
 									<span className="tnum">{formatCount(version.recordCount)}</span> records in the
 									database
+									{version.code === PREVIEWED_VERSION && (
+										<>
+											{" · "}
+											<span className="tnum">{formatCount(OBSERVATIONS.length)}</span> in the
+											preview this workspace shows
+										</>
+									)}
 								</p>
 							</article>
 						))}

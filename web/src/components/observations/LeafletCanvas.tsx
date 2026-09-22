@@ -137,8 +137,8 @@ export default function LeafletCanvas({
 						color: PLAN_PAINT.zoneEdge,
 						weight: 1,
 						dashArray: "4 4",
-						fillColor: "#9184d9",
-						fillOpacity: 0.06
+						fillColor: PLAN_PAINT.zone,
+						fillOpacity: PLAN_PAINT.zoneFillOpacity
 					}}>
 					<Tooltip direction="center" permanent className="zone-label">
 						{zone.id}

@@ -42,10 +42,12 @@ export function ObservationsWorkspace() {
 	const records = useMemo(() => applyFilters(OBSERVATIONS, filters), [filters]);
 	const selected = records.find(record => record.id === selectedId);
 
+	// A new history entry, not a replacement: changing a filter or opening a record is something the
+	// reader did, and Back has to undo it rather than leave the section.
 	const push = useCallback(
 		(next: Filters, record: string | null) => {
 			const params = writeFilters(next, record);
-			router.replace(params.size === 0 ? pathname : `${pathname}?${params.toString()}`, { scroll: false });
+			router.push(params.size === 0 ? pathname : `${pathname}?${params.toString()}`, { scroll: false });
 		},
 		[pathname, router]
 	);

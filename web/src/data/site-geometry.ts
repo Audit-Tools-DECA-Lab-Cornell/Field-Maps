@@ -117,6 +117,12 @@ export const ZONE_GEOMETRY: FeatureCollection = {
 /**
  * The plan base paint, copied from the collector's `planStyle`. Both bases stay subdued so the
  * observations read first.
+ *
+ * These are literals for one reason: Leaflet's path options are passed to canvas and SVG
+ * attributes by JavaScript and cannot read a CSS custom property, so the map cannot reach the
+ * Nocturne tokens the rest of the application uses. This object is therefore the single place the
+ * plan palette is written down — anything that paints the plan reads it from here rather than
+ * repeating a hex. The zone values are the `--color-accent` ramp at the steps named beside them.
  */
 export const PLAN_PAINT = {
 	site: "#20233a",
@@ -125,6 +131,11 @@ export const PLAN_PAINT = {
 	structureEdge: "#4a4e5e",
 	path: "#2f3243",
 	tree: "#2b3527",
-	zoneFill: "#9184d90f",
-	zoneEdge: "#796cbf"
+	/** --color-accent */
+	zone: "#9184d9",
+	/** --color-accent-600 */
+	zoneEdge: "#796cbf",
+	/** --color-accent-400 */
+	zoneEdgeStrong: "#b5abfc",
+	zoneFillOpacity: 0.06
 } as const;

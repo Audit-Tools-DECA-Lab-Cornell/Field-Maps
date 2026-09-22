@@ -32,14 +32,48 @@ export function ExportDialog({
 }) {
 	const [format, setFormat] = useState<FormatId>("csv");
 	const [options, setOptions] = useState<ExportOptions>({ codebook: true, includeFlagged: true });
-	const closeRef = useRef<HTMLDivElement>(null);
+	const dialogRef = useRef<HTMLDivElement>(null);
 
+	/**
+	 * `aria-modal` is a claim about behaviour, so the behaviour has to be here: focus moves into
+	 * the dialog, Tab cycles inside it rather than reaching the obscured workspace behind, Escape
+	 * closes, and focus returns to whatever opened it.
+	 */
 	useEffect(() => {
+		const opener = document.activeElement as HTMLElement | null;
+		const dialog = dialogRef.current;
+		dialog?.focus();
+
+		const focusable = () =>
+			[...(dialog?.querySelectorAll<HTMLElement>("button, [href], input, select, textarea") ?? [])].filter(
+				element => !element.hasAttribute("disabled") && element.tabIndex !== -1
+			);
+
 		const onKey = (event: KeyboardEvent) => {
-			if (event.key === "Escape") onClose();
+			if (event.key === "Escape") {
+				onClose();
+				return;
+			}
+			if (event.key !== "Tab") return;
+			const stops = focusable();
+			const first = stops[0];
+			const last = stops.at(-1);
+			if (first === undefined || last === undefined) return;
+			const active = document.activeElement;
+			if (event.shiftKey && (active === first || active === dialog)) {
+				event.preventDefault();
+				last.focus();
+			} else if (!event.shiftKey && active === last) {
+				event.preventDefault();
+				first.focus();
+			}
 		};
+
 		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
+		return () => {
+			document.removeEventListener("keydown", onKey);
+			opener?.focus();
+		};
 	}, [onClose]);
 
 	const excluded = options.includeFlagged ? 0 : records.filter(record => record.flagId !== null).length;
@@ -59,10 +93,11 @@ export function ExportDialog({
 				if (event.target === event.currentTarget) onClose();
 			}}>
 			<div
-				ref={closeRef}
+				ref={dialogRef}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="export-title"
+				tabIndex={-1}
 				className="flex max-h-full w-full max-w-lg flex-col gap-base overflow-y-auto overscroll-contain rounded-lg border border-neutral-700 bg-raised p-loose shadow-lg">
 				<div>
 					<h2 id="export-title" className="text-question text-text">

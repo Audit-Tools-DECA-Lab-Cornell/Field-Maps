@@ -11,9 +11,20 @@ import type { Observation, ObservationAnswer, RecordState } from "@/types/domain
  * observer, a form version, a revision, a point in EPSG:4326 and one answer per variable, with
  * `null` reserved for a question the display logic hid at collection time.
  *
- * Every screen that shows them says where they come from. When the console is wired to
+ * They are a *preview*, and the distinction matters. The database today holds two `shell-v1`
+ * records — the practice form, three fields, enough to prove the upload path and nothing else. A
+ * management console over two rows shows nothing about managing a study, so these records preview
+ * the workspace as it will read once `janet-test-v1` is published and a few days of collection
+ * have landed: committed, revised, flagged and withdrawn records on the version the study will
+ * actually use. Nothing here is claimed to be in the database now, and `{@link PREVIEWED_VERSION}`
+ * is a draft until the API accepts it.
+ *
+ * Every screen that shows them says so. When the console is wired to
  * `/v1/projects/{id}/observations`, this file goes away; nothing above it needs to change shape.
  */
+
+/** The form version this preview is collected under. It is a draft until the API accepts it. */
+export const PREVIEWED_VERSION = "janet-test-v1";
 
 const SEED = 20260922;
 const OBSERVERS = ACTIVE_SITE.observers;
@@ -216,7 +227,7 @@ function build(): readonly Observation[] {
 			observerCode: observer ?? "AK",
 			observedAt,
 			receivedAt,
-			formVersionCode: round === 1 ? "janet-test-v1" : "janet-test-v1",
+			formVersionCode: PREVIEWED_VERSION,
 			revision,
 			longitude,
 			latitude,

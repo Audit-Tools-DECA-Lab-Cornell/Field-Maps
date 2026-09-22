@@ -1,4 +1,4 @@
-import { GROUND, PATHS } from "@/data/site-geometry";
+import { GROUND, PATHS, PLAN_PAINT } from "@/data/site-geometry";
 import type { Zone } from "@/types/domain";
 
 /**
@@ -6,6 +6,11 @@ import type { Zone } from "@/types/domain";
  * not a map: nothing is fetched, and the only projection is an equirectangular fit to the site's
  * own extent, with longitude scaled by cos(latitude) so a square zone stays square. Every site
  * draws the same ground at the same scale, so two plans side by side can be compared.
+ *
+ * SVG presentation attributes resolve CSS custom properties, so everything Nocturne has a token
+ * for takes the token. The plan base greys have no token — they are the collector's `planStyle`
+ * values, which Leaflet has to receive as literals — so they come from the one place those are
+ * written down, `PLAN_PAINT`.
  */
 
 const site = GROUND.features.find(feature => feature.properties.kind === "site");
@@ -48,8 +53,8 @@ export function ZonePlan({ zones }: { readonly zones: readonly Zone[] }) {
 			{site?.geometry.type === "Polygon" && (
 				<polygon
 					points={points(site.geometry.coordinates[0]!)}
-					fill="#20233a"
-					stroke="#2f3350"
+					fill={PLAN_PAINT.site}
+					stroke={PLAN_PAINT.siteEdge}
 					strokeWidth="1"
 					vectorEffect="non-scaling-stroke"
 				/>
@@ -59,8 +64,8 @@ export function ZonePlan({ zones }: { readonly zones: readonly Zone[] }) {
 					<polygon
 						key={index}
 						points={points(structure.geometry.coordinates[0]!)}
-						fill="#24273a"
-						stroke="#4a4e5e"
+						fill={PLAN_PAINT.structure}
+						stroke={PLAN_PAINT.structureEdge}
 						strokeWidth="1"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -72,7 +77,7 @@ export function ZonePlan({ zones }: { readonly zones: readonly Zone[] }) {
 						key={index}
 						points={points(path.geometry.coordinates)}
 						fill="none"
-						stroke="#2f3243"
+						stroke={PLAN_PAINT.path}
 						strokeWidth="5"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
@@ -86,9 +91,9 @@ export function ZonePlan({ zones }: { readonly zones: readonly Zone[] }) {
 						y={y(zone.north)}
 						width={x(zone.east) - x(zone.west)}
 						height={y(zone.south) - y(zone.north)}
-						fill="#9184d9"
-						fillOpacity={0.12}
-						stroke="#b5abfc"
+						fill="var(--color-accent)"
+						fillOpacity={PLAN_PAINT.zoneFillOpacity * 2}
+						stroke="var(--color-accent-400)"
 						strokeWidth="1"
 						strokeDasharray="4 4"
 						vectorEffect="non-scaling-stroke"
@@ -98,7 +103,7 @@ export function ZonePlan({ zones }: { readonly zones: readonly Zone[] }) {
 						y={(y(zone.north) + y(zone.south)) / 2}
 						textAnchor="middle"
 						dominantBaseline="central"
-						fill="#9397ab"
+						fill="var(--color-neutral-500)"
 						fontSize="14"
 						fontWeight="500">
 						{zone.id}
