@@ -7,6 +7,12 @@
 	"issuer": "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1",
 	"jwks_url": "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1/.well-known/jwks.json",
 	"audience": "authenticated",
-	"browser_origins": ["https://field-maps.vercel.app"],
+	"browser_origins": [
+		"https://field-maps.vercel.app",
+		"http://localhost:3000",
+		"http://127.0.0.1:3000",
+		"http://localhost:5173",
+		"http://127.0.0.1:5173"
+	],
 	"browser_origin_pattern": "https://field-maps-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
 }

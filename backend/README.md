@@ -32,7 +32,7 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 }
 ```
 
-`browser_origins` names the origins the management application is served from. A browser
+`browser_origins` names the origins the management application is served from. Both configurations list localhost as well as the deployed site, because `pnpm api:hosted:up` runs this API on the development machine against the hosted database — a browser on `localhost:3000` is a normal caller of either one. `localhost` and `127.0.0.1` are different origins to a browser, so both are listed. A browser
 preflights any cross-origin call carrying an `Authorization` header, and the default is an empty
 list — no origin allowed — so base map upload from the web application fails until its origin is
 named here. It is an allowlist by design: a wildcard would let any page a signed-in manager has
