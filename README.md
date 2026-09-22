@@ -8,7 +8,7 @@ This is one Git repository with independently managed components. The root owns 
 
 ```text
 field-maps/
-├── web/          Next.js web prototype, source, public assets, and build config
+├── web/          Next.js management application, source, public assets, and build config
 ├── mobile/       Expo / React Native collector with SQLite and MapLibre
 ├── backend/      FastAPI authentication and observation API
 ├── database/     Local PostGIS, SQL migrations, seed data, and database tests
@@ -49,13 +49,13 @@ The mobile collector saves georeferenced observations to SQLite and automaticall
 
 The collector has been rebuilt to the [Riverside Collector design](designs/Riverside%20Collector%20v2.dc.html): an armed place-a-point map mode, one question per screen against a reusable versioned form engine, drafts that survive a force quit, and the Nocturne dark interface. The practice `shell-v1` form and its records are unchanged and still upload. The new `janet-test-v1` instrument subset renders and saves offline but is held on the device, because the API accepts only `shell-v1` today. This redesign is verified by types, tests and bundling only; it has not yet run on a device. See the [mobile collector](mobile/README.md) for what is deliberately left open.
 
-The web application remains an independent operations/field-collector prototype with simulated sync. Moving it into `web/` does not connect it to the backend. General form publishing, imported offline site packages, attachments, bidirectional edits, and closed-app background synchronization remain future work.
+The web application has been rebuilt as the management side of the same product, on the collector's Nocturne design system and the real database vocabulary: an overview of what the field returned, data review over a coordinated map and table, places, the instrument and its variable library, base map package preparation, and the QGIS connection. It is not connected to the API — every record, count and connection value on its screens comes from local fixtures, and each screen says so. General form publishing, imported offline site packages, attachments, bidirectional edits, and closed-app background synchronization remain future work.
 
 Next implementation scope: publishing [Janet's versioned test form](docs/Janet-Test-Form-Scope.md) — dual acceptance in the API, an immutable server form version, and a typed GIS view — once its open protocol decisions are settled. The first test form excludes all 16 hidden spreadsheet rows, as confirmed by the user.
 
 ## Component documentation
 
-- [Web prototype](web/README.md) and [mobile collector](mobile/README.md)
+- [Web management application](web/README.md) and [mobile collector](mobile/README.md)
 - [Backend API](backend/README.md), [local spatial database](database/README.md), and [hosted Supabase setup](docs/Supabase-Setup.md)
 - [QGIS project and connection](qgis/README.md) and [testing on a real QGIS base map](docs/QGIS-Base-Map-Testing.md)
 - [Production architecture](docs/Production-Architecture-Recommendation.md) and [QGIS feasibility research](docs/QGIS-Field-Collection-Feasibility.md)

@@ -1,157 +1,167 @@
-// Core domain model for FieldMaps Parcel Editor.
-// All types are local — there is no backend. See PROTOTYPE.plan.md.
+/**
+ * The FieldMaps domain, named the way the database names it.
+ *
+ * `database/migrations/0001_initial.sql` is the authority: an organization owns projects, a
+ * project owns sites and immutable form versions, and every observation belongs to one site and
+ * one form version, carries a point in EPSG:4326 and a JSON answer object, and is revised rather
+ * than edited in place. Nothing in this file invents a concept the schema does not have.
+ *
+ * The fixtures under `src/data/` fill these types locally. This application does not call the API
+ * yet, and no screen claims otherwise.
+ */
 
-export type EntityType = "parcel" | "asset" | "inspection";
-
-export type ParcelStatus = "healthy" | "inspection_due" | "maintenance_required" | "blocked" | "inactive";
-
-export type SyncStatus = "synced" | "pending" | "syncing" | "failed" | "local_draft";
-
-export type RiskLevel = "low" | "medium" | "high" | "critical";
-
-export type CropType = "almonds" | "tomatoes" | "grapes" | "alfalfa";
-
-export type IrrigationCondition = "normal" | "low_pressure" | "leak_detected" | "offline" | "not_applicable";
-
-export type AssetType = "pump_station" | "irrigation_valve" | "soil_sensor" | "access_gate" | "maintenance_flag";
-
-export type AssetStatus = "operational" | "needs_attention" | "offline" | "blocked" | "resolved";
-
-export type Priority = "low" | "medium" | "high" | "critical";
-
-export type GeometryEditState =
-	| "none"
-	| "editing"
-	| "dirty"
-	| "validating"
-	| "ready_to_save"
-	| "saved_local"
-	| "invalid";
-
-export type InspectionResult = "passed" | "monitor" | "follow_up_required" | "blocked";
-
-export type SoilMoisture = "low" | "normal" | "high" | "unknown";
-
-export type PestPressure = "none" | "low" | "medium" | "high";
-
-export type AccessCondition = "clear" | "limited" | "blocked";
-
-export type ChangeType =
-	| "attribute_update"
-	| "geometry_update"
-	| "inspection_create"
-	| "maintenance_task_create"
-	| "status_change";
-
-/** GeoJSON Polygon: array of linear rings, each ring an array of [lng, lat]. */
-export type PolygonCoordinates = number[][][];
-
-export interface ParcelAsset {
-	id: string;
-	type: "Feature";
-	entityType: "parcel";
-	properties: {
-		parcelId: string;
-		name: string;
-		cropType: CropType;
-		acreage: number;
-		ownerOperator: string;
-		assignedTechnician: string;
-		irrigationZone: string;
-		status: ParcelStatus;
-		riskLevel: RiskLevel;
-		riskScore: number;
-		irrigationCondition: IrrigationCondition;
-		priority: Priority;
-		lastInspectionDate: string;
-		nextInspectionDue: string;
-		openMaintenanceCount: number;
-		notes: string;
-		syncStatus: SyncStatus;
-		updatedAt: string;
-	};
-	geometry: {
-		type: "Polygon";
-		coordinates: PolygonCoordinates;
-	};
+export interface Organization {
+	readonly id: string;
+	readonly name: string;
 }
 
-export interface FieldMarkerAsset {
-	id: string;
-	type: "Feature";
-	entityType: "asset";
-	properties: {
-		assetId: string;
-		name: string;
-		assetType: AssetType;
-		linkedParcelId: string;
-		status: AssetStatus;
-		priority: Priority;
-		lastCheckedAt: string;
-		assignedTechnician: string;
-		notes: string;
-		syncStatus: SyncStatus;
-	};
-	geometry: {
-		type: "Point";
-		coordinates: [number, number];
-	};
+export interface Project {
+	readonly id: string;
+	readonly organizationId: string;
+	readonly name: string;
+	readonly lead: string;
+	readonly leadRole: string;
+	readonly summary: string;
 }
 
-export interface InspectionRecord {
-	id: string;
-	parcelId: string;
-	inspectorName: string;
-	inspectionDate: string;
-	result: InspectionResult;
-	soilMoisture: SoilMoisture;
-	irrigationCondition: IrrigationCondition;
-	pestPressure: PestPressure;
-	accessCondition: AccessCondition;
-	followUpRequired: boolean;
-	notes: string;
-	createdAt: string;
-	syncStatus: SyncStatus;
+/** A named sub-area of a site. Zones are the unit an observation records and a round covers. */
+export interface Zone {
+	readonly id: string;
+	readonly label: string;
+	readonly west: number;
+	readonly south: number;
+	readonly east: number;
+	readonly north: number;
 }
 
-export interface SyncEvent {
-	id: string;
-	entityType: EntityType;
-	entityId: string;
-	/** Human-readable entity label, e.g. "P-102 — East Tomato Row". */
-	entityLabel: string;
-	changeType: ChangeType;
-	status: SyncStatus;
-	createdAt: string;
-	lastAttemptAt?: string;
-	completedAt?: string;
-	summary: string;
-	payloadPreview: Record<string, unknown>;
-	errorMessage?: string;
-	retryCount: number;
+export type SiteState = "collecting" | "configured" | "blocked";
+
+export interface Site {
+	readonly id: string;
+	readonly projectId: string;
+	/** The stable short code the observer sees and the export carries. */
+	readonly code: string;
+	readonly name: string;
+	readonly state: SiteState;
+	readonly detail: string;
+	readonly rounds: readonly number[];
+	readonly observers: readonly string[];
+	readonly zones: readonly Zone[];
 }
 
-export type ActivitySeverity = "info" | "success" | "warning" | "error";
+/**
+ * A published form version is immutable — the database refuses to update or delete one. Publishing
+ * creates a new version alongside the old, and records keep the version they were collected under.
+ */
+export type FormVersionState = "published" | "draft" | "superseded";
 
-export type ActivityAction =
-	| "selected"
-	| "viewed"
-	| "created"
-	| "updated"
-	| "edited_geometry"
-	| "validated"
-	| "synced"
-	| "sync_failed"
-	| "resolved"
-	| "discarded";
+export interface FormVersion {
+	readonly id: string;
+	readonly code: string;
+	readonly label: string;
+	readonly state: FormVersionState;
+	readonly publishedAt: string | null;
+	readonly recordCount: number;
+	readonly variableCount: number;
+	readonly note: string;
+}
 
-export interface ActivityLogItem {
-	id: string;
-	timestamp: string;
-	actor: string;
-	entityType: EntityType;
-	entityId: string;
-	action: ActivityAction;
-	message: string;
-	severity: ActivitySeverity;
+/** Where in the hierarchy a variable is answered. A round answer is inherited by its events. */
+export type VariableScope = "event" | "round" | "zone" | "observer";
+
+export interface Variable {
+	/** The variable code in Janet's source workbook. Never invented here. */
+	readonly code: string;
+	/** The analysis column. Empty when the source has not supplied one. */
+	readonly exportColumn: string;
+	readonly label: string;
+	readonly format: string;
+	readonly scope: VariableScope;
+	/** Whether the draft instrument currently includes it. */
+	readonly included: boolean;
+	/** An unresolved question about the source row. Blocks a clean publish while it stands. */
+	readonly flag?: string;
+}
+
+/**
+ * Display logic is authored as a when/is/show sentence, never as an expression. A manager
+ * configuring a study does not write GIS expressions.
+ */
+export interface DisplayRule {
+	readonly parent: string;
+	readonly value: string;
+	readonly children: string;
+	/** Set when the rule as written in the workbook cannot be evaluated. */
+	readonly problem?: string;
+}
+
+/** A computed check over a committed record. Nothing is auto-corrected and nothing is hidden. */
+export interface QualityFlag {
+	readonly id: string;
+	readonly label: string;
+	readonly body: string;
+}
+
+/**
+ * What the database holds for a record. A record is never edited in place: a competing edit
+ * raises the revision, and a withdrawal sets `deleted_at` rather than removing the row.
+ */
+export type RecordState = "in-database" | "revised" | "flagged" | "withdrawn";
+
+export interface Observation {
+	readonly id: string;
+	readonly siteId: string;
+	readonly zoneId: string;
+	readonly round: number;
+	readonly observerCode: string;
+	/** When the observer recorded it, in the site's own time zone. */
+	readonly observedAt: string;
+	/** When the API committed it. Later than `observedAt` by however long the device was offline. */
+	readonly receivedAt: string;
+	readonly formVersionCode: string;
+	readonly revision: number;
+	readonly longitude: number;
+	readonly latitude: number;
+	readonly playType: string;
+	readonly answers: readonly ObservationAnswer[];
+	readonly flagId: string | null;
+	readonly state: RecordState;
+	readonly history: readonly ObservationEvent[];
+}
+
+export interface ObservationAnswer {
+	readonly code: string;
+	readonly exportColumn: string;
+	readonly label: string;
+	/** `null` means the display logic hid the question at collection time — not an empty answer. */
+	readonly value: string | null;
+}
+
+export interface ObservationEvent {
+	readonly at: string;
+	readonly message: string;
+}
+
+/** A step in turning a QGIS project into something an observer can carry offline. */
+export type PrepState = "done" | "warning" | "blocked" | "waiting";
+
+export interface PrepStep {
+	readonly name: string;
+	readonly detail: string;
+	readonly state: PrepState;
+}
+
+export interface BasemapPackage {
+	readonly id: string;
+	readonly siteId: string;
+	readonly source: string;
+	readonly detail: string;
+	readonly state: PrepState;
+	readonly steps: readonly PrepStep[];
+}
+
+export interface QgisLayer {
+	readonly name: string;
+	readonly mode: "read-only" | "view";
+	readonly detail: string;
 }

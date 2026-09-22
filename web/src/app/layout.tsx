@@ -1,14 +1,34 @@
-import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 
 import { PwaRegister } from "@/components/app-shell/PwaRegister";
 
+/**
+ * Inter is the Nocturne face. It is self-hosted by next/font rather than fetched from Google,
+ * for the same reason the collector bundles it: chrome never waits on a network.
+ */
+const inter = Inter({
+	subsets: ["latin"],
+	weight: ["400", "500", "600"],
+	display: "swap",
+	variable: "--font-inter"
+});
+
 export const metadata: Metadata = {
-	title: "FieldMaps Offline Collector — Northstar Ag Operations",
-	description: "Offline field data collection prototype with QGIS exports and ArcGIS Feature Service handoff.",
+	title: {
+		default: "FieldMaps",
+		template: "%s · FieldMaps"
+	},
+	description:
+		"The management side of FieldMaps: projects, places, instruments and the observations the field collector writes to the shared spatial database.",
 	manifest: "/manifest.webmanifest"
+};
+
+export const viewport: Viewport = {
+	themeColor: "#161826",
+	colorScheme: "dark"
 };
 
 export default function RootLayout({
@@ -17,8 +37,8 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="h-full" data-theme="petrol">
-			<body className="min-h-full">
+		<html lang="en" className={inter.variable}>
+			<body>
 				{children}
 				<PwaRegister />
 			</body>
