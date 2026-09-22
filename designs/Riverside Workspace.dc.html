@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/styles.css">
+<script src="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; }
+  a { color: var(--color-accent-700); }
+  a:hover { color: var(--color-accent-800); }
+  .k { font-family: var(--font-heading); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-700); }
+  .num { font-variant-numeric: tabular-nums; }
+  .scroll { overflow-y: auto; scrollbar-width: thin; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-family: var(--font-heading); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px; border: 1px solid; white-space: nowrap; }
+  .fbtn { font: inherit; font-size: 12.5px; padding: 5px 9px; min-height: 30px; background: transparent; border: 1px solid var(--color-divider); cursor: pointer; color: var(--color-text); text-align: left; }
+  .fbtn:hover { background: var(--color-accent-100); }
+  .fbtn-on { font: inherit; font-size: 12.5px; font-weight: 500; padding: 5px 9px; min-height: 30px; background: var(--color-accent-800); color: #fff; border: 1px solid var(--color-accent-900); cursor: pointer; text-align: left; }
+  .tbtn { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; padding: 9px 14px; background: transparent; border: 0; border-bottom: 2px solid transparent; cursor: pointer; color: var(--color-neutral-700); }
+  .tbtn:hover { color: var(--color-text); }
+  .tbtn-on { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; padding: 9px 14px; background: transparent; border: 0; border-bottom: 2px solid var(--color-accent-800); cursor: pointer; color: var(--color-text); }
+  .pbtn { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; min-height: 38px; padding: 9px 14px; background: var(--color-accent-800); color: #fff; border: 1px solid var(--color-accent-900); cursor: pointer; text-align: left; }
+  .pbtn:hover { background: var(--color-accent-900); }
+  .gbtn { font: inherit; font-size: 13px; min-height: 38px; padding: 9px 13px; background: transparent; border: 1px solid var(--color-divider); cursor: pointer; color: var(--color-text); }
+  .gbtn:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+  .row { display: grid; align-items: center; gap: 8px; padding: 7px 10px; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent); font-size: 12.5px; cursor: pointer; background: transparent; border-left: 0; border-right: 0; border-top: 0; width: 100%; text-align: left; font-family: inherit; color: var(--color-text); }
+  .row:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+  .row-on { background: var(--color-accent-100); }
+  .mk { position: absolute; transform: translate(-50%, -50%); }
+  code { font-size: 11.5px; background: var(--color-neutral-200); padding: 1px 4px; }
+</style>
+</helmet>
+
+<div style="font-family: var(--font-body); min-height: 100vh; display: flex; flex-direction: column;">
+
+  <!-- ══ app chrome ══ -->
+  <div style="display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid var(--color-text); flex-wrap: wrap;">
+    <div style="font-family: var(--font-heading); font-weight: 600; font-size: 19px; letter-spacing: .04em;">FIELDOPS</div>
+    <div style="width: 1px; height: 22px; background: var(--color-divider);"></div>
+    <div style="min-width: 0;">
+      <div class="k">Project</div>
+      <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px;">Riverside Play Study</div>
+    </div>
+    <div style="display: flex; gap: 2px; margin-left: 12px;">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+        <sc-if value="{{ t.on }}" hint-placeholder-val="{{ true }}"><button class="tbtn-on" onClick="{{ t.go }}">{{ t.label }}</button></sc-if>
+        <sc-if value="{{ t.off }}"><button class="tbtn" onClick="{{ t.go }}">{{ t.label }}</button></sc-if>
+      </sc-for>
+    </div>
+    <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+      <span class="chip" style="border-color: #2f6b46; color: #1f4c31;">✓ Database connected</span>
+      <div class="k">JW · Principal investigator</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ DATA REVIEW ══════════════ -->
+  <sc-if value="{{ atReview }}" hint-placeholder-val="{{ true }}">
+    <div style="display: grid; grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) minmax(270px, 340px); align-items: stretch; flex: 1; min-height: 0;">
+
+      <!-- filter rail -->
+      <div class="scroll" style="border-right: 1px solid var(--color-divider); padding: 14px 14px 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div class="k">Filters</div>
+          <button class="fbtn" onClick="{{ clearFilters }}" style="min-height: 24px; padding: 2px 7px; font-size: 11px;">Clear</button>
+        </div>
+        <div style="font-size: 12.5px; color: var(--color-neutral-700); margin-top: 6px;">{{ filterSummary }}</div>
+
+        <sc-for list="{{ filterGroups }}" as="g" hint-placeholder-count="5">
+          <div style="margin-top: 18px;">
+            <div class="k" style="border-bottom: 1px solid var(--color-divider); padding-bottom: 4px;">{{ g.label }}</div>
+            <div style="{{ g.gridStyle }}">
+              <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+                <sc-if value="{{ o.on }}"><button class="fbtn-on" onClick="{{ o.pick }}">{{ o.label }} <span class="num">· {{ o.n }}</span></button></sc-if>
+                <sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button class="fbtn" onClick="{{ o.pick }}">{{ o.label }} <span class="num">· {{ o.n }}</span></button></sc-if>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="margin-top: 20px; border-top: 1px solid var(--color-text); padding-top: 12px;">
+          <div class="k">Data-quality flags</div>
+          <div style="display: grid; gap: 4px; margin-top: 8px;">
+            <sc-for list="{{ flagRows }}" as="f" hint-placeholder-count="4">
+              <sc-if value="{{ f.on }}"><button class="fbtn-on" onClick="{{ f.pick }}" style="display: flex; justify-content: space-between; gap: 8px;"><span>{{ f.label }}</span><span class="num">{{ f.n }}</span></button></sc-if>
+              <sc-if value="{{ f.off }}" hint-placeholder-val="{{ true }}"><button class="fbtn" onClick="{{ f.pick }}" style="display: flex; justify-content: space-between; gap: 8px;"><span>{{ f.label }}</span><span class="num">{{ f.n }}</span></button></sc-if>
+            </sc-for>
+          </div>
+          <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 8px;">Flags are computed checks, not judgements. Nothing is auto-corrected or hidden from an export.</div>
+        </div>
+      </div>
+
+      <!-- map + table -->
+      <div style="display: flex; flex-direction: column; min-width: 0; min-height: 0;">
+
+        <div style="position: relative; height: 420px; flex: none; background: #e4e7dd; border-bottom: 1px solid var(--color-text);">
+          <svg viewBox="0 0 900 420" preserveAspectRatio="none" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+            <rect x="0" y="0" width="900" height="420" fill="#dfe2d5"></rect>
+            <defs><pattern id="wap" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#dde0d3"></rect><circle cx="5" cy="6" r="1.8" fill="#d2d6c6"></circle><circle cx="12" cy="12" r="1.3" fill="#d6dac9"></circle></pattern></defs>
+            <rect x="0" y="0" width="900" height="420" fill="url(#wap)"></rect>
+            <path d="M0 250 L260 210 L520 244 L900 196" stroke="#c9c4b4" stroke-width="26" fill="none"></path>
+            <path d="M380 420 L430 250" stroke="#c9c4b4" stroke-width="18" fill="none"></path>
+            <rect x="46" y="34" width="300" height="168" fill="#d7ddcb" fill-opacity="0.8" stroke="#1d1f2066" stroke-dasharray="8 5" stroke-width="1.5"></rect>
+            <rect x="452" y="30" width="330" height="164" fill="#dfe3d4" fill-opacity="0.9" stroke="#1d1f2066" stroke-dasharray="8 5" stroke-width="1.5"></rect>
+            <rect x="470" y="288" width="322" height="108" fill="#dcdcd4" fill-opacity="0.8" stroke="#1d1f2066" stroke-dasharray="8 5" stroke-width="1.5"></rect>
+            <circle cx="700" cy="96" r="24" fill="#c3cdb4"></circle><circle cx="752" cy="140" r="17" fill="#c3cdb4"></circle>
+            <circle cx="150" cy="316" r="20" fill="#c3cdb4"></circle><circle cx="206" cy="356" r="14" fill="#c3cdb4"></circle>
+            <circle cx="606" cy="344" r="18" fill="#c3cdb4"></circle>
+            <text x="56" y="56" font-family="'Barlow Condensed'" font-size="15" letter-spacing="2" fill="#1d1f20">ZONE A — MEADOW EDGE</text>
+            <text x="462" y="52" font-family="'Barlow Condensed'" font-size="15" letter-spacing="2" fill="#1d1f20">ZONE B — NORTH PLAYGROUND</text>
+            <text x="480" y="310" font-family="'Barlow Condensed'" font-size="15" letter-spacing="2" fill="#1d1f20">ZONE C — COURTYARD</text>
+          </svg>
+
+          <sc-for list="{{ markers }}" as="m" hint-placeholder-count="12">
+            <button class="mk" onClick="{{ m.click }}" style="{{ m.style }}" title="{{ m.title }}">
+              <span style="{{ m.shapeStyle }}"></span>
+            </button>
+          </sc-for>
+
+          <sc-if value="{{ noResults }}">
+            <div style="position: absolute; inset: 0; display: grid; place-items: center;">
+              <div style="background: var(--color-bg); border: 1px solid var(--color-text); padding: 16px 20px; max-width: 360px;">
+                <div style="font-family: var(--font-heading); font-weight: 600; font-size: 18px;">No observations match</div>
+                <div style="font-size: 13px; color: var(--color-neutral-800); margin-top: 4px;">{{ filterSummary }}. Clear a filter to widen the set — the map and table always show the same records.</div>
+                <button class="gbtn" onClick="{{ clearFilters }}" style="margin-top: 12px;">Clear all filters</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="position: absolute; left: 12px; bottom: 12px; max-width: 210px; background: var(--color-bg); border: 1px solid var(--color-divider); padding: 8px 10px;">
+            <div class="k" style="font-size: 9.5px; letter-spacing: .08em;">Shape = play type</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; margin-top: 4px; font-size: 11px;">
+              <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 10px; height: 10px; flex: none; background: #1d1f20; box-shadow: 0 0 0 2px #fff;"></span>Physical</span>
+              <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 11px; height: 11px; flex: none; border-radius: 50%; background: #1d1f20; box-shadow: 0 0 0 2px #fff;"></span>Exploratory</span>
+              <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 0; height: 0; flex: none; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 11px solid #1d1f20;"></span>Imaginative</span>
+              <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 9px; height: 9px; flex: none; background: #1d1f20; transform: rotate(45deg); box-shadow: 0 0 0 2px #fff;"></span>All others</span>
+            </div>
+            <div class="k" style="font-size: 9.5px; letter-spacing: .08em; margin-top: 9px;">Fill = record state</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; font-size: 11px;">
+              <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 10px; height: 10px; flex: none; background: #1d1f20;"></span>In database</span>
+              <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 10px; height: 10px; flex: none; border: 2px solid #1d1f20;"></span>Flagged</span>
+            </div>
+          </div>
+          <div style="position: absolute; left: 12px; top: 12px; background: #f9f0da; border: 1px solid #7d5504; padding: 4px 8px; color: #6b4703;" class="k">Simulated vector plan</div>
+
+          <div style="position: absolute; right: 12px; top: 12px; background: var(--color-bg); border: 1px solid var(--color-divider); padding: 8px 11px;">
+            <div class="k">Showing</div>
+            <div class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 26px; line-height: 1;">{{ shown }}</div>
+            <div class="k">of {{ total }} observations</div>
+          </div>
+        </div>
+
+        <!-- table -->
+        <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--color-divider); flex-wrap: wrap;">
+            <div class="k">Observations · one row per play event</div>
+            <div style="margin-left: auto; display: flex; gap: 7px;">
+              <button class="gbtn" onClick="{{ openExport }}" style="min-height: 32px; padding: 6px 11px; font-size: 12.5px;">Export…</button>
+              <button class="gbtn" onClick="{{ toggleCharts }}" style="min-height: 32px; padding: 6px 11px; font-size: 12.5px;">{{ chartsLabel }}</button>
+            </div>
+          </div>
+
+          <sc-if value="{{ showCharts }}">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0; border-bottom: 1px solid var(--color-text);">
+              <div style="padding: 14px 16px; border-right: 1px solid var(--color-divider);">
+                <div class="k">Research question</div>
+                <h5 style="margin: 3px 0 10px; font-size: 15px;">Is each zone being observed enough times to compare rounds?</h5>
+                <div style="display: grid; grid-template-columns: 34px repeat(3, minmax(0, 1fr)); gap: 3px; font-size: 11.5px;">
+                  <div></div><div class="k" style="text-align: center;">R1</div><div class="k" style="text-align: center;">R2</div><div class="k" style="text-align: center;">R3</div>
+                  <sc-for list="{{ progressGrid }}" as="row" hint-placeholder-count="3">
+                    <div class="k" style="align-self: center;">{{ row.zone }}</div>
+                    <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="3">
+                      <div style="{{ c.style }}" class="num">{{ c.n }}</div>
+                    </sc-for>
+                  </sc-for>
+                </div>
+                <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 9px;">Zone C, round 3 has {{ thinCell }} events — below the 12 the protocol target implies. Darker cells hold more events.</div>
+              </div>
+              <div style="padding: 14px 16px;">
+                <div class="k">Research question</div>
+                <h5 style="margin: 3px 0 10px; font-size: 15px;">Does play type distribution differ by zone?</h5>
+                <div style="display: grid; gap: 7px;">
+                  <sc-for list="{{ typeBars }}" as="b" hint-placeholder-count="5">
+                    <div>
+                      <div style="display: flex; justify-content: space-between; font-size: 11.5px;"><span>{{ b.label }}</span><span class="num k">{{ b.n }}</span></div>
+                      <div style="display: flex; height: 12px; margin-top: 3px; background: var(--color-neutral-200);">
+                        <div style="{{ b.aStyle }}"></div><div style="{{ b.bStyle }}"></div><div style="{{ b.cStyle }}"></div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 10px; font-size: 11px; align-items: center;">
+                  <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 11px; height: 11px; background: #1d2d3d;"></span>Zone A</span>
+                  <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 11px; height: 11px; background: #416180;"></span>Zone B</span>
+                  <span style="display: inline-flex; gap: 5px; align-items: center;"><span style="width: 11px; height: 11px; background: #94bce3;"></span>Zone C</span>
+                  <span style="color: var(--color-neutral-700);">steel ramp only — never the semantic colours</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div class="scroll" style="flex: 1; min-height: 240px;">
+            <div style="display: grid; grid-template-columns: 96px 60px 44px 62px minmax(120px, 1fr) 84px 96px; gap: 8px; padding: 7px 10px; border-bottom: 1px solid var(--color-divider); position: sticky; top: 0; background: var(--color-bg); z-index: 1;">
+              <div class="k">Record</div><div class="k">Time</div><div class="k">Zone</div><div class="k">Round</div><div class="k">Play_Type_1</div><div class="k">Observer</div><div class="k">State</div>
+            </div>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+              <button onClick="{{ r.click }}" class="{{ r.cls }}" style="display: grid; grid-template-columns: 96px 60px 44px 62px minmax(120px, 1fr) 84px 96px;">
+                <span class="num" style="font-family: var(--font-heading); font-weight: 600;">{{ r.id }}</span>
+                <span class="num">{{ r.time }}</span>
+                <span class="num">{{ r.zone }}</span>
+                <span class="num">{{ r.round }}</span>
+                <span>{{ r.type }}</span>
+                <span>{{ r.observer }}</span>
+                <span class="chip" style="{{ r.chipStyle }}">{{ r.glyph }} {{ r.state }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- detail -->
+      <div class="scroll" style="border-left: 1px solid var(--color-divider); padding: 14px 14px 32px;">
+        <sc-if value="{{ hasSelection }}">
+          <div class="k">Observation detail</div>
+          <h3 style="font-size: 22px; margin: 4px 0 8px;">{{ sel.id }}</h3>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <span class="chip" style="{{ sel.chipStyle }}">{{ sel.glyph }} {{ sel.state }}</span>
+            <span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">form {{ sel.formVer }}</span>
+            <span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">rev {{ sel.rev }}</span>
+          </div>
+
+          <sc-if value="{{ sel.flagged }}">
+            <div style="border-left: 3px solid #7d5504; background: #f9f0da; padding: 10px 11px; margin-top: 12px;">
+              <div style="font-family: var(--font-heading); font-weight: 600; font-size: 13.5px; color: #6b4703;">⚠ {{ sel.flagLabel }}</div>
+              <div style="font-size: 12px; color: #6b4703; margin-top: 3px;">{{ sel.flagBody }}</div>
+              <div style="display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap;">
+                <button class="gbtn" onClick="{{ markReviewed }}" style="min-height: 30px; padding: 5px 9px; font-size: 12px;">Mark reviewed</button>
+                <button class="gbtn" onClick="{{ askObserver }}" style="min-height: 30px; padding: 5px 9px; font-size: 12px;">Query the observer</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <div class="k" style="margin-top: 16px; border-bottom: 1px solid var(--color-divider); padding-bottom: 4px;">Context — snapshot at collection</div>
+          <div style="margin-top: 6px;">
+            <sc-for list="{{ sel.context }}" as="c" hint-placeholder-count="5">
+              <div style="display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 7%, transparent); font-size: 12.5px;">
+                <span class="k" style="flex: none;">{{ c.k }}</span><span class="num" style="text-align: right;">{{ c.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div class="k" style="margin-top: 16px; border-bottom: 1px solid var(--color-divider); padding-bottom: 4px;">Answers — form {{ sel.formVer }}</div>
+          <div style="margin-top: 6px;">
+            <sc-for list="{{ sel.answers }}" as="a" hint-placeholder-count="8">
+              <div style="display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 7%, transparent); font-size: 12.5px;">
+                <span class="k" style="flex: none;">{{ a.k }}</span><span style="text-align: right; {{ a.style }}">{{ a.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 9px;">
+            <code>n/a</code> means the display logic hid the question at collection time. It is distinct from a configured <code>No</code> and from an unanswered field, and exports keep the three separate.
+          </div>
+
+          <div class="k" style="margin-top: 16px; border-bottom: 1px solid var(--color-divider); padding-bottom: 4px;">History</div>
+          <div style="margin-top: 7px; display: grid; gap: 7px;">
+            <sc-for list="{{ sel.history }}" as="h" hint-placeholder-count="3">
+              <div style="display: flex; gap: 8px; font-size: 11.5px; line-height: 1.45;">
+                <span class="k num" style="flex: none;">{{ h.t }}</span><span style="color: var(--color-neutral-800);">{{ h.m }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ noSelection }}" hint-placeholder-val="{{ true }}">
+          <div class="k">Observation detail</div>
+          <div style="border: 1px dashed var(--color-divider); padding: 18px; margin-top: 8px;">
+            <div style="font-family: var(--font-heading); font-weight: 600; font-size: 17px;">Nothing selected</div>
+            <div style="font-size: 12.5px; color: var(--color-neutral-700); margin-top: 4px;">Click a marker on the map or a row in the table — the two stay in step.</div>
+          </div>
+        </sc-if>
+
+        <!-- QGIS -->
+        <div style="border: 1px solid var(--color-text); padding: 13px; margin-top: 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div class="k">QGIS integration</div>
+            <span class="chip" style="border-color: #2f6b46; color: #1f4c31;">✓ Live</span>
+          </div>
+          <h5 style="margin: 6px 0 8px; font-size: 15px;">QGIS reads the same database</h5>
+          <p style="font-size: 12px; line-height: 1.6; color: var(--color-neutral-800); margin: 0 0 10px;">
+            There is no upload step and no “send to QGIS” button. Add the PostGIS connection once; refresh the layer in QGIS to pull committed observations.
+          </p>
+          <div style="background: var(--color-neutral-200); border: 1px solid var(--color-divider); padding: 8px 10px; font-size: 11.5px; line-height: 1.6;">
+            <div class="k" style="margin-bottom: 4px;">Connection</div>
+            <div class="num">host <strong>gis.example.ac.uk</strong></div>
+            <div class="num">database <strong>fieldops</strong> · port <strong>5432</strong></div>
+            <div class="num">schema <strong>riverside</strong></div>
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="k" style="margin-bottom: 5px;">Layers exposed</div>
+            <sc-for list="{{ qgisLayers }}" as="l" hint-placeholder-count="3">
+              <div style="display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 7%, transparent); font-size: 12px;">
+                <span class="num">{{ l.name }}</span><span class="k">{{ l.mode }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 9px;">Layers are read-only for the pilot. Desktop editing would need the sync contract to accept QGIS as a writer, which is not in scope.</div>
+          <div style="display: flex; gap: 6px; margin-top: 11px; flex-wrap: wrap;">
+            <button class="gbtn" onClick="{{ noop }}" style="min-height: 32px; padding: 6px 10px; font-size: 12px;">Copy connection</button>
+            <button class="gbtn" onClick="{{ noop }}" style="min-height: 32px; padding: 6px 10px; font-size: 12px;">Download .qgs starter</button>
+          </div>
+          <div style="border: 1px dashed #7d5504; background: #f9f0da; padding: 8px 10px; margin-top: 11px; font-size: 11.5px; color: #6b4703;">
+            <strong>⚠ Simulated.</strong> No database exists behind this panel. The connection values are illustrative and “Live” is a static state.
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══════════════ FORM SETUP ══════════════ -->
+  <sc-if value="{{ atSetup }}">
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); flex: 1; min-height: 0;">
+
+      <div class="scroll" style="padding: 20px 22px 40px; border-right: 1px solid var(--color-divider);">
+        <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; border-bottom: 1px solid var(--color-text); padding-bottom: 12px;">
+          <div style="flex: 1 1 260px; min-width: 0;">
+            <div class="k">North Playground · form draft</div>
+            <h2 style="font-size: 27px; margin: 4px 0 0;">Instrument configuration</h2>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">v4 published</span>
+            <span class="chip" style="border-color: #7d5504; color: #7d5504;">◷ v5 draft · {{ draftDelta }}</span>
+            <button class="pbtn" onClick="{{ openPublish }}">Review &amp; publish v5</button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 22px;">
+
+          <div>
+            <div class="k">Variable library — 112 rows, 111 distinct codes</div>
+            <h4 style="font-size: 18px; margin: 5px 0 9px;">Search and select</h4>
+            <input class="input" value="{{ query }}" onChange="{{ setQuery }}" placeholder="Search code, name, or export column…" style="min-height: 38px;" />
+            <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+              <sc-for list="{{ scopeChips }}" as="c" hint-placeholder-count="5">
+                <sc-if value="{{ c.on }}"><button class="fbtn-on" onClick="{{ c.pick }}">{{ c.label }}</button></sc-if>
+                <sc-if value="{{ c.off }}" hint-placeholder-val="{{ true }}"><button class="fbtn" onClick="{{ c.pick }}">{{ c.label }}</button></sc-if>
+              </sc-for>
+            </div>
+            <div class="scroll" style="border: 1px solid var(--color-divider); margin-top: 10px; max-height: 420px;">
+              <sc-for list="{{ libRows }}" as="v" hint-placeholder-count="8">
+                <div style="display: flex; gap: 9px; align-items: flex-start; padding: 9px 11px; border-bottom: 1px solid var(--color-divider);">
+                  <button onClick="{{ v.toggle }}" style="{{ v.boxStyle }}">{{ v.mark }}</button>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; gap: 7px; align-items: baseline; flex-wrap: wrap;">
+                      <span class="k" style="color: var(--color-accent-800);">{{ v.code }}</span>
+                      <span class="k">{{ v.col }}</span>
+                      <span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">{{ v.scope }}</span>
+                    </div>
+                    <div style="font-size: 13px; font-weight: 500; margin-top: 2px; line-height: 1.3;">{{ v.label }}</div>
+                    <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 2px;">{{ v.fmt }}</div>
+                    <sc-if value="{{ v.hasFlag }}">
+                      <div style="border-left: 2px solid #7d5504; background: #f9f0da; padding: 5px 8px; margin-top: 6px; font-size: 11px; color: #6b4703;">⚠ {{ v.flag }}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ libEmpty }}">
+                <div style="padding: 24px; text-align: center; font-size: 13px; color: var(--color-neutral-700);">No variables match “{{ query }}”.</div>
+              </sc-if>
+            </div>
+            <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 8px;">{{ libSummary }}</div>
+          </div>
+
+          <div>
+            <div class="k">Display logic</div>
+            <h4 style="font-size: 18px; margin: 5px 0 9px;">Rules, in plain language</h4>
+            <div style="border: 1px solid var(--color-divider);">
+              <sc-for list="{{ rules }}" as="r" hint-placeholder-count="4">
+                <div style="padding: 11px 12px; border-bottom: 1px solid var(--color-divider);">
+                  <div style="font-size: 13px; line-height: 1.5;">
+                    <span class="k">When</span> <code>{{ r.parent }}</code> <span class="k">is</span> <strong>{{ r.value }}</strong>
+                  </div>
+                  <div style="font-size: 13px; line-height: 1.5; margin-top: 3px;">
+                    <span class="k">Show</span> {{ r.children }}
+                  </div>
+                  <sc-if value="{{ r.broken }}">
+                    <div style="border-left: 2px solid #a32a1e; background: #f6dcd7; padding: 6px 9px; margin-top: 7px; font-size: 11.5px; color: #7d1f16;">◼ {{ r.problem }}</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 8px;">Rules are authored as when/is/show sentences. No expressions, no code — a manager configuring a study never writes a GIS expression.</div>
+
+            <div class="k" style="margin-top: 22px;">Preview</div>
+            <h4 style="font-size: 18px; margin: 5px 0 9px;">The draft on real devices</h4>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <div class="blueprint" style="padding: 8px; background: var(--color-bg);">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div class="k" style="margin-bottom: 5px;">Phone · 390 × 844</div>
+                <div style="width: 130px; height: 282px; border: 1px solid var(--color-divider); display: flex; flex-direction: column; overflow: hidden;">
+                  <div style="border-bottom: 1px solid var(--color-divider); padding: 4px 6px;" class="k">Zone B · R3</div>
+                  <div style="flex: none; height: 96px; background: #e4e7dd; position: relative;">
+                    <div style="position: absolute; left: 54%; top: 44%; width: 8px; height: 8px; background: #1d1f20; box-shadow: 0 0 0 2px #fff;"></div>
+                  </div>
+                  <div style="padding: 6px; display: grid; gap: 5px;">
+                    <div style="font-size: 8px; line-height: 1.3;">Are loose parts involved?</div>
+                    <div style="display: flex; gap: 3px;"><div style="flex: 1; height: 15px; border: 1px solid var(--color-divider);"></div><div style="flex: 1; height: 15px; background: var(--color-accent-800);"></div></div>
+                    <div style="font-size: 8px; line-height: 1.3; border-left: 2px solid var(--color-accent); padding-left: 4px;">Natural loose parts?</div>
+                    <div style="display: flex; gap: 3px; padding-left: 6px;"><div style="flex: 1; height: 13px; border: 1px solid var(--color-divider);"></div><div style="flex: 1; height: 13px; border: 1px solid var(--color-divider);"></div></div>
+                    <div style="height: 18px; background: var(--color-accent-800); margin-top: 4px;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="blueprint" style="padding: 8px; background: var(--color-bg);">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <div class="k" style="margin-bottom: 5px;">Tablet · 1024 × 768</div>
+                <div style="width: 214px; height: 160px; border: 1px solid var(--color-divider); display: flex; overflow: hidden;">
+                  <div style="flex: 0 0 58%; background: #e4e7dd; border-right: 1px solid var(--color-divider); position: relative;">
+                    <div style="position: absolute; left: 50%; top: 40%; width: 8px; height: 8px; background: #1d1f20; box-shadow: 0 0 0 2px #fff;"></div>
+                  </div>
+                  <div style="flex: 1; padding: 6px; display: grid; gap: 4px; align-content: start;">
+                    <div style="font-size: 7.5px; line-height: 1.3;">Are loose parts involved?</div>
+                    <div style="display: flex; gap: 3px;"><div style="flex: 1; height: 12px; border: 1px solid var(--color-divider);"></div><div style="flex: 1; height: 12px; background: var(--color-accent-800);"></div></div>
+                    <div style="font-size: 7.5px; line-height: 1.3; border-left: 2px solid var(--color-accent); padding-left: 4px;">Natural loose parts?</div>
+                    <div style="display: flex; gap: 3px;"><div style="flex: 1; height: 11px; border: 1px solid var(--color-divider);"></div><div style="flex: 1; height: 11px; border: 1px solid var(--color-divider);"></div></div>
+                    <div style="height: 15px; background: var(--color-accent-800); margin-top: 3px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 8px;">Previews are drawn at true device ratio so a manager can see whether a reveal pushes the save action off screen before publishing.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- map package + sites -->
+      <div class="scroll" style="padding: 20px 18px 40px;">
+        <div class="k">Site organisation</div>
+        <h4 style="font-size: 18px; margin: 5px 0 10px;">Sites and zones</h4>
+        <div style="border: 1px solid var(--color-divider);">
+          <sc-for list="{{ sites }}" as="s" hint-placeholder-count="3">
+            <div style="padding: 10px 12px; border-bottom: 1px solid var(--color-divider);">
+              <div style="display: flex; justify-content: space-between; gap: 8px; align-items: baseline;">
+                <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px;">{{ s.name }}</div>
+                <span class="chip" style="{{ s.chipStyle }}">{{ s.glyph }} {{ s.state }}</span>
+              </div>
+              <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 3px;">{{ s.detail }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div class="k" style="margin-top: 22px;">Map package preparation</div>
+        <h4 style="font-size: 18px; margin: 5px 0 10px;">From QGIS to a downloadable package</h4>
+        <div style="border: 1px solid var(--color-divider);">
+          <sc-for list="{{ prepSteps }}" as="p" hint-placeholder-count="5">
+            <div style="display: flex; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--color-divider);">
+              <span class="chip" style="{{ p.chipStyle }}">{{ p.glyph }}</span>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 13.5px; font-weight: 500;">{{ p.name }}</div>
+                <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 2px;">{{ p.detail }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border-left: 3px solid #a32a1e; background: #f6dcd7; padding: 10px 12px; margin-top: 12px;">
+          <div style="font-family: var(--font-heading); font-weight: 600; font-size: 13.5px; color: #7d1f16;">◼ Validation failed — imagery licence</div>
+          <div style="font-size: 12px; color: #7d1f16; margin-top: 3px;">The basemap referenced by <code>riverside_north.qgz</code> is a Google tile source, which cannot be repackaged for offline use. Supply institution-owned or openly licensed imagery for this extent.</div>
+          <div style="display: flex; gap: 7px; margin-top: 10px; flex-wrap: wrap;">
+            <button class="gbtn" onClick="{{ noop }}" style="min-height: 32px; padding: 6px 10px; font-size: 12px;">Replace basemap</button>
+            <button class="gbtn" onClick="{{ noop }}" style="min-height: 32px; padding: 6px 10px; font-size: 12px;">Continue with vector only</button>
+          </div>
+        </div>
+        <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 12px;">A <code>.qgz</code> alone is not a package. It references its sources; the preparation step resolves them, checks the CRS, renders permitted imagery to tiles, and only then produces something an observer can download.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══ export dialog ══ -->
+  <sc-if value="{{ exportOpen }}">
+    <div class="dialog-backdrop" style="background: rgba(29, 45, 61, 0.72);">
+      <div class="dialog blueprint" style="width: min(520px, 100%); background: #f2f2f3; border: 1px solid #1d1f20; box-shadow: 0 12px 32px rgba(29,43,45,0.32);">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="dialog-title">Export {{ shown }} observations</div>
+        <div class="dialog-body">
+          <div style="border-left: 3px solid var(--color-accent); background: var(--color-accent-100); padding: 9px 11px; font-size: 12.5px;">
+            Exports are for analysis, backup and interoperability. They are <strong>not</strong> the sync path — QGIS already reads the live database.
+          </div>
+          <div class="k" style="margin-top: 14px;">Format</div>
+          <div style="display: grid; gap: 6px; margin-top: 6px;">
+            <sc-for list="{{ formats }}" as="f" hint-placeholder-count="3">
+              <sc-if value="{{ f.on }}"><button class="fbtn-on" onClick="{{ f.pick }}" style="padding: 9px 11px;"><strong>{{ f.name }}</strong> — {{ f.note }}</button></sc-if>
+              <sc-if value="{{ f.off }}" hint-placeholder-val="{{ true }}"><button class="fbtn" onClick="{{ f.pick }}" style="padding: 9px 11px;"><strong>{{ f.name }}</strong> — {{ f.note }}</button></sc-if>
+            </sc-for>
+          </div>
+          <div style="margin-top: 14px; display: grid; gap: 7px; font-size: 12.5px;">
+            <sc-for list="{{ exportOpts }}" as="o" hint-placeholder-count="3">
+              <button onClick="{{ o.toggle }}" style="display: flex; gap: 8px; align-items: flex-start; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; text-align: left; color: var(--color-text);">
+                <span style="{{ o.boxStyle }}">{{ o.mark }}</span>
+                <span>{{ o.label }}<span style="color: var(--color-neutral-700);"> — {{ o.note }}</span></span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="font-size: 11.5px; color: var(--color-neutral-700); margin-top: 12px;">Filters carry into the export. The codebook records every variable code, label, option code and the form version each row was collected under.</div>
+        </div>
+        <div class="dialog-actions">
+          <button class="gbtn" onClick="{{ closeExport }}">Cancel</button>
+          <button class="pbtn" onClick="{{ closeExport }}">Generate {{ exportName }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ══ publish dialog ══ -->
+  <sc-if value="{{ publishOpen }}">
+    <div class="dialog-backdrop" style="background: rgba(29, 45, 61, 0.72);">
+      <div class="dialog blueprint" style="width: min(560px, 100%); background: #f2f2f3; border: 1px solid #1d1f20; box-shadow: 0 12px 32px rgba(29,43,45,0.32);">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="dialog-title">Publish form v5</div>
+        <div class="dialog-body">
+          <div class="k">Changes from v4</div>
+          <div style="border: 1px solid var(--color-divider); margin-top: 6px;">
+            <sc-for list="{{ publishDiff }}" as="d" hint-placeholder-count="3">
+              <div style="display: flex; gap: 9px; padding: 8px 11px; border-bottom: 1px solid var(--color-divider); font-size: 12.5px;">
+                <span class="chip" style="{{ d.chipStyle }}">{{ d.kind }}</span>
+                <span style="flex: 1;">{{ d.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border-left: 3px solid #2f6b46; background: #d9e8de; padding: 10px 12px; margin-top: 14px;">
+            <div style="font-family: var(--font-heading); font-weight: 600; font-size: 13.5px; color: #1f4c31;">✓ The 312 records already collected stay on v4</div>
+            <div style="font-size: 12px; color: #1f4c31; margin-top: 3px;">Publishing creates v5 alongside v4. Existing records keep their version, their answer meanings and their export column names. A v4 record is never re-read through v5 rules.</div>
+          </div>
+          <div style="border-left: 3px solid #7d5504; background: #f9f0da; padding: 10px 12px; margin-top: 10px;">
+            <div style="font-family: var(--font-heading); font-weight: 600; font-size: 13.5px; color: #6b4703;">⚠ Observers must re-download</div>
+            <div style="font-size: 12px; color: #6b4703; margin-top: 3px;">2 observers hold v4 offline. They keep collecting on v4 until they reconnect and fetch v5; rounds in progress are not interrupted mid-flight.</div>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="gbtn" onClick="{{ closePublish }}">Keep as draft</button>
+          <button class="pbtn" onClick="{{ closePublish }}">Publish v5</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:1000}}">
+const TYPES = ['Physical','Exploratory','Imaginative','Play with Rules','Bio','Expressive','Restorative','Non-Play'];
+const SHAPE = {Physical:'square', Exploratory:'circle', Imaginative:'triangle'};
+const OBS = ['AK','BR','CL'];
+const ZONE_BOX = {A:[7,11,29,33], B:[52,10,33,33], C:[54,71,32,20]};
+const TYPE_WEIGHTS = ['Physical','Physical','Physical','Physical','Exploratory','Exploratory','Exploratory','Imaginative','Imaginative','Imaginative','Play with Rules','Play with Rules','Bio','Expressive','Restorative','Non-Play'];
+
+function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+const FLAGS = [
+  {id:'thin', label:'Summary under 20 chars', body:'Play_Event_Summary is 14 characters. The protocol asks for a detailed description; short text limits later coding.'},
+  {id:'lpempty', label:'Loose parts Yes, list empty', body:'LP_Intn_Binary is Yes and Nat_LPs_Sm is Yes, but Nat_LPs_Sm_List has no items. Either the checklist was skipped or the parent answer is wrong.'},
+  {id:'dupe', label:'Coordinates within 2 m', body:'Another observation in the same round sits 1.4 m away with the same play type. Possibly a double-tap, possibly two genuine concurrent events.'},
+  {id:'noclimate', label:'Round context incomplete', body:'The round snapshot has no Wind value. The round was started before the climate step was completed.'},
+  {id:'rejected', label:'Rejected — competing edit', body:'A competing revision was accepted first. The observer has been asked to resolve it in the field app.'}
+];
+
+const LIB = [
+  {code:'DateTime1', col:'Date_Time', label:'Date/Time stamp', fmt:'Full date and full time (MM-DD-YYY 00:00:00)', scope:'event', on:true},
+  {code:'DateTime3', col:'Time_Period', label:'Time Period', fmt:'Custom set of time blocks · select one', scope:'round', on:false},
+  {code:'Observer1', col:'Observer_Initials', label:'Observer Initials', fmt:'open field — up to 10 characters, full caps', scope:'observer', on:true},
+  {code:'Observer3', col:'Observer_ID', label:'Observer ID', fmt:'open field, up to 15 characters', scope:'observer', on:false},
+  {code:'EnvZone1', col:'Env_Zone_ID', label:'Environmental Zone ID', fmt:'multiple choice of letters · select one', scope:'event', on:true},
+  {code:'EnvZone3', col:'Env_SubZone_ID', label:'Environmental SubZone ID', fmt:'letters, Roman or custom · select one', scope:'event', on:true, flag:'Library B21 and B23 both carry the code EnvZone3 for different definitions. Assign distinct IDs before importing.'},
+  {code:'RelRound1', col:'Rel_Round', label:'Reliability Round', fmt:'Binary · defaults to No', scope:'round', on:true},
+  {code:'FirstRound1', col:'First_Round', label:'First Round of Observation', fmt:'yes/no · defaults to No', scope:'round', on:true},
+  {code:'Climate1', col:'Weather', label:'Current weather conditions', fmt:'multiple choice, select all that apply', scope:'round', on:true},
+  {code:'Climate2', col:'Wind', label:'Current wind conditions', fmt:'multiple choice, select one', scope:'round', on:true},
+  {code:'Climate3', col:'Shade', label:'Shade conditions', fmt:'multiple choice, select one', scope:'round', on:true, flag:'Collides with Shade1 (event shade), which also exports as Shade. One of the two needs renaming.'},
+  {code:'LP Inventory 1', col:'Inv_Nat_Surfaces', label:'QUANTITY AVAILABLE IN ZONE: Natural ground surfaces / loose mtls', fmt:'select one · quantity bands', scope:'zone', on:false, flag:'Its rule reads “if YES, make LP Inventory 2 visible” but the answers are quantity bands. Cannot be evaluated as written.'},
+  {code:'Summary1', col:'Play_Event_Summary', label:'Play Event Summary', fmt:'open field — 1000 characters', scope:'event', on:true},
+  {code:'Clothing1', col:'Child_Clothing', label:'Target Child Clothing Color/Description', fmt:'open — up to 500 characters', scope:'event', on:false},
+  {code:'Age1', col:'Child_AgeRange', label:'Child Age range', fmt:'select one · 6 bands from 0-2 yrs', scope:'event', on:true},
+  {code:'Age3', col:'Child_AgeRange_EY', label:'Child Age Range Early Years', fmt:'select one · 0-2, 3-5', scope:'event', on:false},
+  {code:'Gender1', col:'— none —', label:'Child Presenting Gender', fmt:'select one · Female, Male, Unknown', scope:'event', on:true, flag:'No export column name in either workbook. Blocks a clean export until Janet approves one.'},
+  {code:'PeerIntn1', col:'Grp_Composition', label:'Group Composition', fmt:'select one · 5 options', scope:'event', on:true},
+  {code:'PeerIntn2', col:'No_Other_Children', label:'# of OTHER children involved', fmt:'select one · None to 7+', scope:'event', on:true},
+  {code:'PeerIntn4', col:'Peer_Intn', label:'Peer interaction', fmt:'select one · 6 options', scope:'event', on:true},
+  {code:'AdultIntn1', col:'Adults_Engaged', label:'# of adults present or engaged', fmt:'select one · No adults to 3 or more', scope:'event', on:true},
+  {code:'AdultIntn3', col:'Adult_Intn', label:'Adult Interaction Collapsed', fmt:'select one · 7 options', scope:'event', on:true},
+  {code:'PlayType1', col:'Play_Type_1', label:'Primary Play Type 1', fmt:'select one · 9 types', scope:'event', on:true},
+  {code:'PlayType2', col:'Play_Type_2', label:'Primary Play Type 2', fmt:'select one · 9 types', scope:'event', on:true, flag:'Needs its own subtype storage; the test sheet provides only one subtype set for two play-type slots.'},
+  {code:'CARS2', col:'CARS', label:'CARS Activity Intensity Collapsed', fmt:'select one · 3 bands', scope:'event', on:true},
+  {code:'Risk1', col:'Risk', label:'Risk Type Expanded', fmt:'select one · 10 options', scope:'event', on:true},
+  {code:'PlayComm1', col:'Play_Communication', label:'Play Communication', fmt:'select one · 8 options', scope:'event', on:true},
+  {code:'FixedNat1', col:'Fixed_Nat_Intn', label:'Fixed Natural Interaction', fmt:'select one · Yes or No', scope:'event', on:true},
+  {code:'FixedDes1', col:'Fixed_Designed_Intn', label:'Fixed Designed Interaction', fmt:'select one · Yes or No', scope:'event', on:true},
+  {code:'LooseParts1', col:'LP_Intn_Binary', label:'Loose Parts Interaction', fmt:'select one · No by default', scope:'event', on:true},
+  {code:'LooseParts3', col:'Nat_LP_Intn_Binary', label:'Manufactured Loose Parts Interaction', fmt:'select one · No by default', scope:'event', on:true, flag:'Shares its export column with LooseParts2 (natural). Needs a distinct name.'},
+  {code:'LooseParts11', col:'Nat_LPs_Lrg', label:'LARGE Natural LP checklist', fmt:'check all that apply · list pending', scope:'event', on:true, flag:'Shares its export column with the LooseParts10 yes/no answer.'},
+  {code:'Wildlife1', col:'Wildlife_Intn', label:'Wildlife Interaction', fmt:'select one · Yes / No', scope:'event', on:true},
+  {code:'Shade1', col:'Shade', label:'Shade conditions (event)', fmt:'select one · n/a, yes, no, partial', scope:'event', on:true, flag:'Collides with Climate3 (round shade), which also exports as Shade.'},
+  {code:'Topography1', col:'Topography', label:'Topography', fmt:'select one · 7 options', scope:'event', on:true}
+];
+
+const RULES = [
+  {parent:'LP_Intn_Binary', value:'Yes', children:'LooseParts2 (natural interaction) and LooseParts3 (manufactured interaction)'},
+  {parent:'Nat_LP_Intn_Binary', value:'Yes', children:'LooseParts4, 6, 8 and 10 — the natural size bands'},
+  {parent:'Nat_LPs_Sm', value:'Yes', children:'LooseParts7 — the small natural checklist'},
+  {parent:'Grp_Composition', value:'anything but Solitary', children:'PeerIntn2 (# other children) and PeerIntn4 (peer interaction)'},
+  {parent:'Play_Type_1', value:'any type', children:'that type\u2019s subtype question, in slot 1'},
+  {parent:'Wildlife_Intn', value:'Yes', children:'Wildlife2, Wildlife3 and Wildlife5'},
+  {parent:'Inv_Nat_Surfaces', value:'YES', children:'LP Inventory 2 — the natural surfaces checklist', broken:true, problem:'Inv_Nat_Surfaces answers with quantity bands, so “is YES” has no truth value. Needs a presence question, or a predicate such as “is any band above none”.'},
+  {parent:'Adult_Intn', value:'Other (open)', children:'AdultIntn4 — the description field', broken:true, problem:'Test H70 pairs the Other description with the whole parent group rather than the Other option. Confirm the two-stage rule separately.'}
+];
+
+class Component extends DCLogic {
+  state = {
+    tab:'review',
+    f:{zone:null, round:null, observer:null, type:null, state:null, flag:null},
+    sel:null, showCharts:true, exportOpen:false, publishOpen:false,
+    format:'CSV', exOpts:{codebook:true, resolved:false, flagged:true},
+    query:'', scope:null, lib:{}, reviewed:{}
+  };
+
+  data(){
+    if(this._d) return this._d;
+    const rnd = mulberry(7);
+    const out = [];
+    let n = 100;
+    for(let i=0;i<64;i++){
+      const zone = ['A','B','C'][Math.floor(rnd()*3)];
+      const round = 1 + Math.floor(rnd()*3);
+      const [bx,by,bw,bh] = ZONE_BOX[zone];
+      const type = TYPE_WEIGHTS[Math.floor(rnd()*TYPE_WEIGHTS.length)];
+      const flag = rnd() < 0.14 ? FLAGS[Math.floor(rnd()*FLAGS.length)].id : null;
+      out.push({
+        id:'OBS-0'+(n++),
+        zone, round, type,
+        observer: OBS[Math.floor(rnd()*3)],
+        time: (9+Math.floor(rnd()*5))+':'+String(Math.floor(rnd()*60)).padStart(2,'0'),
+        x: bx + 3 + rnd()*(bw-6),
+        y: by + 4 + rnd()*(bh-8),
+        flag,
+        formVer: round===1 ? 'v3' : 'v4',
+        rev: rnd()<0.1 ? 2 : 1
+      });
+    }
+    this._d = out;
+    return out;
+  }
+
+  filtered(){
+    const {zone, round, observer, type, state, flag} = this.state.f;
+    return this.data().filter(r=>{
+      if(zone && r.zone!==zone) return false;
+      if(round && r.round!==round) return false;
+      if(observer && r.observer!==observer) return false;
+      if(type && r.type!==type) return false;
+      if(flag && r.flag!==flag) return false;
+      if(state==='flagged' && !r.flag) return false;
+      if(state==='clean' && r.flag) return false;
+      return true;
+    });
+  }
+
+  setF(k,v){ return ()=>this.setState(s=>({f:{...s.f, [k]: s.f[k]===v ? null : v}, sel:null})); }
+  clearFilters = () => this.setState({f:{zone:null,round:null,observer:null,type:null,state:null,flag:null}});
+  select(id){ return ()=>this.setState({sel:id}); }
+
+  renderVals(){
+    const s = this.state;
+    const all = this.data();
+    const rows = this.filtered();
+    const countIf = fn => all.filter(fn).length;
+
+    const shapeStyle = (r, on) => {
+      const sh = SHAPE[r.type] || 'diamond';
+      const ink = '#1d1f20';
+      const base = {display:'block', boxShadow: on ? '0 0 0 2px #fff, 0 0 0 5px #1d2d3d' : '0 0 0 2px #fff'};
+      if(sh==='circle') return {...base, width:'13px', height:'13px', borderRadius:'50%', background: r.flag ? '#f2f2f3' : ink, border: r.flag ? '2px solid '+ink : '0'};
+      if(sh==='triangle') return {...base, width:0, height:0, borderLeft:'7px solid transparent', borderRight:'7px solid transparent', borderBottom:'13px solid '+(r.flag?'#8a8a8d':ink), boxShadow:'none', filter: on ? 'drop-shadow(0 0 2px #1d2d3d)' : 'none'};
+      if(sh==='diamond') return {...base, width:'11px', height:'11px', transform:'rotate(45deg)', background: r.flag ? '#f2f2f3' : ink, border: r.flag ? '2px solid '+ink : '0'};
+      return {...base, width:'13px', height:'13px', background: r.flag ? '#f2f2f3' : ink, border: r.flag ? '2px solid '+ink : '0'};
+    };
+
+    const selRec = all.find(r=>r.id===s.sel) || null;
+    const flagDef = selRec && selRec.flag ? FLAGS.find(f=>f.id===selRec.flag) : null;
+
+    // progress matrix
+    const maxCell = Math.max(1, ...['A','B','C'].flatMap(z=>[1,2,3].map(r=>countIf(x=>x.zone===z&&x.round===r))));
+    const progressGrid = ['A','B','C'].map(z=>({
+      zone:'Zone '+z,
+      cells:[1,2,3].map(r=>{
+        const n = countIf(x=>x.zone===z&&x.round===r);
+        const t = n/maxCell;
+        const dark = t > 0.6;
+        return {n, style:{textAlign:'center', padding:'7px 0', fontWeight:600, background: t===0 ? 'transparent' : 'rgba(29,45,61,'+(0.12+t*0.78).toFixed(2)+')', color: dark ? '#f2f2f3' : '#1d1f20', border:'1px solid #1d1f2022'}};
+      })
+    }));
+
+    const typeBars = TYPES.slice(0,5).map(t=>{
+      const a = countIf(x=>x.type===t&&x.zone==='A'), b = countIf(x=>x.type===t&&x.zone==='B'), c = countIf(x=>x.type===t&&x.zone==='C');
+      const tot = Math.max(1, a+b+c);
+      const w = v => (v/tot*100).toFixed(1)+'%';
+      return {label:t, n:a+b+c, aStyle:{width:w(a), background:'#1d2d3d'}, bStyle:{width:w(b), background:'#416180'}, cStyle:{width:w(c), background:'#94bce3'}};
+    });
+
+    const chip = (border, color) => ({borderColor:border, color});
+    const box = on => ({width:'17px', height:'17px', flex:'none', display:'grid', placeItems:'center', fontSize:'11px', lineHeight:1, cursor:'pointer', border:'1px solid #1d1f2055', background: on ? '#2c455d' : 'transparent', color:'#fff', padding:0, fontFamily:'inherit'});
+
+    // library
+    const libOn = code => s.lib[code] !== undefined ? s.lib[code] : (LIB.find(v=>v.code===code)||{}).on;
+    const q = s.query.trim().toLowerCase();
+    const libList = LIB.filter(v=>{
+      if(s.scope && v.scope!==s.scope) return false;
+      if(!q) return true;
+      return (v.code+' '+v.col+' '+v.label).toLowerCase().includes(q);
+    });
+    const selectedCount = LIB.filter(v=>libOn(v.code)).length;
+
+    return {
+      tabs: [['review','Data review'],['setup','Project & form setup']].map(([k,label])=>({label, on:s.tab===k, off:s.tab!==k, go:()=>this.setState({tab:k})})),
+      atReview: s.tab==='review', atSetup: s.tab==='setup', noop: ()=>{},
+
+      // filters
+      filterGroups: [
+        {label:'Zone', gridStyle:{display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:'4px', marginTop:'7px'},
+         options:['A','B','C'].map(z=>({label:z, n:countIf(r=>r.zone===z), on:s.f.zone===z, off:s.f.zone!==z, pick:this.setF('zone',z)}))},
+        {label:'Round', gridStyle:{display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:'4px', marginTop:'7px'},
+         options:[1,2,3].map(r=>({label:'R'+r, n:countIf(x=>x.round===r), on:s.f.round===r, off:s.f.round!==r, pick:this.setF('round',r)}))},
+        {label:'Observer', gridStyle:{display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:'4px', marginTop:'7px'},
+         options:OBS.map(o=>({label:o, n:countIf(r=>r.observer===o), on:s.f.observer===o, off:s.f.observer!==o, pick:this.setF('observer',o)}))},
+        {label:'Play_Type_1', gridStyle:{display:'grid', gap:'4px', marginTop:'7px'},
+         options:TYPES.map(t=>({label:t, n:countIf(r=>r.type===t), on:s.f.type===t, off:s.f.type!==t, pick:this.setF('type',t)}))},
+        {label:'Record state', gridStyle:{display:'grid', gap:'4px', marginTop:'7px'},
+         options:[['clean','In database, clean'],['flagged','Has a quality flag']].map(([k,label])=>({label, n: k==='clean'?countIf(r=>!r.flag):countIf(r=>!!r.flag), on:s.f.state===k, off:s.f.state!==k, pick:this.setF('state',k)}))}
+      ],
+      flagRows: FLAGS.map(f=>({label:f.label, n:countIf(r=>r.flag===f.id), on:s.f.flag===f.id, off:s.f.flag!==f.id, pick:this.setF('flag',f.id)})),
+      clearFilters: this.clearFilters,
+      filterSummary: (()=>{
+        const bits=[];
+        if(s.f.zone) bits.push('zone '+s.f.zone);
+        if(s.f.round) bits.push('round '+s.f.round);
+        if(s.f.observer) bits.push('observer '+s.f.observer);
+        if(s.f.type) bits.push(s.f.type);
+        if(s.f.state) bits.push(s.f.state==='clean'?'clean only':'flagged only');
+        if(s.f.flag) bits.push(FLAGS.find(f=>f.id===s.f.flag).label.toLowerCase());
+        return bits.length ? bits.join(' · ') : 'All 64 observations, rounds 1–3, three observers';
+      })(),
+
+      shown: rows.length, total: all.length, noResults: rows.length===0,
+
+      markers: rows.map(r=>({
+        style:{left:r.x+'%', top:r.y+'%', background:'none', border:0, padding:'6px', cursor:'pointer'},
+        shapeStyle: shapeStyle(r, r.id===s.sel),
+        title: r.id+' · '+r.type+' · zone '+r.zone,
+        click: this.select(r.id)
+      })),
+
+      rows: rows.map(r=>({
+        id:r.id, time:r.time, zone:r.zone, round:r.round, type:r.type, observer:r.observer,
+        cls: r.id===s.sel ? 'row row-on' : 'row',
+        state: r.flag ? 'Flagged' : 'In database',
+        glyph: r.flag ? '⚠' : '✓',
+        chipStyle: r.flag ? chip('#7d5504','#6b4703') : chip('#2f6b46','#1f4c31'),
+        click: this.select(r.id)
+      })),
+
+      showCharts: s.showCharts, chartsLabel: s.showCharts ? 'Hide charts' : 'Show charts',
+      toggleCharts: ()=>this.setState(x=>({showCharts:!x.showCharts})),
+      progressGrid, typeBars, thinCell: countIf(x=>x.zone==='C'&&x.round===3),
+
+      hasSelection: !!selRec, noSelection: !selRec,
+      sel: selRec ? {
+        id:selRec.id, formVer:selRec.formVer, rev:selRec.rev,
+        state: selRec.flag ? 'Flagged' : 'In database', glyph: selRec.flag ? '⚠' : '✓',
+        chipStyle: selRec.flag ? chip('#7d5504','#6b4703') : chip('#2f6b46','#1f4c31'),
+        flagged: !!flagDef && !s.reviewed[selRec.id],
+        flagLabel: flagDef ? flagDef.label : '', flagBody: flagDef ? flagDef.body : '',
+        context: [
+          {k:'Site', v:'North Playground'},
+          {k:'Env_Zone_ID', v:selRec.zone},
+          {k:'Round', v:'R'+selRec.round},
+          {k:'Observer_Initials', v:selRec.observer},
+          {k:'Date_Time', v:'2026-09-1'+selRec.round+' '+selRec.time+':00'},
+          {k:'Weather (round)', v:'Partial sun/cloud'},
+          {k:'Wind (round)', v: selRec.flag==='noclimate' ? '— missing —' : 'light wind'},
+          {k:'Coordinates', v:'49.2607, -123.1341'}
+        ],
+        answers: [
+          {k:'Play_Type_1', v:selRec.type, style:{}},
+          {k:'Play_Type_2', v:'Exploratory', style:{}},
+          {k:'CARS', v:'3 (Slow)', style:{}},
+          {k:'Grp_Composition', v:'1:1 with peer', style:{}},
+          {k:'No_Other_Children', v:'1', style:{}},
+          {k:'LP_Intn_Binary', v:'Yes', style:{}},
+          {k:'Nat_LPs_Sm', v:'Yes', style:{}},
+          {k:'Nat_LPs_Sm_List', v: selRec.flag==='lpempty' ? '— empty —' : 'Sticks, Leaves', style: selRec.flag==='lpempty' ? {color:'#7d1f16'} : {}},
+          {k:'Mfgd_LPs_Sm', v:'n/a — hidden by display logic', style:{color:'#5d5d60', fontStyle:'italic'}},
+          {k:'Wildlife_Intn', v:'No', style:{}},
+          {k:'Play_Event_Summary', v: selRec.flag==='thin' ? 'kids on logs' : 'Two children dragging a large branch…', style: selRec.flag==='thin' ? {color:'#7d1f16'} : {}}
+        ],
+        history: [
+          {t:selRec.time, m:'Created on device by '+selRec.observer+' · form '+selRec.formVer},
+          {t:'12:04', m:'Uploaded and acknowledged as revision 1'},
+          selRec.rev===2 ? {t:'12:41', m:'Revision 2 accepted from a second device'} : {t:'12:41', m:'No further revisions'},
+          {t:'—', m: s.reviewed[selRec.id] ? 'Flag marked reviewed by JW' : 'Read by QGIS layer refresh at 13:10'}
+        ]
+      } : {},
+      markReviewed: ()=>this.setState(x=>({reviewed:{...x.reviewed, [x.sel]:true}})),
+      askObserver: ()=>this.setState(x=>({reviewed:{...x.reviewed, [x.sel]:true}})),
+
+      qgisLayers: [
+        {name:'riverside.observations', mode:'read-only'},
+        {name:'riverside.rounds', mode:'read-only'},
+        {name:'riverside.zones', mode:'read-only'},
+        {name:'riverside.observations_flagged', mode:'view'}
+      ],
+
+      // export
+      exportOpen: s.exportOpen, openExport: ()=>this.setState({exportOpen:true}), closeExport: ()=>this.setState({exportOpen:false}),
+      formats: [
+        {name:'CSV', note:'one row per event, explicit lon/lat columns, WGS 84'},
+        {name:'GeoJSON', note:'RFC 7946 lon/lat order — browser and web-map friendly'},
+        {name:'GeoPackage', note:'typed layers plus related answer tables, generated server-side'}
+      ].map(f=>({...f, on:s.format===f.name, off:s.format!==f.name, pick:()=>this.setState({format:f.name})})),
+      exportName: s.format,
+      exportOpts: [
+        {id:'codebook', label:'Include codebook', note:'variable codes, labels, option codes, form version'},
+        {id:'flagged', label:'Include flagged records', note:'flags travel as columns; rows are never silently dropped'},
+        {id:'resolved', label:'Resolve multi-select to indicator columns', note:'one 0/1 column per option alongside the coded text'}
+      ].map(o=>({label:o.label, note:o.note, mark: s.exOpts[o.id] ? '✓' : '', boxStyle: box(s.exOpts[o.id]), toggle:()=>this.setState(x=>({exOpts:{...x.exOpts, [o.id]:!x.exOpts[o.id]}}))})),
+
+      // setup
+      query: s.query, setQuery: (e)=>this.setState({query:e.target.value}),
+      scopeChips: [['observer','Observer'],['round','Round'],['zone','Zone'],['event','Event']].map(([k,label])=>({label, on:s.scope===k, off:s.scope!==k, pick:()=>this.setState(x=>({scope:x.scope===k?null:k}))})),
+      libRows: libList.map(v=>{
+        const on = libOn(v.code);
+        return {code:v.code, col:v.col, label:v.label, fmt:v.fmt, scope:v.scope,
+          mark: on ? '✓' : '', boxStyle: box(on),
+          hasFlag: !!v.flag, flag: v.flag || '',
+          toggle: ()=>this.setState(x=>({lib:{...x.lib, [v.code]: !on}}))};
+      }),
+      libEmpty: libList.length===0,
+      libSummary: selectedCount + ' of ' + LIB.length + ' shown variables selected. Scope decides where a question is asked — project setup, sign-in, round start, zone start, or per event.',
+      rules: RULES.map(r=>({parent:r.parent, value:r.value, children:r.children, broken:!!r.broken, problem:r.problem||''})),
+      draftDelta: (()=>{
+        const base = LIB.filter(v=>v.on).length;
+        const d = selectedCount - base;
+        if(d===0) return 'no variable changes yet';
+        return (d>0?'+':'') + d + (Math.abs(d)===1 ? ' variable' : ' variables');
+      })(),
+
+      sites: [
+        {name:'North Playground', detail:'Zones A, B, C · 6 subzones · 6 rounds · 2 observers assigned', state:'Collecting', glyph:'✓', chipStyle:chip('#2f6b46','#1f4c31')},
+        {name:'Meadow', detail:'Zones A, B · 4 subzones · rounds not scheduled', state:'Configured', glyph:'▣', chipStyle:chip('#5d5d60','#4a4a4c')},
+        {name:'Courtyard', detail:'1 zone · map package failed validation · no published form', state:'Blocked', glyph:'◼', chipStyle:chip('#a32a1e','#7d1f16')}
+      ],
+      prepSteps: [
+        {name:'Source project read', detail:'riverside_north.qgz · 7 layers · EPSG:26910', glyph:'✓', chipStyle:chip('#2f6b46','#1f4c31')},
+        {name:'Layer sources resolved', detail:'6 of 7 resolved · 1 references a missing GeoPackage', glyph:'⚠', chipStyle:chip('#7d5504','#6b4703')},
+        {name:'CRS check and reprojection', detail:'Reprojected to EPSG:4326 for the observation layer', glyph:'✓', chipStyle:chip('#2f6b46','#1f4c31')},
+        {name:'Imagery licence check', detail:'Basemap tile source is not redistributable offline', glyph:'◼', chipStyle:chip('#a32a1e','#7d1f16')},
+        {name:'Tile render and package', detail:'Blocked — waiting on a permitted basemap', glyph:'—', chipStyle:chip('#5d5d60','#4a4a4c')}
+      ],
+
+      publishOpen: s.publishOpen, openPublish: ()=>this.setState({publishOpen:true}), closePublish: ()=>this.setState({publishOpen:false}),
+      publishDiff: [
+        {kind:'added', text:'DateTime3 · Time_Period — new round-scope question', chipStyle:chip('#2f6b46','#1f4c31')},
+        {kind:'renamed', text:'Shade1 now exports as Shade_Event, resolving the collision with Climate3', chipStyle:chip('#7d5504','#6b4703')},
+        {kind:'rule', text:'Wildlife_Intn = Yes now also reveals Wildlife3', chipStyle:chip('#416180','#2c455d')},
+        {kind:'removed', text:'Clothing1 · Child_Clothing removed from the instrument', chipStyle:chip('#a32a1e','#7d1f16')}
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/styles.css">
+<script src="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--color-neutral-200); }
+  a { color: var(--color-accent-700); }
+  a:hover { color: var(--color-accent-800); }
+  .k { font-family: var(--font-heading); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-700); }
+  .num { font-variant-numeric: tabular-nums; }
+  .opt { display: block; width: 100%; text-align: left; font: inherit; font-size: 14px; min-height: 44px; padding: 10px 12px; background: var(--color-bg); border: 1px solid var(--color-divider); cursor: pointer; color: var(--color-text); }
+  .opt:hover { background: var(--color-accent-100); }
+  .opt-on { display: block; width: 100%; text-align: left; font: inherit; font-size: 14px; font-weight: 500; min-height: 44px; padding: 10px 12px; background: var(--color-accent-800); color: #fff; border: 1px solid var(--color-accent-900); cursor: pointer; }
+  .sbtn { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; padding: 8px 12px; background: var(--color-bg); border: 1px solid var(--color-divider); cursor: pointer; color: var(--color-text); }
+  .sbtn:hover { background: var(--color-accent-100); }
+  .sbtn-on { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; padding: 8px 12px; background: var(--color-accent-900); color: #f2f2f3; border: 1px solid var(--color-accent-900); cursor: pointer; }
+  .pbtn { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 15px; letter-spacing: .05em; text-transform: uppercase; min-height: 48px; padding: 12px 16px; background: var(--color-accent-800); color: #fff; border: 1px solid var(--color-accent-900); cursor: pointer; width: 100%; text-align: left; }
+  .pbtn:hover { background: var(--color-accent-900); }
+  .jump { font: inherit; font-family: var(--font-heading); font-weight: 600; font-size: 12px; letter-spacing: .05em; padding: 4px 8px; background: transparent; border: 1px solid #a32a1e; color: #7d1f16; cursor: pointer; }
+  .jump:hover { background: #f0c9c1; }
+  .pbtn:disabled { opacity: .4; cursor: not-allowed; }
+  .gbtn { font: inherit; font-size: 14px; min-height: 44px; padding: 10px 14px; background: transparent; border: 1px solid var(--color-divider); cursor: pointer; color: var(--color-text); }
+  .gbtn:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-family: var(--font-heading); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border: 1px solid; }
+  .scroll { overflow-y: auto; scrollbar-width: thin; }
+  .mk { position: absolute; transform: translate(-50%, -50%); }
+</style>
+</helmet>
+
+<div style="font-family: var(--font-body); padding: 24px 20px 72px; max-width: 1560px; margin: 0 auto;">
+
+  <!-- ══ prototype shell ══ -->
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; border-bottom: 1px solid var(--color-text); padding-bottom: 12px;">
+    <div style="flex: 1 1 280px; min-width: 0;">
+      <div class="k">Clickable prototype · Survey Sheet direction</div>
+      <h1 style="font-size: 34px; margin: 4px 0 0; letter-spacing: -.02em;">Riverside Play Study — collector</h1>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <div style="display: flex; border: 1px solid var(--color-divider);">
+        <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}"><button class="sbtn-on" onClick="{{ setPhone }}">Phone</button></sc-if>
+        <sc-if value="{{ isTablet }}"><button class="sbtn" onClick="{{ setPhone }}">Phone</button></sc-if>
+        <sc-if value="{{ isTablet }}"><button class="sbtn-on" onClick="{{ setTablet }}">Tablet</button></sc-if>
+        <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}"><button class="sbtn" onClick="{{ setTablet }}">Tablet</button></sc-if>
+      </div>
+      <button class="sbtn" onClick="{{ toggleOnline }}">{{ netLabel }}</button>
+      <button class="sbtn" onClick="{{ relaunch }}">Force-quit &amp; reopen</button>
+      <button class="sbtn" onClick="{{ resetAll }}">Reset prototype</button>
+    </div>
+  </div>
+
+  <!-- ══ flow rail ══ -->
+  <div style="display: flex; gap: 0; flex-wrap: wrap; margin-top: 14px; border: 1px solid var(--color-divider); background: var(--color-bg);">
+    <sc-for list="{{ steps }}" as="s" hint-placeholder-count="6">
+      <sc-if value="{{ s.on }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ s.go }}" style="font-family: var(--font-heading); font-weight: 600; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; padding: 9px 13px; background: var(--color-accent-900); color: #f2f2f3; border: 0; border-right: 1px solid var(--color-divider); cursor: pointer; min-height: 40px;">{{ s.n }} {{ s.label }}</button>
+      </sc-if>
+      <sc-if value="{{ s.off }}">
+        <button onClick="{{ s.go }}" style="font-family: var(--font-heading); font-weight: 600; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; padding: 9px 13px; background: transparent; color: var(--color-neutral-700); border: 0; border-right: 1px solid var(--color-divider); cursor: pointer; min-height: 40px;">{{ s.n }} {{ s.label }}</button>
+      </sc-if>
+    </sc-for>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 22px; align-items: start; margin-top: 22px;">
+
+    <!-- ══════════ DEVICE ══════════ -->
+    <div style="overflow-x: auto; padding: 8px 8px 8px 0;">
+      <div class="blueprint" style="background: var(--color-bg); box-shadow: var(--shadow-md); display: inline-block;">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div style="{{ frameStyle }}">
+
+          <!-- device status bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; border-bottom: 1px solid var(--color-divider); background: var(--color-neutral-100); flex: none;">
+            <div class="k num">9:41</div>
+            <div class="k" style="letter-spacing: .1em;">FieldOps</div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <sc-if value="{{ online }}"><span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">▮▮▮ online</span></sc-if>
+              <sc-if value="{{ offline }}" hint-placeholder-val="{{ true }}"><span class="chip" style="border-color: #7d5504; color: #7d5504;">▮ no signal</span></sc-if>
+              <span class="k num">84%</span>
+            </div>
+          </div>
+
+          <!-- ───────── 01 PROJECTS ───────── -->
+          <sc-if value="{{ atProjects }}" hint-placeholder-val="{{ true }}">
+            <div class="scroll" style="flex: 1; padding: 18px 16px 24px;">
+              <div class="k">Signed in · AK — Research assistant</div>
+              <h2 style="font-size: 26px; margin: 5px 0 2px;">Assigned projects</h2>
+              <p style="font-size: 13px; color: var(--color-neutral-700); margin: 0 0 16px;">Download a project before you leave. Readiness is checked component by component.</p>
+              <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
+                <button onClick="{{ p.go }}" style="display: block; width: 100%; text-align: left; font: inherit; background: var(--color-bg); border: 1px solid var(--color-divider); padding: 14px; margin-bottom: 10px; cursor: pointer; color: var(--color-text);">
+                  <div style="display: flex; justify-content: space-between; gap: 10px; align-items: flex-start;">
+                    <div style="min-width: 0;">
+                      <div style="font-family: var(--font-heading); font-weight: 600; font-size: 19px; line-height: 1.15;">{{ p.name }}</div>
+                      <div style="font-size: 12.5px; color: var(--color-neutral-700); margin-top: 3px;">{{ p.site }} · {{ p.zones }}</div>
+                    </div>
+                    <span class="chip" style="{{ p.chipStyle }}">{{ p.chip }}</span>
+                  </div>
+                  <div style="display: flex; gap: 14px; margin-top: 10px; font-size: 11.5px;" class="num k">
+                    <span>Form {{ p.form }}</span><span>{{ p.size }}</span><span>{{ p.rounds }}</span>
+                  </div>
+                </button>
+              </sc-for>
+              <div style="border: 1px dashed var(--color-divider); padding: 12px; margin-top: 6px; font-size: 12px; color: var(--color-neutral-700);">
+                Projects appear here when a manager assigns you. Nothing downloads automatically over cellular.
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 02 SITE / OFFLINE PACKAGE ───────── -->
+          <sc-if value="{{ atSite }}">
+            <div class="scroll" style="flex: 1; padding: 16px 16px 24px;">
+              <button class="gbtn" onClick="{{ goProjects }}" style="min-height: 36px; padding: 6px 10px; font-size: 13px;">← Projects</button>
+              <div class="k" style="margin-top: 12px;">Riverside Play Study</div>
+              <h2 style="font-size: 25px; margin: 4px 0 10px;">North Playground</h2>
+
+              <div class="blueprint" style="padding: 0; margin-bottom: 14px;">
+                <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+                <svg viewBox="0 0 320 120" style="display: block; width: 100%; background: #e4e7dd;">
+                  <rect x="0" y="0" width="320" height="120" fill="#e4e7dd"></rect>
+                  <path d="M0 78 L100 62 L190 74 L320 56" stroke="#c9c4b4" stroke-width="12" fill="none"></path>
+                  <rect x="20" y="14" width="120" height="50" fill="#d7ddcb" stroke="#1d1f2055" stroke-dasharray="4 3"></rect>
+                  <rect x="176" y="80" width="118" height="34" fill="#dcdcd4" stroke="#1d1f2055" stroke-dasharray="4 3"></rect>
+                  <rect x="164" y="14" width="86" height="42" fill="#dfe3d4" stroke="#1d1f2055" stroke-dasharray="4 3"></rect>
+                  <circle cx="272" cy="30" r="10" fill="#c3cdb4"></circle><circle cx="296" cy="46" r="7" fill="#c3cdb4"></circle><circle cx="60" cy="96" r="8" fill="#c3cdb4"></circle>
+                  <text x="26" y="30" font-family="'Barlow Condensed'" font-size="11" letter-spacing="1.4" fill="#1d1f20">ZONE A</text>
+                  <text x="170" y="30" font-family="'Barlow Condensed'" font-size="11" letter-spacing="1.4" fill="#1d1f20">ZONE B</text>
+                  <text x="182" y="96" font-family="'Barlow Condensed'" font-size="11" letter-spacing="1.4" fill="#1d1f20">ZONE C</text>
+                </svg>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider); margin-bottom: 14px;">
+                <div style="background: var(--color-bg); padding: 9px 10px;"><div class="k">Zones</div><div class="num" style="font-size: 17px; font-family: var(--font-heading); font-weight: 600;">A B C</div></div>
+                <div style="background: var(--color-bg); padding: 9px 10px;"><div class="k">Rounds</div><div class="num" style="font-size: 17px; font-family: var(--font-heading); font-weight: 600;">3 of 6</div></div>
+                <div style="background: var(--color-bg); padding: 9px 10px;"><div class="k">Form</div><div class="num" style="font-size: 17px; font-family: var(--font-heading); font-weight: 600;">v4</div></div>
+              </div>
+
+              <h4 style="font-size: 17px; margin: 0 0 4px;">Offline package</h4>
+              <p style="font-size: 12.5px; color: var(--color-neutral-700); margin: 0 0 10px;">{{ dlSummary }}</p>
+
+              <div style="border: 1px solid var(--color-divider);">
+                <sc-for list="{{ dlRows }}" as="d" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--color-divider);">
+                    <span class="chip" style="{{ d.chipStyle }}">{{ d.glyph }} {{ d.state }}</span>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="font-size: 13.5px; font-weight: 500;">{{ d.name }}</div>
+                      <div style="font-size: 11.5px; color: var(--color-neutral-700);">{{ d.detail }}</div>
+                    </div>
+                    <span class="k num">{{ d.size }}</span>
+                  </div>
+                </sc-for>
+                <div style="padding: 12px;">
+                  <sc-if value="{{ dlRunning }}">
+                    <div style="height: 8px; background: var(--color-neutral-300); border: 1px solid var(--color-divider);">
+                      <div style="{{ barStyle }}"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 7px;" class="k num"><span>{{ dlPct }}% · {{ dlDone }} of 214 MB</span><span>Downloading</span></div>
+                  </sc-if>
+                  <sc-if value="{{ dlFailed }}">
+                    <div style="border-left: 3px solid #a32a1e; background: #f6dcd7; padding: 10px 12px;">
+                      <div style="font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: #7d1f16;">◼ Download incomplete — 68%</div>
+                      <div style="font-size: 12.5px; color: #7d1f16; margin-top: 3px;">Imagery tiles stopped at tile 1,204 of 1,770. The 146 MB already written is kept; retrying resumes from there. This project is <strong>not</strong> usable offline yet.</div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                      <button class="pbtn" onClick="{{ startDownload }}" style="flex: 1;">Resume download</button>
+                      <button class="gbtn" onClick="{{ noop }}">Reduce detail</button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ dlReady }}">
+                    <div style="border-left: 3px solid #2f6b46; background: #d9e8de; padding: 10px 12px;">
+                      <div style="font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: #1f4c31;">✓ Verified ready offline</div>
+                      <div style="font-size: 12.5px; color: #1f4c31; margin-top: 3px;">All four components verified on this device at 9:38. Map, form v4 and zone data will work with no signal and no location permission.</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ dlNone }}" hint-placeholder-val="{{ true }}">
+                    <button class="pbtn" onClick="{{ startDownload }}">Download for offline use · 214 MB</button>
+                    <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 8px;">Use Wi-Fi. The map thumbnail above is already cached — it is not evidence the package is complete.</div>
+                  </sc-if>
+                </div>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <sc-if value="{{ dlReady }}"><button class="pbtn" onClick="{{ goRound }}">{{ roundCta }}</button></sc-if>
+                <sc-if value="{{ notReady }}" hint-placeholder-val="{{ true }}">
+                  <button class="pbtn" disabled="{{ true }}">Start round 3</button>
+                  <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 8px;">Rounds cannot start until the package verifies. This prevents a round that has a map but no published form.</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 03 ROUND CONTEXT ───────── -->
+          <sc-if value="{{ atRound }}">
+            <div class="scroll" style="flex: 1; padding: 16px 16px 24px;">
+              <button class="gbtn" onClick="{{ goSite }}" style="min-height: 36px; padding: 6px 10px; font-size: 13px;">← Site</button>
+              <div class="k" style="margin-top: 12px;">Round context · entered once per round</div>
+              <h2 style="font-size: 25px; margin: 4px 0 6px;">Round 3 — confirm context</h2>
+              <p style="font-size: 13px; color: var(--color-neutral-700); margin: 0 0 14px;">These answers are <strong>round-scoped</strong>: they attach to every observation in this round as a snapshot, and are not asked again per event.</p>
+
+              <div style="border: 1px solid var(--color-divider); padding: 12px; margin-bottom: 12px; background: var(--color-neutral-100);">
+                <div class="k">Observer1 · Observer_Initials · observer scope</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                  <div style="font-family: var(--font-heading); font-weight: 600; font-size: 22px; letter-spacing: .06em;">AK</div>
+                  <span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">from sign-in</span>
+                </div>
+                <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 4px;">Carried from your account on every event, per Library H10. Not re-typed.</div>
+              </div>
+
+              <div style="border: 1px solid var(--color-divider); padding: 12px; margin-bottom: 12px;">
+                <div class="k">EnvZone1 · Env_Zone_ID · event scope, remembered within round</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                  <sc-for list="{{ zoneOpts }}" as="z" hint-placeholder-count="3">
+                    <sc-if value="{{ z.on }}" hint-placeholder-val="{{ true }}"><button class="opt-on" onClick="{{ z.pick }}" style="text-align: center;">{{ z.label }}</button></sc-if>
+                    <sc-if value="{{ z.off }}"><button class="opt" onClick="{{ z.pick }}" style="text-align: center;">{{ z.label }}</button></sc-if>
+                  </sc-for>
+                </div>
+                <div class="k" style="margin-top: 12px;">EnvZone3 · Env_SubZone_ID · revealed by zone</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                  <sc-for list="{{ subOpts }}" as="z" hint-placeholder-count="3">
+                    <sc-if value="{{ z.on }}" hint-placeholder-val="{{ true }}"><button class="opt-on" onClick="{{ z.pick }}" style="text-align: center;">{{ z.label }}</button></sc-if>
+                    <sc-if value="{{ z.off }}"><button class="opt" onClick="{{ z.pick }}" style="text-align: center;">{{ z.label }}</button></sc-if>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="border: 1px solid var(--color-divider); padding: 12px; margin-bottom: 12px;">
+                <div class="k">RelRound1 · Rel_Round · defaults to No</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                  <sc-if value="{{ relOff }}" hint-placeholder-val="{{ true }}"><button class="opt-on" onClick="{{ noop }}" style="text-align: center;">No</button><button class="opt" onClick="{{ toggleRel }}" style="text-align: center;">Yes</button></sc-if>
+                  <sc-if value="{{ relOn }}"><button class="opt" onClick="{{ toggleRel }}" style="text-align: center;">No</button><button class="opt-on" onClick="{{ noop }}" style="text-align: center;">Yes</button></sc-if>
+                </div>
+                <div style="font-size: 12.5px; margin-top: 8px;">Is this play event part of a Reliability Round?</div>
+              </div>
+
+              <div style="border: 1px solid var(--color-divider); padding: 12px; margin-bottom: 12px;">
+                <div class="k">FirstRound1 · First_Round · reveals climate + inventory</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                  <sc-if value="{{ firstOff }}" hint-placeholder-val="{{ true }}"><button class="opt-on" onClick="{{ noop }}" style="text-align: center;">No</button><button class="opt" onClick="{{ toggleFirst }}" style="text-align: center;">Yes</button></sc-if>
+                  <sc-if value="{{ firstOn }}"><button class="opt" onClick="{{ toggleFirst }}" style="text-align: center;">No</button><button class="opt-on" onClick="{{ noop }}" style="text-align: center;">Yes</button></sc-if>
+                </div>
+                <div style="font-size: 12.5px; margin-top: 8px;">Is this the first round of the observation period?</div>
+                <sc-if value="{{ firstOff }}" hint-placeholder-val="{{ true }}">
+                  <div style="border-left: 3px solid var(--color-accent); background: var(--color-accent-100); padding: 9px 11px; margin-top: 10px; font-size: 12.5px;">
+                    Climate and zone inventory are inherited from round 1 today (recorded 08:12 by AK) and stored as a snapshot on each event. Turn this on only if the observation period restarts.
+                  </div>
+                </sc-if>
+                <sc-if value="{{ firstOn }}">
+                  <div style="margin-top: 14px; border-top: 1px solid var(--color-divider); padding-top: 12px;">
+                    <sc-for list="{{ climateQs }}" as="q" hint-placeholder-count="3">
+                      <div style="margin-bottom: 14px;">
+                        <div class="k">{{ q.code }} · {{ q.col }} · round scope</div>
+                        <div style="font-size: 14px; font-weight: 500; margin: 3px 0 2px;">{{ q.label }}</div>
+                        <div style="font-size: 12px; color: var(--color-neutral-700); margin-bottom: 7px;">{{ q.hint }}</div>
+                        <div style="display: grid; gap: 6px;">
+                          <sc-for list="{{ q.options }}" as="o" hint-placeholder-count="4">
+                            <sc-if value="{{ o.on }}"><button class="opt-on" onClick="{{ o.pick }}">✓ {{ o.label }}</button></sc-if>
+                            <sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button class="opt" onClick="{{ o.pick }}">{{ o.label }}</button></sc-if>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <div style="border: 1px dashed #7d5504; background: #f9f0da; padding: 10px 11px; font-size: 12px; color: #6b4703;">
+                      <strong>⚠ Unresolved rule.</strong> Zone loose-parts inventory (LP Inventory 1–14) is also round-scoped and would appear here. Test H19–H31 read “if YES” but the answers are quantity bands, so the reveal condition cannot be evaluated as written. Not shown pending Janet's decision.
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <button class="pbtn" onClick="{{ goMap }}">Start observing zone {{ zone }}</button>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 04/05 MAP + FORM (split on tablet) ───────── -->
+          <sc-if value="{{ atCollect }}">
+            <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+
+              <!-- locked round header -->
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--color-text); background: var(--color-neutral-100); flex: none; flex-wrap: wrap;">
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                  <span class="k">Zone</span><span style="font-family: var(--font-heading); font-weight: 600; font-size: 19px;">{{ zone }}{{ subLabel }}</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                  <span class="k">Round</span><span class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 19px;">3</span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                  <span class="k">Obs</span><span style="font-family: var(--font-heading); font-weight: 600; font-size: 19px;">AK</span>
+                </div>
+                <span class="chip" style="border-color: var(--color-neutral-400); color: var(--color-neutral-800);">{{ climateChip }}</span>
+                <div style="margin-left: auto; display: flex; gap: 6px;">
+                  <button class="sbtn" onClick="{{ goRound }}" style="padding: 5px 9px; font-size: 11px;">Change round context</button>
+                  <button class="sbtn" onClick="{{ goRecords }}" style="padding: 5px 9px; font-size: 11px;">{{ savedLabel }}</button>
+                </div>
+              </div>
+
+              <div style="{{ splitStyle }}">
+
+                <!-- ── MAP PANE ── -->
+                <div style="{{ mapPaneStyle }}">
+                  <div style="position: relative; flex: 1; min-height: 0; background: #e4e7dd; cursor: crosshair;" onClick="{{ placePoint }}">
+                    <svg viewBox="0 0 400 420" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+                      <rect x="0" y="0" width="400" height="420" fill="#e4e7dd"></rect>
+                      <sc-if value="{{ layerAerial }}" hint-placeholder-val="{{ true }}">
+                        <g opacity="0.55">
+                          <rect x="0" y="0" width="400" height="420" fill="#dcdfd2"></rect>
+                          <path d="M0 0 H400 V420 H0 Z" fill="url(#ap)"></path>
+                          <defs><pattern id="ap" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#dde0d3"></rect><circle cx="4" cy="5" r="1.6" fill="#d2d6c6"></circle><circle cx="10" cy="11" r="1.2" fill="#d6dac9"></circle></pattern></defs>
+                        </g>
+                      </sc-if>
+                      <sc-if value="{{ layerPaths }}" hint-placeholder-val="{{ true }}">
+                        <path d="M0 250 L120 214 L230 246 L400 196" stroke="#c9c4b4" stroke-width="22" fill="none"></path>
+                        <path d="M170 420 L196 250" stroke="#c9c4b4" stroke-width="16" fill="none"></path>
+                      </sc-if>
+                      <sc-if value="{{ layerZones }}" hint-placeholder-val="{{ true }}">
+                        <rect x="24" y="30" width="150" height="160" fill="#d7ddcb" fill-opacity="0.75" stroke="#1d1f2066" stroke-dasharray="6 4" stroke-width="1.5"></rect>
+                        <rect x="208" y="26" width="164" height="150" fill="#dfe3d4" fill-opacity="0.85" stroke="#1d1f20" stroke-dasharray="6 4" stroke-width="2"></rect>
+                        <rect x="214" y="288" width="158" height="104" fill="#dcdcd4" fill-opacity="0.75" stroke="#1d1f2066" stroke-dasharray="6 4" stroke-width="1.5"></rect>
+                        <text x="32" y="48" font-family="'Barlow Condensed'" font-size="13" letter-spacing="1.6" fill="#1d1f20">ZONE A</text>
+                        <text x="216" y="44" font-family="'Barlow Condensed'" font-size="13" letter-spacing="1.6" fill="#1d1f20" font-weight="600">ZONE B — ACTIVE</text>
+                        <text x="222" y="306" font-family="'Barlow Condensed'" font-size="13" letter-spacing="1.6" fill="#1d1f20">ZONE C</text>
+                        <text x="216" y="168" font-family="'Barlow Condensed'" font-size="11" letter-spacing="1.2" fill="#3d4a3a">b·ii</text>
+                      </sc-if>
+                      <sc-if value="{{ layerTrees }}" hint-placeholder-val="{{ true }}">
+                        <circle cx="330" cy="86" r="17" fill="#c3cdb4"></circle><circle cx="356" cy="120" r="12" fill="#c3cdb4"></circle>
+                        <circle cx="76" cy="300" r="14" fill="#c3cdb4"></circle><circle cx="112" cy="336" r="10" fill="#c3cdb4"></circle>
+                        <circle cx="286" cy="340" r="13" fill="#c3cdb4"></circle>
+                      </sc-if>
+                      <sc-if value="{{ layerObs }}" hint-placeholder-val="{{ true }}">
+                        <g>
+                          <rect x="248" y="72" width="11" height="11" fill="#1d1f20" stroke="#fff" stroke-width="2.5"></rect>
+                          <circle cx="300" cy="132" r="6" fill="#1d1f20" stroke="#fff" stroke-width="2.5"></circle>
+                          <rect x="264" y="118" width="11" height="11" fill="#f2f2f3" stroke="#1d1f20" stroke-width="2.5"></rect>
+                          <path d="M336 156 L343 169 L329 169 Z" fill="#f2f2f3" stroke="#1d1f20" stroke-width="2.5"></path>
+                        </g>
+                      </sc-if>
+                    </svg>
+
+                    <!-- placed point -->
+                    <sc-if value="{{ hasPoint }}">
+                      <div class="mk" style="{{ ptStyle }}">
+                        <svg width="46" height="46" viewBox="0 0 46 46" style="display: block;">
+                          <circle cx="23" cy="23" r="21" fill="none" stroke="#5980a6" stroke-width="1.5" stroke-dasharray="3 3"></circle>
+                          <path d="M23 2 L23 14 M23 32 L23 44 M2 23 L14 23 M32 23 L44 23" stroke="#5980a6" stroke-width="2"></path>
+                          <rect x="17" y="17" width="12" height="12" fill="#1d1f20" stroke="#fff" stroke-width="2.5"></rect>
+                        </svg>
+                      </div>
+                    </sc-if>
+
+                    <!-- GPS dot, optional -->
+                    <sc-if value="{{ gps }}">
+                      <div class="mk" style="left: 62%; top: 74%;">
+                        <div style="width: 54px; height: 54px; border-radius: 50%; background: #5980a626; border: 1px solid #5980a6; display: grid; place-items: center;">
+                          <div style="width: 12px; height: 12px; border-radius: 50%; background: #416180; border: 2px solid #fff;"></div>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <!-- empty prompt -->
+                    <sc-if value="{{ noPoint }}" hint-placeholder-val="{{ true }}">
+                      <div style="position: absolute; left: 12px; right: 154px; top: 12px; background: var(--color-bg); border: 1px solid var(--color-text); padding: 11px 13px;">
+                        <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px;">Tap where the play event is happening</div>
+                        <div style="font-size: 12.5px; color: var(--color-neutral-800); margin-top: 3px;">Place the point at the child's location, not yours. You can nudge it afterwards. Location permission is not required.</div>
+                      </div>
+                    </sc-if>
+
+                    <!-- scale + simulated label -->
+                    <div style="position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; align-items: center;">
+                      <div style="background: var(--color-bg); border: 1px solid var(--color-divider); padding: 3px 7px;" class="k num">0 — 20 m</div>
+                      <div style="background: #f9f0da; border: 1px solid #7d5504; padding: 3px 7px; color: #6b4703;" class="k">Simulated vector plan</div>
+                    </div>
+
+                    <!-- layers -->
+                    <div style="position: absolute; right: 10px; top: 10px; background: var(--color-bg); border: 1px solid var(--color-divider); padding: 8px 10px; min-width: 132px;">
+                      <div class="k" style="margin-bottom: 6px;">Layers</div>
+                      <sc-for list="{{ layerRows }}" as="l" hint-placeholder-count="5">
+                        <button onClick="{{ l.toggle }}" style="display: flex; align-items: center; gap: 7px; width: 100%; background: none; border: 0; padding: 5px 0; cursor: pointer; font: inherit; font-size: 12.5px; color: var(--color-text); text-align: left;">
+                          <span style="{{ l.boxStyle }}">{{ l.mark }}</span>{{ l.name }}
+                        </button>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <!-- map toolbar -->
+                  <div style="flex: none; border-top: 1px solid var(--color-divider); padding: 10px 12px; background: var(--color-neutral-100);">
+                    <sc-if value="{{ hasPoint }}">
+                      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 34px); grid-template-rows: repeat(2, 34px); gap: 2px;">
+                          <div></div><button class="gbtn" onClick="{{ nudgeUp }}" style="min-height: 34px; padding: 0;">↑</button><div></div>
+                          <button class="gbtn" onClick="{{ nudgeLeft }}" style="min-height: 34px; padding: 0;">←</button>
+                          <button class="gbtn" onClick="{{ nudgeDown }}" style="min-height: 34px; padding: 0;">↓</button>
+                          <button class="gbtn" onClick="{{ nudgeRight }}" style="min-height: 34px; padding: 0;">→</button>
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                          <div class="k">Point · WGS 84</div>
+                          <div class="num" style="font-size: 13.5px; font-family: var(--font-heading); font-weight: 600;">{{ ptLat }}, {{ ptLng }}</div>
+                          <div style="font-size: 11.5px; color: var(--color-neutral-700);">Manual placement · ±0 m assumed</div>
+                        </div>
+                        <button class="gbtn" onClick="{{ clearPoint }}">Clear</button>
+                      </div>
+                    </sc-if>
+                    <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
+                      <sc-if value="{{ gps }}"><button class="sbtn-on" onClick="{{ toggleGps }}">GPS on</button></sc-if>
+                      <sc-if value="{{ noGps }}" hint-placeholder-val="{{ true }}"><button class="sbtn" onClick="{{ toggleGps }}">GPS off</button></sc-if>
+                      <span style="font-size: 11.5px; color: var(--color-neutral-700);">Orientation aid only — never sets the point.</span>
+                      <sc-if value="{{ phoneMapOnly }}">
+                        <button class="pbtn" onClick="{{ goForm }}" disabled="{{ noPoint }}" style="margin-top: 4px;">{{ formCta }}</button>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ── FORM PANE ── -->
+                <div style="{{ formPaneStyle }}">
+                  <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--color-divider);">
+                    <sc-if value="{{ phoneFormOnly }}"><button class="gbtn" onClick="{{ goMap }}" style="min-height: 34px; padding: 5px 9px; font-size: 13px;">← Map</button></sc-if>
+                    <div style="min-width: 0;">
+                      <div class="k">Observation · form v4 · event scope</div>
+                      <div style="font-family: var(--font-heading); font-weight: 600; font-size: 16px;">{{ formTitle }}</div>
+                    </div>
+                    <span class="chip" style="margin-left: auto; border-color: var(--color-neutral-400); color: var(--color-neutral-800);">{{ answeredLabel }}</span>
+                  </div>
+
+                  <div class="scroll" style="flex: 1; min-height: 0; padding: 12px;">
+                    <sc-if value="{{ noPoint }}" hint-placeholder-val="{{ true }}">
+                      <div style="border: 1px dashed var(--color-divider); padding: 18px; text-align: center;">
+                        <div style="font-family: var(--font-heading); font-weight: 600; font-size: 17px;">No point placed</div>
+                        <div style="font-size: 13px; color: var(--color-neutral-700); margin-top: 4px;">Tap the map to start an observation. The form stays inert until a location exists, so an answer set can never be saved without coordinates.</div>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ hasPoint }}">
+                      <sc-if value="{{ hasErrs }}">
+                        <div style="border-left: 3px solid #a32a1e; background: #f6dcd7; padding: 10px 12px; margin-bottom: 12px;">
+                          <div style="font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: #7d1f16;">◼ {{ errCount }} required answers missing</div>
+                          <div style="font-size: 12.5px; color: #7d1f16; margin-top: 3px;">Jump straight to one — the form does not scroll you away from where you were.</div>
+                          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                            <sc-for list="{{ errJumps }}" as="e" hint-placeholder-count="3">
+                              <button class="jump" onClick="{{ e.jump }}">{{ e.code }} ↓</button>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+
+                      <sc-if value="{{ hasHidden }}">
+                        <div style="border-left: 3px solid #7d5504; background: #f9f0da; padding: 10px 12px; margin-bottom: 12px;">
+                          <div style="font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: #6b4703;">⚠ {{ hiddenPhrase }} hidden by that change</div>
+                          <div style="font-size: 12.5px; color: #6b4703; margin-top: 3px;">{{ hiddenNames }}. They are stored as <strong>not applicable</strong> — not as “No”, and not as unanswered. Reverting restores them.</div>
+                          <button class="sbtn" onClick="{{ undoHidden }}" style="margin-top: 8px;">Undo the change</button>
+                        </div>
+                      </sc-if>
+
+                      <sc-for list="{{ questions }}" as="q" hint-placeholder-count="7">
+                        <div id="{{ q.domId }}" style="{{ q.wrapStyle }}">
+                          <sc-if value="{{ q.groupFirst }}">
+                            <div style="font-family: var(--font-heading); font-weight: 600; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-accent-800); border-bottom: 1px solid var(--color-accent-300); padding-bottom: 4px; margin-bottom: 10px;">{{ q.group }}</div>
+                          </sc-if>
+                          <div style="display: flex; gap: 8px; align-items: baseline;">
+                            <span class="k" style="flex: 1; min-width: 0;">{{ q.code }} · {{ q.col }}</span>
+                            <sc-if value="{{ q.revealed }}"><span class="chip" style="border-color: var(--color-accent); color: var(--color-accent-800);">revealed</span></sc-if>
+                            <sc-if value="{{ q.required }}"><span class="k" style="color: #a32a1e;">required</span></sc-if>
+                          </div>
+                          <div style="font-size: 14.5px; font-weight: 500; margin: 3px 0 2px; line-height: 1.35;">{{ q.label }}</div>
+                          <sc-if value="{{ q.hasHint }}"><div style="font-size: 12px; color: var(--color-neutral-700); margin-bottom: 8px;">{{ q.hint }}</div></sc-if>
+
+                          <sc-if value="{{ q.isChoice }}">
+                            <div style="{{ q.optsStyle }}">
+                              <sc-for list="{{ q.options }}" as="o" hint-placeholder-count="3">
+                                <sc-if value="{{ o.on }}"><button class="opt-on" onClick="{{ o.pick }}">{{ o.tick }} {{ o.label }}</button></sc-if>
+                                <sc-if value="{{ o.off }}" hint-placeholder-val="{{ true }}"><button class="opt" onClick="{{ o.pick }}">{{ o.label }}</button></sc-if>
+                              </sc-for>
+                            </div>
+                          </sc-if>
+                          <sc-if value="{{ q.isText }}">
+                            <input class="input" value="{{ q.value }}" onChange="{{ q.type }}" placeholder="{{ q.ph }}" style="min-height: 44px;" />
+                          </sc-if>
+                          <sc-if value="{{ q.isArea }}">
+                            <textarea class="input" value="{{ q.value }}" onChange="{{ q.type }}" placeholder="{{ q.ph }}" style="min-height: 86px;"></textarea>
+                            <div class="k num" style="text-align: right; margin-top: 3px;">{{ q.chars }} / 1000</div>
+                          </sc-if>
+                          <sc-if value="{{ q.hasErr }}">
+                            <div style="font-size: 12.5px; color: #7d1f16; margin-top: 6px; display: flex; gap: 5px;"><span>◼</span><span>{{ q.err }}</span></div>
+                          </sc-if>
+                          <sc-if value="{{ q.hasFlag }}">
+                            <div style="border: 1px dashed #7d5504; background: #f9f0da; padding: 7px 9px; margin-top: 7px; font-size: 11.5px; color: #6b4703;"><strong>⚠ Workbook ambiguity.</strong> {{ q.flag }}</div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+
+                      <div style="border: 1px dashed var(--color-divider); padding: 11px; margin-top: 4px; font-size: 12px; color: var(--color-neutral-700);">
+                        This slice runs {{ qTotal }} of the 74 visible rows in <em>Variables to use for App testing.xlsx</em> — every branch shape in the workbook is represented. The 16 hidden rows are excluded pending confirmation of what “hidden” means.
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <div style="flex: none; border-top: 1px solid var(--color-text); padding: 10px 12px; background: var(--color-neutral-100); display: flex; gap: 8px; align-items: center;">
+                    <button class="pbtn" onClick="{{ saveObs }}" disabled="{{ noPoint }}" style="flex: 1;">Save to device</button>
+                    <button class="gbtn" onClick="{{ discard }}">Discard</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 06 RECEIPT ───────── -->
+          <sc-if value="{{ atReceipt }}">
+            <div class="scroll" style="flex: 1; padding: 18px 16px 24px;">
+              <div style="border-left: 3px solid #2f6b46; background: #d9e8de; padding: 13px 14px;">
+                <div style="font-family: var(--font-heading); font-weight: 600; font-size: 20px; color: #1f4c31;">✓ Saved on this device</div>
+                <div style="font-size: 13px; color: #1f4c31; margin-top: 4px;">Written to local storage before this screen appeared. It survives closing the app, restarting the tablet, and an empty battery.</div>
+              </div>
+              <div style="border: 1px solid var(--color-divider); margin-top: 14px;">
+                <sc-for list="{{ receiptRows }}" as="r" hint-placeholder-count="5">
+                  <div style="display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--color-divider); font-size: 13px;">
+                    <span class="k" style="flex: none;">{{ r.k }}</span><span class="num" style="text-align: right; min-width: 0;">{{ r.v }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border: 1px solid var(--color-divider); padding: 12px; margin-top: 14px;">
+                <div class="k">Next observation — what changes</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 9px; font-size: 12.5px;">
+                  <div>
+                    <div style="font-family: var(--font-heading); font-weight: 600; font-size: 13px; color: #1f4c31;">Carried forward</div>
+                    <ul style="margin: 5px 0 0; padding-left: 16px; line-height: 1.6; color: var(--color-neutral-800);">
+                      <li>Observer AK</li><li>Round 3 + climate snapshot</li><li>Zone {{ zone }}{{ subLabel }}</li><li>Zone inventory</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <div style="font-family: var(--font-heading); font-weight: 600; font-size: 13px; color: #7d1f16;">Reset</div>
+                    <ul style="margin: 5px 0 0; padding-left: 16px; line-height: 1.6; color: var(--color-neutral-800);">
+                      <li>Point location</li><li>All event answers</li><li>Loose-parts branch</li><li>Timestamp</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div style="display: grid; gap: 8px; margin-top: 16px;">
+                <button class="pbtn" onClick="{{ nextObs }}">Next observation — same zone</button>
+                <button class="gbtn" onClick="{{ goRound }}">Change zone or round context</button>
+                <button class="gbtn" onClick="{{ goRecords }}">{{ savedLabel }}</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 07 SAVED WORK + SYNC ───────── -->
+          <sc-if value="{{ atRecords }}">
+            <div class="scroll" style="flex: 1; padding: 16px 16px 24px;">
+              <button class="gbtn" onClick="{{ backToCollect }}" style="min-height: 36px; padding: 6px 10px; font-size: 13px;">← Collection</button>
+              <div class="k" style="margin-top: 12px;">On this device</div>
+              <h2 style="font-size: 25px; margin: 4px 0 10px;">Saved work</h2>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider); margin-bottom: 12px;">
+                <sc-for list="{{ tally }}" as="t" hint-placeholder-count="4">
+                  <div style="background: var(--color-bg); padding: 8px 9px;">
+                    <div class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 22px; {{ t.color }}">{{ t.n }}</div>
+                    <div class="k" style="{{ t.color }}">{{ t.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="border: 1px solid var(--color-divider); padding: 11px 12px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <span class="chip" style="{{ netChipStyle }}">{{ netChip }}</span>
+                  <span class="chip" style="{{ syncChipStyle }}">{{ syncChip }}</span>
+                  <sc-if value="{{ canSync }}"><button class="sbtn" onClick="{{ runSync }}" style="margin-left: auto;">Try now</button></sc-if>
+                </div>
+                <div style="font-size: 12.5px; color: var(--color-neutral-800); margin-top: 8px;">{{ syncMsg }}</div>
+                <sc-if value="{{ syncRunning }}">
+                  <div style="height: 8px; background: var(--color-neutral-300); border: 1px solid var(--color-divider); margin-top: 9px;">
+                    <div style="{{ syncBarStyle }}"></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ authExpired }}">
+                  <div style="border-left: 3px solid #a32a1e; background: #f6dcd7; padding: 10px 12px; margin-top: 10px;">
+                    <div style="font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: #7d1f16;">◼ Session expired mid-upload</div>
+                    <div style="font-size: 12.5px; color: #7d1f16; margin-top: 3px;">2 records were acknowledged; the remaining {{ stuckCount }} stayed on this device untouched. Nothing was lost and nothing was uploaded twice — each record carries an operation ID, so retrying is duplicate-safe.</div>
+                    <button class="pbtn" onClick="{{ reauth }}" style="margin-top: 9px;">Sign in again and resume</button>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="border: 1px solid var(--color-divider);">
+                <sc-for list="{{ recRows }}" as="r" hint-placeholder-count="5">
+                  <button onClick="{{ r.open }}" style="display: block; width: 100%; text-align: left; font: inherit; background: var(--color-bg); border: 0; border-bottom: 1px solid var(--color-divider); padding: 11px 12px; cursor: pointer; color: var(--color-text);">
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                      <span class="chip" style="{{ r.chipStyle }}">{{ r.glyph }} {{ r.state }}</span>
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px;">{{ r.id }}</div>
+                        <div style="font-size: 12.5px; color: var(--color-neutral-700);">{{ r.meta }}</div>
+                      </div>
+                      <span class="k num" style="flex: none;">{{ r.time }}</span>
+                    </div>
+                    <sc-if value="{{ r.note }}">
+                      <div style="font-size: 12px; color: #7d1f16; margin-top: 6px;">{{ r.noteText }}</div>
+                    </sc-if>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="border: 1px dashed var(--color-divider); padding: 11px; margin-top: 12px; font-size: 12px; color: var(--color-neutral-700);">
+                Sync is attempted automatically when the app opens, resumes, or regains connectivity, and while it is open with unsent work. Uploads while the app is closed are not promised.
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 08 RECORD / CONFLICT ───────── -->
+          <sc-if value="{{ atRecord }}">
+            <div class="scroll" style="flex: 1; padding: 16px 16px 24px;">
+              <button class="gbtn" onClick="{{ goRecords }}" style="min-height: 36px; padding: 6px 10px; font-size: 13px;">← Saved work</button>
+              <div class="k" style="margin-top: 12px;">{{ openRec.meta }}</div>
+              <h2 style="font-size: 25px; margin: 4px 0 8px;">{{ openRec.id }}</h2>
+              <span class="chip" style="{{ openRec.chipStyle }}">{{ openRec.glyph }} {{ openRec.state }}</span>
+
+              <sc-if value="{{ recRejected }}">
+                <div style="border-left: 3px solid #a32a1e; background: #f6dcd7; padding: 11px 13px; margin-top: 14px;">
+                  <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px; color: #7d1f16;">◼ Rejected by the server — competing edit</div>
+                  <div style="font-size: 12.5px; color: #7d1f16; margin-top: 4px;">Revision 2 of this record was already accepted from another device at 10:02. Your edit was made against revision 1, so it was not applied. Your version is still safe on this device. No winner was chosen by clock.</div>
+                </div>
+                <div class="k" style="margin-top: 16px;">Field comparison</div>
+                <div style="border: 1px solid var(--color-divider); margin-top: 6px;">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; background: var(--color-neutral-100); border-bottom: 1px solid var(--color-divider);">
+                    <div class="k" style="padding: 7px 10px;">Your version · rev 1</div>
+                    <div class="k" style="padding: 7px 10px; border-left: 1px solid var(--color-divider);">Server · rev 2 (BR)</div>
+                  </div>
+                  <sc-for list="{{ diffRows }}" as="d" hint-placeholder-count="3">
+                    <div style="border-bottom: 1px solid var(--color-divider);">
+                      <div class="k" style="padding: 6px 10px 0;">{{ d.col }}</div>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                        <div style="padding: 4px 10px 8px; font-size: 13.5px; {{ d.mineStyle }}">{{ d.mine }}</div>
+                        <div style="padding: 4px 10px 8px; font-size: 13.5px; border-left: 1px solid var(--color-divider); {{ d.theirsStyle }}">{{ d.theirs }}</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div class="k" style="margin-top: 16px;">Resolve</div>
+                <div style="display: grid; gap: 8px; margin-top: 8px;">
+                  <sc-for list="{{ resolutions }}" as="x" hint-placeholder-count="4">
+                    <button onClick="{{ x.pick }}" style="display: block; width: 100%; text-align: left; font: inherit; background: var(--color-bg); border: 1px solid var(--color-divider); padding: 11px 12px; cursor: pointer; color: var(--color-text); min-height: 48px;">
+                      <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px;">{{ x.title }}</div>
+                      <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 2px;">{{ x.body }}</div>
+                    </button>
+                  </sc-for>
+                </div>
+                <div style="border: 1px dashed var(--color-divider); padding: 10px 11px; margin-top: 12px; font-size: 12px; color: var(--color-neutral-700);">
+                  Observers resolve their own competing edits. Anything that changes the meaning of an accepted record — a deletion, a zone reassignment, a protocol question — is escalated to the manager instead.
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ recResolved }}">
+                <div style="border-left: 3px solid #2f6b46; background: #d9e8de; padding: 11px 13px; margin-top: 14px;">
+                  <div style="font-family: var(--font-heading); font-weight: 600; font-size: 15px; color: #1f4c31;">✓ {{ resolvedTitle }}</div>
+                  <div style="font-size: 12.5px; color: #1f4c31; margin-top: 4px;">{{ resolvedBody }}</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ recPlain }}">
+                <div style="border: 1px solid var(--color-divider); margin-top: 14px;">
+                  <sc-for list="{{ recDetail }}" as="d" hint-placeholder-count="6">
+                    <div style="display: flex; justify-content: space-between; gap: 12px; padding: 8px 11px; border-bottom: 1px solid var(--color-divider); font-size: 13px;">
+                      <span class="k" style="flex: none;">{{ d.k }}</span><span class="num" style="text-align: right;">{{ d.v }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 12px;">Answers are shown against the form version that produced them ({{ openRec.formVer }}). Publishing a newer version does not re-interpret this record.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- ───────── 09 COLD START ───────── -->
+          <sc-if value="{{ atResume }}">
+            <div class="scroll" style="flex: 1; padding: 18px 16px 24px;">
+              <div class="k">App reopened · 12 minutes later</div>
+              <h2 style="font-size: 26px; margin: 5px 0 4px;">Welcome back, AK</h2>
+              <p style="font-size: 13px; color: var(--color-neutral-700); margin: 0 0 16px;">Everything below was read from this device's storage, not from the network.</p>
+
+              <div style="border: 1px solid var(--color-text); padding: 13px; margin-bottom: 12px;">
+                <div class="k">Open round</div>
+                <div style="font-family: var(--font-heading); font-weight: 600; font-size: 20px; margin-top: 3px;">Riverside · North Playground · Round 3</div>
+                <div style="font-size: 12.5px; color: var(--color-neutral-800); margin-top: 4px;">Zone {{ zone }}{{ subLabel }}, observer AK, climate snapshot from 08:12 — all intact.</div>
+                <button class="pbtn" onClick="{{ goCollect }}" style="margin-top: 11px;">Resume round 3</button>
+              </div>
+
+              <sc-if value="{{ hasDraft }}">
+                <div style="border: 1px solid #7d5504; background: #f9f0da; padding: 13px;">
+                  <div style="font-family: var(--font-heading); font-weight: 600; font-size: 16px; color: #6b4703;">⚠ One unsaved draft recovered</div>
+                  <div style="font-size: 12.5px; color: #6b4703; margin-top: 4px;">A point at {{ ptLat }}, {{ ptLng }} with {{ draftCount }} answers was never saved. Drafts are written to storage as you type, so nothing was lost — but a draft is <strong>not</strong> an observation and is not queued for sync.</div>
+                  <div style="display: flex; gap: 8px; margin-top: 11px;">
+                    <button class="pbtn" onClick="{{ goCollect }}" style="flex: 1;">Open the draft</button>
+                    <button class="gbtn" onClick="{{ discard }}">Delete it</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noDraft }}" hint-placeholder-val="{{ true }}">
+                <div style="border: 1px dashed var(--color-divider); padding: 13px; font-size: 12.5px; color: var(--color-neutral-700);">No unsaved drafts. Place a point and type a few answers, then use “Force-quit &amp; reopen” to see draft recovery.</div>
+              </sc-if>
+
+              <div style="border: 1px solid var(--color-divider); padding: 12px; margin-top: 12px;">
+                <div class="k">Storage read at launch</div>
+                <div style="display: flex; gap: 14px; margin-top: 7px; flex-wrap: wrap;">
+                  <div><div class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 22px;">{{ recCount }}</div><div class="k">records</div></div>
+                  <div><div class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 22px;">{{ unsentCount }}</div><div class="k">unsent</div></div>
+                  <div><div class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 22px;">214</div><div class="k">MB package</div></div>
+                  <div><div class="num" style="font-family: var(--font-heading); font-weight: 600; font-size: 22px;">v4</div><div class="k">form</div></div>
+                </div>
+                <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 9px;">{{ launchSync }}</div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ NOTES + JOURNAL ══════════ -->
+    <div style="display: grid; gap: 16px; position: sticky; top: 16px;">
+      <div class="blueprint" style="padding: 13px 14px; background: var(--color-bg);">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="k" style="color: #6b4703;">⚠ Simulated on this screen</div>
+        <div style="font-size: 12.5px; line-height: 1.6; margin-top: 7px; color: var(--color-neutral-800);">{{ simNote }}</div>
+      </div>
+      <div class="blueprint" style="padding: 13px 14px; background: var(--color-bg);">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="k">Device journal</div>
+        <div style="margin-top: 8px; display: grid; gap: 7px;">
+          <sc-for list="{{ journal }}" as="j" hint-placeholder-count="4">
+            <div style="display: flex; gap: 8px; font-size: 11.5px; line-height: 1.45;">
+              <span class="k num" style="flex: none; padding-top: 1px;">{{ j.t }}</span>
+              <span style="color: var(--color-neutral-800);">{{ j.m }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="blueprint" style="padding: 13px 14px; background: var(--color-bg);">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="k">Try these</div>
+        <ul style="margin: 8px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.65; color: var(--color-neutral-800);">
+          <li>Download the package — it fails at 68%, then resumes.</li>
+          <li>Set loose parts to Yes, answer the children, then set it back to No.</li>
+          <li>Save with the summary empty.</li>
+          <li>Switch to Tablet mid-observation; the point and answers survive.</li>
+          <li>Go online — sync starts itself, then the session expires.</li>
+          <li>Open OBS-0139 and resolve the competing edit.</li>
+          <li>Force-quit with a half-filled form.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:1100}}">
+const PLAY_TYPES = ['Physical','Exploratory','Imaginative','Play with Rules','Bio','Expressive','Restorative','Digital','Non-Play'];
+const SUBS = {
+  'Physical': ['Phys_Subtype','Physical Play Subtype',['Gross motor','Fine motor','Vestibular','Rough & Tumble']],
+  'Exploratory': ['Expl_Subtype','Exploratory Play Subtype',['Sensory','Active','Constructive']],
+  'Imaginative': ['Imag_Subtype','Imaginative Play Subtype',['Symbolic','Socio-dramatic','Fantasy']],
+  'Play with Rules': ['PwR_Subtype','Play with Rules Subtype',['Conventional','Organic']],
+  'Bio': ['Bio_Subtype','Bio Play Subtype',['Plants','Wildlife','Care']],
+  'Expressive': ['Expr_Subtype','Expressive Subtype',['Performance','Artistic','Language','Conversation']],
+  'Restorative': ['Res_Subtype','Restorative Subtype',['Resting','Retreat','Reading','Onlooking']],
+  'Digital': ['Dig_Subtype','Digital Subtype',['Device','Augmented','Embedded']],
+  'Non-Play': ['Non_Subtype','Non-Play Subtype',['Self care','Nutrition','Distress','Aggression','Transition','Other']]
+};
+const QTY = ['Small qty (3 items or less)','Moderate Qty (4 to 10 itmes)','Large Qty (More than 10 items)'];
+const YN = ['No','Yes'];
+
+const QS = [
+  {id:'summary', code:'Summary1', col:'Play_Event_Summary', group:'Play event summary', label:'Play Event Summary', hint:'Write a detailed description of the play event', kind:'area', req:true, ph:'Two children dragging a large branch toward the mud kitchen…'},
+  {id:'age', code:'Age1', col:'Child_AgeRange', group:'Target child details', label:'Child Age range', hint:'Choose most appropriate range', kind:'one', opts:['0-2 yrs','3-5 yrs','6-8 yrs','9-12yrs','13-16yrs','17+'], req:true, cols:3},
+  {id:'gender', code:'Gender1', col:'— none —', group:'Target child details', label:'Child Presenting Gender', hint:'Choose according to presenting factors (e.g. clothing, hair, accessories)', kind:'one', opts:['Female','Male','Unknown'], cols:3, flag:'No export column name in either workbook (Test E51, Library E75 both blank). A stable name must be approved before any export.'},
+  {id:'grp', code:'PeerIntn1', col:'Grp_Composition', group:'Peer / group interaction', label:'Group Composition', kind:'one', opts:['Solitary (No other children)','1:1 with peer','1:1 with adult','Group children w adult(s)','Group children w NO adult(s)'], req:true},
+  {id:'others', code:'PeerIntn2', col:'No_Other_Children', group:'Peer / group interaction', label:'# of OTHER children involved', hint:'Number of other children participating with target child in same play event', kind:'one', opts:['None (solitary play)','1','2','3 to 6','7+'], cols:3, when:a=>!!a.grp && a.grp!=='Solitary (No other children)'},
+  {id:'peer', code:'PeerIntn4', col:'Peer_Intn', group:'Peer / group interaction', label:'Peer interaction', hint:'Type of peer interaction of target child with other children', kind:'one', opts:['None (Solitary play)','Parallel','Cooperative','Onlooking','Conflict','Unoccupied'], cols:2, when:a=>!!a.grp && a.grp!=='Solitary (No other children)'},
+  {id:'adults', code:'AdultIntn1', col:'Adults_Engaged', group:'Adult interaction', label:'# of adults present or engaged', hint:'Number of adults directly present or engaging with target child', kind:'one', opts:['No adults','1','2','3 or more'], cols:4},
+  {id:'adultIntn', code:'AdultIntn3', col:'Adult_Intn', group:'Adult interaction', label:'Adult Interaction Collapsed', hint:'Type of adult interaction of target child', kind:'one', opts:['n/a (no adult)','Observing','Affirming','Participating (playing WITH child)','Directing','Restricting','Other (open)'], when:a=>!!a.adults && a.adults!=='No adults'},
+  {id:'adultOther', code:'AdultIntn4', col:'Adult_Intn_Other', group:'Adult interaction', label:"Adult Interaction 'Other' Description", kind:'text', ph:'100 characters', when:a=>a.adultIntn==='Other (open)'},
+  {id:'pt1', code:'PlayType1', col:'Play_Type_1', group:'Play type', label:'Primary Play Type 1', hint:'Select a primary type of play involved in the play event', kind:'one', opts:PLAY_TYPES, cols:3, req:true},
+  {id:'sub1', code:'PlaySubtype', col:'', group:'Play type', label:'', kind:'one', opts:[], dyn:'pt1', slot:1},
+  {id:'pt2', code:'PlayType2', col:'Play_Type_2', group:'Play type', label:'Primary Play Type 2', hint:'Select a primary type of play involved in the play event', kind:'one', opts:PLAY_TYPES, cols:3},
+  {id:'sub2', code:'PlaySubtype', col:'', group:'Play type', label:'', kind:'one', opts:[], dyn:'pt2', slot:2},
+  {id:'cars', code:'CARS2', col:'CARS', group:'Activity intensity', label:'CARS Activity Intensity Collapsed', kind:'one', opts:['1-2 (Stationary)','3 (Slow)','4-5 (Moderate-Vigorous)']},
+  {id:'risk', code:'Risk1', col:'Risk', group:'Risky play', label:'Risk Type Expanded', hint:'Is there any risk involved in the play event?', kind:'one', opts:['No/Very low risk','Risk Appraisal','Risk Avoidance','Low positive risk','Moderate positive risk','High positive risk','Low negative risk','Moderate negative risk','High negative risk','Other/not sure'], cols:2},
+  {id:'riskOther', code:'Risk4', col:'Risk_Other', group:'Risky play', label:'Risk Type Other', hint:"Describe 'Other' risk involved in play event", kind:'text', ph:'100 characters', when:a=>a.risk==='Other/not sure'},
+  {id:'comm', code:'PlayComm1', col:'Play_Communication', group:'Play communication', label:'Play Communication', hint:'Play communication expressed during the play event', kind:'one', opts:['n/a (no other children)','none','play','environment','cowabunga','peer social','adult social','other'], cols:2},
+  {id:'commOther', code:'PlayComm2', col:'Play_Communication_Other', group:'Play communication', label:'Play Communication Other', kind:'text', ph:'Describe the other type', when:a=>a.comm==='other'},
+  {id:'fixNat', code:'FixedNat1', col:'Fixed_Nat_Intn', group:'Fixed environmental features', label:'Fixed Natural Interaction', hint:'Does the play event involve any fixed natural features (e.g. trees, bushes, boulders, natural water features, etc)?', kind:'one', opts:YN, cols:2},
+  {id:'fixNatDesc', code:'FixedNat3', col:'Fixed_Nat_Description', group:'Fixed environmental features', label:'Fixed Natural Description', hint:'Describe the fixed natural features involved in this play event', kind:'text', ph:'100 characters', when:a=>a.fixNat==='Yes'},
+  {id:'fixDes', code:'FixedDes1', col:'Fixed_Designed_Intn', group:'Fixed designed features', label:'Fixed Designed Interaction', hint:'Does the play event involve any fixed, designed or manufactured features (e.g. play structures, rock climbing wall, swings, willow tunnel, etc)?', kind:'one', opts:YN, cols:2},
+  {id:'fixDesDesc', code:'FixedDes3', col:'Fixed_Designed_Description', group:'Fixed designed features', label:'Fixed Designed Description', kind:'text', ph:'100 characters', when:a=>a.fixDes==='Yes'},
+  {id:'lp', code:'LooseParts1', col:'LP_Intn_Binary', group:'Loose environmental features', label:'Loose Parts Interaction', hint:'Are loose parts involved in this play event?', kind:'one', opts:YN, cols:2},
+  {id:'lpNat', code:'LooseParts2', col:'Nat_LP_Intn_Binary', group:'Loose environmental features', label:'Natural Loose Parts Interaction', hint:'Are natural loose parts involved?', kind:'one', opts:YN, cols:2, when:a=>a.lp==='Yes'},
+  {id:'lpMfg', code:'LooseParts3', col:'Nat_LP_Intn_Binary', group:'Loose environmental features', label:'Manufactured Loose Parts Interaction', hint:'Are manufactured loose parts involved?', kind:'one', opts:YN, cols:2, when:a=>a.lp==='Yes', flag:'Test E168 and E169 both read Nat_LP_Intn_Binary. Manufactured interaction needs its own export name or the two answers collide in one column.'},
+  {id:'natSurf', code:'LooseParts4', col:'Nat_Surfaces', group:'Loose · natural', label:'Natural ground surfaces / loose mtls', hint:'Were natural ground surfaces / moldable materials involved in the play event (e.g.: Sand, water, mud, mulch, loose hay, loose grass)?', kind:'one', opts:YN, cols:2, when:a=>a.lpNat==='Yes'},
+  {id:'natSurfList', code:'LooseParts5', col:'Nat_Surfaces_List', group:'Loose · natural', label:'Natural ground surfaces / loose mtls checklist', hint:'Check all natural ground surfaces involved in the play event (ONLY include if directly involved in the play, not just the ground surface underneath)', kind:'many', opts:['Sand','Water','Mud','Mulch','Loose hay','Loose grass'], cols:3, when:a=>a.natSurf==='Yes', flag:'Test G171 says “List to be provided”. Options here are the instruction examples, standing in until Janet supplies the list.'},
+  {id:'natSm', code:'LooseParts6', col:'Nat_LPs_Sm', group:'Loose · natural', label:'SMALL Natural Loose Parts (light, easy to move/handle)', hint:'Were SMALL loose parts involved in the play event (e.g: acorns, pinecones, sticks, flowers, weeds, leaves, small rocks/pebbles, feathers, bugs, fruit)?', kind:'one', opts:YN, cols:2, when:a=>a.lpNat==='Yes'},
+  {id:'natSmList', code:'LooseParts7', col:'Nat_LPs_Sm_List', group:'Loose · natural', label:'SMALL Natural LP checklist', hint:'Check all SMALL Natural LPs involved in the play event', kind:'many', opts:['Acorns','Pinecones','Sticks','Flowers','Leaves','Small rocks','Feathers','Bugs','Fruit'], cols:3, when:a=>a.natSm==='Yes', flag:'Choice set pending — shown from the instruction examples.'},
+  {id:'natMed', code:'LooseParts8', col:'Nat_LPs_Med', group:'Loose · natural', label:'MEDIUM Natural Loose Parts (a bit of weight, relatively easy to handle/move)', hint:'Were MEDIUM Natural loose parts involved (e.g.: tree cookies, medium sized rocks, small stumps, small logs, large sticks, medium sized branches, bamboo poles, etc)?', kind:'one', opts:YN, cols:2, when:a=>a.lpNat==='Yes'},
+  {id:'natLrg', code:'LooseParts10', col:'Nat_LPs_Lrg', group:'Loose · natural', label:'LARGE Natural Loose Parts (heavy, more difficult to handle/move)', hint:'Were LARGE Natural loose parts involved in the play event (e.g.: large stumps, large rocks, medium to large logs, medium to large branches, etc)?', kind:'one', opts:YN, cols:2, when:a=>a.lpNat==='Yes'},
+  {id:'natLrgList', code:'LooseParts11', col:'Nat_LPs_Lrg', group:'Loose · natural', label:'LARGE Natural LP checklist', kind:'many', opts:['Large stumps','Large rocks','Logs','Large branches'], cols:2, when:a=>a.natLrg==='Yes', flag:'Test E176 and E177 both read Nat_LPs_Lrg — the yes/no answer and its checklist share one column. The checklist needs a distinct export name.'},
+  {id:'mfgSm', code:'LooseParts12', col:'Mfgd_LPs_Sm', group:'Loose · manufactured', label:'SMALL Manufactured Loose Parts (light, easy to move or handle; sensory play items)', hint:'Were SMALL Manufactured LPs involved (e.g.: LEGO/small-medium blocks, bubbles, books, musical instruments, art materials, binoculars/magnifying glass)?', kind:'one', opts:YN, cols:2, when:a=>a.lpMfg==='Yes'},
+  {id:'mfgSmList', code:'LooseParts13', col:'Mfgd_LPs_Sm_List', group:'Loose · manufactured', label:'SMALL Manufactured LP checklist', kind:'many', opts:['Blocks','Bubbles','Books','Instruments','Art materials','Magnifier'], cols:3, when:a=>a.mfgSm==='Yes', flag:'Choice set pending.'},
+  {id:'wild', code:'Wildlife1', col:'Wildlife_Intn', group:'Wildlife', label:'Wildlife Interaction', hint:'Were any wildlife (e.g., birds, bugs, butterflies, frogs, squirrels, etc) involved in the play event?', kind:'one', opts:YN, cols:2},
+  {id:'wildType', code:'Wildlife2', col:'Wildlife_Intn_Type', group:'Wildlife', label:'Wildlife Interaction Type', hint:'Which type of wildlife interaction was involved?', kind:'one', opts:['None','Observing','Handling','Searching for','Rescuing/Caring','Harming','Other'], cols:2, when:a=>a.wild==='Yes'},
+  {id:'wildDesc', code:'Wildlife5', col:'Wildlife_Description', group:'Wildlife', label:'Wildlife Description', hint:'What type of wildlife were involved in the play event', kind:'text', ph:'100 characters', when:a=>a.wild==='Yes'},
+  {id:'shadeE', code:'Shade1', col:'Shade_Event', group:'Shade · event', label:'Shade conditions', hint:'Shade condition where play event currently taking place', kind:'one', opts:['n/a','yes','no','partial'], cols:4, flag:'Test E17 (round climate) and E199 (this question) both read Shade. Shown here as Shade_Event to keep the two separable; the final name is Janet\u2019s call.'},
+  {id:'topo', code:'Topography1', col:'Topography', group:'Topography', label:'Topography', hint:'What were the topography conditions where the play event occurred', kind:'one', opts:['Flat - Ground level','Flat - Raised level','Low slope','Moderate slope','Steep Slope','Uneven or rolling surface','Other'], cols:2},
+  {id:'topoOther', code:'Topography2', col:'Topography_Other', group:'Topography', label:'Other Topography Description', kind:'text', ph:'100 characters', when:a=>a.topo==='Other'}
+];
+
+const CLIMATE = [
+  {id:'weather', code:'Climate1', col:'Weather', label:'Current weather conditions', hint:'Select all options that apply', many:true, opts:['Full sun','Partial sun/cloud','cloudy/overcast','foggy/misty','light rain','heavy rain']},
+  {id:'wind', code:'Climate2', col:'Wind', label:'Current wind conditions', hint:'Select most appropriate option', opts:['No wind','light wind','heavy wind','occassional gusts']},
+  {id:'shadeR', code:'Climate3', col:'Shade', label:'Shade conditions', hint:'Select most appropriate option', opts:['Full sun','partial shade','dappled shade','full shade']}
+];
+
+const SEED = [
+  {id:'OBS-0142', zone:'B', sub:'ii', round:3, time:'10:52', st:'synced', rev:1, formVer:'v4'},
+  {id:'OBS-0143', zone:'B', sub:'ii', round:3, time:'11:04', st:'synced', rev:1, formVer:'v4'},
+  {id:'OBS-0144', zone:'B', sub:'i', round:3, time:'11:19', st:'device', rev:1, formVer:'v4'},
+  {id:'OBS-0145', zone:'C', sub:'i', round:3, time:'11:31', st:'device', rev:1, formVer:'v4'},
+  {id:'OBS-0139', zone:'A', sub:'ii', round:2, time:'09:47', st:'attention', rev:1, formVer:'v3'}
+];
+
+const CHIPS = {
+  device:   {glyph:'▣', label:'On device', border:'#5d5d60', color:'#4a4a4c'},
+  queued:   {glyph:'◷', label:'Waiting',   border:'#7d5504', color:'#6b4703'},
+  syncing:  {glyph:'◐', label:'Syncing',   border:'#5980a6', color:'#2c455d'},
+  synced:   {glyph:'✓', label:'Synced',    border:'#2f6b46', color:'#1f4c31'},
+  attention:{glyph:'◼', label:'Attention', border:'#a32a1e', color:'#7d1f16'}
+};
+
+const SIM = {
+  projects:'Project assignment list is static front-end data. No authentication or server call happens when you sign in or open a project.',
+  site:'Download progress, the failure at 68%, byte sizes and the four component checks are scripted timers. No tiles, layers or form definitions are actually fetched or written.',
+  round:'Round context is held in memory only. In the real product it is written to local storage as a round record and snapshotted onto every event in the round.',
+  collect:'The map is a hand-drawn vector site plan, not a georeferenced package — real MapLibre rendering, CRS handling and offline tiles are out of scope here. Placement, nudging, layer visibility and every conditional-display rule are real. GPS is a static dot.',
+  receipt:'The record is held in browser memory for this session, not in SQLite. The receipt reflects the intended contract: atomic local write before this screen can appear.',
+  records:'Sync attempts, the 68%-style progress, server acknowledgement, the expired session and the rejected record are all scripted front-end states. Nothing leaves this page.',
+  record:'The competing-edit comparison uses invented server values to show the shape of the recovery flow. No revision numbers or conflicts are computed.',
+  resume:'Force-quit reloads the screen state; real drafts and records would be read back from device storage at launch.'
+};
+
+class Component extends DCLogic {
+  state = {
+    device:'phone', screen:'projects', online:false,
+    dl:{status:'none', pct:0},
+    round:{zone:'B', sub:'ii', rel:false, first:false, weather:['Partial sun/cloud'], wind:'light wind', shadeR:'dappled shade'},
+    pt:null, gps:false,
+    layers:{aerial:true, paths:true, zones:true, trees:true, obs:true},
+    ans:{}, errs:{}, hidden:null,
+    recs:SEED.slice(), seq:146,
+    sync:{phase:'idle', pct:0, msg:'Nothing has been sent yet. 2 records are waiting on this device.'},
+    authUsed:false, openId:null, resolved:null,
+    journal:[{t:'9:38', m:'Package verified on device — 4 of 4 components'},{t:'9:41', m:'Signed in as AK'}],
+    savedRec:null
+  };
+
+  componentWillUnmount(){ clearInterval(this._dl); clearInterval(this._sy); }
+
+  log(m){ this.setState(s=>{ const n=s.journal.length; const mins=41+n*3; const t=(9+Math.floor(mins/60))+':'+String(mins%60).padStart(2,'0'); return {journal:[...s.journal.slice(-7),{t,m}]}; }); }
+
+  go(screen){ return ()=>{ this.setState({screen}); }; }
+
+  // ── download ──
+  startDownload = () => {
+    clearInterval(this._dl);
+    this.setState(s=>({dl:{status:'running', pct:s.dl.pct}}));
+    this.log('Download started over Wi-Fi');
+    this._dl = setInterval(()=>{
+      this.setState(s=>{
+        const failed = s.dl.pct < 68 && !s.dl.retried;
+        const pct = s.dl.pct + 4;
+        if(failed && pct >= 68){ clearInterval(this._dl); return {dl:{status:'failed', pct:68, retried:true}}; }
+        if(pct >= 100){ clearInterval(this._dl); return {dl:{status:'ready', pct:100, retried:true}}; }
+        return {dl:{status:'running', pct, retried:s.dl.retried}};
+      });
+    }, 130);
+  };
+
+  // ── map ──
+  placePoint = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(4, Math.min(96, ((e.clientX - r.left)/r.width)*100));
+    const y = Math.max(4, Math.min(96, ((e.clientY - r.top)/r.height)*100));
+    const first = !this.state.pt;
+    this.setState({pt:{x,y}});
+    if(first) this.log('Point placed manually — draft written to storage');
+  };
+  nudge(dx,dy){ return ()=>this.setState(s=>({pt:s.pt?{x:Math.max(2,Math.min(98,s.pt.x+dx)), y:Math.max(2,Math.min(98,s.pt.y+dy))}:null})); }
+  clearPoint = () => { this.setState({pt:null}); this.log('Point cleared — draft answers kept'); };
+  toggleGps = () => this.setState(s=>({gps:!s.gps}));
+  toggleLayer(k){ return ()=>this.setState(s=>({layers:{...s.layers,[k]:!s.layers[k]}})); }
+
+  // ── form ──
+  visibleIds(ans){
+    const out=[];
+    for(const q of QS){
+      if(q.dyn){ if(ans[q.dyn]) out.push(q.id); continue; }
+      if(!q.when || q.when(ans)) out.push(q.id);
+    }
+    return out;
+  }
+  applyAnswer(id, val){
+    this.setState(s=>{
+      const before = this.visibleIds(s.ans);
+      const ans = {...s.ans};
+      if(val===null) delete ans[id]; else ans[id]=val;
+      const after = this.visibleIds(ans);
+      const lost = before.filter(x=>!after.includes(x) && ans[x]!==undefined);
+      let hidden = null;
+      if(lost.length){
+        const bag={};
+        for(const x of lost){ bag[x]=ans[x]; delete ans[x]; }
+        const names = lost.map(x=>{ const q=QS.find(k=>k.id===x); return q ? (q.dyn ? 'play subtype' : q.code) : x; });
+        hidden = {ids:lost, bag, names:names.join(', '), prev:s.ans[id]===undefined?null:s.ans[id], target:id};
+      }
+      const errs = {...s.errs}; delete errs[id];
+      return {ans, hidden, errs};
+    });
+  }
+  pick(id,val,many){ return ()=>{
+    if(many){ this.setState(s=>{ const cur=s.ans[id]||[]; const next=cur.includes(val)?cur.filter(v=>v!==val):[...cur,val]; return {ans:{...s.ans,[id]:next}}; }); return; }
+    const cur = this.state.ans[id];
+    this.applyAnswer(id, cur===val ? null : val);
+  }; }
+  typeIn(id){ return (e)=>{ const v=e.target.value; this.setState(s=>{ const errs={...s.errs}; delete errs[id]; return {ans:{...s.ans,[id]:v}, errs}; }); }; }
+  undoHidden = () => {
+    this.setState(s=>{
+      if(!s.hidden) return {};
+      const ans={...s.ans, ...s.hidden.bag};
+      if(s.hidden.prev===null) delete ans[s.hidden.target]; else ans[s.hidden.target]=s.hidden.prev;
+      return {ans, hidden:null};
+    });
+  };
+
+  saveObs = () => {
+    const a = this.state.ans;
+    const errs = {};
+    if(!a.summary || !a.summary.trim()) errs.summary = 'A play event summary is required by the protocol before the record can be saved.';
+    if(!a.age) errs.age = 'Child age range is required.';
+    if(!a.grp) errs.grp = 'Group composition is required.';
+    if(!a.pt1) errs.pt1 = 'Primary play type 1 is required.';
+    if(a.pt1 && !a.sub1) errs.sub1 = 'The subtype for ' + a.pt1 + ' is required once a play type is chosen.';
+    if(Object.keys(errs).length){ this.setState({errs}); this.log('Save blocked — '+Object.keys(errs).length+' required answers missing'); return; }
+    const id = 'OBS-0' + this.state.seq;
+    const rec = {id, zone:this.state.round.zone, sub:this.state.round.sub, round:3, time:'11:'+(38+(this.state.seq-146)*4), st:'device', rev:1, formVer:'v4', mine:true};
+    this.setState(s=>({recs:[...s.recs, rec], seq:s.seq+1, savedRec:{id, count:Object.keys(s.ans).length}, screen:'receipt', errs:{}, hidden:null}));
+    this.log('Record '+id+' committed to local storage');
+    if(this.state.online) setTimeout(this.runSync, 700);
+  };
+  nextObs = () => { this.setState({ans:{}, pt:null, errs:{}, hidden:null, screen:'map'}); this.log('New observation — round and zone context retained'); };
+  discard = () => { this.setState({ans:{}, pt:null, errs:{}, hidden:null, screen:'map'}); this.log('Draft discarded'); };
+
+  // ── sync ──
+  toggleOnline = () => {
+    const next = !this.state.online;
+    this.setState({online:next});
+    if(next){
+      this.log('Connectivity restored — automatic sync attempt queued');
+      this.setState(s=>({recs:s.recs.map(r=>r.st==='device'?{...r,st:'queued'}:r), sync:{phase:'queued', pct:0, msg:'Connectivity detected. Being online is not the same as being synced — the attempt starts on its own in a moment.'}}));
+      setTimeout(this.runSync, 900);
+    } else {
+      clearInterval(this._sy);
+      this.log('Connectivity lost — local work untouched');
+      this.setState(s=>({sync:{phase:'offline', pct:0, msg:'No connection. Records stay on this device; the queue is preserved exactly as it is.'}, recs:s.recs.map(r=>r.st==='syncing'||r.st==='queued'?{...r,st:'device'}:r)}));
+    }
+  };
+  runSync = () => {
+    if(!this.state.online) return;
+    clearInterval(this._sy);
+    this.setState(s=>({sync:{phase:'running', pct:0, msg:'Uploading with operation IDs so a retry cannot duplicate a record.'}, recs:s.recs.map(r=>(r.st==='device'||r.st==='queued')?{...r,st:'queued'}:r)}));
+    this._sy = setInterval(()=>{
+      this.setState(s=>{
+        const pct = s.sync.pct + 7;
+        const q = s.recs.filter(r=>r.st==='queued'||r.st==='syncing');
+        if(!q.length){ clearInterval(this._sy); return {sync:{phase:'done', pct:100, msg:'All records acknowledged by the server. “Synced” is shown only for revisions the server confirmed.'}}; }
+        if(!s.authUsed && pct >= 42){
+          clearInterval(this._sy);
+          const recs = s.recs.slice();
+          const firstQ = recs.findIndex(r=>r.st==='queued');
+          if(firstQ>-1) recs[firstQ] = {...recs[firstQ], st:'synced'};
+          return {authUsed:true, recs, sync:{phase:'auth', pct:42, msg:'Upload interrupted.'}};
+        }
+        const recs = s.recs.slice();
+        const i = recs.findIndex(r=>r.st==='queued');
+        if(pct % 21 === 0 && i>-1){ recs[i] = {...recs[i], st:'synced'}; }
+        if(pct >= 100){ clearInterval(this._sy); return {recs:recs.map(r=>r.st==='queued'?{...r,st:'synced'}:r), sync:{phase:'done', pct:100, msg:'All queued records acknowledged. OBS-0139 still needs attention — a rejected record is not a failed upload.'}}; }
+        return {recs, sync:{phase:'running', pct, msg:'Uploading with operation IDs so a retry cannot duplicate a record.'}};
+      });
+    }, 220);
+  };
+  reauth = () => { this.log('Re-authenticated — resuming from the same queue'); this.setState({sync:{phase:'running', pct:42, msg:'Signed back in. Resuming from the queue; already-acknowledged records are not re-sent.'}}); setTimeout(this.runSync, 350); };
+
+  resolve(kind){ return ()=>{
+    const map = {
+      mine:['Your version re-submitted as revision 3','Your answers were sent as a new revision on top of the server\u2019s revision 2. The other observer\u2019s edit stays in the history; nothing was overwritten silently.'],
+      theirs:['Server version kept','Your local edit was discarded and the record now matches revision 2. The discarded values are retained in this device\u2019s audit log for 30 days.'],
+      split:['Saved as a separate observation','Your answers became a new record with a new UUID, positioned at the same coordinates. Both observations are independently exportable.'],
+      escalate:['Sent to the project manager','The record is flagged for adjudication in the web workspace. It stays on this device, unsent, until the manager decides — appropriate when the disagreement is about protocol rather than data entry.']
+    };
+    const [title, body] = map[kind];
+    this.setState(s=>({resolved:{title,body}, recs:s.recs.map(r=>r.id===s.openId?{...r, st: kind==='escalate'?'attention':'synced'}:r)}));
+    this.log('OBS-0139 resolved — '+title.toLowerCase());
+  }; }
+
+  relaunch = () => {
+    this.log('App relaunched — reading device storage');
+    this.setState({screen:'resume', sync:{phase:this.state.online?'queued':'offline', pct:0, msg:this.state.online?'Launch sync attempt queued.':'Offline at launch. Unsent work is intact.'}});
+    if(this.state.online) setTimeout(this.runSync, 1100);
+  };
+  resetAll = () => { clearInterval(this._dl); clearInterval(this._sy); this.setState({device:this.state.device, screen:'projects', online:false, dl:{status:'none',pct:0}, round:{zone:'B',sub:'ii',rel:false,first:false,weather:['Partial sun/cloud'],wind:'light wind',shadeR:'dappled shade'}, pt:null, gps:false, ans:{}, errs:{}, hidden:null, recs:SEED.slice(), seq:146, sync:{phase:'idle',pct:0,msg:'Nothing has been sent yet. 2 records are waiting on this device.'}, authUsed:false, openId:null, resolved:null, journal:[{t:'9:38',m:'Package verified on device — 4 of 4 components'},{t:'9:41',m:'Signed in as AK'}], savedRec:null}); };
+
+  chipStyleFor(k){ const c=CHIPS[k]; return {borderColor:c.border, color:c.color}; }
+
+  renderVals(){
+    const s = this.state;
+    const phone = s.device === 'phone';
+    const sc = s.screen;
+    const collect = sc==='map' || sc==='form';
+    const zone = s.round.zone;
+    const subLabel = '·' + s.round.sub;
+
+    // questions
+    const ans = s.ans;
+    const vis = this.visibleIds(ans);
+    let lastGroup = '';
+    const questions = vis.map(id=>{
+      const q = QS.find(k=>k.id===id);
+      let label=q.label, col=q.col, opts=q.opts, code=q.code, hint=q.hint;
+      if(q.dyn){
+        const pt = ans[q.dyn];
+        const d = SUBS[pt];
+        code = 'PlaySubtype';
+        col = d[0] + q.slot;
+        label = d[1];
+        hint = 'Choose the subtype of ' + pt + ' play involved in the play event';
+        opts = d[2];
+      }
+      const val = ans[id];
+      const many = q.kind==='many';
+      const isChoice = q.kind==='one' || many;
+      const cols = q.cols || 1;
+      const groupFirst = q.group !== lastGroup;
+      if(groupFirst) lastGroup = q.group;
+      const err = s.errs[id];
+      return {
+        id, domId:'fo-q-'+id, code, col, group:q.group, groupFirst, label, hint, hasHint: !!hint,
+        required: !!q.req, revealed: !!q.when || !!q.dyn,
+        isChoice, isText: q.kind==='text', isArea: q.kind==='area',
+        value: val || '', chars: (val||'').length, ph: q.ph || '',
+        type: this.typeIn(id),
+        hasErr: !!err, err: err || '',
+        hasFlag: !!q.flag, flag: q.flag || '',
+        optsStyle: {display:'grid', gridTemplateColumns:'repeat('+cols+', minmax(0, 1fr))', gap:'6px'},
+        wrapStyle: {marginBottom:'18px', paddingLeft: (q.when||q.dyn) ? '10px' : '0', borderLeft: (q.when||q.dyn) ? '2px solid #5980a6' : '0'},
+        options: (opts||[]).map(o=>{
+          const on = many ? (val||[]).includes(o) : val===o;
+          return {label:o, on, off:!on, tick: many ? '✓' : '●', pick:this.pick(id,o,many)};
+        })
+      };
+    });
+
+    const errKeys = Object.keys(s.errs);
+    const dlStatus = s.dl.status;
+    const compState = (threshold) => dlStatus==='ready' ? 'synced' : (dlStatus==='failed' ? (threshold<=40?'synced':'attention') : (dlStatus==='running' ? (s.dl.pct>threshold?'synced':'syncing') : 'device'));
+    const dlRows = [
+      {name:'Aerial imagery tiles', detail:'z16–z20, site extent + 40 m buffer, institution-licensed', size:'146 MB', st:compState(60)},
+      {name:'Site reference layers', detail:'paths, play areas, trees, zone polygons A/B/C', size:'11 MB', st:compState(20)},
+      {name:'Published form', detail:'v4 · 74 variables · 31 display rules', size:'0.4 MB', st:compState(10)},
+      {name:'Zone & round reference data', detail:'3 zones, 6 subzones, rounds 1–6, observer assignments', size:'0.2 MB', st:compState(15)}
+    ].map(r=>({name:r.name, detail:r.detail, size:r.size, state: r.st==='synced'?'verified':(r.st==='syncing'?'writing':(r.st==='attention'?'incomplete':'not downloaded')), glyph:CHIPS[r.st].glyph, chipStyle:this.chipStyleFor(r.st)}));
+
+    const st = s.sync.phase;
+    const tallyOf = k => s.recs.filter(r=>r.st===k).length;
+    const unsent = s.recs.filter(r=>r.st!=='synced').length;
+    const openRecObj = s.recs.find(r=>r.id===s.openId) || s.recs[0];
+    const isRejected = openRecObj && openRecObj.st==='attention' && !s.resolved;
+
+    const draftCount = Object.keys(ans).length;
+    const simKey = collect ? 'collect' : (sc==='receipt' ? 'receipt' : (sc==='record' ? 'record' : sc));
+
+    return {
+      // shell
+      isPhone: phone, isTablet: !phone,
+      setPhone: ()=>this.setState({device:'phone'}), setTablet: ()=>this.setState({device:'tablet'}),
+      online: s.online, offline: !s.online,
+      netLabel: s.online ? 'Go offline' : 'Go online',
+      toggleOnline: this.toggleOnline, relaunch: this.relaunch, resetAll: this.resetAll, noop: ()=>{},
+      frameStyle: {width: phone ? '390px' : '1024px', height: phone ? '844px' : '768px', display:'flex', flexDirection:'column', overflow:'hidden'},
+      steps: [
+        ['1','Projects','projects'],['2','Offline','site'],['3','Round','round'],['4','Map','map'],['5','Form','form'],['6','Saved','receipt'],['7','Sync','records'],['8','Recovery','record'],['9','Relaunch','resume']
+      ].map(([n,label,key])=>{
+        const on = sc===key || (key==='record' && sc==='record');
+        return {n, label, on, off:!on, go:()=>{ if(key==='record') this.setState({screen:'record', openId:'OBS-0139', resolved:null}); else this.setState({screen:key}); }};
+      }),
+      simNote: SIM[simKey] || SIM.projects,
+      journal: s.journal.slice().reverse(),
+
+      // screens
+      atProjects: sc==='projects', atSite: sc==='site', atRound: sc==='round',
+      atCollect: collect, atReceipt: sc==='receipt', atRecords: sc==='records',
+      atRecord: sc==='record', atResume: sc==='resume',
+      goProjects: this.go('projects'), goSite: this.go('site'), goRound: this.go('round'),
+      goMap: this.go('map'), goForm: this.go('form'), goRecords: this.go('records'),
+      goCollect: this.go('map'), backToCollect: this.go('map'),
+
+      // projects
+      projects: [
+        {name:'Riverside Play Study', site:'North Playground', zones:'3 zones', form:'v4', size: dlStatus==='ready' ? '214 MB on device' : '214 MB', rounds:'Round 3 of 6',
+         chip: dlStatus==='ready' ? '✓ Ready offline' : (dlStatus==='failed' ? '◼ Incomplete' : (dlStatus==='running' ? '◐ Downloading' : '▣ Not downloaded')),
+         chipStyle: this.chipStyleFor(dlStatus==='ready'?'synced':(dlStatus==='failed'?'attention':(dlStatus==='running'?'syncing':'device'))),
+         go: this.go('site')},
+        {name:'Riverside Play Study', site:'Meadow', zones:'2 zones', form:'v4', size:'96 MB', rounds:'Round 1 of 6', chip:'▣ Not downloaded', chipStyle:this.chipStyleFor('device'), go:this.go('site')},
+        {name:'Courtyard Pilot', site:'Courtyard', zones:'1 zone', form:'v2 · draft', size:'—', rounds:'Not published', chip:'◷ No form yet', chipStyle:this.chipStyleFor('queued'), go:()=>{}}
+      ],
+
+      // download
+      dlRows, dlSummary: dlStatus==='ready' ? 'Verified 9:38 today. Re-check before each field day.' : (dlStatus==='failed' ? 'One component failed. A project is only ready when all four verify.' : 'Four components must each verify. A cached thumbnail is not readiness.'),
+      dlRunning: dlStatus==='running', dlFailed: dlStatus==='failed', dlReady: dlStatus==='ready', dlNone: dlStatus==='none',
+      notReady: dlStatus!=='ready',
+      dlPct: s.dl.pct, dlDone: Math.round(214*s.dl.pct/100),
+      barStyle: {width: s.dl.pct+'%', height:'100%', background:'#5980a6'},
+      startDownload: this.startDownload,
+      roundCta: 'Start round 3 — zone ' + zone,
+
+      // round
+      zone, subLabel,
+      zoneOpts: ['A','B','C'].map(z=>({label:z, on:z===zone, off:z!==zone, pick:()=>{ if(z!==zone){ this.setState(st2=>({round:{...st2.round, zone:z, sub:'i'}, ans:{}, pt:null})); this.log('Zone changed to '+z+' — event answers and point reset, round climate retained'); } }})),
+      subOpts: ['i','ii','iii'].map(z=>({label:zone.toLowerCase()+'·'+z, on:z===s.round.sub, off:z!==s.round.sub, pick:()=>this.setState(st2=>({round:{...st2.round, sub:z}}))})),
+      relOn: s.round.rel, relOff: !s.round.rel,
+      toggleRel: ()=>this.setState(st2=>({round:{...st2.round, rel:!st2.round.rel}})),
+      firstOn: s.round.first, firstOff: !s.round.first,
+      toggleFirst: ()=>this.setState(st2=>({round:{...st2.round, first:!st2.round.first}})),
+      climateQs: CLIMATE.map(c=>({code:c.code, col:c.col, label:c.label, hint:c.hint,
+        options: c.opts.map(o=>{
+          const cur = s.round[c.id];
+          const on = c.many ? (cur||[]).includes(o) : cur===o;
+          return {label:o, on, off:!on, pick:()=>this.setState(st2=>{
+            const r={...st2.round};
+            if(c.many){ const arr=r[c.id]||[]; r[c.id]=arr.includes(o)?arr.filter(v=>v!==o):[...arr,o]; } else { r[c.id]=o; }
+            return {round:r};
+          })};
+        })})),
+      climateChip: (s.round.weather[0]||'—') + ' · ' + s.round.wind,
+
+      // map / form panes
+      splitStyle: {flex:1, minHeight:0, display:'flex', flexDirection: phone ? 'column' : 'row'},
+      mapPaneStyle: {display: (phone && sc==='form') ? 'none' : 'flex', flexDirection:'column', minHeight:0, minWidth:0, flex: phone ? 1 : '0 0 58%', borderRight: phone ? '0' : '1px solid #1d1f2029'},
+      formPaneStyle: {display: (phone && sc==='map') ? 'none' : 'flex', flexDirection:'column', minHeight:0, minWidth:0, flex:1},
+      phoneMapOnly: phone && sc==='map', phoneFormOnly: phone && sc==='form',
+      layerAerial: s.layers.aerial, layerPaths: s.layers.paths, layerZones: s.layers.zones, layerTrees: s.layers.trees, layerObs: s.layers.obs,
+      layerRows: [['aerial','Aerial imagery'],['paths','Paths'],['zones','Zone polygons'],['trees','Trees'],['obs','Observations']].map(([k,name])=>({
+        name, toggle:this.toggleLayer(k), mark: s.layers[k] ? '✓' : '',
+        boxStyle: {width:'16px', height:'16px', flex:'none', display:'grid', placeItems:'center', fontSize:'11px', lineHeight:1, border:'1px solid #1d1f2055', background: s.layers[k] ? '#5980a6' : 'transparent', color:'#fff'}
+      })),
+      hasPoint: !!s.pt, noPoint: !s.pt,
+      ptStyle: s.pt ? {left: s.pt.x+'%', top: s.pt.y+'%'} : {left:'50%', top:'50%'},
+      ptLat: s.pt ? (49.2607 + (50-s.pt.y)*0.000018).toFixed(6) : '—',
+      ptLng: s.pt ? (-123.1341 + (s.pt.x-50)*0.000026).toFixed(6) : '—',
+      placePoint: this.placePoint, clearPoint: this.clearPoint,
+      nudgeUp: this.nudge(0,-0.6), nudgeDown: this.nudge(0,0.6), nudgeLeft: this.nudge(-0.6,0), nudgeRight: this.nudge(0.6,0),
+      gps: s.gps, noGps: !s.gps, toggleGps: this.toggleGps,
+      formCta: s.pt ? 'Complete the observation' : 'Place a point first',
+      formTitle: s.pt ? 'New observation' : 'Awaiting a point',
+      answeredLabel: draftCount + ' of ' + vis.length + ' answered',
+      questions, qTotal: QS.length,
+      hasErrs: errKeys.length>0, errCount: errKeys.length,
+      errJumps: errKeys.map(k=>{
+        const q=QS.find(x=>x.id===k);
+        return {code: q ? q.code : k, jump: ()=>{
+          const el = document.getElementById('fo-q-'+k);
+          if(!el) return;
+          const t = el.querySelector('textarea, input, button');
+          if(t) t.focus({preventScroll:false});
+        }};
+      }),
+      hasHidden: !!s.hidden,
+      hiddenPhrase: s.hidden ? (s.hidden.ids.length===1 ? 'One answer' : s.hidden.ids.length+' answers') : '',
+      hiddenNames: s.hidden ? s.hidden.names : '', undoHidden: this.undoHidden,
+      saveObs: this.saveObs, discard: this.discard,
+      savedLabel: 'Saved work · ' + unsent + ' unsent',
+
+      // receipt
+      receiptRows: s.savedRec ? [
+        {k:'Record', v:s.savedRec.id},
+        {k:'Written', v:'local database · atomic'},
+        {k:'UUID', v:'a31f…9c2 (generated on device)'},
+        {k:'Form version', v:'v4 — bound to this record'},
+        {k:'Context snapshot', v:'round 3 · zone '+zone+subLabel+' · AK'},
+        {k:'Answers stored', v:s.savedRec.count+' answered, hidden ones as n/a'},
+        {k:'Sync state', v: s.online ? 'waiting to sync' : 'on device — no connection'}
+      ] : [{k:'Record', v:'—'}],
+      nextObs: this.nextObs,
+
+      // records
+      tally: [
+        {label:'On device', n:tallyOf('device'), color:{color:'#4a4a4c'}},
+        {label:'Waiting', n:tallyOf('queued'), color:{color:'#6b4703'}},
+        {label:'Synced', n:tallyOf('synced'), color:{color:'#1f4c31'}},
+        {label:'Attention', n:tallyOf('attention'), color:{color:'#7d1f16'}}
+      ],
+      netChip: s.online ? '▮▮▮ Connected' : '▮ No connection',
+      netChipStyle: s.online ? this.chipStyleFor('synced') : this.chipStyleFor('queued'),
+      syncChip: st==='running' ? '◐ Syncing' : (st==='done' ? '✓ Up to date' : (st==='auth' ? '◼ Sign-in needed' : (st==='queued' ? '◷ Attempt queued' : '▣ Not synced'))),
+      syncChipStyle: this.chipStyleFor(st==='running'?'syncing':(st==='done'?'synced':(st==='auth'?'attention':(st==='queued'?'queued':'device')))),
+      syncMsg: s.sync.msg,
+      syncRunning: st==='running',
+      syncBarStyle: {width: s.sync.pct+'%', height:'100%', background:'#5980a6'},
+      authExpired: st==='auth', stuckCount: s.recs.filter(r=>r.st==='queued').length,
+      canSync: s.online && st!=='running' && st!=='auth',
+      runSync: this.runSync, reauth: this.reauth,
+      recRows: s.recs.slice().reverse().map(r=>({
+        id:r.id, time:r.time, state:CHIPS[r.st].label, glyph:CHIPS[r.st].glyph, chipStyle:this.chipStyleFor(r.st),
+        meta:'Zone '+r.zone+'·'+r.sub+' · round '+r.round+' · form '+r.formVer,
+        note: r.st==='attention', noteText:'Rejected — a competing edit was accepted first. Tap to resolve.',
+        open: ()=>this.setState({screen:'record', openId:r.id, resolved:null})
+      })),
+
+      // record detail
+      openRec: openRecObj ? {id:openRecObj.id, meta:'Zone '+openRecObj.zone+'·'+openRecObj.sub+' · round '+openRecObj.round+' · '+openRecObj.time, state:CHIPS[openRecObj.st].label, glyph:CHIPS[openRecObj.st].glyph, chipStyle:this.chipStyleFor(openRecObj.st), formVer:openRecObj.formVer} : {},
+      recRejected: isRejected, recResolved: !!s.resolved, recPlain: !isRejected && !s.resolved,
+      resolvedTitle: s.resolved ? s.resolved.title : '', resolvedBody: s.resolved ? s.resolved.body : '',
+      diffRows: [
+        {col:'Grp_Composition', mine:'1:1 with peer', theirs:'Group children w NO adult(s)', mineStyle:{background:'#f6dcd7'}, theirsStyle:{background:'#f6dcd7'}},
+        {col:'No_Other_Children', mine:'1', theirs:'3 to 6', mineStyle:{background:'#f6dcd7'}, theirsStyle:{background:'#f6dcd7'}},
+        {col:'Play_Type_1', mine:'Physical', theirs:'Physical', mineStyle:{}, theirsStyle:{}},
+        {col:'Phys_Subtype1', mine:'Rough & Tumble', theirs:'Rough & Tumble', mineStyle:{}, theirsStyle:{}}
+      ],
+      resolutions: [
+        {title:'Keep my version', body:'Sends your answers as revision 3. The other edit stays in history.', pick:this.resolve('mine')},
+        {title:'Keep the server version', body:'Discards your local edit. Kept in this device\u2019s audit log for 30 days.', pick:this.resolve('theirs')},
+        {title:'Save mine as a separate observation', body:'New UUID at the same coordinates — right when you both saw different events.', pick:this.resolve('split')},
+        {title:'Send to the project manager', body:'For protocol disagreements. Stays unsent until adjudicated on web.', pick:this.resolve('escalate')}
+      ],
+      recDetail: [
+        {k:'Record', v:openRecObj?openRecObj.id:'—'},
+        {k:'Coordinates', v:'49.260714, -123.134082'},
+        {k:'Form version', v:openRecObj?openRecObj.formVer:'—'},
+        {k:'Observer', v:'AK'},
+        {k:'Play_Type_1', v:'Exploratory'},
+        {k:'Expl_Subtype1', v:'Constructive'},
+        {k:'LP_Intn_Binary', v:'Yes'},
+        {k:'Nat_LPs_Sm_List', v:'Sticks, Leaves'},
+        {k:'Mfgd_LPs_Sm', v:'n/a — hidden by display logic'}
+      ],
+
+      // resume
+      hasDraft: draftCount>0 || !!s.pt, noDraft: draftCount===0 && !s.pt,
+      draftCount, recCount: s.recs.length, unsentCount: unsent,
+      launchSync: s.online ? 'Launch sync attempt started automatically — connectivity was available at launch.' : 'No connection at launch. Nothing was attempted; nothing was lost.'
+    };
+  }
+}
+</script>
+</body>
+</html>

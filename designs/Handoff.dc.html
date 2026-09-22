@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/styles.css">
+<script src="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; }
+  a { color: var(--color-accent-700); }
+  a:hover { color: var(--color-accent-800); }
+  .k { font-family: var(--font-heading); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-700); }
+  .num { font-variant-numeric: tabular-nums; }
+  .sec { font-family: var(--font-heading); font-size: 13px; letter-spacing: .08em; color: var(--color-accent-700); }
+  .lede { font-size: 15px; line-height: 1.65; max-width: 74ch; color: var(--color-neutral-800); }
+  .t { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .t th { text-align: left; font-family: var(--font-heading); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-neutral-700); padding: 7px 9px; border-bottom: 1px solid var(--color-text); vertical-align: bottom; }
+  .t td { padding: 8px 9px; border-bottom: 1px solid color-mix(in srgb, var(--color-text) 9%, transparent); vertical-align: top; line-height: 1.5; }
+  .sw { width: 18px; height: 18px; display: inline-block; border: 1px solid rgba(0,0,0,.25); vertical-align: -4px; }
+  code { font-size: 11.5px; background: var(--color-neutral-200); padding: 1px 4px; }
+  .q { border: 1px solid var(--color-divider); padding: 14px 16px; }
+</style>
+</helmet>
+
+<div style="max-width: 1180px; margin: 0 auto; padding: 40px 26px 100px; font-family: var(--font-body);">
+
+  <header style="border-bottom: 1px solid var(--color-text); padding-bottom: 14px;">
+    <div class="k">Riverside Play Study · Survey Sheet direction</div>
+    <h1 style="font-size: 50px; margin: 6px 0 10px; letter-spacing: -.02em;">Developer handoff</h1>
+    <p class="lede" style="margin: 0;">Tokens, components, the data-scope model, the sync state machine, and the
+      research-protocol questions that must be answered before the instrument can be generated from Janet's
+      workbook. Written against React Native / Expo with MapLibre on mobile and Next.js on the web.</p>
+  </header>
+
+  <section style="margin-top: 44px;">
+    <div class="sec">01 — What is in this project</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider); margin-top: 12px;">
+      <div style="background: var(--color-bg); padding: 15px 16px;">
+        <div class="k">Design decisions</div>
+        <h5 style="margin: 5px 0 6px; font-size: 16px;"><a href="Direction Study.dc.html">Direction Study</a></h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Journeys, the five consequential decisions, three visual directions with tokens and licensing, the selection and its reasoning.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 15px 16px;">
+        <div class="k">Mobile prototype</div>
+        <h5 style="margin: 5px 0 6px; font-size: 16px;"><a href="Riverside Collector.dc.html">Riverside Collector</a></h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Nine screens, phone portrait and tablet landscape, with real conditional logic, validation, download failure, sync recovery and draft recovery.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 15px 16px;">
+        <div class="k">Web prototype</div>
+        <h5 style="margin: 5px 0 6px; font-size: 16px;"><a href="Riverside Workspace.dc.html">Riverside Workspace</a></h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Coordinated map and table over one filter set, observation detail, quality flags, export, the QGIS connection area, and form setup with versioned publication.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 15px 16px;">
+        <div class="k">Source data read</div>
+        <h5 style="margin: 5px 0 6px; font-size: 16px;">Parsed workbooks</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Both spreadsheets extracted to tab-separated text with hidden rows marked <code>[H]</code>, so every code, column name and rule in the designs is traceable to a cell.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">02 — Tokens</div>
+    <h2 style="font-size: 28px; margin: 8px 0 8px;">Colour</h2>
+    <p class="lede" style="margin-bottom: 16px;">The steel ramp is the design system's; the semantic set is the one
+      addition this product needs, chosen to sit on the same ground without touching the accent hue. Four
+      palettes, none of which can be confused for another.</p>
+
+    <table class="t">
+      <thead><tr><th style="width: 64px;">Swatch</th><th>Token</th><th>Value</th><th>Role</th><th>Contrast on <code>#f2f2f3</code></th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background: #f2f2f3;"></span></td><td><code>--color-bg</code></td><td class="num">#f2f2f3</td><td>Page ground, both platforms</td><td class="num">—</td></tr>
+        <tr><td><span class="sw" style="background: #e9e9ea;"></span></td><td><code>--color-surface</code></td><td class="num">#e9e9ea</td><td>Input fills, locked context strips</td><td class="num">—</td></tr>
+        <tr><td><span class="sw" style="background: #1d1f20;"></span></td><td><code>--color-text</code></td><td class="num">#1d1f20</td><td>Body and headings</td><td class="num">15.3 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #5980a6;"></span></td><td><code>--color-accent</code></td><td class="num">#5980a6</td><td>Lines, crosshairs, reveal bars, focus ring, borders — never a fill behind text</td><td class="num">3.1 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #2c455d;"></span></td><td><code>--color-accent-800</code></td><td class="num">#2c455d</td><td>Filled controls: selected option, primary button</td><td class="num">9.0 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #1d2d3d;"></span></td><td><code>--color-accent-900</code></td><td class="num">#1d2d3d</td><td>Pressed state, active step, darkest chart band</td><td class="num">12.6 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #5d5d60;"></span></td><td><code>--fo-state-device</code></td><td class="num">#5d5d60</td><td>Saved on this device · glyph ▣</td><td class="num">5.9 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #7d5504;"></span></td><td><code>--fo-state-waiting</code></td><td class="num">#7d5504</td><td>Waiting to sync, workbook ambiguity, warning · glyph ◷ / ⚠</td><td class="num">5.6 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #2f6b46;"></span></td><td><code>--fo-state-synced</code></td><td class="num">#2f6b46</td><td>Synced, verified offline · glyph ✓</td><td class="num">4.9 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #a32a1e;"></span></td><td><code>--fo-state-attention</code></td><td class="num">#a32a1e</td><td>Needs attention, validation error, failed download · glyph ◼</td><td class="num">5.8 : 1</td></tr>
+        <tr><td><span class="sw" style="background: #f9f0da;"></span> <span class="sw" style="background: #d9e8de;"></span> <span class="sw" style="background: #f6dcd7;"></span></td><td><code>--fo-tint-waiting / -synced / -attention</code></td><td class="num">#f9f0da · #d9e8de · #f6dcd7</td><td>Banner grounds; the matching 700-weight ink sits on them, not the base</td><td class="num">—</td></tr>
+        <tr><td><span class="sw" style="background: #d7ddcb;"></span> <span class="sw" style="background: #c9c4b4;"></span> <span class="sw" style="background: #c3cdb4;"></span> <span class="sw" style="background: #dcdcd4;"></span></td><td><code>--fo-map-*</code></td><td class="num">#d7ddcb · #c9c4b4 · #c3cdb4 · #dcdcd4</td><td>Zone, path, canopy, hardstanding fills. Desaturated on purpose so markers and status never compete with the basemap</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 12.5px; color: var(--color-neutral-700); margin-top: 12px;">The three tint grounds are the
+      only fills that carry semantic hue. Status is always a glyph plus a word plus a colour, so the colour is
+      never load-bearing. Charts use the steel ramp alone — <code>#1d2d3d</code>, <code>#416180</code>,
+      <code>#94bce3</code> — and never a semantic value.</p>
+
+    <h2 style="font-size: 28px; margin: 36px 0 8px;">Type, space, targets, motion</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; margin-top: 12px;">
+      <div>
+        <div class="k" style="border-bottom: 1px solid var(--color-divider); padding-bottom: 5px;">Type</div>
+        <table class="t" style="margin-top: 4px;">
+          <tbody>
+            <tr><td style="font-family: var(--font-heading); font-weight: 600; font-size: 22px;">Barlow Condensed 600</td><td style="width: 40%;">Headings, buttons, kickers, numerals, table headers</td></tr>
+            <tr><td style="font-size: 15px;">Barlow 400 / 500 / 700</td><td>Questions, answers, body, table cells</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size: 12px; line-height: 1.6; color: var(--color-neutral-800); margin-top: 10px;">
+          Both SIL OFL. Bundle the static weights with <code>expo-font</code>; self-host the same files on the web
+          rather than calling Google Fonts, so a field tablet never waits on a network for chrome.
+        </div>
+        <table class="t" style="margin-top: 12px;">
+          <thead><tr><th>Step</th><th>Mobile</th><th>Web</th></tr></thead>
+          <tbody>
+            <tr><td>Screen title</td><td class="num">25 px / 600</td><td class="num">27–50 px / 600</td></tr>
+            <tr><td>Question label</td><td class="num">14.5 px / 500</td><td class="num">13 px / 500</td></tr>
+            <tr><td>Answer option</td><td class="num">14 px / 400</td><td class="num">12.5 px / 400</td></tr>
+            <tr><td>Instruction</td><td class="num">12 px / 400</td><td class="num">11.5 px / 400</td></tr>
+            <tr><td>Kicker / code</td><td class="num">10.5 px / 600 · 0.12em</td><td class="num">10.5 px / 600 · 0.12em</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 8px;">Variable codes set in the kicker
+          style throughout, so <code>LooseParts2</code> is always visually a code and never mistaken for content.
+          Everything scales with the OS text-size setting; question rows grow rather than truncate.</div>
+      </div>
+      <div>
+        <div class="k" style="border-bottom: 1px solid var(--color-divider); padding-bottom: 5px;">Space, targets, motion</div>
+        <table class="t" style="margin-top: 4px;">
+          <thead><tr><th>Token</th><th>Value</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td><code>--space-1…8</code></td><td class="num">3.4 · 6.8 · 10.2 · 13.6 · 20.4 · 27.2</td><td>0.85× density scale, unchanged</td></tr>
+            <tr><td><code>--radius-*</code></td><td class="num">0 everywhere in this product</td><td>Square corners; the frame is the identity</td></tr>
+            <tr><td>Answer option</td><td class="num">min-height 44 px</td><td>iOS minimum; 48 dp on Android via platform check</td></tr>
+            <tr><td>Primary action</td><td class="num">min-height 48 px</td><td>Save, download, start round</td></tr>
+            <tr><td>Map nudge control</td><td class="num">34 px, 2 px gap</td><td>Below 44 px deliberately — a secondary adjustment beside a 44 px point handle, always reachable by dragging the point instead</td></tr>
+            <tr><td>Focus ring</td><td class="num">2 px <code>--color-accent</code>, offset 2 px</td><td>Never the browser default</td></tr>
+            <tr><td>Reveal transition</td><td class="num">140 ms ease-out, height + opacity</td><td>Long enough to see a question appear, short enough not to delay the next tap</td></tr>
+            <tr><td>Sync progress</td><td class="num">continuous, no spinner</td><td>A determinate bar; a spinner cannot distinguish stalled from working</td></tr>
+            <tr><td>Screen change</td><td class="num">no slide, no fade</td><td>Repeated collection is faster without transitions between observations</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">03 — Components</div>
+    <h2 style="font-size: 28px; margin: 8px 0 14px;">Inventory</h2>
+    <table class="t">
+      <thead><tr><th>Component</th><th>What it is</th><th>States</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ContextStrip</strong></td><td>Locked zone / round / observer / climate header</td><td>collapsed, expanded, editing-blocked</td><td>Always visible during collection. Tapping it goes to round context, which warns before resetting.</td></tr>
+        <tr><td><strong>QuestionRow</strong></td><td>One variable: code + column, label, instruction, control, error, ambiguity note</td><td>default, revealed, error, ambiguous, read-only</td><td>Revealed variants carry a 2 px accent left bar and a “revealed” chip. One component covers all six answer formats.</td></tr>
+        <tr><td><strong>ChoiceGrid</strong></td><td>Single- and multi-select options as 44 px rows or an <em>n</em>-column grid</td><td>unselected, selected, disabled</td><td>Column count is per-variable metadata, not a guess: 1 for long labels, 2–4 for short ones.</td></tr>
+        <tr><td><strong>HiddenAnswerNotice</strong></td><td>Declares what a parent change hid and what it stored</td><td>one answer, many answers, undone</td><td>Holds the removed values for the session so Undo is exact.</td></tr>
+        <tr><td><strong>ValidationSummary</strong></td><td>Count, plain-language cause, one jump control per missing variable</td><td>none, 1, many</td><td>Jump focuses the field in place rather than scrolling the form.</td></tr>
+        <tr><td><strong>StateChip</strong></td><td>Glyph + word + colour for the five record states and four package states</td><td>device, waiting, syncing, synced, attention</td><td>The single source of status vocabulary across both platforms.</td></tr>
+        <tr><td><strong>PackageChecklist</strong></td><td>Four offline components, each with its own state and byte size</td><td>not downloaded, writing, verified, incomplete</td><td>Readiness is the conjunction of all four. Nothing else may claim “ready offline”.</td></tr>
+        <tr><td><strong>MapCanvas</strong></td><td>MapLibre view, layer visibility, manual crosshair placement, nudge pad, optional GPS dot</td><td>empty, placed, adjusting, no-permission</td><td>Placement never reads GPS. GPS only draws an orientation dot.</td></tr>
+        <tr><td><strong>ObservationMarker</strong></td><td>Shape = play type, fill = record state, 2 px white halo</td><td>4 shapes × 2 fills × selected</td><td>Halo is what keeps it legible over both aerial imagery and flat vector fills.</td></tr>
+        <tr><td><strong>SaveReceipt</strong></td><td>Confirms the local write and lists carry-forward versus reset</td><td>saved, saved-and-queued</td><td>Cannot render before the transaction commits.</td></tr>
+        <tr><td><strong>ConflictCompare</strong></td><td>Two-column field diff with four resolutions</td><td>rejected, resolved, escalated</td><td>Differing fields tinted; identical fields left plain so the eye goes to the disagreement.</td></tr>
+        <tr><td><strong>FilterRail</strong> · web</td><td>Faceted filters with live counts over one result set</td><td>idle, filtered, empty</td><td>Map, table and export all read the same filter state.</td></tr>
+        <tr><td><strong>RuleSentence</strong> · web</td><td>Display logic as when / is / show, with a broken-rule variant</td><td>valid, unevaluable</td><td>Managers never write an expression.</td></tr>
+        <tr><td><strong>PublishDialog</strong> · web</td><td>Version diff plus the guarantee about prior records</td><td>draft, publishing, published</td><td>States explicitly that existing records keep their version.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">04 — Data model</div>
+    <h2 style="font-size: 28px; margin: 8px 0 8px;">Scope decides where a question is asked</h2>
+    <p class="lede" style="margin-bottom: 16px;">The workbook's inheritance notes are the whole reason the product
+      is more than a map popup. Scope is a property of the variable, set once in project configuration, and it
+      drives both where the question appears and what survives a context change.</p>
+    <table class="t">
+      <thead><tr><th>Scope</th><th>Stored on</th><th>Asked where</th><th>Example variables</th><th>Resets when</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Project</strong></td><td>project + form version</td><td>Web setup</td><td>Zone ID scheme, subzone counts, selected variables, option lists, display rules</td><td>Never — a change creates a new form version</td></tr>
+        <tr><td><strong>Observer</strong></td><td>account assignment</td><td>Sign-in</td><td><code>Observer_Initials</code>, <code>Observer_ID</code></td><td>Sign-out</td></tr>
+        <tr><td><strong>Round</strong></td><td>round record, snapshotted per event</td><td>Round context screen</td><td><code>First_Round</code>, <code>Rel_Round</code>, <code>Weather</code>, <code>Wind</code>, <code>Shade</code>, <code>Time_Period</code></td><td>New round or new day</td></tr>
+        <tr><td><strong>Zone</strong></td><td>round + zone record, snapshotted per event</td><td>Zone start</td><td><code>Inv_Nat_Surfaces</code> and the rest of LP Inventory 1–14</td><td>New zone within the round</td></tr>
+        <tr><td><strong>Event</strong></td><td>observation record</td><td>Observation form</td><td><code>Play_Type_1/2</code>, subtypes, <code>Grp_Composition</code>, loose-parts branch, <code>Wildlife_Intn</code>, <code>Topography</code></td><td>Every new observation</td></tr>
+      </tbody>
+    </table>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 22px; margin-top: 22px;">
+      <div>
+        <div class="k" style="border-bottom: 1px solid var(--color-divider); padding-bottom: 5px;">Three values that are not the same</div>
+        <table class="t" style="margin-top: 4px;">
+          <tbody>
+            <tr><td><code>null</code></td><td>Unanswered — the question was shown and skipped</td></tr>
+            <tr><td><code>"No"</code></td><td>A deliberate negative answer the observer chose</td></tr>
+            <tr><td><code>n/a</code></td><td>Hidden by display logic and therefore not applicable</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 8px;">Every export keeps the three
+          distinct. Collapsing <code>n/a</code> into <code>No</code> would silently invent data.</div>
+      </div>
+      <div>
+        <div class="k" style="border-bottom: 1px solid var(--color-divider); padding-bottom: 5px;">Record identity</div>
+        <table class="t" style="margin-top: 4px;">
+          <tbody>
+            <tr><td><code>uuid</code></td><td>Generated on device at placement, never server-assigned</td></tr>
+            <tr><td><code>operation_id</code></td><td>Per upload attempt — makes retries duplicate-safe</td></tr>
+            <tr><td><code>revision</code></td><td>Server-managed; competing edits are detected by it, never by device clock</td></tr>
+            <tr><td><code>form_version</code></td><td>Bound at save; a later publication never re-reads the record</td></tr>
+            <tr><td><code>round_snapshot</code></td><td>Frozen copy of round and zone context as it stood at save</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">05 — Sync</div>
+    <h2 style="font-size: 28px; margin: 8px 0 14px;">Five states and what moves between them</h2>
+    <table class="t">
+      <thead><tr><th style="width: 150px;">State</th><th>Means exactly</th><th>Leaves when</th><th>Never</th></tr></thead>
+      <tbody>
+        <tr><td><span style="display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-heading); font-weight: 600; color: #4a4a4c;">▣ On device</span></td><td>Committed to durable local storage. Survives app close, device restart, flat battery.</td><td>Connectivity is detected → Waiting</td><td>Depends on a network having ever existed</td></tr>
+        <tr><td><span style="display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-heading); font-weight: 600; color: #6b4703;">◷ Waiting</span></td><td>Queued with an operation ID. An attempt is scheduled.</td><td>Attempt starts → Syncing</td><td>Shown merely because the device is online</td></tr>
+        <tr><td><span style="display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-heading); font-weight: 600; color: #2c455d;">◐ Syncing</span></td><td>Request in flight.</td><td>Ack → Synced · auth failure → On device · transient failure → Waiting with backoff · rejection → Needs attention</td><td>Discards local work on any outcome</td></tr>
+        <tr><td><span style="display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-heading); font-weight: 600; color: #1f4c31;">✓ Synced</span></td><td>The server acknowledged this specific revision.</td><td>A new local edit → On device</td><td>Inferred from a successful HTTP status alone</td></tr>
+        <tr><td><span style="display: inline-flex; gap: 6px; align-items: center; font-family: var(--font-heading); font-weight: 600; color: #7d1f16;">◼ Needs attention</span></td><td>The server rejected it, or a competing revision was accepted first. The local copy is intact.</td><td>Resolution is chosen → Waiting, or escalation → stays for the manager</td><td>Resolved automatically by picking a winner</td></tr>
+      </tbody>
+    </table>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider); margin-top: 20px;">
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k">Attempt triggers</div>
+        <ul style="margin: 7px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.7; color: var(--color-neutral-800);">
+          <li>App launch</li><li>App resumes from background</li><li>Connectivity regained</li><li>Unsent work exists while the app is open</li>
+        </ul>
+        <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 9px;">Uploads while the app is closed are not promised. No screen implies otherwise.</div>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k">Three things the UI keeps apart</div>
+        <ul style="margin: 7px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.7; color: var(--color-neutral-800);">
+          <li><strong>Connectivity</strong> — a radio state, shown in the status bar</li>
+          <li><strong>Synchronisation</strong> — a per-record state, shown on the record</li>
+          <li><strong>Package completeness</strong> — a per-component state, shown on the project</li>
+        </ul>
+        <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 9px;">Conflating any two is the most common failure mode in field tools.</div>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k">Conflict routing</div>
+        <ul style="margin: 7px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.7; color: var(--color-neutral-800);">
+          <li><strong>Observer resolves</strong> data-entry disagreements: which answer, which count, duplicate placement</li>
+          <li><strong>Manager adjudicates</strong> meaning: deletions, zone reassignment, protocol interpretation</li>
+        </ul>
+        <div style="font-size: 12px; color: var(--color-neutral-700); margin-top: 9px;">Escalated records stay unsent on the device until the manager decides.</div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">06 — Platform notes</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 26px; margin-top: 12px;">
+      <div>
+        <h4 style="font-size: 19px; margin: 0 0 10px;">React Native / Expo + MapLibre</h4>
+        <ul style="margin: 0; padding-left: 17px; font-size: 13px; line-height: 1.75; color: var(--color-neutral-800);">
+          <li>The tablet layout is a real layout, not a scaled phone: a 58 / 42 split with independent scroll regions. Switch on the shortest side, not on a device name.</li>
+          <li>Placement is a map-centre crosshair plus a confirm, or a direct tap — both write the same coordinate. Keep the point draggable with a 44 px handle; the nudge pad is the precision path.</li>
+          <li>Never request location permission to place a point. Ask only when the observer turns the orientation dot on, and keep every other feature working if they decline.</li>
+          <li>The form is one virtualised list of QuestionRow, not nested scroll views. A reveal inserts rows below the current one so the answered question does not move.</li>
+          <li>Write the draft on every answer change and the record in a single transaction before navigating. The receipt screen is rendered from the committed row, not from in-memory state.</li>
+          <li>Bundle the fonts. A field tablet must never show a fallback face because a CDN was unreachable.</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="font-size: 19px; margin: 0 0 10px;">Next.js web</h4>
+        <ul style="margin: 0; padding-left: 17px; font-size: 13px; line-height: 1.75; color: var(--color-neutral-800);">
+          <li>One filter state owns the map, the table and the export. A filtered export and a filtered view must never disagree.</li>
+          <li>Selection is bidirectional between marker and row, and survives a filter change if the record still matches.</li>
+          <li>Publication is append-only. Persist the full form definition per version; resolve a record's labels through its own version on read.</li>
+          <li>Map package preparation is a server job with per-step results. Surface the failing step and its reason, not a generic error.</li>
+          <li>The QGIS area shows connection details and layer modes. It has no upload action, because uploading is not how the data gets there.</li>
+          <li>Exports carry a codebook and the form version per row. They are labelled supplementary in the interface itself.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">07 — Accessibility</div>
+    <h2 style="font-size: 28px; margin: 8px 0 14px;">What is met, and what is deferred</h2>
+    <table class="t">
+      <thead><tr><th>Requirement</th><th>How it is met</th></tr></thead>
+      <tbody>
+        <tr><td>Text contrast 4.5:1</td><td>Ink on ground is 15.3:1. Every filled control uses <code>--color-accent-800</code> (9.0:1 with white). The base accent is restricted to lines, borders and the focus ring, where 3:1 is the applicable threshold.</td></tr>
+        <tr><td>Status not by colour alone</td><td>Every state carries a glyph and a word. Map markers encode category as shape and state as fill.</td></tr>
+        <tr><td>Touch targets</td><td>44 px minimum on iOS, 48 dp on Android, for every answer option and action. The one sub-44 control is the nudge pad, which duplicates a drag interaction.</td></tr>
+        <tr><td>Larger text</td><td>No fixed heights on anything holding text. Question rows and option rows grow; the save action stays pinned to the bottom of the form pane rather than flowing off screen.</td></tr>
+        <tr><td>Screen readers</td><td>QuestionRow announces code, label, instruction, required state, and — for a revealed question — which parent answer revealed it. The hidden-answer notice is a live region.</td></tr>
+        <tr><td>Keyboard, web</td><td>2 px accent <code>:focus-visible</code> ring at 2 px offset throughout; filter rail, table and detail panel are all tab-reachable in reading order.</td></tr>
+        <tr><td>Low-light theme</td><td><strong>Deferred.</strong> The Night Transit tokens from the direction study are the intended dark theme, scheduled after the primary theme is validated in the field.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section style="margin-top: 52px;">
+    <div class="sec">08 — Honesty</div>
+    <h2 style="font-size: 28px; margin: 8px 0 8px;">What the prototypes simulate</h2>
+    <p class="lede" style="margin-bottom: 14px;">Each screen names its own simulation in the panel beside it. The
+      complete list, so nothing is mistaken for working software:</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider);">
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k" style="color: #6b4703;">⚠ Maps</div>
+        <p style="font-size: 12.5px; margin: 6px 0 0; color: var(--color-neutral-800);">A hand-drawn vector site plan, not a georeferenced package. No MapLibre, no CRS handling, no tiles. Coordinates are derived from tap position against an invented origin. Placement, nudging and layer visibility are real interactions on a fake map.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k" style="color: #6b4703;">⚠ Download</div>
+        <p style="font-size: 12.5px; margin: 6px 0 0; color: var(--color-neutral-800);">Progress, byte sizes, the failure at 68% and the four component checks are scripted timers. Nothing is fetched or written to storage.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k" style="color: #6b4703;">⚠ Storage</div>
+        <p style="font-size: 12.5px; margin: 6px 0 0; color: var(--color-neutral-800);">Records live in browser memory for the session. “Force-quit &amp; reopen” re-renders the launch state; it does not prove persistence. The current implementation's SQLite saves are separate from this prototype.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k" style="color: #6b4703;">⚠ Sync, auth, conflicts</div>
+        <p style="font-size: 12.5px; margin: 6px 0 0; color: var(--color-neutral-800);">All front-end states. There is no API, no session, no revision arithmetic. The competing-edit comparison uses invented server values to show the shape of the recovery flow.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k" style="color: #6b4703;">⚠ QGIS and database</div>
+        <p style="font-size: 12.5px; margin: 6px 0 0; color: var(--color-neutral-800);">No PostGIS instance exists. Connection values are illustrative, “Database connected” is a static state, and no export is generated.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 14px 16px;">
+        <div class="k" style="color: #6b4703;">⚠ Content</div>
+        <p style="font-size: 12.5px; margin: 6px 0 0; color: var(--color-neutral-800);">The 64 web observations are generated from a seeded pseudo-random function. Variable codes, labels and rules are read from the workbooks; site names, observers and answer values are fictional.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 52px; border-top: 2px solid var(--color-text); padding-top: 20px;">
+    <div class="sec">09 — Open questions</div>
+    <h2 style="font-size: 30px; margin: 8px 0 8px;">Eleven decisions only the protocol owner can make</h2>
+    <p class="lede" style="margin-bottom: 20px;">Each of these is visible in the prototypes as a flag rather than a
+      guess. None of them are design preferences; each changes what the data means. Cell references are to Sheet1
+      of the two workbooks — <em>Test</em> is <em>Variables to use for App testing.xlsx</em>, <em>Library</em> is
+      <em>Behavior Mapping Variable Library.xlsx</em>.</p>
+
+    <div style="display: grid; gap: 12px;">
+      <div class="q">
+        <div class="k">01 · blocks the instrument</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Do the “if YES” inventory rules mean presence, or a quantity above zero?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test H19, H21, H23, H25, H27, H29, H31 say “if YES, make the checklist visible”, but the answers are quantity bands with no zero option. As written the condition has no truth value. Either add a presence question, or define the predicate and an explicit none option. The zone-inventory section is withheld from the prototype until this is settled.</p>
+      </div>
+      <div class="q">
+        <div class="k">02 · blocks export</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">What is <code>Gender1</code>'s export column name?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test E51 and Library E75 are both blank. The question is selected in the instrument and has no column to write to.</p>
+      </div>
+      <div class="q">
+        <div class="k">03 · silent data loss if unresolved</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Three export column collisions need distinct names</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test E168 and E169 both read <code>Nat_LP_Intn_Binary</code> — natural and manufactured loose-parts interaction. Test E176 and E177 both read <code>Nat_LPs_Lrg</code> — a yes/no answer and its checklist. Test E17 and E199 both read <code>Shade</code> — round climate shade and event-location shade. The prototype shows the last as <code>Shade_Event</code> provisionally; the others are flagged in place.</p>
+      </div>
+      <div class="q">
+        <div class="k">04 · blocks import</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Does “hidden row” mean excluded, optional, or unfinished?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test rows 33–40 and 180–187 are hidden (16 rows), Library has 12. Test H169 references <code>LooseParts14</code> and <code>LooseParts16</code>, which are in hidden rows — so a rule points at a question that may not exist. The prototype excludes hidden rows and says so.</p>
+      </div>
+      <div class="q">
+        <div class="k">05 · changes the schema</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Does the second play type get its own subtype storage?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test rows 83 and 92 define <code>Play_Type_1</code> and <code>Play_Type_2</code>, but rows 101–133 supply only one subtype set. Library H139 implies both slots need independent storage. The prototype writes <code>Phys_Subtype1</code> and <code>Phys_Subtype2</code> — confirm that is the intended shape.</p>
+      </div>
+      <div class="q">
+        <div class="k">06 · changes round semantics</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Does a weather change start a new round, or only affect later events?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Library H28–H36 says climate carries forward until a new first round or a new day. If the weather changes mid-round, either a new round begins or the snapshot is revised for subsequent events only. The prototype snapshots per event, which supports the second reading without committing to it.</p>
+      </div>
+      <div class="q">
+        <div class="k">07 · blocks several checklists</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Which choice lists are still to be provided?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test G171, G173, G175, G177, G179 and the inventory checklist rows say a list will be supplied. The prototype substitutes the instruction examples and labels each as pending. Alternatively, enable manager-authored lists in project setup — which is a product decision, not a data-entry one.</p>
+      </div>
+      <div class="q">
+        <div class="k">08 · changes the reveal behaviour</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Should “Other” descriptions appear on the option, or on the parent group?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Test H70 and H188 reveal the Other description alongside the whole parent group. The prototype reveals it only when Other is actually selected, which is the more likely intent — confirm, because it changes how many fields an observer sees.</p>
+      </div>
+      <div class="q">
+        <div class="k">09 · affects analysis</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">How should multi-select answers be represented in an export?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Coded text in one column, one indicator column per option, a related answer table, or all three. <code>Weather</code> and every checklist depend on this. The export dialog offers indicator columns as an option; the default needs agreeing.</p>
+      </div>
+      <div class="q">
+        <div class="k">10 · affects zone configuration</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Two different definitions share the code <code>EnvZone3</code></h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Library B21 and B23 both use it — one for a custom zone ID scheme, one for subzones. They need distinct IDs, with the alternatives preserved as mutually exclusive configuration choices.</p>
+      </div>
+      <div class="q">
+        <div class="k">11 · affects the whole library import</div>
+        <h5 style="margin: 4px 0 5px; font-size: 16px;">Are rules present in the Library but absent from the Test sheet inherited or disabled?</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">The test sheet omits several inheritance and subtype notes that the full library carries. Absence of a note is not a safe execution rule. Also: Test C164 describes a natural feature under the designed and manufactured group — likely a copied label.</p>
+      </div>
+    </div>
+
+    <div style="border: 1px solid var(--color-text); padding: 16px 18px; margin-top: 20px;">
+      <div class="k">Not asked, and not assumed</div>
+      <p style="font-size: 12.5px; line-height: 1.65; margin: 7px 0 0; color: var(--color-neutral-800);">
+        Nothing in these designs collects participant names, faces, or identifying detail, and there is no live
+        observer tracking. Every example is anonymous. Where the workbook describes a child, the design records
+        only the presenting categories the protocol already defines — age band, presenting gender, group
+        composition — and the clothing-description variable is left unselected in the draft instrument rather
+        than added on our initiative.
+      </p>
+    </div>
+  </section>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/styles.css">
+<script src="_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: #0e0f19; }
+  a { color: var(--color-accent-300); } a:hover { color: var(--color-accent-200); }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-thumb { background: #3f424d; border-radius: 3px; }
+</style>
+</helmet>
+
+<div style="font-family: var(--font-body); color: var(--color-text); padding: 20px 22px 40px; background: #0e0f19; min-height: 100vh;">
+
+  <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 18px;">
+    <div style="font-family: var(--font-heading); font-weight: 500; font-size: 20px;">FieldOps collector</div>
+    <div style="font-size: 13px; color: var(--color-neutral-400);">Riverside Play Study · tablet landscape is the primary target</div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px;">
+    <button onClick="{{ setTablet }}" style="{{ tabletBtn }}">Tablet · landscape</button>
+    <button onClick="{{ setPhoneLand }}" style="{{ phoneLandBtn }}">Phone · landscape</button>
+    <button onClick="{{ setPhonePort }}" style="{{ phonePortBtn }}">Phone · portrait</button>
+    <span style="width: 14px;"></span>
+    <button onClick="{{ toggleOnline }}" style="{{ netBtn }}">{{ netLabel }}</button>
+    <button onClick="{{ relaunch }}" style="{{ ghostBtn }}">Force-quit &amp; reopen</button>
+    <button onClick="{{ resetAll }}" style="{{ ghostBtn }}">Reset</button>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start;">
+
+    <div style="{{ frameOuter }}">
+      <div style="{{ frameStyle }}">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px 0; font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--color-neutral-500); flex: none;">
+          <span>9:41</span>
+          <span style="display: flex; align-items: center; gap: 7px;"><span style="{{ netDot }}"></span>{{ netStatus }}</span>
+        </div>
+
+        <!-- ─── assignments ─── -->
+        <sc-if value="{{ atAssign }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ pageWrap }}">
+            <sc-if value="{{ recovered }}">
+              <div style="border-left: 2px solid #d9a86c; padding: 2px 0 2px 13px; margin-bottom: 24px;">
+                <div style="font-size: 15px; font-weight: 500; color: #e8bd85;">A draft survived the crash</div>
+                <div style="font-size: 13px; color: var(--color-neutral-400); line-height: 1.5; margin-top: 4px;">{{ draftLine }}</div>
+                <div style="display: flex; gap: 16px; margin-top: 10px;">
+                  <button onClick="{{ resumeDraft }}" style="{{ linkBtn }}">Resume it</button>
+                  <button onClick="{{ dropDraft }}" style="{{ linkMuted }}">Discard</button>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="font-size: 13px; color: var(--color-neutral-400);">Assigned to you</div>
+            <div style="font-family: var(--font-heading); font-weight: 500; font-size: 28px; line-height: 1.12; margin-top: 6px; letter-spacing: -.015em;">Three studies waiting</div>
+
+            <div style="margin-top: 22px; display: grid; gap: 2px;">
+              <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
+                <button onClick="{{ p.go }}" style="{{ p.style }}">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;">
+                    <span style="font-size: 17px; font-weight: 500; color: var(--color-text);">{{ p.name }}</span>
+                    <span style="{{ p.chipStyle }}">{{ p.chip }}</span>
+                  </div>
+                  <div style="font-size: 13px; color: var(--color-neutral-400); margin-top: 4px;">{{ p.meta }}</div>
+                </button>
+              </sc-for>
+            </div>
+
+            <div style="{{ fadeRule }}"></div>
+            <div style="font-size: 12.5px; color: var(--color-neutral-500); line-height: 1.55;">Packages download over wi-fi only. Nothing is fetched on cellular unless you ask for it.</div>
+          </div>
+        </sc-if>
+
+        <!-- ─── brief ─── -->
+        <sc-if value="{{ atBrief }}">
+          <div style="{{ pageWrap }}">
+            <button onClick="{{ goAssign }}" style="{{ linkMuted }}">← Studies</button>
+            <div style="font-family: var(--font-heading); font-weight: 500; font-size: 25px; margin-top: 10px; letter-spacing: -.01em;">North Playground</div>
+            <div style="font-size: 13px; color: var(--color-neutral-400); margin-top: 3px;">Package v4 · 3 zones · 18.4 MB on device</div>
+
+            <div style="font-size: 13px; color: var(--color-neutral-400); margin-top: 22px;">Where are you working?</div>
+            <div style="display: flex; gap: 6px; margin-top: 9px;">
+              <sc-for list="{{ zoneOpts }}" as="z" hint-placeholder-count="3">
+                <button onClick="{{ z.pick }}" style="{{ z.style }}">{{ z.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="font-size: 13px; color: var(--color-neutral-400); margin-top: 18px;">Which round?</div>
+            <div style="display: flex; gap: 6px; margin-top: 9px;">
+              <sc-for list="{{ roundOpts }}" as="r" hint-placeholder-count="3">
+                <button onClick="{{ r.pick }}" style="{{ r.style }}">{{ r.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="margin-top: 20px; padding-left: 13px; border-left: 2px solid var(--color-accent);">
+              <div style="font-size: 13.5px; line-height: 1.55; color: var(--color-neutral-300);">{{ contextLine }}</div>
+              <button onClick="{{ toggleFirst }}" style="{{ linkBtn }}">{{ firstLabel }}</button>
+            </div>
+
+            <button onClick="{{ goField }}" style="{{ primaryBtn }}">Start observing · Zone {{ zone }}, round {{ round }}</button>
+          </div>
+        </sc-if>
+
+        <!-- ─── field ─── -->
+        <sc-if value="{{ atField }}">
+          <div style="{{ fieldWrap }}">
+
+            <!-- map -->
+            <div style="{{ mapBox }}">
+              <div style="{{ mapSurface }}">
+                <div onClick="{{ mapClick }}" style="{{ sceneStyle }}">
+                  <svg viewBox="0 0 340 300" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;">
+                    <rect x="0" y="0" width="340" height="300" fill="{{ groundFill }}"></rect>
+                    <sc-if value="{{ aerial }}">
+                      <path d="M0 0 H340 V300 H0 Z" fill="#20241d"></path>
+                      <circle cx="60" cy="70" r="46" fill="#272d20"></circle>
+                      <circle cx="286" cy="52" r="54" fill="#272d20"></circle>
+                      <circle cx="300" cy="238" r="40" fill="#272d20"></circle>
+                      <rect x="150" y="96" width="92" height="58" fill="#3a352b"></rect>
+                    </sc-if>
+                    <sc-if value="{{ layerPaths }}">
+                      <path d="M0 196 L110 172 L206 188 L340 158" stroke="{{ pathStroke }}" stroke-width="7" fill="none"></path>
+                      <path d="M118 300 L132 188 L148 56" stroke="{{ pathStroke }}" stroke-width="5" fill="none"></path>
+                    </sc-if>
+                    <sc-if value="{{ layerZones }}">
+                      <rect x="148" y="38" width="152" height="136" rx="3" fill="#9184d90f" stroke="var(--color-accent-600)" stroke-dasharray="6 5"></rect>
+                      <rect x="14" y="30" width="108" height="98" rx="3" fill="none" stroke="#4a4e5e" stroke-dasharray="6 5"></rect>
+                      <rect x="146" y="204" width="146" height="72" rx="3" fill="none" stroke="#4a4e5e" stroke-dasharray="6 5"></rect>
+                    </sc-if>
+                    <sc-if value="{{ layerTrees }}">
+                      <circle cx="272" cy="80" r="13" fill="#2b3527"></circle>
+                      <circle cx="298" cy="112" r="9" fill="#2b3527"></circle>
+                      <circle cx="50" cy="240" r="12" fill="#2b3527"></circle>
+                      <circle cx="78" cy="262" r="8" fill="#2b3527"></circle>
+                    </sc-if>
+                    <rect x="192" y="104" width="60" height="36" rx="2" fill="{{ structFill }}" stroke="#4a4e5e"></rect>
+                  </svg>
+
+                  <sc-if value="{{ showZoneLabel }}">
+                    <div style="{{ zoneLabelStyle }}">Zone B</div>
+                  </sc-if>
+
+                  <sc-if value="{{ clustered }}">
+                    <button onClick="{{ zoomIn }}" style="{{ clusterStyle }}">{{ clusterCount }}</button>
+                  </sc-if>
+
+                  <sc-if value="{{ spread }}">
+                    <sc-for list="{{ priorPts }}" as="d" hint-placeholder-count="4">
+                      <button onClick="{{ d.select }}" style="{{ d.style }}"></button>
+                    </sc-for>
+                  </sc-if>
+
+                  <sc-if value="{{ hasPt }}">
+                    <div style="{{ ptStyle }}"></div>
+                  </sc-if>
+                </div>
+
+                <!-- top-left context -->
+                <div style="position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; align-items: center;">
+                  <button onClick="{{ goBrief }}" style="{{ pillBtn }}">← Zone {{ zone }} · R{{ round }}</button>
+                  <div style="{{ pillStatic }}">{{ heldLabel }}</div>
+                </div>
+
+                <!-- top-right layers -->
+                <div style="position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                  <div style="display: flex; gap: 6px;">
+                    <button onClick="{{ toggleBase }}" style="{{ basePillStyle }}">{{ baseLabel }}</button>
+                    <button onClick="{{ toggleLayers }}" style="{{ layersPillStyle }}">Layers</button>
+                  </div>
+                  <sc-if value="{{ layersOpen }}">
+                    <div style="{{ layersPanel }}">
+                      <sc-for list="{{ layerRows }}" as="l" hint-placeholder-count="4">
+                        <button onClick="{{ l.toggle }}" style="{{ l.style }}">
+                          <span style="{{ l.markStyle }}"></span>
+                          <span style="flex: 1; text-align: left;">{{ l.name }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+
+                <!-- bottom-left navigation, scale and callout -->
+                <div style="position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+                  <sc-if value="{{ selectedObs }}">
+                    <div style="{{ calloutStyle }}">
+                      <div style="display: flex; justify-content: space-between; gap: 14px; align-items: baseline;">
+                        <span style="font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums;">{{ selId }}</span>
+                        <span style="font-size: 11.5px; color: var(--color-neutral-400);">{{ selTime }}</span>
+                      </div>
+                      <div style="font-size: 12.5px; color: var(--color-neutral-300); line-height: 1.45; margin-top: 4px;">{{ selSummary }}</div>
+                      <button onClick="{{ clearSel }}" style="{{ linkMuted }}">Close</button>
+                    </div>
+                  </sc-if>
+                  <div style="{{ pillStatic }}">{{ scaleLabel }}</div>
+                </div>
+
+                <!-- arming banner -->
+                <sc-if value="{{ placing }}">
+                  <div style="{{ armBanner }}">Tap the child’s position — the map will not pan while this is on</div>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- panel -->
+            <sc-if value="{{ panelOpen }}">
+              <div style="{{ cardPane }}">
+
+                <sc-if value="{{ noPt }}" hint-placeholder-val="{{ true }}">
+                  <div style="flex: 1; overflow-y: auto; padding: 16px 16px 8px;">
+                    <div style="font-family: var(--font-heading); font-weight: 500; font-size: 20px; line-height: 1.2;">{{ idleTitle }}</div>
+                    <div style="font-size: 13px; color: var(--color-neutral-400); line-height: 1.5; margin-top: 6px;">{{ idleBody }}</div>
+                    <button onClick="{{ armPlace }}" style="{{ armBtnStyle }}">{{ armLabel }}</button>
+                    <div style="{{ fadeRule }}"></div>
+                    <div style="font-size: 12.5px; color: var(--color-neutral-500); line-height: 1.55;">Panning and zooming stay live until you arm a point, so a stray thumb never drops an observation.</div>
+                    <button onClick="{{ goRecords }}" style="{{ wideGhost }}">{{ recordsLabel }}</button>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ hasPt }}">
+                  <div style="display: flex; gap: 4px; padding: 12px 16px 0; flex: none;">
+                    <sc-for list="{{ actBars }}" as="a" hint-placeholder-count="5">
+                      <div style="{{ a.style }}"></div>
+                    </sc-for>
+                  </div>
+
+                  <div style="flex: 1; overflow-y: auto; padding: 12px 16px 8px; min-height: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                      <span style="font-size: 12.5px; color: var(--color-accent-300);">{{ qAct }}</span>
+                      <span style="font-size: 12px; color: var(--color-neutral-500); font-variant-numeric: tabular-nums;">{{ qCount }}</span>
+                    </div>
+
+                    <div style="font-family: var(--font-heading); font-weight: 500; font-size: 22px; line-height: 1.2; margin-top: 7px; letter-spacing: -.01em; text-wrap: pretty;">{{ qLabel }}</div>
+                    <sc-if value="{{ qHasHint }}">
+                      <div style="font-size: 13px; color: var(--color-neutral-400); line-height: 1.5; margin-top: 5px; text-wrap: pretty;">{{ qHint }}</div>
+                    </sc-if>
+                    <sc-if value="{{ qOpened }}">
+                      <div style="font-size: 12.5px; color: var(--color-accent-300); margin-top: 7px;">{{ qOpenedBy }}</div>
+                    </sc-if>
+
+                    <sc-if value="{{ qIsChoice }}" hint-placeholder-val="{{ true }}">
+                      <div style="{{ optGrid }}">
+                        <sc-for list="{{ qOpts }}" as="o" hint-placeholder-count="5">
+                          <button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.text }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ qIsMany }}">
+                      <div style="{{ optGrid }}">
+                        <sc-for list="{{ qOpts }}" as="o" hint-placeholder-count="6">
+                          <button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.text }}</button>
+                        </sc-for>
+                      </div>
+                      <button onClick="{{ advance }}" style="{{ primaryBtn }}">Continue</button>
+                    </sc-if>
+
+                    <sc-if value="{{ qIsText }}">
+                      <textarea onChange="{{ onText }}" value="{{ qValue }}" placeholder="{{ qPh }}" rows="{{ qRows }}" style="width: 100%; box-sizing: border-box; margin-top: 14px; font: inherit; font-size: 15px; line-height: 1.5; color: var(--color-text); background: var(--color-neutral-900); border: none; border-radius: 10px; padding: 12px 13px; resize: none; outline: none;"></textarea>
+                      <button onClick="{{ advance }}" style="{{ primaryBtn }}">Continue</button>
+                    </sc-if>
+
+                    <sc-if value="{{ qFlagged }}">
+                      <div style="margin-top: 14px; padding-left: 12px; border-left: 2px solid #d9a86c;">
+                        <div style="font-size: 12px; color: #e8bd85;">Protocol question for Janet</div>
+                        <div style="font-size: 12.5px; color: var(--color-neutral-400); line-height: 1.5; margin-top: 3px;">{{ qFlag }}</div>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 16px 12px; flex: none;">
+                    <button onClick="{{ back }}" style="{{ linkMuted }}">← Back</button>
+                    <div style="display: flex; gap: 14px; align-items: center;">
+                      <sc-if value="{{ qSkippable }}"><button onClick="{{ advance }}" style="{{ linkMuted }}">Skip</button></sc-if>
+                      <button onClick="{{ goReview }}" style="{{ linkBtn }}">Review &amp; save</button>
+                    </div>
+                  </div>
+                </sc-if>
+
+              </div>
+            </sc-if>
+
+            <button onClick="{{ togglePanel }}" style="{{ panelTabStyle }}">{{ panelTabLabel }}</button>
+          </div>
+        </sc-if>
+
+        <!-- ─── review ─── -->
+        <sc-if value="{{ atReview }}">
+          <div style="{{ pageWrap }}">
+            <button onClick="{{ backToCards }}" style="{{ linkMuted }}">← Keep answering</button>
+            <div style="font-family: var(--font-heading); font-weight: 500; font-size: 25px; margin-top: 10px; letter-spacing: -.01em;">Before you save</div>
+            <div style="font-size: 13px; color: var(--color-neutral-400); margin-top: 3px;">{{ reviewLine }}</div>
+
+            <sc-if value="{{ hasErrs }}">
+              <div style="margin-top: 14px; padding-left: 13px; border-left: 2px solid #d9a86c;">
+                <div style="font-size: 14px; font-weight: 500; color: #e8bd85;">{{ errLine }}</div>
+                <div style="font-size: 12.5px; color: var(--color-neutral-400); line-height: 1.5; margin-top: 3px;">Saving is blocked until these have answers. Nothing you have entered is lost.</div>
+              </div>
+            </sc-if>
+
+            <div style="margin-top: 18px;">
+              <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="10">
+                <div style="{{ r.groupStyle }}">{{ r.group }}</div>
+                <button onClick="{{ r.edit }}" style="{{ r.style }}">
+                  <span style="font-size: 13px; color: var(--color-neutral-400); flex: 1; min-width: 0; text-align: left;">{{ r.label }}</span>
+                  <span style="{{ r.valStyle }}">{{ r.value }}</span>
+                </button>
+              </sc-for>
+            </div>
+
+            <div style="{{ fadeRule }}"></div>
+            <button onClick="{{ save }}" style="{{ primaryBtn }}">Save observation</button>
+            <button onClick="{{ discard }}" style="{{ wideGhost }}">Discard this observation</button>
+          </div>
+        </sc-if>
+
+        <!-- ─── saved ─── -->
+        <sc-if value="{{ atSaved }}">
+          <div style="{{ pageWrap }}">
+            <div style="width: 30px; height: 2px; background: var(--color-accent);"></div>
+            <div style="font-family: var(--font-heading); font-weight: 500; font-size: 25px; margin-top: 14px; line-height: 1.15; letter-spacing: -.01em;">{{ savedTitle }}</div>
+            <div style="font-size: 13.5px; color: var(--color-neutral-400); line-height: 1.55; margin-top: 7px; max-width: 40ch;">{{ savedBody }}</div>
+
+            <div style="{{ fadeRule }}"></div>
+            <div style="font-size: 13px; color: var(--color-neutral-400);">Carried into the next observation</div>
+            <div style="display: grid; gap: 9px; margin-top: 10px;">
+              <div style="font-size: 14px;">Zone {{ zone }}, round {{ round }} <span style="color: var(--color-neutral-500);">— kept</span></div>
+              <div style="font-size: 14px;">Climate and zone inventory <span style="color: var(--color-neutral-500);">— kept as a round snapshot</span></div>
+              <div style="font-size: 14px;">Every event answer <span style="color: var(--color-neutral-500);">— cleared</span></div>
+            </div>
+
+            <div style="{{ fadeRule }}"></div>
+            <button onClick="{{ nextObs }}" style="{{ primaryBtn }}">Next observation, same zone</button>
+            <button onClick="{{ goBrief }}" style="{{ wideGhost }}">Change zone or round</button>
+            <button onClick="{{ goRecords }}" style="{{ wideGhost }}">{{ recordsLabel }}</button>
+          </div>
+        </sc-if>
+
+        <!-- ─── records ─── -->
+        <sc-if value="{{ atRecords }}">
+          <div style="{{ pageWrap }}">
+            <button onClick="{{ goField }}" style="{{ linkMuted }}">← Back to the map</button>
+            <div style="font-family: var(--font-heading); font-weight: 500; font-size: 25px; margin-top: 10px; letter-spacing: -.01em;">On this device</div>
+            <div style="font-size: 13px; color: var(--color-neutral-400); margin-top: 3px;">{{ syncLine }}</div>
+
+            <div style="margin-top: 16px; display: grid; gap: 2px;">
+              <sc-for list="{{ records }}" as="r" hint-placeholder-count="5">
+                <button onClick="{{ r.open }}" style="{{ r.style }}">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px;">
+                    <span style="font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums;">{{ r.id }}</span>
+                    <span style="{{ r.chipStyle }}">{{ r.state }}</span>
+                  </div>
+                  <div style="font-size: 12.5px; color: var(--color-neutral-400); margin-top: 3px; text-align: left;">{{ r.meta }}</div>
+                </button>
+              </sc-for>
+            </div>
+
+            <div style="{{ fadeRule }}"></div>
+            <div style="font-size: 12.5px; color: var(--color-neutral-500); line-height: 1.6;">Sync runs by itself whenever the device has signal. There is no send button — a record you can see here is a record the server does not have yet.</div>
+          </div>
+        </sc-if>
+
+        <div style="flex: none; padding: 7px 16px 9px; font-size: 11.5px; color: var(--color-neutral-500); border-top: 1px solid #ffffff10; display: flex; gap: 8px; align-items: center;">
+          <span style="width: 5px; height: 5px; border-radius: 3px; background: var(--color-accent); flex: none;"></span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ lastLog }}</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 260px; max-width: 400px;">
+      <div style="font-size: 13px; color: var(--color-neutral-400);">Map behaviour</div>
+      <div style="font-family: var(--font-heading); font-weight: 500; font-size: 20px; margin-top: 6px; line-height: 1.25;">Navigating and marking are separate modes</div>
+      <div style="font-size: 13.5px; color: var(--color-neutral-300); line-height: 1.6; margin-top: 10px;">Tapping the map selects things on it. Placing an observation is a mode you arm first, so panning with a gloved thumb can never drop a point by accident. Prior observations cluster into a single count when zoomed out and separate as you zoom in.</div>
+      <div style="font-size: 13.5px; color: var(--color-neutral-300); line-height: 1.6; margin-top: 12px;">The base map is subdued so the data reads first. Markers carry a dark halo and a light ring, so they hold up on both the plan and the aerial. The form panel collapses when the map needs the whole screen.</div>
+      <div style="{{ fadeRule }}"></div>
+      <div style="font-size: 13px; color: var(--color-neutral-400);">Try</div>
+      <div style="display: grid; gap: 7px; margin-top: 9px; font-size: 13px; color: var(--color-neutral-300); line-height: 1.5;">
+        <div>Tap the map before arming — nothing is placed.</div>
+        <div>Zoom out to 1× and the four prior observations become one cluster.</div>
+        <div>Switch to the aerial and watch the markers keep their contrast.</div>
+        <div>Collapse the panel, then answer loose parts Yes and set it back to No.</div>
+        <div>Go online — sync starts itself and one record comes back contested.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1560,&quot;height&quot;:980}}">
+const PLAY_TYPES = ['Physical','Exploratory','Imaginative','Play with Rules','Bio','Expressive','Restorative','Digital','Non-Play'];
+const SUBS = {
+  'Physical': ['Phys_Subtype','Physical play — which kind?',['Gross motor','Fine motor','Vestibular','Rough & tumble']],
+  'Exploratory': ['Expl_Subtype','Exploratory play — which kind?',['Sensory','Active','Constructive']],
+  'Imaginative': ['Imag_Subtype','Imaginative play — which kind?',['Symbolic','Socio-dramatic','Fantasy']],
+  'Play with Rules': ['PwR_Subtype','Rules play — which kind?',['Conventional','Organic']],
+  'Bio': ['Bio_Subtype','Bio play — which kind?',['Plants','Wildlife','Care']],
+  'Expressive': ['Expr_Subtype','Expressive play — which kind?',['Performance','Artistic','Language','Conversation']],
+  'Restorative': ['Res_Subtype','Restorative — which kind?',['Resting','Retreat','Reading','Onlooking']],
+  'Digital': ['Dig_Subtype','Digital play — which kind?',['Device','Augmented','Embedded']],
+  'Non-Play': ['Non_Subtype','Non-play — which kind?',['Self care','Nutrition','Distress','Aggression','Transition','Other']]
+};
+const YN = ['No','Yes'];
+
+const QS = [
+  {id:'age', code:'Age1', col:'Child_AgeRange', act:'Child', label:'How old is the target child?', hint:'Closest range. Observers are not expected to ask.', kind:'one', opts:['0–2 yrs','3–5 yrs','6–8 yrs','9–12 yrs','13–16 yrs','17+'], cols:3, req:true},
+  {id:'gender', code:'Gender1', col:'— none —', act:'Child', label:'Presenting gender', hint:'From presenting factors only — clothing, hair, accessories.', kind:'one', opts:['Female','Male','Unknown'], cols:3, flag:'No export column exists in either workbook (Test E51 and Library E75 are both blank). A stable column name has to be agreed before this field can be exported.'},
+
+  {id:'grp', code:'PeerIntn1', col:'Grp_Composition', act:'Social', label:'Who is the child playing with?', kind:'one', opts:['Solitary (no other children)','1:1 with a peer','1:1 with an adult','Group, children with adult(s)','Group, children with no adult(s)'], req:true},
+  {id:'others', code:'PeerIntn2', col:'No_Other_Children', act:'Social', label:'How many other children?', hint:'Children taking part in the same play event.', kind:'one', opts:['None','1','2','3 to 6','7+'], cols:3, when:a=>!!a.grp && a.grp!=='Solitary (no other children)', openedBy:'Opened by the group answer'},
+  {id:'peer', code:'PeerIntn4', col:'Peer_Intn', act:'Social', label:'What kind of peer interaction?', kind:'one', opts:['Parallel','Cooperative','Onlooking','Conflict','Unoccupied'], cols:2, when:a=>!!a.grp && a.grp!=='Solitary (no other children)', openedBy:'Opened by the group answer'},
+  {id:'adults', code:'AdultIntn1', col:'Adults_Engaged', act:'Social', label:'How many adults are present or engaged?', kind:'one', opts:['No adults','1','2','3 or more'], cols:4},
+  {id:'adultIntn', code:'AdultIntn3', col:'Adult_Intn', act:'Social', label:'What is the adult doing?', kind:'one', opts:['Observing','Affirming','Participating','Directing','Restricting','Something else'], cols:2, when:a=>!!a.adults && a.adults!=='No adults', openedBy:'Opened because an adult is present'},
+  {id:'adultOther', code:'AdultIntn4', col:'Adult_Intn_Other', act:'Social', label:'Describe what the adult is doing', kind:'text', ph:'Up to 100 characters', rows:2, when:a=>a.adultIntn==='Something else', openedBy:'Opened by “Something else”'},
+
+  {id:'pt1', code:'PlayType1', col:'Play_Type_1', act:'Play', label:'Primary play type', kind:'one', opts:PLAY_TYPES, cols:3, req:true},
+  {id:'sub1', code:'PlaySubtype', col:'', act:'Play', label:'', kind:'one', opts:[], dyn:'pt1', when:a=>!!a.pt1, openedBy:'Subtypes follow the type you chose'},
+  {id:'pt2', code:'PlayType2', col:'Play_Type_2', act:'Play', label:'A second play type, if there is one', kind:'one', opts:PLAY_TYPES, cols:3},
+  {id:'cars', code:'CARS2', col:'CARS', act:'Play', label:'How physically intense is it?', hint:'CARS, collapsed to three bands.', kind:'one', opts:['1–2 · stationary','3 · slow','4–5 · moderate to vigorous']},
+  {id:'risk', code:'Risk1', col:'Risk', act:'Play', label:'Is there risk in this play event?', kind:'one', opts:['No or very low risk','Risk appraisal','Risk avoidance','Low positive risk','Moderate positive risk','High positive risk','Low negative risk','Moderate negative risk','High negative risk','Other / not sure'], cols:2},
+  {id:'riskOther', code:'Risk4', col:'Risk_Other', act:'Play', label:'Describe the risk', kind:'text', ph:'Up to 100 characters', rows:2, when:a=>a.risk==='Other / not sure', openedBy:'Opened by “Other / not sure”'},
+  {id:'comm', code:'PlayComm1', col:'Play_Communication', act:'Play', label:'What is being communicated?', kind:'one', opts:['None','About the play','About the environment','Cowabunga','Peer social','Adult social','Something else'], cols:2, when:a=>!!a.grp && a.grp!=='Solitary (no other children)', openedBy:'Skipped for solitary play'},
+
+  {id:'fixNat', code:'FixedNat1', col:'Fixed_Nat_Intn', act:'Setting', label:'Fixed natural features involved?', hint:'Trees, bushes, boulders, a creek — anything rooted in place.', kind:'one', opts:YN, cols:2},
+  {id:'fixNatDesc', code:'FixedNat3', col:'Fixed_Nat_Description', act:'Setting', label:'Which natural features?', kind:'text', ph:'Up to 100 characters', rows:2, when:a=>a.fixNat==='Yes', openedBy:'Opened by Yes'},
+  {id:'fixDes', code:'FixedDes1', col:'Fixed_Designed_Intn', act:'Setting', label:'Fixed designed features involved?', hint:'Play structures, swings, a climbing wall, a willow tunnel.', kind:'one', opts:YN, cols:2},
+  {id:'fixDesDesc', code:'FixedDes3', col:'Fixed_Designed_Description', act:'Setting', label:'Which designed features?', kind:'text', ph:'Up to 100 characters', rows:2, when:a=>a.fixDes==='Yes', openedBy:'Opened by Yes'},
+  {id:'lp', code:'LooseParts1', col:'LP_Intn_Binary', act:'Setting', label:'Are loose parts involved?', hint:'Anything the child can pick up and move.', kind:'one', opts:YN, cols:2},
+  {id:'lpNat', code:'LooseParts2', col:'Nat_LP_Intn_Binary', act:'Setting', label:'Natural loose parts?', kind:'one', opts:YN, cols:2, when:a=>a.lp==='Yes', openedBy:'Opened by loose parts'},
+  {id:'lpMfg', code:'LooseParts3', col:'Nat_LP_Intn_Binary', act:'Setting', label:'Manufactured loose parts?', kind:'one', opts:YN, cols:2, when:a=>a.lp==='Yes', openedBy:'Opened by loose parts', flag:'Test E168 and E169 both read Nat_LP_Intn_Binary. Manufactured interaction needs its own export name or these two answers collide in one column.'},
+  {id:'natSurfList', code:'LooseParts5', col:'Nat_Surfaces_List', act:'Setting', label:'Which natural materials?', hint:'Only if they are part of the play, not just the ground underneath.', kind:'many', opts:['Sand','Water','Mud','Mulch','Loose hay','Loose grass'], cols:3, when:a=>a.lpNat==='Yes', openedBy:'Opened by natural loose parts', flag:'Test G171 says “list to be provided”. These options are the instruction’s own examples, standing in until the real list arrives.'},
+
+  {id:'summary', code:'Summary1', col:'Play_Event_Summary', act:'Record', label:'Describe the play event', hint:'A sentence or two, written as you saw it.', kind:'text', rows:4, req:true, ph:'Two children dragging a large branch toward the mud kitchen, negotiating who steers…'}
+];
+
+const PROJECTS = [
+  {name:'Riverside Play Study', meta:'North Playground · 3 zones · package v4', chip:'On device', tone:'ok'},
+  {name:'Cedar Park Baseline', meta:'2 zones · 42 MB · wi-fi needed', chip:'Not downloaded', tone:'muted'},
+  {name:'Harbour Green Pilot', meta:'Closed 4 Sept · read only', chip:'Archived', tone:'muted'}
+];
+
+const PRIOR = [
+  {id:'OBS-0141', x:62, y:48, t:'14:22', s:'Three children building a dam in the creek channel.'},
+  {id:'OBS-0140', x:70, y:38, t:'14:09', s:'Child alone on the rope bridge, repeating the crossing.'},
+  {id:'OBS-0139', x:55, y:56, t:'11:51', s:'Two children negotiating turns at the mud kitchen.'},
+  {id:'OBS-0138', x:76, y:52, t:'11:34', s:'Adult lifting a child onto the climbing boulder.'}
+];
+
+class Component extends DCLogic {
+  state = {
+    device:'tablet', screen:'assign', online:false, zone:'B', round:3, first:false,
+    pt:null, ans:{}, qi:0, errs:[], recovered:false, savedCount:0,
+    placing:false, zoom:2, aerial:false, layersOpen:false, panelOpen:true, sel:null,
+    layers:{paths:true, zones:true, trees:true},
+    log:'Prototype ready — offline, four records held on device',
+    records:[
+      {id:'OBS-0141', state:'Held', meta:'Zone B · round 3 · 14:22'},
+      {id:'OBS-0140', state:'Held', meta:'Zone B · round 3 · 14:09'},
+      {id:'OBS-0139', state:'Held', meta:'Zone A · round 2 · 11:51'},
+      {id:'OBS-0138', state:'Synced', meta:'Zone A · round 2 · 11:34'}
+    ]
+  };
+
+  log(m){ this.setState({log:m}); }
+
+  vis(ans){ return QS.filter(q=>!q.when || q.when(ans)).map(q=>q.id); }
+  qById(id){ return QS.find(q=>q.id===id); }
+  resolve(q, ans){
+    if(q.dyn){
+      const s = SUBS[ans[q.dyn]];
+      if(!s) return {...q, label:'Subtype', opts:[]};
+      return {...q, code:s[0], col:s[0], label:s[1], opts:s[2], cols:2};
+    }
+    return q;
+  }
+  prune(ans){
+    const keep = this.vis(ans), out = {};
+    Object.keys(ans).forEach(k=>{ if(keep.indexOf(k)>=0) out[k]=ans[k]; });
+    return out;
+  }
+
+  setTablet = () => this.setState({device:'tablet'});
+  setPhoneLand = () => this.setState({device:'phone-land'});
+  setPhonePort = () => this.setState({device:'phone-port'});
+
+  toggleOnline = () => {
+    const on = !this.state.online;
+    this.setState({online:on});
+    if(on){ this.log('Signal found — sync started on its own'); setTimeout(this.runSync, 800); }
+    else this.log('Signal lost — records are held on device');
+  };
+  runSync = () => {
+    if(!this.state.online) return;
+    this.setState(s=>({records:s.records.map(r=> r.state==='Held' ? {...r, state:'Sending'} : r)}));
+    setTimeout(()=>{
+      if(!this.state.online) return;
+      this.setState(s=>({records:s.records.map((r,i)=> r.state==='Sending' ? (i===2 ? {...r, state:'Contested', meta:r.meta+' · edited by AK on web'} : {...r, state:'Synced'}) : r)}));
+      this.log('Sent · OBS-0139 came back contested');
+    }, 1700);
+  };
+  relaunch = () => {
+    const hasDraft = Object.keys(this.state.ans).length>0 || !!this.state.pt;
+    this.setState({screen:'assign', recovered:hasDraft});
+    this.log(hasDraft ? 'Reopened — an unsaved draft was found in storage' : 'Reopened — nothing was in progress');
+  };
+  resetAll = () => this.setState({screen:'assign', ans:{}, pt:null, qi:0, errs:[], recovered:false, online:false, savedCount:0, placing:false, sel:null, zoom:2, aerial:false, panelOpen:true, log:'Prototype reset'});
+  resumeDraft = () => { this.setState({recovered:false, screen:'field'}); this.log('Draft restored — every answer was written to storage as you tapped'); };
+  dropDraft = () => { this.setState({recovered:false, ans:{}, pt:null, qi:0}); this.log('Draft discarded'); };
+
+  goAssign = () => this.setState({screen:'assign'});
+  goBrief = () => this.setState({screen:'brief'});
+  goField = () => this.setState({screen:'field'});
+  goRecords = () => this.setState({screen:'records'});
+  goReview = () => this.setState({screen:'review'});
+  backToCards = () => this.setState({screen:'field'});
+  openProject = i => () => { if(i===0){ this.setState({screen:'brief'}); this.log('Riverside Play Study opened from the device package'); } else this.log('Not downloaded — connect to wi-fi to fetch this package'); };
+  pickZone = z => () => { this.setState({zone:z}); this.log('Zone '+z+' — the next observation is stamped with it'); };
+  pickRound = r => () => { this.setState({round:r}); this.log('Round '+r+' — round context carries to every observation in it'); };
+  toggleFirst = () => { const f=!this.state.first; this.setState({first:f}); this.log(f ? 'Round context will be re-entered' : 'Round context inherited from round 1'); };
+
+  // ── map ──
+  armPlace = () => { const p=!this.state.placing; this.setState({placing:p, sel:null}); this.log(p ? 'Placing armed — the next tap on the map drops the point' : 'Placing cancelled'); };
+  mapClick = e => {
+    if(!this.state.placing){ this.log('Map tap — navigating. Arm a point before marking a child.'); return; }
+    const b = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX-b.left)/b.width)*100, y = ((e.clientY-b.top)/b.height)*100;
+    this.setState({pt:{x,y}, qi:0, placing:false, panelOpen:true});
+    this.log('Point placed by hand — GPS was ±11 m under the canopy');
+  };
+  selectObs = o => e => { e.stopPropagation(); this.setState({sel:o.id}); this.log(o.id+' selected on the map'); };
+  clearSel = () => this.setState({sel:null});
+  zoomIn = () => { const z=Math.min(3, this.state.zoom+1); this.setState({zoom:z}); this.log('Zoom '+z+'× — '+(z>1?'observations shown individually':'observations clustered')); };
+  zoomOut = () => { const z=Math.max(1, this.state.zoom-1); this.setState({zoom:z, sel: z===1 ? null : this.state.sel}); this.log('Zoom '+z+'× — '+(z>1?'observations shown individually':'observations clustered into one count')); };
+  recentre = () => { this.setState({zoom:2}); this.log('Recentred on the zone, back to 2×'); };
+  toggleBase = () => { const a=!this.state.aerial; this.setState({aerial:a}); this.log(a ? 'Aerial base — markers keep their halo' : 'Plan base'); };
+  toggleLayers = () => this.setState({layersOpen:!this.state.layersOpen});
+  toggleLayer = k => () => { this.setState(s=>({layers:{...s.layers, [k]:!s.layers[k]}})); this.log(k+' layer toggled'); };
+  togglePanel = () => { const o=!this.state.panelOpen; this.setState({panelOpen:o}); this.log(o ? 'Form panel shown' : 'Form panel collapsed — the map has the whole screen'); };
+
+  // ── answers ──
+  pickOne = (id, val) => () => {
+    const cur = {...this.state.ans};
+    if(cur[id]===val) delete cur[id]; else cur[id]=val;
+    const ans = this.prune(cur);
+    const dropped = Object.keys(this.state.ans).length - Object.keys(ans).length;
+    this.setState({ans, errs:[]});
+    if(dropped>0) this.log(dropped+' answer'+(dropped>1?'s':'')+' dropped — the questions that held them are no longer asked');
+    if(cur[id]!==undefined) setTimeout(()=>this.step(1, ans), 160);
+  };
+  pickMany = (id, val) => () => {
+    const cur = {...this.state.ans};
+    const arr = Array.isArray(cur[id]) ? cur[id].slice() : [];
+    const i = arr.indexOf(val);
+    if(i>=0) arr.splice(i,1); else arr.push(val);
+    if(arr.length) cur[id]=arr; else delete cur[id];
+    this.setState({ans:this.prune(cur), errs:[]});
+  };
+  onText = e => {
+    const id = this.currentId(), cur = {...this.state.ans}, v = e.target.value;
+    if(v) cur[id]=v; else delete cur[id];
+    this.setState({ans:this.prune(cur), errs:[]});
+  };
+  currentId(){ const v=this.vis(this.state.ans); return v[Math.min(this.state.qi, v.length-1)]; }
+  step = (d, ansArg) => {
+    const ans = ansArg || this.state.ans, v = this.vis(ans), next = this.state.qi + d;
+    if(next >= v.length){ this.setState({screen:'review'}); this.log('End of the stack — review sheet opened'); return; }
+    if(next < 0){ this.setState({pt:null}); this.log('Point cleared — back to the map'); return; }
+    this.setState({qi:next});
+  };
+  advance = () => this.step(1);
+  back = () => this.step(-1);
+  jumpTo = i => () => this.setState({qi:i, screen:'field', panelOpen:true});
+
+  save = () => {
+    const ans = this.state.ans;
+    const missing = this.vis(ans).filter(id=>{ const q=this.qById(id); return q.req && !ans[id]; });
+    if(missing.length){ this.setState({errs:missing}); this.log('Save blocked — '+missing.length+' required answer'+(missing.length>1?'s':'')+' still empty'); return; }
+    const n = 142 + this.state.savedCount;
+    this.setState(s=>({screen:'saved', savedCount:s.savedCount+1, errs:[],
+      records:[{id:'OBS-0'+n, state: s.online ? 'Sending' : 'Held', meta:'Zone '+s.zone+' · round '+s.round+' · 14:31'}, ...s.records]}));
+    this.log('OBS-0'+n+' written to device storage');
+    if(this.state.online) setTimeout(this.runSync, 900);
+  };
+  discard = () => { this.setState({ans:{}, pt:null, qi:0, errs:[], screen:'field'}); this.log('Observation discarded'); };
+  nextObs = () => { this.setState({ans:{}, pt:null, qi:0, errs:[], screen:'field'}); this.log('New observation — zone and round context kept'); };
+  openRecord = r => () => this.log(r.state==='Contested'
+    ? r.id+' — two versions exist. Resolve by keeping yours, keeping theirs, splitting, or sending to the manager.'
+    : r.id+' · '+r.state.toLowerCase());
+
+  rail(on){ return {font:'inherit', fontSize:'13px', padding:'7px 13px', borderRadius:'8px', cursor:'pointer', border:'none', background: on ? 'var(--color-accent-900)' : 'var(--color-neutral-900)', color: on ? 'var(--color-accent-200)' : 'var(--color-neutral-300)'}; }
+  chip(tone){
+    const m = {ok:['#2b2741','var(--color-accent-300)'], muted:['#24262f','var(--color-neutral-400)'], warn:['#3a2f22','#e8bd85'], live:['#22303a','#9ecfe0']};
+    const c = m[tone] || m.muted;
+    return {fontSize:'11.5px', padding:'3px 9px', borderRadius:'999px', background:c[0], color:c[1], flex:'none', whiteSpace:'nowrap'};
+  }
+
+  renderVals(){
+    const s = this.state, ans = s.ans;
+    const tablet = s.device==='tablet', portrait = s.device==='phone-port';
+    const wide = !portrait;
+    const vis = this.vis(ans);
+    const qi = Math.min(s.qi, vis.length-1);
+    const rawQ = this.qById(vis[qi]) || QS[0];
+    const q = this.resolve(rawQ, ans);
+    const val = ans[q.id];
+
+    const optBase = {font:'inherit', fontSize: tablet ? '14.5px' : '14px', minHeight:'46px', padding:'11px 13px', borderRadius:'10px', border:'none', cursor:'pointer', textAlign:'left', lineHeight:1.3};
+    const optStyle = on => ({...optBase, background: on ? 'var(--color-accent-800)' : 'var(--color-neutral-900)', color: on ? 'var(--color-accent-100)' : 'var(--color-neutral-300)', fontWeight: on ? 500 : 400, boxShadow: on ? 'inset 2px 0 0 var(--color-accent-400)' : 'none'});
+
+    const isMany = q.kind==='many';
+    const opts = (q.opts||[]).map(o=>{
+      const on = isMany ? (Array.isArray(val) && val.indexOf(o)>=0) : val===o;
+      return {text:o, style:optStyle(on), pick: isMany ? this.pickMany(q.id,o) : this.pickOne(q.id,o)};
+    });
+
+    const ACTS = ['Child','Social','Play','Setting','Record'];
+    const actIdx = ACTS.indexOf(q.act);
+    const actBars = ACTS.map((a,i)=>({style:{flex:1, height:'3px', borderRadius:'2px', background: i<actIdx ? 'var(--color-accent-700)' : i===actIdx ? 'var(--color-accent)' : 'var(--color-neutral-900)'}}));
+
+    let lastGroup = '';
+    const reviewRows = vis.map((id,i)=>{
+      const rq = this.resolve(this.qById(id), ans), v = ans[id];
+      const missing = rq.req && !v, flagged = s.errs.indexOf(id)>=0;
+      const group = rq.act===lastGroup ? '' : rq.act;
+      lastGroup = rq.act;
+      return {
+        group, groupStyle:{fontSize:'12px', color:'var(--color-accent-300)', margin: group ? '16px 0 6px' : '0', display: group ? 'block' : 'none'},
+        label: rq.label, value: Array.isArray(v) ? v.join(', ') : (v || (rq.req ? 'Required' : 'Not answered')),
+        edit: this.jumpTo(i),
+        style: {display:'flex', gap:'12px', alignItems:'baseline', width:'100%', font:'inherit', textAlign:'left', background:'transparent', border:'none', borderBottom:'1px solid #ffffff0d', padding:'10px 0', cursor:'pointer', minHeight:'44px'},
+        valStyle: {fontSize:'14px', fontWeight:500, flex:'none', maxWidth:'46%', textAlign:'right', color: flagged ? '#e8bd85' : missing ? 'var(--color-neutral-500)' : 'var(--color-text)'}
+      };
+    });
+
+    const answered = vis.filter(id=>ans[id]!==undefined).length;
+    const heldCount = s.records.filter(r=>r.state==='Held').length;
+    const syncing = s.records.some(r=>r.state==='Sending');
+
+    const fadeRule = {height:'1px', margin:'20px 0 14px', background:'linear-gradient(90deg, transparent, #ffffff1f 40px, #ffffff1f calc(100% - 40px), transparent)'};
+    const primaryBtn = {font:'inherit', fontSize:'15px', fontWeight:500, width:'100%', minHeight:'48px', marginTop:'14px', borderRadius:'10px', border:'1px solid var(--color-accent)', background:'transparent', color:'var(--color-accent-200)', cursor:'pointer'};
+    const wideGhost = {font:'inherit', fontSize:'14px', width:'100%', minHeight:'46px', marginTop:'8px', borderRadius:'10px', border:'none', background:'transparent', color:'var(--color-neutral-400)', cursor:'pointer'};
+    const linkBtn = {font:'inherit', fontSize:'13.5px', padding:'6px 0', background:'transparent', border:'none', color:'var(--color-accent-300)', cursor:'pointer', minHeight:'44px'};
+    const linkMuted = {font:'inherit', fontSize:'13.5px', padding:'6px 0', background:'transparent', border:'none', color:'var(--color-neutral-400)', cursor:'pointer', minHeight:'44px'};
+    const rowBtn = {display:'block', width:'100%', font:'inherit', textAlign:'left', background:'transparent', border:'none', borderBottom:'1px solid #ffffff0d', padding:'13px 0', cursor:'pointer'};
+
+    const glass = {background:'#12131fd9', backdropFilter:'blur(6px)', border:'none', borderRadius:'8px', color:'var(--color-neutral-200)', font:'inherit'};
+    const pillStatic = {...glass, fontSize:'11.5px', padding:'6px 10px', color:'var(--color-neutral-300)', whiteSpace:'nowrap'};
+    const pillBtn = {...pillStatic, cursor:'pointer', minHeight:'32px'};
+    const sqBtn = {...glass, width:'38px', height:'38px', fontSize:'17px', lineHeight:1, cursor:'pointer', display:'grid', placeItems:'center'};
+
+    const z = s.zoom;
+    const markerPos = (x,y) => ({position:'absolute', left:x+'%', top:y+'%', transform:'translate(-50%,-50%) scale('+(1/z)+')'});
+
+    const priorPts = PRIOR.map(o=>({
+      select:this.selectObs(o),
+      style:{...markerPos(o.x,o.y), width:'16px', height:'16px', borderRadius:'50%', padding:0, cursor:'pointer',
+        background: s.sel===o.id ? 'var(--color-accent-300)' : 'var(--color-accent-600)',
+        border:'2px solid '+(s.sel===o.id ? '#f5f4ff' : '#d2cefd'),
+        boxShadow:'0 0 0 3px #0e0f1999, 0 1px 3px #000c'}
+    }));
+
+    const sel = PRIOR.find(o=>o.id===s.sel);
+
+    return {
+      setTablet:this.setTablet, setPhoneLand:this.setPhoneLand, setPhonePort:this.setPhonePort,
+      tabletBtn:this.rail(tablet), phoneLandBtn:this.rail(s.device==='phone-land'), phonePortBtn:this.rail(portrait),
+      toggleOnline:this.toggleOnline, relaunch:this.relaunch, resetAll:this.resetAll,
+      netBtn:this.rail(s.online), ghostBtn:this.rail(false),
+      netLabel: s.online ? 'Online' : 'Offline',
+      netStatus: syncing ? 'Sending…' : s.online ? 'Online' : heldCount+' held',
+      netDot: {width:'6px', height:'6px', borderRadius:'4px', background: s.online ? 'var(--color-accent-400)' : '#d9a86c', display:'inline-block'},
+
+      frameOuter: {flex:'none', maxWidth:'100%', overflowX:'auto'},
+      frameStyle: {width: tablet ? '1024px' : portrait ? '390px' : '844px', height: tablet ? '768px' : portrait ? '844px' : '390px',
+        background:'var(--color-bg)', borderRadius:'18px', boxShadow:'var(--shadow-lg)', display:'flex', flexDirection:'column', overflow:'hidden'},
+      pageWrap: {flex:1, overflowY:'auto', padding:'14px 18px 22px', width:'100%', maxWidth: wide ? '600px' : 'none', boxSizing:'border-box'},
+
+      atAssign: s.screen==='assign', atBrief: s.screen==='brief', atField: s.screen==='field',
+      atReview: s.screen==='review', atSaved: s.screen==='saved', atRecords: s.screen==='records',
+
+      recovered: s.recovered,
+      draftLine: 'A point at 49.2663, −123.1441 with '+Object.keys(ans).length+' answers was never saved. Answers are written to storage as you tap, so nothing waits on a save.',
+      resumeDraft:this.resumeDraft, dropDraft:this.dropDraft,
+      projects: PROJECTS.map((p,i)=>({...p, go:this.openProject(i), style:rowBtn, chipStyle:this.chip(p.tone)})),
+      goAssign:this.goAssign, goBrief:this.goBrief, goField:this.goField, goRecords:this.goRecords, goReview:this.goReview, backToCards:this.backToCards,
+
+      zone:s.zone, round:s.round,
+      zoneOpts:['A','B','C'].map(zz=>({label:'Zone '+zz, pick:this.pickZone(zz), style:optStyle(s.zone===zz)})),
+      roundOpts:[1,2,3].map(r=>({label:'Round '+r, pick:this.pickRound(r), style:optStyle(s.round===r)})),
+      contextLine: s.first ? 'Climate and zone inventory will be asked again before the first observation.' : 'Climate and zone inventory are inherited from round 1 today, recorded 08:12 by AK, and stamped onto every observation in this round.',
+      firstLabel: s.first ? 'Inherit from round 1 instead' : 'This is a fresh observation period',
+      toggleFirst:this.toggleFirst,
+
+      // field layout
+      fieldWrap: {flex:1, display:'flex', flexDirection: portrait ? 'column' : 'row', minHeight:0, position:'relative'},
+      mapBox: {flex:1, minWidth:0, minHeight: portrait ? '46%' : 0, padding:'10px', boxSizing:'border-box'},
+      mapSurface: {position:'relative', width:'100%', height:'100%', borderRadius:'12px', overflow:'hidden', background:'#1b1d2b', cursor: s.placing ? 'crosshair' : 'grab'},
+      sceneStyle: {position:'absolute', inset:0, transform:'scale('+z+')', transformOrigin:'64% 46%', transition:'transform .25s ease'},
+      cardPane: {display:'flex', flexDirection:'column', minHeight:0, flex: portrait ? '1' : 'none',
+        width: portrait ? 'auto' : (tablet ? '392px' : '310px'), borderLeft: portrait ? 'none' : '1px solid #ffffff12'},
+
+      aerial:s.aerial, groundFill: s.aerial ? '#20241d' : '#1b1d2b',
+      pathStroke: s.aerial ? '#4a4437' : '#2f3243', structFill: s.aerial ? '#3a352b' : '#24273a',
+      layerPaths:s.layers.paths, layerZones:s.layers.zones, layerTrees:s.layers.trees,
+      showZoneLabel: s.layers.zones,
+      zoneLabelStyle: {position:'absolute', left:'46%', top:'14%', transform:'scale('+(1/z)+')', transformOrigin:'left top', fontSize:'12px', color:'var(--color-neutral-300)', textShadow:'0 1px 3px #000'},
+
+      clustered: z===1, spread: z>1, clusterCount:'4',
+      clusterStyle: {...markerPos(66,48), width:'34px', height:'34px', borderRadius:'50%', cursor:'pointer', font:'inherit', fontSize:'14px', fontWeight:500,
+        background:'var(--color-accent-700)', color:'var(--color-accent-100)', border:'2px solid #d2cefd', boxShadow:'0 0 0 4px #0e0f1999, 0 2px 6px #000c'},
+      priorPts,
+      hasPt: !!s.pt, noPt: !s.pt,
+      ptStyle: s.pt ? {...markerPos(s.pt.x, s.pt.y), width:'24px', height:'24px', borderRadius:'50%', border:'2px solid #f5f4ff', background:'#9184d966', boxShadow:'0 0 0 5px #0e0f1999, 0 0 14px #9184d9aa'} : {},
+
+      mapClick:this.mapClick, placing:s.placing, armPlace:this.armPlace,
+      armLabel: s.placing ? 'Cancel placing' : 'Place a point',
+      armBtnStyle: {...primaryBtn, border:'1px solid '+(s.placing ? '#d9a86c' : 'var(--color-accent)'), color: s.placing ? '#e8bd85' : 'var(--color-accent-200)'},
+      armBanner: {position:'absolute', left:'50%', top:'12px', transform:'translateX(-50%)', ...glass, background:'#3a2f22e6', color:'#f0d3ad', fontSize:'12.5px', padding:'7px 12px', whiteSpace:'nowrap'},
+      idleTitle: s.placing ? 'Waiting for your tap' : 'No observation open',
+      idleBody: s.placing ? 'The next tap on the map becomes the child’s position. You can nudge it afterwards.' : 'Pan and zoom freely. When you have chosen a child to follow, arm a point and tap where they are.',
+
+      zoomIn:this.zoomIn, zoomOut:this.zoomOut, recentre:this.recentre, sqBtn,
+      recentreStyle: {...sqBtn, color:'var(--color-accent-300)'},
+      scaleLabel: z===1 ? '40 m · zone view' : z===2 ? '20 m' : '8 m · feature view',
+      toggleBase:this.toggleBase, baseLabel: s.aerial ? 'Aerial' : 'Plan',
+      basePillStyle: {...pillBtn, color: s.aerial ? 'var(--color-accent-200)' : 'var(--color-neutral-300)'},
+      toggleLayers:this.toggleLayers, layersOpen:s.layersOpen,
+      layersPillStyle: {...pillBtn, color: s.layersOpen ? 'var(--color-accent-200)' : 'var(--color-neutral-300)'},
+      layersPanel: {...glass, padding:'6px', display:'grid', gap:'2px', minWidth:'168px'},
+      layerRows: [['paths','Paths'],['zones','Zone polygons'],['trees','Trees']].map(([k,name])=>({
+        name, toggle:this.toggleLayer(k),
+        style: {display:'flex', alignItems:'center', gap:'9px', width:'100%', font:'inherit', fontSize:'13px', padding:'9px 9px', minHeight:'40px', borderRadius:'6px', border:'none', cursor:'pointer',
+          background: s.layers[k] ? '#9184d91f' : 'transparent', color: s.layers[k] ? 'var(--color-accent-200)' : 'var(--color-neutral-400)'},
+        markStyle: {width:'3px', height:'15px', borderRadius:'2px', flex:'none', background: s.layers[k] ? 'var(--color-accent)' : '#ffffff1f'}
+      })),
+
+      selectedObs: !!sel, selId: sel?sel.id:'', selTime: sel?sel.t:'', selSummary: sel?sel.s:'', clearSel:this.clearSel,
+      calloutStyle: {...glass, padding:'10px 12px', maxWidth:'260px'},
+      pillBtn, pillStatic,
+      heldLabel: heldCount+' held',
+
+      panelOpen: s.panelOpen, togglePanel:this.togglePanel,
+      panelTabLabel: s.panelOpen ? (portrait ? 'Hide form' : '›') : (portrait ? 'Show form' : '‹'),
+      panelTabStyle: portrait
+        ? {...glass, position:'absolute', right:'14px', top:'14px', fontSize:'12px', padding:'7px 11px', cursor:'pointer', zIndex:3}
+        : {...glass, position:'absolute', right: s.panelOpen ? (tablet ? '392px' : '310px') : '0', top:'50%', transform:'translateY(-50%)', width:'20px', height:'54px', borderRadius:'8px 0 0 8px', cursor:'pointer', fontSize:'13px', display:'grid', placeItems:'center', zIndex:3},
+
+      actBars,
+      qAct:q.act, qCount:(qi+1)+' of '+vis.length, qLabel:q.label, qHint:q.hint||'', qHasHint:!!q.hint,
+      qOpened: !!rawQ.openedBy, qOpenedBy: rawQ.openedBy||'',
+      qIsChoice: q.kind==='one', qIsMany: isMany, qIsText: q.kind==='text',
+      qOpts:opts, qValue: q.kind==='text' ? (val||'') : '', qPh:q.ph||'', qRows:q.rows||3,
+      qFlagged: !!q.flag, qFlag:q.flag||'', qSkippable: !q.req,
+      optGrid: {display:'grid', gridTemplateColumns:'repeat('+Math.min(q.cols||1, tablet?4:2)+', minmax(0, 1fr))', gap:'6px', marginTop:'14px'},
+      onText:this.onText, advance:this.advance, back:this.back,
+
+      reviewRows, hasErrs: s.errs.length>0, errLine: s.errs.length+' required answer'+(s.errs.length===1?'':'s')+' still empty',
+      reviewLine: answered+' of '+vis.length+' questions answered · every answer is already on the device',
+      save:this.save, discard:this.discard,
+
+      savedTitle: s.online ? 'Saved and sent' : 'Saved to the device',
+      savedBody: s.online ? 'The record left immediately because there is signal. Had it failed it would simply sit with the others until the next window.' : 'It joins '+heldCount+' others waiting. Sync happens by itself the moment this device has signal — there is nothing to remember to press.',
+      nextObs:this.nextObs, recordsLabel:'See the '+s.records.length+' records on this device',
+
+      records: s.records.map(r=>({...r, open:this.openRecord(r), style:rowBtn, chipStyle:this.chip(r.state==='Contested'?'warn':r.state==='Synced'?'ok':r.state==='Sending'?'live':'muted')})),
+      syncLine: s.online ? (syncing ? 'Sending now' : 'Online — anything held goes out automatically') : 'Offline — '+heldCount+' records are waiting for signal',
+
+      fadeRule, primaryBtn, wideGhost, linkBtn, linkMuted, lastLog:s.log
+    };
+  }
+}
+
+</script>
+</body>
+</html>

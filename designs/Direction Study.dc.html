@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/styles.css">
+<script src="_ds/industry-73d1bcbb-000d-4b75-8778-c9e73cf17ae7/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+  body { margin: 0; }
+  a { color: var(--color-accent-700); }
+  a:hover { color: var(--color-accent-800); }
+  .fo-kick { font-family: var(--font-heading); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-700); }
+  .fo-lede { font-size: 15px; line-height: 1.6; max-width: 72ch; color: var(--color-neutral-800); }
+  .fo-rule { height: 1px; background: var(--color-divider); border: 0; margin: 0; }
+  .fo-tok { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .fo-sw { width: 16px; height: 16px; flex: none; border: 1px solid rgba(0,0,0,.25); }
+  .fo-num { font-family: var(--font-heading); font-size: 13px; letter-spacing: .08em; color: var(--color-accent-700); }
+</style>
+</helmet>
+
+<div style="max-width: 1240px; margin: 0 auto; padding: 40px 28px 96px; font-family: var(--font-body);">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px; border-bottom: 1px solid var(--color-text); padding-bottom: 14px;">
+    <div style="flex: 1 1 340px; min-width: 0;">
+      <div class="fo-kick">Riverside Play Study · behaviour mapping</div>
+      <h1 style="font-size: 52px; margin: 6px 0 0; letter-spacing: -.02em;">Direction study</h1>
+    </div>
+    <div style="flex: 0 1 380px; font-size: 12.5px; line-height: 1.5; color: var(--color-neutral-700);">
+      Journeys, the five decisions that shape the product, three visual directions on the same
+      map-plus-form screen, and the one selected. Variable codes and display-logic notes are read
+      from <em>Variables to use for App testing.xlsx</em>; nothing in the protocol has been reinterpreted.
+    </div>
+  </header>
+
+  <section style="margin-top: 52px;">
+    <div class="fo-num">01 — Journeys</div>
+    <h2 style="font-size: 30px; margin: 8px 0 18px;">Three users, three different shapes of work</h2>
+    <p class="fo-lede">Each journey has one thing it must never get wrong. For the observer that is
+      <strong>not losing an observation</strong>; for the manager it is <strong>not changing the meaning of
+      records already collected</strong>; for the analyst it is <strong>knowing which records are actually
+      in the database</strong>. The interface is organised around those three guarantees rather than
+      around a feature list.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0; margin-top: 28px; border-top: 1px solid var(--color-text);">
+
+      <div style="padding: 18px 22px 22px 0; border-right: 1px solid var(--color-divider);">
+        <div class="fo-kick" style="color: var(--color-accent-700);">Field observer · phone &amp; tablet</div>
+        <h4 style="margin: 8px 0 12px; font-size: 19px;">Prepare → round → place → answer → save → next</h4>
+        <ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.75; color: var(--color-neutral-800);">
+          <li>Download the project package before leaving; verify it component by component.</li>
+          <li>Start or resume a round; confirm observer, zone, and round context once.</li>
+          <li>Place a point where the play event is — not where the tablet is.</li>
+          <li>Answer only the questions the display logic reveals.</li>
+          <li>Save to the device, see it written, continue immediately.</li>
+        </ol>
+        <p style="font-size: 12px; margin: 14px 0 0; color: var(--color-neutral-700);">Critical decision:
+          the round context screen is a separate, deliberate step. Weather, wind, shade and the zone
+          inventory are round-scoped in the library (Climate1–3, LP Inventory 1–14), so they are asked
+          once per round and shown as a locked header afterwards — never mixed into the per-event form.</p>
+      </div>
+
+      <div style="padding: 18px 22px 22px 22px; border-right: 1px solid var(--color-divider);">
+        <div class="fo-kick" style="color: var(--color-accent-700);">Manager / PI · desktop web</div>
+        <h4 style="margin: 8px 0 12px; font-size: 19px;">Configure → preview → publish a version</h4>
+        <ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.75; color: var(--color-neutral-800);">
+          <li>Set up site, zones and subzones, rounds, and observer assignments.</li>
+          <li>Prepare and validate the map package; see what failed and why.</li>
+          <li>Search the variable library, select questions, set display rules.</li>
+          <li>Preview on phone and tablet frames at real size.</li>
+          <li>Publish as an immutable form version; prior records stay bound to theirs.</li>
+        </ol>
+        <p style="font-size: 12px; margin: 14px 0 0; color: var(--color-neutral-700);">Critical decision:
+          publishing is versioned and additive. A new version never rewrites the interpretation of
+          collected records; the review table always shows which version produced a row.</p>
+      </div>
+
+      <div style="padding: 18px 0 22px 22px;">
+        <div class="fo-kick" style="color: var(--color-accent-700);">Analyst · desktop web + QGIS</div>
+        <h4 style="margin: 8px 0 12px; font-size: 19px;">Filter → inspect → flag → connect</h4>
+        <ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.75; color: var(--color-neutral-800);">
+          <li>Coordinated map and table over one filter set.</li>
+          <li>Open a record and see its full answer set plus context snapshot.</li>
+          <li>Work through data-quality flags, not decorative charts.</li>
+          <li>Read the same rows from QGIS over a live connection.</li>
+        </ol>
+        <p style="font-size: 12px; margin: 14px 0 0; color: var(--color-neutral-700);">Critical decision:
+          there is no “send to QGIS” action. QGIS connects to the same store and refreshes its layer.
+          Exports exist for analysis and backup, and are labelled as such.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 64px;">
+    <div class="fo-num">02 — Decisions</div>
+    <h2 style="font-size: 30px; margin: 8px 0 18px;">Five consequential design decisions</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider);">
+      <div style="background: var(--color-bg); padding: 18px;">
+        <div class="fo-kick">Decision 01</div>
+        <h5 style="margin: 6px 0 8px; font-size: 16px;">Scope is visible, not implied</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Every answer is labelled
+          with where it lives: project, observer, round, zone, or event. Changing round or zone shows an
+          explicit list of what carries forward and what resets, before it happens.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 18px;">
+        <div class="fo-kick">Decision 02</div>
+        <h5 style="margin: 6px 0 8px; font-size: 16px;">Offline readiness is a checklist, not a thumbnail</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Imagery tiles, site
+          layers, form version, and zone/round reference data each report their own state and byte size.
+          A project is “ready offline” only when all four verify.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 18px;">
+        <div class="fo-kick">Decision 03</div>
+        <h5 style="margin: 6px 0 8px; font-size: 16px;">Connectivity ≠ sync</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Five record states —
+          saved on device, waiting, syncing, synced, needs attention — each with an icon and a word.
+          “Synced” appears only after the server acknowledges that revision.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 18px;">
+        <div class="fo-kick">Decision 04</div>
+        <h5 style="margin: 6px 0 8px; font-size: 16px;">Hidden answers are declared, never guessed</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">When a parent answer
+          changes and children hide, the form says what happened to those values and stores them as
+          <em>not applicable</em> — distinct from a configured “No” and from unanswered.</p>
+      </div>
+      <div style="background: var(--color-bg); padding: 18px;">
+        <div class="fo-kick">Decision 05</div>
+        <h5 style="margin: 6px 0 8px; font-size: 16px;">Four palettes that cannot collide</h5>
+        <p style="font-size: 12.5px; margin: 0; color: var(--color-neutral-800);">Map categories, marker
+          states, sync states, and validation each draw from a reserved set. Status always carries an
+          icon and a label, so nothing depends on colour alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 64px;">
+    <div class="fo-num">03 — Explorations</div>
+    <h2 style="font-size: 30px; margin: 8px 0 8px;">The same screen, three ways</h2>
+    <p class="fo-lede" style="margin-bottom: 26px;">Each sample shows the identical moment: zone B, round 3,
+      a point placed over the site plan, and the loose-parts branch of the observation form opening
+      (<code style="font-size: 12px;">LP_Intn_Binary</code> → <code style="font-size: 12px;">Nat_LP_Intn_Binary</code>).
+      Differences below are visual, not functional.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 26px;">
+
+      <!-- A: Survey Sheet -->
+      <div>
+        <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 2px solid var(--color-text); padding-bottom: 8px;">
+          <div class="fo-num" style="color: var(--color-text);">A</div>
+          <h3 style="margin: 0; font-size: 23px;">Survey Sheet</h3>
+        </div>
+        <p style="font-size: 12.5px; line-height: 1.6; margin: 12px 0 14px; color: var(--color-neutral-800);">
+          The site-survey drawing: steel-blue line work on technical paper, square corners, registration
+          marks at framed objects, condensed headings so long variable names fit without truncating.
+          Reads as an instrument rather than an app. Mono accent leaves the whole warm half of the
+          spectrum free for semantic states.</p>
+
+        <div style="border: 1px solid #1d1f2033; background: #f2f2f3; padding: 12px; font-family: Barlow, sans-serif;">
+          <div style="display: flex; justify-content: space-between; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #5d5d60;">
+            <span>Zone B · Round 3</span><span>OBS · AK</span>
+          </div>
+          <div style="position: relative; margin-top: 10px; border: 1px solid #1d1f2033;">
+            <svg viewBox="0 0 280 150" style="display: block; width: 100%; background: #e6e7e2;">
+              <rect x="0" y="0" width="280" height="150" fill="#e4e7dd"></rect>
+              <path d="M0 96 L90 78 L170 92 L280 70" stroke="#c9c4b4" stroke-width="13" fill="none"></path>
+              <rect x="18" y="16" width="112" height="62" fill="#d7ddcb" stroke="#1d1f2055" stroke-dasharray="4 3"></rect>
+              <rect x="156" y="98" width="104" height="42" fill="#dcdcd4" stroke="#1d1f2055" stroke-dasharray="4 3"></rect>
+              <circle cx="206" cy="34" r="11" fill="#c3cdb4"></circle>
+              <circle cx="232" cy="52" r="8" fill="#c3cdb4"></circle>
+              <circle cx="54" cy="118" r="9" fill="#c3cdb4"></circle>
+              <text x="24" y="32" font-family="'Barlow Condensed', sans-serif" font-size="11" fill="#1d1f20" letter-spacing="1.4">ZONE B</text>
+              <rect x="82" y="44" width="9" height="9" fill="#1d1f20" stroke="#fff" stroke-width="2"></rect>
+              <rect x="112" y="60" width="9" height="9" fill="none" stroke="#1d1f20" stroke-width="2"></rect>
+              <g stroke="#5980a6" stroke-width="1.5">
+                <circle cx="150" cy="70" r="13" fill="#5980a622"></circle>
+                <path d="M150 50 L150 64 M150 76 L150 90 M130 70 L144 70 M156 70 L170 70"></path>
+              </g>
+            </svg>
+            <div style="position: absolute; left: 6px; bottom: 6px; background: #f2f2f3; border: 1px solid #1d1f2033; font-family: 'Barlow Condensed', sans-serif; font-size: 9.5px; letter-spacing: .08em; padding: 2px 6px; text-transform: uppercase;">Vector plan</div>
+          </div>
+          <div style="margin-top: 12px; font-size: 11px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: .09em; text-transform: uppercase; color: #5d5d60;">Loose environmental features · event</div>
+          <div style="margin-top: 6px; font-size: 13px; font-weight: 500;">Are loose parts involved in this play event?</div>
+          <div style="display: flex; gap: 0; margin-top: 8px; border: 1px solid #1d1f2033;">
+            <div style="flex: 1; padding: 9px; text-align: center; font-size: 13px; color: #1d1f20;">No</div>
+            <div style="flex: 1; padding: 9px; text-align: center; font-size: 13px; background: #2c455d; color: #f2f2f3; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; border-left: 1px solid #1d1f2033;">YES</div>
+          </div>
+          <div style="margin-top: 10px; border-left: 2px solid #5980a6; padding-left: 10px;">
+            <div style="font-size: 12.5px;">Are natural loose parts involved?</div>
+            <div style="display: flex; gap: 0; margin-top: 6px; border: 1px solid #1d1f2033;">
+              <div style="flex: 1; padding: 7px; text-align: center; font-size: 12px;">No</div>
+              <div style="flex: 1; padding: 7px; text-align: center; font-size: 12px; border-left: 1px solid #1d1f2033;">Yes</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <div style="flex: 1; background: #2c455d; color: #f2f2f3; text-align: left; padding: 10px 12px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: .04em;">SAVE TO DEVICE</div>
+            <div style="border: 1px solid #1d1f2033; padding: 10px 12px; font-size: 13px;">Cancel</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: grid; gap: 5px;">
+          <div class="fo-tok"><span class="fo-sw" style="background: #f2f2f3;"></span><code>bg #f2f2f3</code></div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #1d1f20;"></span><code>text #1d1f20</code></div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #5980a6;"></span><code>accent #5980a6</code> · steel</div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #1d2d3d;"></span><code>accent-900 #1d2d3d</code></div>
+        </div>
+        <p style="font-size: 11.5px; line-height: 1.6; margin: 12px 0 0; color: var(--color-neutral-700);">
+          <strong>Type</strong> Barlow Condensed 600 over Barlow 400/500/700. Both SIL Open Font License,
+          full weight range, self-hostable and bundleable in an Expo build. Condensed headings buy roughly
+          18% more characters per line — material for labels like “LARGE Natural Loose Parts”.</p>
+      </div>
+
+      <!-- B: Field Rule -->
+      <div>
+        <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 2px solid var(--color-text); padding-bottom: 8px;">
+          <div class="fo-num" style="color: var(--color-text);">B</div>
+          <h3 style="margin: 0; font-size: 23px;">Field Rule</h3>
+        </div>
+        <p style="font-size: 12.5px; line-height: 1.6; margin: 12px 0 14px; color: var(--color-neutral-800);">
+          Swiss signage logic: heavy 2px rules, zero radius, flush-left labels even inside wide buttons,
+          one hot red accent. The loudest and most confident of the three, and the strongest at arm's
+          length in bright sun. Its problem is structural: red is the only accent, and red is also the
+          colour a field tool needs for rejected records and validation.</p>
+
+        <div style="border: 2px solid #201e1d; background: #f3f2f2; padding: 12px; font-family: Archivo, sans-serif;">
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600;">
+            <span>Zone B / Round 3</span><span>OBS AK</span>
+          </div>
+          <div style="position: relative; margin-top: 10px; border-top: 2px solid #201e1d; border-bottom: 2px solid #201e1d;">
+            <svg viewBox="0 0 280 150" style="display: block; width: 100%;">
+              <rect x="0" y="0" width="280" height="150" fill="#e8e6e4"></rect>
+              <path d="M0 96 L90 78 L170 92 L280 70" stroke="#cfcbc7" stroke-width="13" fill="none"></path>
+              <rect x="18" y="16" width="112" height="62" fill="none" stroke="#201e1d" stroke-width="2"></rect>
+              <rect x="156" y="98" width="104" height="42" fill="none" stroke="#201e1d" stroke-width="2"></rect>
+              <circle cx="206" cy="34" r="11" fill="#d8d5d2"></circle>
+              <circle cx="232" cy="52" r="8" fill="#d8d5d2"></circle>
+              <circle cx="54" cy="118" r="9" fill="#d8d5d2"></circle>
+              <text x="24" y="32" font-family="Archivo, sans-serif" font-size="11" font-weight="700" fill="#201e1d" letter-spacing="1">ZONE B</text>
+              <rect x="82" y="44" width="10" height="10" fill="#201e1d"></rect>
+              <rect x="112" y="60" width="10" height="10" fill="#f3f2f2" stroke="#201e1d" stroke-width="2"></rect>
+              <g stroke="#ec3013" stroke-width="2">
+                <circle cx="150" cy="70" r="13" fill="none"></circle>
+                <path d="M150 50 L150 64 M150 76 L150 90 M130 70 L144 70 M156 70 L170 70"></path>
+              </g>
+            </svg>
+          </div>
+          <div style="margin-top: 12px; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: #6a6663;">Loose environmental features</div>
+          <div style="margin-top: 6px; font-size: 13.5px; font-weight: 500;">Are loose parts involved in this play event?</div>
+          <div style="display: flex; margin-top: 8px; border: 2px solid #201e1d;">
+            <div style="flex: 1; padding: 9px 12px; font-size: 13px;">No</div>
+            <div style="flex: 1; padding: 9px 12px; font-size: 13px; background: #ec3013; color: #fff; font-weight: 700; border-left: 2px solid #201e1d;">Yes</div>
+          </div>
+          <div style="margin-top: 12px; border-top: 2px solid #ec3013; padding-top: 8px;">
+            <div style="font-size: 12.5px;">Are natural loose parts involved?</div>
+            <div style="display: flex; margin-top: 6px; border: 2px solid #201e1d;">
+              <div style="flex: 1; padding: 7px 10px; font-size: 12px;">No</div>
+              <div style="flex: 1; padding: 7px 10px; font-size: 12px; border-left: 2px solid #201e1d;">Yes</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <div style="flex: 1; background: #ec3013; color: #fff; padding: 11px 12px; font-weight: 700; font-size: 13.5px;">Save to device</div>
+            <div style="border: 2px solid #201e1d; padding: 11px 12px; font-size: 13px;">Cancel</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: grid; gap: 5px;">
+          <div class="fo-tok"><span class="fo-sw" style="background: #f3f2f2;"></span><code>bg #f3f2f2</code></div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #201e1d;"></span><code>text #201e1d</code></div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #ec3013;"></span><code>accent #ec3013</code> · signal red</div>
+        </div>
+        <p style="font-size: 11.5px; line-height: 1.6; margin: 12px 0 0; color: var(--color-neutral-700);">
+          <strong>Type</strong> Archivo 600 over Archivo 400/500/700 — SIL OFL, one family for the whole
+          system, bundles cleanly. Wide grotesk forms are excellent at distance but consume horizontal
+          space that dense variable labels need.</p>
+      </div>
+
+      <!-- C: Night Transit -->
+      <div>
+        <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 2px solid var(--color-text); padding-bottom: 8px;">
+          <div class="fo-num" style="color: var(--color-text);">C</div>
+          <h3 style="margin: 0; font-size: 23px;">Night Transit</h3>
+        </div>
+        <p style="font-size: 12.5px; line-height: 1.6; margin: 12px 0 14px; color: var(--color-neutral-800);">
+          A dense, dark instrument panel: low-chroma blue-grey ground, a blurple accent used as line and
+          glow, 8px radii, compact spacing. Aerial imagery looks superb on it and dusk rounds are
+          comfortable. It loses badly in the condition that matters most — direct daylight on a tablet,
+          where a dark ground turns the screen into a mirror.</p>
+
+        <div style="border: 1px solid #32344a; background: #161826; padding: 12px; font-family: Inter, sans-serif; color: #e9e9ed;">
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #9a9ab0;">
+            <span>Zone B · Round 3</span><span>OBS AK</span>
+          </div>
+          <div style="position: relative; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #32344a;">
+            <svg viewBox="0 0 280 150" style="display: block; width: 100%;">
+              <rect x="0" y="0" width="280" height="150" fill="#1e2032"></rect>
+              <path d="M0 96 L90 78 L170 92 L280 70" stroke="#2c2f45" stroke-width="13" fill="none"></path>
+              <rect x="18" y="16" width="112" height="62" rx="6" fill="#23263a" stroke="#43476a"></rect>
+              <rect x="156" y="98" width="104" height="42" rx="6" fill="#23263a" stroke="#43476a"></rect>
+              <circle cx="206" cy="34" r="11" fill="#2a2f42"></circle>
+              <circle cx="232" cy="52" r="8" fill="#2a2f42"></circle>
+              <circle cx="54" cy="118" r="9" fill="#2a2f42"></circle>
+              <text x="24" y="32" font-family="Inter, sans-serif" font-size="10" font-weight="500" fill="#b9b9cb" letter-spacing="1">ZONE B</text>
+              <rect x="82" y="44" width="9" height="9" rx="2" fill="#e9e9ed"></rect>
+              <rect x="112" y="60" width="9" height="9" rx="2" fill="none" stroke="#e9e9ed" stroke-width="2"></rect>
+              <g stroke="#9184d9" stroke-width="1.5">
+                <circle cx="150" cy="70" r="13" fill="#9184d926"></circle>
+                <path d="M150 50 L150 64 M150 76 L150 90 M130 70 L144 70 M156 70 L170 70"></path>
+              </g>
+            </svg>
+          </div>
+          <div style="margin-top: 12px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #9a9ab0;">Loose environmental features</div>
+          <div style="margin-top: 6px; font-size: 13px; font-weight: 500;">Are loose parts involved in this play event?</div>
+          <div style="display: flex; margin-top: 8px; border: 1px solid #43476a; border-radius: 8px; overflow: hidden;">
+            <div style="flex: 1; padding: 9px; text-align: center; font-size: 12.5px; color: #b9b9cb;">No</div>
+            <div style="flex: 1; padding: 9px; text-align: center; font-size: 12.5px; border-left: 1px solid #43476a; background: #9184d91f; color: #c5bdf0;">Yes</div>
+          </div>
+          <div style="margin-top: 10px; border-left: 1px solid #9184d9; padding-left: 10px;">
+            <div style="font-size: 12.5px;">Are natural loose parts involved?</div>
+            <div style="display: flex; margin-top: 6px; border: 1px solid #43476a; border-radius: 8px; overflow: hidden;">
+              <div style="flex: 1; padding: 7px; text-align: center; font-size: 12px; color: #b9b9cb;">No</div>
+              <div style="flex: 1; padding: 7px; text-align: center; font-size: 12px; border-left: 1px solid #43476a; color: #b9b9cb;">Yes</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <div style="flex: 1; border: 1px solid #9184d9; color: #c5bdf0; padding: 10px 12px; font-size: 13px; font-weight: 500; border-radius: 8px;">Save to device</div>
+            <div style="border: 1px solid #43476a; color: #b9b9cb; padding: 10px 12px; font-size: 13px; border-radius: 8px;">Cancel</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: grid; gap: 5px;">
+          <div class="fo-tok"><span class="fo-sw" style="background: #161826;"></span><code>bg #161826</code></div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #e9e9ed;"></span><code>text #e9e9ed</code></div>
+          <div class="fo-tok"><span class="fo-sw" style="background: #9184d9;"></span><code>accent #9184d9</code> · blurple</div>
+        </div>
+        <p style="font-size: 11.5px; line-height: 1.6; margin: 12px 0 0; color: var(--color-neutral-700);">
+          <strong>Type</strong> Inter 500/600 over Inter 400 — SIL OFL and variable, so one file covers the
+          range. Neutral and legible, but the least distinctive of the three; it is the typeface most
+          research tools already use.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 64px; border-top: 2px solid var(--color-text); padding-top: 22px;">
+    <div class="fo-num">04 — Selection</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 10px;">
+      <div>
+        <h2 style="font-size: 34px; margin: 0 0 12px;">A — Survey Sheet</h2>
+        <p style="font-size: 14px; line-height: 1.65; color: var(--color-neutral-800); margin: 0 0 12px;">
+          Chosen on four grounds, in order of weight for these users.</p>
+        <ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.8; color: var(--color-neutral-800);">
+          <li><strong>Daylight.</strong> A light technical ground at near-white luminance is the most
+            readable surface on a tablet held outdoors; dark themes fail here first.</li>
+          <li><strong>Semantic headroom.</strong> The accent is a single desaturated steel. Amber, green
+            and red stay entirely unused by the chrome, so sync and validation states own them outright —
+            the exact problem that rules out Field Rule.</li>
+          <li><strong>Density.</strong> Condensed headings and a 0.85× spacing scale fit long variable
+            names and a 40-question instrument without truncation or a second scroll axis.</li>
+          <li><strong>Identity.</strong> Registration marks, hairline frames and square corners read as
+            survey drawing. It looks like field science, not like a SaaS dashboard.</li>
+        </ol>
+        <p style="font-size: 13px; line-height: 1.65; color: var(--color-neutral-800); margin: 14px 0 0;">
+          <strong>Night Transit is not discarded.</strong> It becomes the low-light theme — same layout,
+          same components, dark tokens — scheduled after the primary theme is validated, per your note.</p>
+      </div>
+      <div>
+        <h4 style="margin: 0 0 12px; font-size: 19px;">The four reserved palettes</h4>
+        <div style="display: grid; gap: 1px; background: var(--color-divider); border: 1px solid var(--color-divider); font-size: 12px;">
+          <div style="background: var(--color-bg); padding: 12px 14px;">
+            <div class="fo-kick">Chrome &amp; interaction</div>
+            <div style="display: flex; gap: 6px; margin-top: 7px; align-items: center;">
+              <span class="fo-sw" style="background: #5980a6;"></span><span class="fo-sw" style="background: #416180;"></span><span class="fo-sw" style="background: #2c455d;"></span><span class="fo-sw" style="background: #1d2d3d;"></span>
+              <span style="color: var(--color-neutral-700);">steel only — lines and marks at 500, filled controls at 800/900 so white type clears 4.5:1</span>
+            </div>
+          </div>
+          <div style="background: var(--color-bg); padding: 12px 14px;">
+            <div class="fo-kick">Sync state</div>
+            <div style="display: flex; gap: 6px; margin-top: 7px; align-items: center; flex-wrap: wrap;">
+              <span class="fo-sw" style="background: #5d5d60;"></span><span class="fo-sw" style="background: #7d5504;"></span><span class="fo-sw" style="background: #5980a6;"></span><span class="fo-sw" style="background: #2f6b46;"></span><span class="fo-sw" style="background: #a32a1e;"></span>
+              <span style="color: var(--color-neutral-700);">device · waiting · syncing · synced · attention</span>
+            </div>
+          </div>
+          <div style="background: var(--color-bg); padding: 12px 14px;">
+            <div class="fo-kick">Map categories</div>
+            <div style="display: flex; gap: 6px; margin-top: 7px; align-items: center;">
+              <span class="fo-sw" style="background: #d7ddcb;"></span><span class="fo-sw" style="background: #c9c4b4;"></span><span class="fo-sw" style="background: #c3cdb4;"></span><span class="fo-sw" style="background: #dcdcd4;"></span>
+              <span style="color: var(--color-neutral-700);">desaturated site fills</span>
+            </div>
+          </div>
+          <div style="background: var(--color-bg); padding: 12px 14px;">
+            <div class="fo-kick">Markers</div>
+            <div style="display: flex; gap: 10px; margin-top: 7px; align-items: center;">
+              <svg width="70" height="16" viewBox="0 0 70 16">
+                <rect x="1" y="3" width="10" height="10" fill="#1d1f20" stroke="#fff" stroke-width="2"></rect>
+                <rect x="19" y="3" width="10" height="10" fill="#f2f2f3" stroke="#1d1f20" stroke-width="2"></rect>
+                <circle cx="42" cy="8" r="5.5" fill="#1d1f20" stroke="#fff" stroke-width="2"></circle>
+                <path d="M60 2 L66 13 L54 13 Z" fill="#1d1f20" stroke="#fff" stroke-width="2"></path>
+              </svg>
+              <span style="color: var(--color-neutral-700);">shape codes play type; fill codes sync; white halo holds over aerial imagery</span>
+            </div>
+          </div>
+        </div>
+        <p style="font-size: 12px; line-height: 1.6; margin: 14px 0 0; color: var(--color-neutral-700);">
+          Marker shape carries the research category and marker fill carries the record state, so neither
+          depends on hue. Every status chip in the product pairs a glyph with a word.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-top: 56px; border-top: 1px solid var(--color-divider); padding-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 26px;">
+    <div>
+      <div class="fo-kick">Honest about the prototype</div>
+      <p style="font-size: 12.5px; line-height: 1.65; margin: 8px 0 0; color: var(--color-neutral-800);">
+        Map rendering in these samples is a simulated vector site plan, not a georeferenced package.
+        Download progress, sync attempts, server acknowledgement and conflict detection are scripted
+        front-end states. No authentication, no PostGIS, no QGIS connection exists behind any screen.
+        The interactive collector labels each simulated behaviour where it occurs.</p>
+    </div>
+    <div>
+      <div class="fo-kick">Next in this study</div>
+      <p style="font-size: 12.5px; line-height: 1.65; margin: 8px 0 0; color: var(--color-neutral-800);">
+        The mobile collection journey — project preparation, offline readiness, round context, manual
+        point placement, the conditional instrument, save, and sync recovery — in phone portrait and
+        tablet landscape. Then the web review workspace and QGIS connection area, and the token and
+        component handoff.</p>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>
