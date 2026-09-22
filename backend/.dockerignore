@@ -1,0 +1,12 @@
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!config.local.json
+!src/
+!src/**
+!tests/
+!tests/**
+!certs/
+!certs/**
+**/__pycache__/
