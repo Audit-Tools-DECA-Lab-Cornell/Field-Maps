@@ -45,11 +45,13 @@ Run `pnpm run help` for the command overview. Integration tests need the local d
 
 ## Current functionality
 
-The mobile practice form saves georeferenced observations to SQLite and automatically uploads while the app is active. Native sign-in and two real test uploads have been exercised; the user tested offline save/reconnect, and both records were independently verified in hosted PostGIS and QGIS Desktop. The API still runs on the development computer. This is not a production deployment.
+The mobile collector saves georeferenced observations to SQLite and automatically uploads while the app is active. Native sign-in and two real test uploads have been exercised; the user tested offline save/reconnect, and both records were independently verified in hosted PostGIS and QGIS Desktop. The API still runs on the development computer. This is not a production deployment.
+
+The collector has been rebuilt to the [Riverside Collector design](designs/Riverside%20Collector%20v2.dc.html): an armed place-a-point map mode, one question per screen against a reusable versioned form engine, drafts that survive a force quit, and the Nocturne dark interface. The practice `shell-v1` form and its records are unchanged and still upload. The new `janet-test-v1` instrument subset renders and saves offline but is held on the device, because the API accepts only `shell-v1` today. This redesign is verified by types, tests and bundling only; it has not yet run on a device. See the [mobile collector](mobile/README.md) for what is deliberately left open.
 
 The web application remains an independent operations/field-collector prototype with simulated sync. Moving it into `web/` does not connect it to the backend. General form publishing, imported offline site packages, attachments, bidirectional edits, and closed-app background synchronization remain future work.
 
-Next implementation scope: [Janet's versioned test form](docs/Janet-Test-Form-Scope.md). The first test form excludes all 16 hidden spreadsheet rows, as confirmed by the user.
+Next implementation scope: publishing [Janet's versioned test form](docs/Janet-Test-Form-Scope.md) — dual acceptance in the API, an immutable server form version, and a typed GIS view — once its open protocol decisions are settled. The first test form excludes all 16 hidden spreadsheet rows, as confirmed by the user.
 
 ## Component documentation
 

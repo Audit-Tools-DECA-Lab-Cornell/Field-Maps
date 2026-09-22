@@ -1,9 +1,29 @@
+import { router } from "expo-router";
 import { useState } from "react";
-import { ScrollView, Text, TextInput } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { useAccount } from "../src/auth/provider";
-import { ActionButton } from "../src/components/action-button";
+import {
+  AttentionNote,
+  FadeRule,
+  GhostAction,
+  LinkAction,
+  PrimaryAction,
+  Prose,
+  SectionLabel,
+} from "../src/components/chrome";
+import { PageScreen } from "../src/components/screen";
 import { useSync } from "../src/sync/provider";
-import { colors } from "../src/theme";
+import { colors, fonts, radius, space, textStyles } from "../src/theme";
+
+const field = {
+  backgroundColor: colors.neutral900,
+  borderRadius: radius.md + 2,
+  paddingHorizontal: 13,
+  minHeight: 48,
+  color: colors.text,
+  fontFamily: fonts.regular,
+  fontSize: 15,
+} as const;
 
 export default function AccountScreen() {
   const { client, session, account, ready, configured, error: setupError } = useAccount();
@@ -12,6 +32,7 @@ export default function AccountScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
   async function submit() {
     if (!client || busy) return;
     setBusy(true);
@@ -33,78 +54,91 @@ export default function AccountScreen() {
       setBusy(false);
     }
   }
+
   return (
-    <ScrollView
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ padding: 24, gap: 20 }}
-    >
-      <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "600" }}>
-        Account and synchronization
+    <PageScreen>
+      <LinkAction label="← Studies" muted onPress={() => router.navigate("/")} />
+      <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>
+        Account and synchronisation
       </Text>
-      <Text style={{ color: colors.muted, lineHeight: 22 }}>
-        {!configured
-          ? "Practice mode: records stay on this device. Your project connection needs to be configured before signing in."
-          : !ready
-            ? "Restoring your account…"
-            : session
-              ? `Signed in as ${session.user.email ?? "project member"}. Saved observations upload automatically while the app is open and connected.`
-              : account
-                ? `Offline workspace for ${account.email ?? "your account"}. You can keep collecting. Sign in again if uploads cannot resume when connected.`
-                : "Sign in before collecting project records. Practice records stay separate and are never uploaded automatically."}
-      </Text>
+      <View style={{ marginTop: space.tight, maxWidth: 520 }}>
+        <Prose tone="body">
+          {!configured
+            ? "Practice mode: records stay on this device. Your project connection needs to be configured before signing in."
+            : !ready
+              ? "Restoring your account…"
+              : session
+                ? `Signed in as ${session.user.email ?? "project member"}. Saved observations upload automatically while the app is open and connected.`
+                : account
+                  ? `Offline workspace for ${account.email ?? "your account"}. You can keep collecting. Sign in again if uploads cannot resume when connected.`
+                  : "Sign in before collecting project records. Practice records stay separate and are never uploaded automatically."}
+        </Prose>
+      </View>
+
       {client && ready && !session && (
-        <>
+        <View style={{ marginTop: space.loose, gap: space.snug }}>
+          <SectionLabel>Sign in</SectionLabel>
           <TextInput
             accessibilityLabel="Email"
             placeholder="Email"
+            placeholderTextColor={colors.neutral600}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
             editable={!busy}
-            style={{ padding: 16, backgroundColor: colors.surface, color: colors.ink }}
+            style={field}
           />
           <TextInput
             accessibilityLabel="Password"
             placeholder="Password"
+            placeholderTextColor={colors.neutral600}
             autoCapitalize="none"
             autoComplete="current-password"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
             editable={!busy}
-            style={{ padding: 16, backgroundColor: colors.surface, color: colors.ink }}
+            style={field}
           />
-        </>
+        </View>
       )}
-      {[setupError, syncError, error].filter(Boolean).map((message) => (
-        <Text key={message} accessibilityRole="alert" style={{ color: colors.error }}>
-          {message}
-        </Text>
-      ))}
+
+      <View style={{ gap: space.snug, marginTop: space.base }}>
+        {[setupError, syncError, error]
+          .filter((message): message is string => typeof message === "string" && message !== "")
+          .map((message) => (
+            <AttentionNote key={message} role="alert" title={message} />
+          ))}
+      </View>
+
       {client && ready && (
-        <ActionButton
+        <PrimaryAction
           label={busy ? "Please wait…" : session ? "Sign out on this device" : "Sign in"}
           disabled={busy || (!session && (!email.trim() || !password))}
           onPress={() => {
             void submit();
           }}
+          style={{ marginTop: space.base }}
         />
       )}
       {session && (
-        <ActionButton
-          label="Retry pending uploads"
-          secondary
+        <GhostAction
+          label="Retry records that need attention"
           onPress={() => {
             void retry().catch(() => setError("Could not retry. Reopen the app and try again."));
           }}
+          style={{ marginTop: space.snug }}
         />
       )}
-      <Text style={{ color: colors.muted, lineHeight: 22 }}>
+
+      <FadeRule />
+      <Prose tone="faint">
         Signing out keeps pending records on this device for the same account. Reopen the app after
-        reconnecting to resume uploads. Closed-app background synchronization is not enabled.
-      </Text>
-    </ScrollView>
+        reconnecting to resume uploads; a session that expires mid-upload resumes once you sign in
+        again. Closed-app background synchronisation is not enabled.
+      </Prose>
+    </PageScreen>
   );
 }

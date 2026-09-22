@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coordinateSchema, countInputSchema, observationSchema } from "./observation";
+import { coordinateSchema, countInputSchema, shellObservationSchema } from "./observation";
 
 describe("Observation boundaries", () => {
   it("rejects an empty count instead of recording zero", () => {
@@ -35,10 +35,10 @@ describe("Observation boundaries", () => {
       storageStatus: "local-only",
     };
     // When parsing the record.
-    const record = observationSchema.parse(input);
+    const record = shellObservationSchema.parse(input);
     // Then identity is required and research text is preserved.
     expect(record.observer).toBe("JL");
     expect(record.notes).toBe(input.notes);
-    expect(observationSchema.safeParse({ ...input, observer: " " }).success).toBe(false);
+    expect(shellObservationSchema.safeParse({ ...input, observer: " " }).success).toBe(false);
   });
 });

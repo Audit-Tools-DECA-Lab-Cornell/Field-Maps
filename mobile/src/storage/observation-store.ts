@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { type Observation, observationSchema } from "../domain/observation";
+import { type Observation, observationSchema, storageStatusSchema } from "../domain/observation";
+import { isUploadable } from "../forms/registry";
 
 export interface LocalDatabase {
   execAsync(sql: string): Promise<void>;
@@ -14,12 +15,14 @@ class NewerDatabaseError extends Error {
   }
 }
 
+export const SCHEMA_VERSION = 3;
+
 export async function initializeDatabase(db: LocalDatabase): Promise<void> {
   const versions = z
     .array(z.object({ user_version: z.number().int() }))
     .parse(await db.getAllAsync("PRAGMA user_version"));
   const version = versions[0]?.user_version ?? 0;
-  if (version > 2) throw new NewerDatabaseError(version);
+  if (version > SCHEMA_VERSION) throw new NewerDatabaseError(version);
   await db.execAsync("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;");
   if (version === 0) {
     try {
@@ -59,7 +62,40 @@ export async function initializeDatabase(db: LocalDatabase): Promise<void> {
       throw error;
     }
   }
+  if (version < 3) {
+    // An unfinished observation is not an uploadable record. It lives in its own table so a
+    // half-answered form can never reach the upload queue, and so an interrupted observation
+    // survives a force quit.
+    try {
+      await db.execAsync(`
+        BEGIN IMMEDIATE;
+        CREATE TABLE observation_drafts (
+          owner_scope TEXT PRIMARY KEY NOT NULL,
+          id TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          payload TEXT NOT NULL
+        );
+        PRAGMA user_version = 3;
+        COMMIT;
+      `);
+    } catch (error) {
+      await db.execAsync("ROLLBACK;");
+      throw error;
+    }
+  }
 }
+
+/**
+ * A record is queued for upload only when it belongs to an account and its form version is one
+ * the API accepts. A draft form version stays `local-only`, so nothing is sent against a
+ * contract the server would reject and nothing is silently lost.
+ */
+export function initialSyncState(record: Observation, scope: string) {
+  return scope === "local" || !isUploadable(record.formVersion) ? "local-only" : "pending";
+}
+
+const INSERT_OBSERVATION =
+  "INSERT INTO observations (id, created_at, payload, owner_scope, sync_state) VALUES (?, ?, ?, ?, ?)";
 
 export async function saveObservation(
   db: LocalDatabase,
@@ -67,13 +103,43 @@ export async function saveObservation(
   scope = "local",
 ): Promise<void> {
   await db.runAsync(
-    "INSERT INTO observations (id, created_at, payload, owner_scope, sync_state) VALUES (?, ?, ?, ?, ?)",
+    INSERT_OBSERVATION,
     record.id,
     record.createdAt,
     JSON.stringify(record),
     scope,
-    scope === "local" ? "local-only" : "pending",
+    initialSyncState(record, scope),
   );
+}
+
+/**
+ * Finishing an observation: store the record and retire its draft in one transaction.
+ *
+ * Done as two statements, a crash between them would leave a draft carrying an identifier the
+ * observations table already holds — recovery would offer it back, and saving it again would
+ * fail the primary key forever.
+ */
+export async function commitObservation(
+  db: LocalDatabase,
+  record: Observation,
+  scope = "local",
+): Promise<void> {
+  await db.execAsync("BEGIN IMMEDIATE;");
+  try {
+    await db.runAsync(
+      INSERT_OBSERVATION,
+      record.id,
+      record.createdAt,
+      JSON.stringify(record),
+      scope,
+      initialSyncState(record, scope),
+    );
+    await db.runAsync("DELETE FROM observation_drafts WHERE owner_scope = ?", scope);
+    await db.execAsync("COMMIT;");
+  } catch (error) {
+    await db.execAsync("ROLLBACK;");
+    throw error;
+  }
 }
 
 export async function listObservations(db: LocalDatabase, scope = "local"): Promise<Observation[]> {
@@ -81,7 +147,7 @@ export async function listObservations(db: LocalDatabase, scope = "local"): Prom
     .array(
       z.object({
         payload: z.string(),
-        sync_state: observationSchema.shape.storageStatus,
+        sync_state: storageStatusSchema,
         sync_error: z.string(),
       }),
     )
