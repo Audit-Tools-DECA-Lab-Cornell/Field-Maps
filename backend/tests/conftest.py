@@ -11,7 +11,7 @@ from sqlalchemy.pool import NullPool
 from fieldmaps_api.auth import JwksVerifier
 from fieldmaps_api.config import Settings
 from fieldmaps_api.main import create_app
-from tests.signing import ISSUER, PROJECT, USER, VIEWER, Signer, make_signer
+from tests.signing import ISSUER, MANAGER, PROJECT, USER, VIEWER, Signer, make_signer
 
 
 async def seed_memberships() -> None:
@@ -31,6 +31,7 @@ async def seed_memberships() -> None:
                 [
                     {"user": USER, "project": PROJECT, "role": "observer"},
                     {"user": VIEWER, "project": PROJECT, "role": "viewer"},
+                    {"user": MANAGER, "project": PROJECT, "role": "manager"},
                 ],
             )
     finally:

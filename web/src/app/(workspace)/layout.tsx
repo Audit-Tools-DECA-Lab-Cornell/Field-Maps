@@ -33,7 +33,7 @@ export default function WorkspaceLayout({ children }: { readonly children: React
 			</a>
 
 			<header className="flex shrink-0 flex-wrap items-center gap-x-loose gap-y-tight border-b border-edge px-loose py-snug">
-				<Link href="/" className="flex min-h-9 shrink-0 items-center gap-snug rounded-md">
+				<Link href="/overview" className="flex min-h-9 shrink-0 items-center gap-snug rounded-md">
 					<Image src="/icons/icon.svg" alt="" width={24} height={24} unoptimized className="rounded-[22%]" />
 					<span className="text-body font-medium text-text" translate="no">
 						FieldMaps
