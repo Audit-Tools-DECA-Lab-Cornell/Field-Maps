@@ -55,7 +55,7 @@ Database command aliases target only the local stack. Hosted migrations remain a
 
 ## Web move and deployment
 
-The web source, public assets, dependencies, lockfile, formatter, TypeScript, ESLint, PostCSS, and Next.js configuration now live in `web/`. Public URLs stay the same: assets are still served at `/`, not `/web/`. Next.js tracing and Turbopack are scoped to the web directory.
+The web source, public assets, dependencies, lockfile, formatter, TypeScript, ESLint, PostCSS, and Next.js configuration now live in `web/`. Public URLs stay the same: assets are still served at `/`, not `/web/`. Next.js tracing and the Turbopack root are the repository root, not `web/`: Vercel's Next.js adapter resolves build output paths against the repository root, and a `web/` tracing root made every path miss (`ENOENT … /vercel/path0/.next/package.json`).
 
 For the existing Vercel web project, set **Root Directory** to **`web`** before deploying this layout. Use install command `pnpm install --frozen-lockfile` and build command `pnpm build` within that root, with the Next.js framework preset. This follows [Vercel's monorepo project configuration](https://vercel.com/docs/monorepos). The hosted project settings have not been changed by this repository reorganization.
 
