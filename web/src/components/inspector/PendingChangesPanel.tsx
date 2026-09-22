@@ -55,8 +55,7 @@ function whatToFix(e: SyncEvent): string | null {
 	}
 	if (e.status === "local_draft" && e.changeType === "geometry_update") {
 		const delta = e.payloadPreview?.areaDeltaAcres;
-		const deltaStr =
-			typeof delta === "number" ? ` (area Δ ${delta >= 0 ? "+" : ""}${delta} ac)` : "";
+		const deltaStr = typeof delta === "number" ? ` (area Δ ${delta >= 0 ? "+" : ""}${delta} ac)` : "";
 		return `Boundary draft${deltaStr} pending supervisor approval before it can sync.`;
 	}
 	return null;

@@ -82,10 +82,7 @@ function getImpactPreview(result: InspectionResult | "", accessCondition: Access
 	}
 }
 
-const TONE_STYLES: Record<
-	"green" | "amber" | "orange" | "red",
-	{ bg: string; bd: string; fg: string }
-> = {
+const TONE_STYLES: Record<"green" | "amber" | "orange" | "red", { bg: string; bd: string; fg: string }> = {
 	green: { bg: "var(--green-bg)", bd: "var(--green-bd)", fg: "var(--green-fg)" },
 	amber: { bg: "var(--amber-bg)", bd: "var(--amber-bd)", fg: "var(--amber-fg)" },
 	orange: { bg: "var(--orange-bg)", bd: "var(--orange-bd)", fg: "var(--orange-fg)" },
@@ -305,13 +302,9 @@ export function InspectionForm() {
 					<div className="fo-kicker" style={{ marginBottom: 4 }}>
 						Impact preview
 					</div>
-					<div style={{ fontSize: 12.5, fontWeight: 650, color: impactStyles.fg }}>
-						{impact.text}
-					</div>
+					<div style={{ fontSize: 12.5, fontWeight: 650, color: impactStyles.fg }}>{impact.text}</div>
 					{impact.detail && (
-						<div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 3 }}>
-							{impact.detail}
-						</div>
+						<div style={{ fontSize: 11.5, color: "var(--text-2)", marginTop: 3 }}>{impact.detail}</div>
 					)}
 				</div>
 			)}

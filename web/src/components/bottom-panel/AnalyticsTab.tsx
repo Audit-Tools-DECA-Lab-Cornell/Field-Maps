@@ -27,12 +27,9 @@ function ExceptionCard({ label, value, tone }: { label: string; value: number; t
 		<div
 			style={{
 				padding: "8px 12px",
-				background: value > 0
-					? `color-mix(in srgb, ${tone} 10%, var(--surface-2))`
-					: "var(--surface-2)",
-				border: value > 0
-					? `1px solid color-mix(in srgb, ${tone} 28%, var(--border))`
-					: "1px solid var(--border)",
+				background: value > 0 ? `color-mix(in srgb, ${tone} 10%, var(--surface-2))` : "var(--surface-2)",
+				border:
+					value > 0 ? `1px solid color-mix(in srgb, ${tone} 28%, var(--border))` : "1px solid var(--border)",
 				borderRadius: "var(--r-md)",
 				display: "flex",
 				alignItems: "center",
@@ -68,8 +65,8 @@ export function AnalyticsTab() {
 	const failedSyncs = syncEvents.filter(e => e.status === "failed").length;
 	const localDrafts = syncEvents.filter(e => e.status === "local_draft").length;
 	const offlineAssets = assets.filter(a => a.properties.status === "offline").length;
-	const overdueInspections = parcels.filter(p =>
-		p.properties.nextInspectionDue < TODAY && p.properties.status !== "inactive"
+	const overdueInspections = parcels.filter(
+		p => p.properties.nextInspectionDue < TODAY && p.properties.status !== "inactive"
 	).length;
 
 	const MAINTENANCE_MAX = 6;

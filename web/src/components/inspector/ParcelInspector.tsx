@@ -28,9 +28,7 @@ function deriveOperationalCase(
 	const p = parcel.properties;
 	const pid = p.parcelId;
 
-	const relatedEvents = syncEvents.filter(
-		e => e.entityId === parcel.id || e.entityLabel.startsWith(pid + " ")
-	);
+	const relatedEvents = syncEvents.filter(e => e.entityId === parcel.id || e.entityLabel.startsWith(pid + " "));
 	const failedEvent = relatedEvents.find(e => e.status === "failed");
 	const draftEvent = relatedEvents.find(e => e.status === "local_draft");
 
@@ -56,8 +54,7 @@ function deriveOperationalCase(
 		blocker = err ?? "Sync failed — see Pending Changes for details.";
 	} else if (p.syncStatus === "local_draft" || draftEvent) {
 		const delta = draftEvent?.payloadPreview?.areaDeltaAcres;
-		const deltaStr =
-			typeof delta === "number" ? ` (area Δ ${delta >= 0 ? "+" : ""}${delta} ac)` : "";
+		const deltaStr = typeof delta === "number" ? ` (area Δ ${delta >= 0 ? "+" : ""}${delta} ac)` : "";
 		recommendation = `Boundary draft${deltaStr} requires supervisor review before sync.`;
 		blocker = "Local draft — cannot auto-sync. Supervisor review required.";
 	} else if (overdue > 0) {
@@ -148,9 +145,7 @@ function OperationalCase({
 					fontSize: 11.5,
 					color: "var(--text-3)"
 				}}>
-				{dueState && (
-					<span style={{ color: dueState.tone, fontWeight: 650 }}>{dueState.label}</span>
-				)}
+				{dueState && <span style={{ color: dueState.tone, fontWeight: 650 }}>{dueState.label}</span>}
 				{assetExceptionCount > 0 && (
 					<span>
 						{assetExceptionCount} asset exception{assetExceptionCount !== 1 ? "s" : ""}
@@ -226,12 +221,7 @@ export function ParcelInspector() {
 			</div>
 
 			{/* operational case */}
-			<OperationalCase
-				parcel={parcel}
-				overdue={overdue}
-				linkedAssets={linkedAssets}
-				syncEvents={syncEvents}
-			/>
+			<OperationalCase parcel={parcel} overdue={overdue} linkedAssets={linkedAssets} syncEvents={syncEvents} />
 
 			<ValidationWarnings warnings={warnings} />
 
