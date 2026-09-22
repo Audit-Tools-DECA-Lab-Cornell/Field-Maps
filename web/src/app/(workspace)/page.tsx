@@ -54,10 +54,12 @@ export default function OverviewPage() {
 				</AttentionNote>
 
 				<div className="mt-wide grid grid-cols-2 gap-loose sm:grid-cols-4">
+					{/* Not "in the database": the notice above says the database holds two shell-v1 records,
+					    and a tile that claims otherwise is the contradiction this workspace exists to avoid. */}
 					<StatTile
-						label="In the database"
+						label="Counting for analysis"
 						value={formatCount(OBSERVATIONS.length - withdrawn.length)}
-						detail={`${plural(revised.length, "revision")} beyond the first`}
+						detail={`${formatCount(withdrawn.length)} withdrawn, ${formatCount(revised.length)} revised`}
 					/>
 					<StatTile
 						label="Flagged by a check"
