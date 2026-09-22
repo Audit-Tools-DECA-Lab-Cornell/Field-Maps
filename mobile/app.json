@@ -6,6 +6,7 @@
     "scheme": "fieldmaps",
     "orientation": "default",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fieldmaps.collector.dev",
@@ -15,7 +16,12 @@
       }
     },
     "android": {
-      "package": "com.fieldmaps.collector.dev"
+      "package": "com.fieldmaps.collector.dev",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png",
+        "backgroundColor": "#161826"
+      }
     },
     "platforms": [
       "ios",

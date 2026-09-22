@@ -219,6 +219,7 @@ encryption configuration. Use test data for this development slice.
 | `src/layout/` | The per-screen orientation rule and the tablet/phone layout decisions |
 | `src/components/` | Nocturne chrome primitives, the question panel, and screen frames |
 | `src/theme.ts` | Nocturne tokens, copied from the design system's own stylesheet |
+| `assets/` | App icon, Android adaptive and themed layers, Play Store icon; sources in `assets/icon-source/` |
 | `plugins/` | Local config plugins: the Android 16 large-screen orientation opt-out |
 
 The SQLite schema is at version 3: version 1 created the observation table, version 2 added the
