@@ -1,0 +1,48 @@
+# Janet test form: next implementation slice
+
+Prepared September 18, 2026 from `Variables to use for App testing.xlsx`, Sheet1, and the current mobile/API contracts. This is an implementation scope, not an approved research instrument or a deployed form. The workbook remains unchanged.
+
+## Starting point
+
+The practice form saves initials, people count, and notes to SQLite, uploads through the authenticated API, and exposes accepted observations in QGIS. Two test observations have completed this development path. Preserve the existing `shell-v1` form and its records when introducing a new form version.
+
+The next slice should exercise reusable form definitions and conditional answers with a small, source-backed subset. It should not require a full web form builder first. Publish a separate test version only after its option codes, required fields, and rule interpretations are explicit.
+
+## Candidate first subset
+
+| Source cells | Field or behavior | Implementation requirement |
+| --- | --- | --- |
+| B4:G5 | Automatic timestamp and observer initials | Preserve time with timezone; support up to 10 uppercase characters for initials. |
+| B42:G42 | Play event summary | Text up to 1,000 characters. |
+| B44:G49 | Child age range | Single choice from the six supplied ranges; store stable codes separately from labels. |
+| B83:G100 | Primary play types 1 and 2 | Separate answers using the nine supplied choices. Whether the second slot is required remains a protocol decision. |
+| B101:G133 | Play subtypes and non-play Other | Independent subtype and Other answers for each play slot; do not share slot 1's values with slot 2. The test sheet supplies one subtype set; confirm the full library's two-slot interpretation before publishing. |
+| B135:G137 | CARS activity intensity | Preserve the three supplied category bands. Do not turn bands into inferred numeric scores. |
+| B188:H197 | Wildlife interaction, type, Other, description | The Yes branch reveals follow-ups. Confirm whether Other description appears only when type is Other, as the broad rule currently reveals all three follow-ups. Description fields have a 100-character limit. |
+
+These fields exercise text, single choice, dependent choices, and nested conditions. Add round climate, environmental zones, inventory, and other groups after their context and option lists are explicit. This candidate subset is not a decision to discard the remaining variables.
+
+## Confirmed inclusion decision
+
+The user confirmed that the first test form must exclude all 16 hidden variable rows: Sheet1 rows 33–40 and 180–187. Keep those variables in the unchanged source workbook for later review with Janet. Record inclusion explicitly in the form definition; this decision applies to the first test form, not every future form.
+
+Display rules must not reintroduce excluded fields. In particular, H169 references `LooseParts14` and `LooseParts16`, which are excluded. Resolve those references against the explicitly included fields before publishing; retain the original rule text as source provenance.
+
+## Contract and implementation order
+
+1. Define versioned form JSON with stable field/option identifiers, labels, constraints, explicit inclusion, and a restricted condition format. Preserve source workbook row references. Validate unique export names, dependency references, and cycles before publishing. Never execute workbook text as code.
+2. Implement the same visibility and validation behavior on mobile and the API, using shared language-neutral fixtures. Proposed test behavior: answers hidden by a parent change are excluded from the saved payload, and hidden required fields do not block saving. Confirm this behavior before research use.
+3. Render the definition offline and save `form_version_id` plus validated answers in the existing SQLite transaction and account-scoped queue. Preserve `shell-v1` records and pending uploads. A deployment must accept both versions during transition.
+4. Add a new immutable server form version and a typed QGIS analysis view for its accepted answers. Keep the existing practice view working. Compare stable codes, coordinates, timestamps, and both play subtypes across mobile, PostGIS, and QGIS.
+5. Verify offline save/restart, parent-answer changes, independent play slots, reconnect/retry without duplicates, and account isolation. Native testing and QGIS readback follow automated contract and migration checks. Only then expand the subset or build the web publishing interface.
+
+## Questions carried forward
+
+| Workbook evidence | Open decision |
+| --- | --- |
+| H19, H21, H23, H25, H27, H29, H31 | Inventory conditions say Yes, but answers are quantity bands. Define the exact predicate and whether a None option is needed. |
+| H54, H70, H138, H188 | Specify category predicates and when Other text appears. Do not mechanically interpret nonempty categories as true. |
+| E17/E199, E168/E169, E176/E177, blank E51 | Approve distinct export names for collisions and the missing gender export field. Preserve original source names in provenance. |
+| G171, G173, G175, G177, G179; project zones; round inheritance | Supply project choice lists and decide which answers carry forward across observations, rounds, dates, and zones. Never fabricate the missing lists from examples. |
+
+The next code change should begin with form-definition parsing and condition fixtures, while these content decisions remain separate from the reusable engine. Full source review is in `QGIS-Field-Collection-Feasibility.md`.
