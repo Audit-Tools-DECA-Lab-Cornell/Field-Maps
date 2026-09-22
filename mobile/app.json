@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "FieldOps",
+    "slug": "fieldops-mobile",
+    "version": "0.1.0",
+    "scheme": "fieldops",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fieldops.collector.dev"
+    },
+    "android": {
+      "package": "com.fieldops.collector.dev"
+    },
+    "platforms": ["ios", "android"],
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "@maplibre/maplibre-react-native",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
