@@ -1,49 +1,42 @@
 {
-	"name": "FieldOps Parcel Editor",
-	"description": "Offline field collection prototype with QGIS and ArcGIS handoff",
-	"author": "@pratyush1712",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/pratyush1712/ArcGIS"
-	},
-	"version": "0.1.0",
-	"private": true,
-	"type": "module",
-	"engines": {
-		"node": ">=22.0.0"
-	},
-	"scripts": {
-		"dev": "next dev",
-		"build": "next build",
-		"start": "next start",
-		"lint": "eslint",
-		"lint:fix": "eslint . --fix",
-		"format": "pnpm run lint:fix && prettier --write .",
-		"format:check": "prettier --check ."
-	},
-	"dependencies": {
-		"leaflet": "^1.9.4",
-		"next": "16.2.7",
-		"react": "19.2.4",
-		"react-dom": "19.2.4",
-		"react-leaflet": "^5.0.0",
-		"zustand": "^5.0.8"
-	},
-	"devDependencies": {
-		"@eslint/eslintrc": "^3.3.5",
-		"@tailwindcss/postcss": "^4",
-		"@tsconfig/recommended": "^1.0.13",
-		"@types/leaflet": "^1.9.20",
-		"@types/node": "^20",
-		"@types/react": "^19",
-		"@types/react-dom": "^19",
-		"eslint": "^9",
-		"eslint-config-next": "16.2.7",
-		"eslint-plugin-simple-import-sort": "^13.0.0",
-		"prettier": "^3.8.4",
-		"tailwindcss": "^4",
-		"typescript": "^5"
-	},
-	"packageManager": "pnpm@10.17.1"
+  "name": "fieldops",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Product commands for the FieldOps web, mobile, API, and spatial database",
+  "packageManager": "pnpm@10.17.1",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm web:dev",
+    "build": "pnpm web:build",
+    "start": "pnpm --dir web start",
+    "lint": "pnpm --dir web lint",
+    "lint:fix": "pnpm --dir web lint:fix",
+    "format": "pnpm --dir web format",
+    "format:check": "pnpm --dir web format:check",
+    "typecheck": "pnpm --dir web typecheck",
+    "setup:apps": "pnpm --dir web install --frozen-lockfile && pnpm --dir mobile install --frozen-lockfile",
+    "web:dev": "pnpm --dir web dev",
+    "web:build": "pnpm --dir web build",
+    "web:check": "pnpm --dir web check",
+    "mobile:dev": "pnpm --dir mobile start",
+    "mobile:simulator": "pnpm --dir mobile start:simulator",
+    "mobile:ios": "pnpm --dir mobile ios",
+    "mobile:android": "pnpm --dir mobile android",
+    "mobile:check": "pnpm --dir mobile typecheck && pnpm --dir mobile lint",
+    "mobile:test": "pnpm --dir mobile test",
+    "backend:setup": "uv sync --project backend --frozen",
+    "backend:check": "make backend-check",
+    "backend:test": "make backend-test",
+    "db:up": "make db-up",
+    "db:migrate": "make db-migrate",
+    "db:seed": "make db-seed",
+    "db:test": "make db-test",
+    "api:hosted:up": "make api-hosted-up",
+    "api:hosted:stop": "make api-hosted-stop",
+    "check": "pnpm web:check && pnpm mobile:check && pnpm backend:check",
+    "test": "pnpm mobile:test && pnpm backend:test && pnpm db:test",
+    "help": "make help"
+  }
 }

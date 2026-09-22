@@ -1,83 +1,60 @@
-# FieldOps Offline Collector
+# FieldOps
 
-A showcase-ready prototype for collecting mapped observations in the field, keeping them on the device when connectivity is unavailable, and handing the data to QGIS or ArcGIS.
+Custom offline field collection for research teams: a native collector, a web management application, an authenticated API, and a shared spatial database readable in QGIS.
 
-The application has two connected demonstrations:
+This is one Git repository with independently managed components. The root owns product documentation and development commands; each application owns its dependencies, lockfile, and runtime. FieldOps remains independent of Playspace, COPA, and YEE.
 
-- **Operations console:** parcel status, asset layers, inspections, boundary editing, validation, and a sync queue.
-- **Field collector:** tablet-friendly point capture, configurable form fields, local persistence, offline reference layers, QGIS exports, and an ArcGIS request preview.
+## Product layout
 
-## 90-second demo
+```text
+field-ops/
+├── web/          Next.js web prototype, source, public assets, and build config
+├── mobile/       Expo / React Native collector with SQLite and MapLibre
+├── backend/      FastAPI authentication and observation API
+├── database/     Local PostGIS, SQL migrations, seed data, and database tests
+├── supabase/     Hosted migrations and optional local Supabase configuration
+├── qgis/         Read-only live project, connection settings, and launcher
+├── docs/         Requirements, architecture, research, and implementation scope
+├── designs/      Design references
+├── package.json  Product command aliases; no application dependencies
+└── Makefile      Python, Docker, and database orchestration
+```
 
-1. Click **Open field collector**. On a tablet-sized screen, the collector opens automatically.
-2. Switch **Online** to **Offline**. The remote tile basemap disappears, while the packaged parcel layers and saved points remain usable.
-3. Click **Add point**, tap the map, complete the form, and click **Save offline**. The observation stays in the local queue across a reload.
-4. Download **QGIS CSV** or **GeoJSON**, or open **ArcGIS payload** to show the Feature Service request shape.
-5. Try syncing while offline, reconnect, and click **Sync changes**.
+## Start working
 
-## What the prototype proves
+Use Node 24 (`nvm use`), pnpm 10.17.1, and Docker Desktop for API/database work. Python development uses uv and Python 3.13 or newer.
 
-- A point can be positioned by tapping a georeferenced map, without relying on the device GPS.
-- Typed fields can combine required text, date/time, controlled choices, optional notes, and follow-up flags.
-- Observations are stored in browser-local persistent storage before any network request.
-- CSV exports include numeric `longitude` and `latitude` columns that QGIS can load as a delimited-text point layer.
-- GeoJSON exports use longitude/latitude coordinates in EPSG:4326 and open directly as a vector layer.
-- ArcGIS additions can be represented as point geometry plus attributes and sent to a writable Feature Service layer through `applyEdits`.
-
-## Honest prototype boundaries
-
-- The **Sync changes** action is simulated. The **ArcGIS payload** panel shows the real request structure, but no organization URL, layer schema, authentication, conflict resolution, or production writes are configured.
-- OpenStreetMap tiles are used only while online. The demo never bulk downloads or pre-caches map tiles. Offline mode uses bundled vector reference data; a production deployment would package licensed raster/vector basemaps.
-- QGIS Desktop is file-oriented, so the prototype exports interoperable CSV and GeoJSON. Automatic multi-user synchronization would normally use QField/QFieldSync, QFieldCloud, or an OGC transaction service.
-- Local browser storage is suitable for a demo. Production field data needs a durable local database, migrations, encryption decisions, audit metadata, and tested conflict handling.
-
-## Recommended production paths
-
-### ArcGIS-first organization
-
-Use ArcGIS Maps SDKs for Native Apps when offline basemap packages, editable local geodatabases, attachments, and two-way Feature Service synchronization are required. The web collector can remain useful as an administrative or lightweight connected client.
-
-### QGIS-first organization
-
-Use QGIS to author the project and QFieldSync to package offline layers and a basemap for QField. QField records changes in the field and QFieldSync or QFieldCloud synchronizes them back to the source project.
-
-### Vendor-neutral custom application
-
-Keep the local-first collection model, export GeoJSON/CSV for simple handoff, and add adapters for ArcGIS Feature Services or QGIS Server WFS transactions when automatic sync is justified.
-
-## Run locally
-
-```bash
-pnpm install
+```sh
+pnpm setup:apps
+pnpm backend:setup
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+`pnpm dev` opens the web development server at http://localhost:3000. Root `pnpm install` only installs the dependency-free command package; use `pnpm setup:apps` to install web and mobile dependencies.
 
-Quality checks:
+| Root command                                  | What it does                                                        |
+| --------------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm start`      | Web development / production build / production server              |
+| `pnpm mobile:simulator`                       | Metro for the existing iOS simulator development build              |
+| `pnpm mobile:ios` / `pnpm mobile:android`     | Build and run the native development app                            |
+| `pnpm api:hosted:up` / `pnpm api:hosted:stop` | Start/stop the local API connected to hosted Supabase               |
+| `pnpm check`                                  | Web and mobile type/lint checks, then Python Ruff/BasedPyright      |
+| `pnpm test`                                   | Mobile tests, local API integration tests, and local SQL assertions |
 
-```bash
-pnpm lint
-pnpm build
-```
+Run `pnpm run help` for the command overview. Integration tests need the local databases started with `pnpm db:up`; they do not run against Supabase. The hosted API needs the already provisioned local credential volume. See [workspace operations](docs/Workspace.md) for prerequisites, individual checks, and deployment instructions.
 
-## Technical shape
+## Current functionality
 
-- Next.js 16 App Router and TypeScript
-- React Leaflet and local GeoJSON reference layers
-- Zustand stores, including persisted field observations
-- Progressive Web App manifest and same-origin offline shell cache
-- Client-side CSV, GeoJSON, and ArcGIS request generation
+The mobile practice form saves georeferenced observations to SQLite and automatically uploads while the app is active. Native sign-in and two real test uploads have been exercised; the user tested offline save/reconnect, and both records were independently verified in hosted PostGIS and QGIS Desktop. The API still runs on the development computer. This is not a production deployment.
 
-No API key or account is required for the prototype.
+The web application remains an independent operations/field-collector prototype with simulated sync. Moving it into `web/` does not connect it to the backend. General form publishing, imported offline site packages, attachments, bidirectional edits, and closed-app background synchronization remain future work.
 
-## Research sources
+Next implementation scope: [Janet's versioned test form](docs/Janet-Test-Form-Scope.md). The first test form excludes all 16 hidden spreadsheet rows, as confirmed by the user.
 
-- [ArcGIS FeatureLayer `applyEdits`](https://developers.arcgis.com/javascript/latest/references/core/layers/FeatureLayer/#applyEdits)
-- [ArcGIS REST API: layer-level Apply Edits](https://developers.arcgis.com/rest/services-reference/enterprise/apply-edits-feature-service-layer/)
-- [ArcGIS offline mapping apps](https://developers.arcgis.com/documentation/offline-mapping-apps/)
-- [ArcGIS Field Maps overview](https://doc.arcgis.com/en/field-maps/get-started/get-started.htm)
-- [QGIS delimited text and coordinate fields](https://docs.qgis.org/3.44/en/docs/user_manual/managing_data_source/supported_data.html#delimited-text-files)
-- [QFieldSync offline packaging and synchronization](https://docs.qfield.org/get-started/tutorials/get-started-qfs/)
-- [QGIS Server services and WFS transactions](https://docs.qgis.org/3.44/en/docs/server_manual/services.html)
-- [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
+## Component documentation
+
+- [Web prototype](web/README.md) and [mobile collector](mobile/README.md)
+- [Backend API](backend/README.md), [local spatial database](database/README.md), and [hosted Supabase setup](docs/Supabase-Setup.md)
+- [QGIS project and connection](qgis/README.md)
+- [Production architecture](docs/Production-Architecture-Recommendation.md) and [QGIS feasibility research](docs/QGIS-Field-Collection-Feasibility.md)
+- [Design brief](docs/Claude-Design-Brief.md) and [workspace management](docs/Workspace.md)

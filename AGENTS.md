@@ -1,35 +1,33 @@
-# AGENTS.md — field-ops
+# AGENTS.md — FieldOps product workspace
 
-Early-stage Next.js prototype ("FieldOps Parcel Editor"), independent of the
-Audit Tools / Playspace / YEE products. Not yet connected to the shared backend.
+FieldOps is one Git repository with independently managed applications. It is separate from Playspace, COPA, YEE, and their backend.
 
-## Stack
+## Routing
 
-- Next.js (App Router), pnpm
-- 35 `arcgis-*` library skills installed under `.claude/skills/` and
-  `.agents/skills/` (framework know-how — mirrors the pattern used elsewhere in
-  this workspace: reference them by name, don't restate their content here)
+| Folder              | Responsibility                                                            |
+| ------------------- | ------------------------------------------------------------------------- |
+| `web/`              | Next.js App Router web prototype; read its local AGENTS.md                |
+| `mobile/`           | Expo / React Native offline collector and account-scoped SQLite queue     |
+| `backend/`          | FastAPI authentication and observation API                                |
+| `database/`         | Local PostGIS, migrations, seeds, and SQL/API integration tests           |
+| `supabase/`         | Hosted migrations and optional local Supabase configuration               |
+| `qgis/`             | Scoped read-only live project and public connection configuration         |
+| `docs/`, `designs/` | Product requirements, architecture, operational guides, design references |
 
-## Commands
+Read the owning component's README before changing it. Root `README.md` and `docs/Workspace.md` describe common operations. The web prototype still uses simulated sync; native mobile uploads have been verified through hosted PostGIS into QGIS.
 
-```bash
-pnpm dev
-pnpm build
-pnpm lint        # eslint
-pnpm lint:fix
-pnpm format      # lint:fix + prettier --write
-pnpm format:check
-```
+## Commands and boundaries
 
-## Hard rules (full text in workspace-root `AGENTS.md`)
+- Use Node 24 and pnpm 10.17.1. Each app retains its own dependencies and lockfile; do not merge or hoist them at the product root.
+- `pnpm dev` / `pnpm build` target web; `pnpm mobile:simulator` starts Metro.
+- `pnpm check` runs web/mobile type and lint checks plus Python checks.
+- `pnpm db:up` starts the local test infrastructure; `pnpm test` runs mobile/API/SQL suites. Tests never target hosted Supabase.
+- `pnpm api:hosted:up` starts the local API against Supabase. Local and hosted API configurations share port 8000; do not run both.
 
-- Never read/print/work around `.env` / `.env.*` / secret files unless the user
-  names a specific file in the current request.
+## Hard rules
+
+- Never read, print, inspect, or manipulate `.env` / `.env.*` / secret files unless the user names a specific file in the current request.
 - Never commit, push, branch, or amend without explicit user approval.
-
-## Status
-
-No memory system, no role agents yet — this is the thinnest-scaffolded area of
-the workspace (35 skills but no facts/routing layer to go with them). Add
-`.claude/memory/` here once the codebase has established conventions worth
-recording; don't fabricate facts ahead of the code.
+- Preserve unrelated changes. Keep hosted migrations/deployments explicit; no resets or volume deletion in ordinary setup/check commands.
+- Keep product facts in the owning docs. Do not fabricate production, device, or background-sync verification.
+- Use installed skills by name when relevant; ArcGIS library skills do not imply that this product must adopt ArcGIS services.

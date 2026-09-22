@@ -1,8 +1,2 @@
-ignoredBuiltDependencies:
-    - sharp
-    - unrs-resolver
-fetchTimeout: 1200000
-fetchRetries: 10
-fetchRetryMaxtimeout: 180000
-fetchRetryMintimeout: 15000
-networkConcurrency: 1
+# Each app owns its dependency graph and lockfile. Root scripts orchestrate them.
+packages: []
