@@ -10,7 +10,7 @@ import { GROUND, PATHS, PLAN_PAINT, TREES, ZONE_EXTENT, ZONES } from "@/data/sit
 import { boxToLatLngs } from "@/lib/geometry";
 import type { Observation } from "@/types/domain";
 
-import { MARKER_SIZE, markerHtml } from "./markers";
+import { MARKER, markerHtml } from "./markers";
 
 /**
  * The map, drawn on the collector's own plan base.
@@ -155,8 +155,8 @@ export default function LeafletCanvas({
 					eventHandlers={{ click: () => onSelect(record.id) }}
 					icon={L.divIcon({
 						className: "",
-						iconSize: [MARKER_SIZE, MARKER_SIZE],
-						iconAnchor: [MARKER_SIZE / 2, MARKER_SIZE / 2],
+						iconSize: [MARKER.box, MARKER.box],
+						iconAnchor: [MARKER.box / 2, MARKER.box / 2],
 						html: markerHtml(record.playType, record.state, record.id === selectedId)
 					})}
 				/>

@@ -42,14 +42,23 @@ export function ObservationsWorkspace() {
 	const records = useMemo(() => applyFilters(OBSERVATIONS, filters), [filters]);
 	const selected = records.find(record => record.id === selectedId);
 
-	// A new history entry, not a replacement: changing a filter or opening a record is something the
-	// reader did, and Back has to undo it rather than leave the section.
+	/** The current view, written the way `push` writes one, so the two can be compared exactly. */
+	const currentQuery = useMemo(() => writeFilters(filters, selectedId).toString(), [filters, selectedId]);
+
+	/**
+	 * A new history entry, not a replacement: changing a filter or opening a record is something the
+	 * reader did, and Back has to undo it rather than leave the section.
+	 *
+	 * Re-clicking the row or marker that is already open changes nothing, so it adds nothing —
+	 * otherwise Back would spend itself returning to the view it is already on.
+	 */
 	const push = useCallback(
 		(next: Filters, record: string | null) => {
-			const params = writeFilters(next, record);
-			router.push(params.size === 0 ? pathname : `${pathname}?${params.toString()}`, { scroll: false });
+			const query = writeFilters(next, record).toString();
+			if (query === currentQuery) return;
+			router.push(query === "" ? pathname : `${pathname}?${query}`, { scroll: false });
 		},
-		[pathname, router]
+		[currentQuery, pathname, router]
 	);
 
 	const change = useCallback(
