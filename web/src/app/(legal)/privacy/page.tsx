@@ -53,9 +53,10 @@ export default function PrivacyPage() {
 
 			<h2 id="who-we-are">Who we are</h2>
 			<p>
-				{operator} runs {policy.appName} and is responsible for the data described here (“we”, “us”). Each study
-				is run by a research project team. The project team decides what its study records and uses the
-				observations for its research.
+				{policy.appName} is run by the {operator}, led by <a href={policy.lead.url}>{policy.lead.name}</a>,
+				which is responsible for the data described here (“we”, “us”). The app is built and maintained by{" "}
+				<a href={policy.developer.url}>{policy.developer.name}</a>. Each study is run by a research project
+				team. The project team decides what its study records and uses the observations for its research.
 			</p>
 
 			<h2 id="what-we-collect">What we collect</h2>
@@ -204,9 +205,9 @@ export default function PrivacyPage() {
 				</li>
 				<li>
 					<strong>Our service providers.</strong> Supabase runs our sign-in service and hosts the database, on
-					Amazon Web Services servers in the United States (US East, Northern Virginia). Our upload server is hosted by{" "}
-					{policy.serverHost ?? <Missing>server host</Missing>}. They process the data on our behalf to
-					provide those services.
+					Amazon Web Services servers in the United States (US East, Northern Virginia). Our upload server is
+					hosted by {policy.serverHost ?? <Missing>server host</Missing>}. They process the data on our behalf
+					to provide those services.
 				</li>
 				<li>
 					<strong>A connectivity check on iOS.</strong> While an account is on the device and the app is open,
@@ -240,7 +241,8 @@ export default function PrivacyPage() {
 				</li>
 				<li>
 					Accounts and uploaded observations are kept{" "}
-					{policy.retention ?? <Missing>retention period</Missing>}.
+					{policy.retention ?? <Missing>retention period</Missing>}. We delete an account when its holder
+					leaves the research team, or sooner if they ask.
 				</li>
 				<li>
 					Server request logs and our sign-in provider’s record of sign-ins are kept{" "}
@@ -287,9 +289,16 @@ export default function PrivacyPage() {
 			</p>
 
 			<h2 id="contact">Contact us</h2>
-			<p>
-				Questions or requests about your privacy: <Contact email={policy.contactEmail} />.
-			</p>
+			<ul>
+				<li>
+					<strong>Privacy questions and requests, including deletion:</strong> {policy.lead.name}, {operator},{" "}
+					<Contact email={policy.contactEmail} />.
+				</li>
+				<li>
+					<strong>Technical questions about the app:</strong> {policy.developer.name}, its developer,{" "}
+					<a href={`mailto:${policy.developer.email}`}>{policy.developer.email}</a>.
+				</li>
+			</ul>
 		</article>
 	);
 }

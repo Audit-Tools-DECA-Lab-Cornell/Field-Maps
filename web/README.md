@@ -55,7 +55,7 @@ Keep the local-first collection model, export GeoJSON/CSV for simple handoff, an
 
 `/privacy` and `/privacy/delete-data` are the privacy policy and data deletion pages for the native mobile collector, for its Google Play listing. They live in `src/app/(legal)/`, use the collector's Nocturne palette, and are prerendered as static pages. Every statement was checked against the mobile, backend and database code; update the pages before the app collects anything new.
 
-Facts only the operator can supply — organisation, contact email, retention period, deletion time — are `null` in `src/app/(legal)/policy.ts`. Until each is filled in, the pages show a visible draft notice and inline "to be confirmed" markers.
+Facts only the operator can supply live in `src/app/(legal)/policy.ts`: the operator (DECA Lab at Cornell University, led by Professor Janet Loebach), the privacy contact, and the developer. The server host, retention periods and deletion time are marked "Assumed" there and need confirming with the lab. Any field set back to `null` brings back a visible draft notice and an inline "to be confirmed" marker.
 
 ## Run locally
 

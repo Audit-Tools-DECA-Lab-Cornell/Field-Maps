@@ -1,23 +1,40 @@
 /**
  * Facts the privacy pages need that the code cannot supply. Every `null` renders as a visible
  * "to be confirmed" marker and is listed in the draft notice at the top of each page, so an
- * incomplete policy can never pass for a finished one. Fill these in before submitting the URL to
- * Google Play.
+ * incomplete policy can never pass for a finished one.
+ *
+ * The operator and developer details were supplied by the developer. The values marked "Assumed"
+ * were chosen on September 22, 2026 as typical for a university research app, at the developer's
+ * request; confirm them with the lab and keep the systems consistent with them.
  */
 export const policy = {
 	appName: "FieldMaps",
-	/** The organisation responsible for the app and its data, e.g. a lab and its university. */
-	operator: null as string | null,
+	/** The organisation responsible for the app and its data. */
+	operator: "DECA Lab at Cornell University" as string | null,
+	/** The researcher who leads the operator. */
+	lead: { name: "Professor Janet Loebach", url: "https://human.cornell.edu/people/janet-loebach" },
 	/** Where privacy questions and deletion requests go. */
-	contactEmail: null as string | null,
-	/** Who hosts the server that receives uploads, e.g. a cloud provider and region. */
-	serverHost: null as string | null,
-	/** How long uploaded observations and accounts are kept, in plain words. */
-	retention: null as string | null,
-	/** How long server request logs and sign-in records are kept, in plain words. */
-	logRetention: null as string | null,
-	/** How many days a deletion request may take. */
-	deletionDays: null as number | null,
+	contactEmail: "j.loebach@cornell.edu" as string | null,
+	/** Who builds and maintains the app; the contact for technical questions. */
+	developer: {
+		name: "Pratyush Sudhakar",
+		url: "https://pratyushsudhakar.com",
+		email: "pratyushsudhakar03@gmail.com"
+	},
+	/** Assumed. Who hosts the server that receives uploads. */
+	serverHost: "a cloud hosting provider in the United States" as string | null,
+	/** Assumed. How long uploaded observations and accounts are kept; completes a sentence. */
+	retention:
+		"while the study runs, and afterwards for as long as the study’s approved research protocol and Cornell University policy require, usually three years after the study ends" as
+			| string
+			| null,
+	/**
+	 * Assumed. How long server request logs and sign-in records are kept; completes a sentence.
+	 * Keeping this true needs the sign-in provider's database audit log cleared on the same cycle.
+	 */
+	logRetention: "for up to 90 days" as string | null,
+	/** Assumed. How many days a deletion request may take. */
+	deletionDays: 30 as number | null,
 	/** The date this version of the policy takes effect. */
 	effectiveDate: "September 22, 2026"
 };
