@@ -14,6 +14,8 @@ import type { LocalDatabase } from "./observation-store";
  */
 export const observationDraftSchema = z.object({
   id: z.uuid(),
+  /** The account scope that started it. Stored in the payload so recovery can verify it. */
+  owner: z.string().min(1),
   formVersion: z.string().min(1),
   packageId: z.string().min(1),
   siteId: z.string().min(1),
@@ -61,6 +63,12 @@ export async function readDraft(
   // A draft written by a version this app no longer understands is dropped rather than
   // offered for resume, which would restore answers against the wrong question stack.
   if (!parsed.success) {
+    await clearDraft(db, scope);
+    return null;
+  }
+  // The row is keyed by account scope and the payload names its owner. If they disagree the
+  // draft has been moved between accounts, and research answers must not change hands.
+  if (parsed.data.owner !== scope) {
     await clearDraft(db, scope);
     return null;
   }

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { type ObservationIdentity, ownershipProblem, packageSwitchProblem } from "./ownership";
+import {
+  type ObservationIdentity,
+  ownershipProblem,
+  packageSwitchProblem,
+  recoveryProblem,
+} from "./ownership";
 
 const started: ObservationIdentity = {
   id: "1f0a2b3c-4d5e-4f60-8a9b-0c1d2e3f4a5b",
@@ -58,5 +63,29 @@ describe("Opening another study", () => {
     // Given the observer navigates back through the brief to the same study.
     // Then their observation is not in their way.
     expect(packageSwitchProblem(started, "riverside-play-study")).toBeNull();
+  });
+});
+
+describe("Resuming a recovered draft", () => {
+  it("resumes a draft the signed-in account started", () => {
+    // Given a draft left behind by the account now signed in.
+    // Then it can be taken back up.
+    expect(recoveryProblem("account-a", "account-a")).toBeNull();
+  });
+
+  it("refuses a draft left over from another account", () => {
+    // Given account A's draft is still offered after switching to account B, which has none.
+    const problem = recoveryProblem("account-a", "account-b");
+    // Then resuming it cannot bind A's answers to B, and says how to get them back.
+    expect(problem).toMatch(/different account/i);
+    expect(problem).toMatch(/sign back into/i);
+  });
+
+  it("keeps practice drafts out of an account, and account drafts out of practice", () => {
+    // Given a draft started before signing in, and one started while signed in.
+    // Then neither is offered to the other side of that boundary.
+    expect(recoveryProblem("local", "account-a")).not.toBeNull();
+    expect(recoveryProblem("account-a", "local")).not.toBeNull();
+    expect(recoveryProblem("local", "local")).toBeNull();
   });
 });

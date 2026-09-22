@@ -28,6 +28,7 @@ function adapter(database: DatabaseSync): LocalDatabase {
 
 const draft: ObservationDraft = {
   id: "0c1bd9be-9d3a-4a4b-9b0a-1f9a1b2c3d4e",
+  owner: "local",
   formVersion: "janet-test-v1",
   packageId: "riverside-play-study",
   siteId: "riverside-north-playground",
@@ -74,10 +75,11 @@ describe("Unfinished observations", () => {
     const database = new DatabaseSync(":memory:");
     try {
       await initializeDatabase(adapter(database));
-      await saveDraft(adapter(database), "account-a", draft);
+      const theirs = { ...draft, owner: "account-a" };
+      await saveDraft(adapter(database), "account-a", theirs);
       await saveDraft(adapter(database), "account-a", {
-        ...draft,
-        answers: { ...draft.answers, play_type_1: "physical" },
+        ...theirs,
+        answers: { ...theirs.answers, play_type_1: "physical" },
         questionIndex: 2,
       });
       // When it is read back.
@@ -95,7 +97,7 @@ describe("Unfinished observations", () => {
     const database = new DatabaseSync(":memory:");
     try {
       await initializeDatabase(adapter(database));
-      await saveDraft(adapter(database), "account-a", draft);
+      await saveDraft(adapter(database), "account-a", { ...draft, owner: "account-a" });
       // When a different account opens the app.
       // Then nothing is offered for recovery, and the original is untouched.
       expect(await readDraft(adapter(database), "account-b")).toBeNull();
@@ -118,6 +120,32 @@ describe("Unfinished observations", () => {
       // When recovery runs.
       // Then it declines the draft and clears it, rather than resuming into a wrong stack.
       expect(await readDraft(adapter(database), "local")).toBeNull();
+      expect(database.prepare("SELECT COUNT(*) AS total FROM observation_drafts").get()).toEqual({
+        total: 0,
+      });
+    } finally {
+      database.close();
+    }
+  });
+
+  it("refuses a draft whose payload names an account other than the row it sits in", async () => {
+    // Given a draft row whose stored owner disagrees with its account scope.
+    const database = new DatabaseSync(":memory:");
+    try {
+      await initializeDatabase(adapter(database));
+      database
+        .prepare(
+          "INSERT INTO observation_drafts (owner_scope, id, updated_at, payload) VALUES (?, ?, ?, ?)",
+        )
+        .run(
+          "account-b",
+          draft.id,
+          draft.updatedAt,
+          JSON.stringify({ ...draft, owner: "account-a" }),
+        );
+      // When that account opens the app.
+      // Then the draft is refused and cleared, so one observer's answers cannot change hands.
+      expect(await readDraft(adapter(database), "account-b")).toBeNull();
       expect(database.prepare("SELECT COUNT(*) AS total FROM observation_drafts").get()).toEqual({
         total: 0,
       });

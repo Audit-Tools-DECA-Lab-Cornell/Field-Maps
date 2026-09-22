@@ -36,3 +36,16 @@ export function packageSwitchProblem(
     return `An unfinished observation is open in ${identity.packageName}. Resume or discard it before opening another study.`;
   return null;
 }
+
+/**
+ * Why a recovered draft may not be resumed under this account, if it may not.
+ *
+ * The account can change while a recovered draft is still held in memory — signing out of an
+ * account that had one, into an account that has none, leaves the offer on screen. Resuming it
+ * then would bind another observer's answers to whoever is signed in now.
+ */
+export function recoveryProblem(draftOwner: string, account: string): string | null {
+  if (draftOwner !== account)
+    return "That draft belongs to a different account. Sign back into the account that started it to resume it.";
+  return null;
+}

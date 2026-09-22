@@ -35,7 +35,12 @@ import {
 } from "../storage/draft-store";
 import { commitObservation } from "../storage/observation-store";
 import { useSync } from "../sync/provider";
-import { type ObservationIdentity, ownershipProblem, packageSwitchProblem } from "./ownership";
+import {
+  type ObservationIdentity,
+  ownershipProblem,
+  packageSwitchProblem,
+  recoveryProblem,
+} from "./ownership";
 
 /**
  * One observation period: the package, the zone and round it is stamped with, and the
@@ -164,6 +169,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
       if (ownershipProblem(owner, key, sitePackage.id) !== null) return;
       const draft = observationDraftSchema.safeParse({
         id: owner.id,
+        owner: owner.owner,
         formVersion: sitePackage.formVersion,
         packageId: sitePackage.id,
         siteId: sitePackage.siteId,
@@ -187,6 +193,10 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!ready) return;
     let active = true;
+    // Drop the standing offer first. The account can change without this provider unmounting,
+    // and an offer left from the previous account would hand its answers to whoever is signed
+    // in now — including when the new account has no draft of its own to replace it.
+    setRecovered(null);
     void readDraft(database, key)
       .then((draft) => {
         if (!active || !draft) return;
@@ -359,6 +369,12 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
   const resumeRecovered = useCallback(async () => {
     const draft = recovered;
     if (!draft) return undefined;
+    const wrongAccount = recoveryProblem(draft.owner, key);
+    if (wrongAccount !== null) {
+      setRecovered(null);
+      setStatus(wrongAccount);
+      return undefined;
+    }
     const opened = await bundledPackages.open(draft.packageId);
     if (!opened) {
       setStatus("That draft belongs to a package this device no longer has.");
