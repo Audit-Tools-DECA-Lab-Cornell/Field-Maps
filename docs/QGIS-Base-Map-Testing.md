@@ -177,13 +177,7 @@ QGIS reprojects the EPSG:4326 points onto the EPSG:3857 base map automatically.
 
 ### Known snags in the current `qgis/` folder
 
-- **`pg_service.conf` points at the old folder name.** Its `sslrootcert` line uses `.../field-maps/backend/certs/...`, but the checkout is now `field-ops/`. Change that line to:
-
-  ```text
-  sslrootcert=/Users/praty/Desktop/StudentJob.nosync/field-ops/backend/certs/supabase-root-2021.crt
-  ```
-
-  Without this, the connection fails with a certificate error.
+- **The new database starts empty.** `pg_service.conf` points at the Field Maps GIS project, provisioned September 22, 2026. The layer shows points only after the app uploads to it; the QGIS password is read from the `fieldmaps_qgis_secrets` volume as described in [the QGIS README](../qgis/README.md).
 - **The saved project file is missing.** `open-training.command` opens `qgis/fieldmaps-training.qgs`, which is not in the folder; only an older backup, `fieldops-training.qgs~`, is there. Use the manual layer steps above, then save your own project. The launcher still works for setting `PGSERVICEFILE` if you point it at your project.
 
 ---
@@ -198,7 +192,7 @@ QGIS reprojects the EPSG:4326 points onto the EPSG:3857 base map automatically.
 | TypeScript error on the imported JSON          | JSON imports have a loose type                               | Keep the `as FeatureCollection` cast from Part 4                                        |
 | Record stays on the device, never syncs        | Collected on Riverside (`janet-test-v1`), or `siteId` was changed | Collect on **Sample garden practice**; keep `siteId: "sample-garden"`             |
 | Record shows "needs attention"                 | API rejected it or is not running                            | Check `pnpm api:hosted:up`, then retry from the Account screen                          |
-| QGIS certificate / SSL error                   | Old `field-maps` path in `pg_service.conf`                   | Fix `sslrootcert` (see Known snags)                                                     |
+| QGIS certificate / SSL error                   | `sslrootcert` in `pg_service.conf` does not match this checkout | Point it at `backend/certs/supabase-root-2021.crt` in your checkout                  |
 | New point missing in QGIS                      | Layer not refreshed                                          | Right-click the layer → **Refresh**                                                     |
 
 ## Not supported yet

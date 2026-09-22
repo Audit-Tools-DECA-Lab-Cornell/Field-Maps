@@ -204,7 +204,7 @@ export default function PrivacyPage() {
 				</li>
 				<li>
 					<strong>Our service providers.</strong> Supabase runs our sign-in service and hosts the database, on
-					Amazon Web Services servers in the United States (US West, Oregon). Our upload server is hosted by{" "}
+					Amazon Web Services servers in the United States (US East, Northern Virginia). Our upload server is hosted by{" "}
 					{policy.serverHost ?? <Missing>server host</Missing>}. They process the data on our behalf to
 					provide those services.
 				</li>

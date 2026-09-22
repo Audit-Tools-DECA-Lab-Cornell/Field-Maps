@@ -1,8 +1,8 @@
 {
   "connection": {
     "apiUrl": "http://127.0.0.1:8000",
-    "supabaseUrl": "https://wbnvnewslhigxwawcdji.supabase.co",
-    "publishableKey": "sb_publishable_FjeJe-r85yMpMJQGzyMGtA_so19wf2I",
+    "supabaseUrl": "https://lezmqhuucfwqknspgcdy.supabase.co",
+    "publishableKey": "sb_publishable_jkMFOW9fOrrwIJB4Y_YP7Q_yBut6-Jd",
     "projectId": "10000000-0000-4000-8000-000000000002"
   }
 }

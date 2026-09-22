@@ -1,6 +1,6 @@
 # Live FieldMaps observations in QGIS
 
-The Supabase login `fieldmaps_qgis_training` is restricted to the fictional training project's `gis.sample_observations` view. It cannot read private application or Auth tables, edit observations, create objects in `public`, grant memberships, or bypass row policies. Its actual pooler login has been tested with TLS certificate and hostname verification; it returns both uploaded WGS84 points.
+The Supabase login `fieldmaps_qgis_training` is restricted to the fictional training project's `gis.sample_observations` view. It cannot read private application or Auth tables, edit observations, create objects in `public`, grant memberships, or bypass row policies. On the earlier development project, its pooler login was tested with TLS certificate and hostname verification and returned both uploaded WGS84 points. The connection below now points at the Field Maps GIS project, provisioned September 22, 2026; its QGIS login connects with verified TLS and is read-only. It has no observations yet.
 
 This is a development reader for the practice project. Real research projects need their own scoped reader assignments and credential lifecycle.
 
@@ -8,17 +8,17 @@ This is a development reader for the practice project. Real research projects ne
 
 | Setting            | Value                                         |
 | ------------------ | --------------------------------------------- |
-| Host               | `aws-0-us-west-2.pooler.supabase.com`         |
+| Host               | `aws-0-us-east-1.pooler.supabase.com`         |
 | Port               | `5432` (session pooler)                       |
 | Database           | `postgres`                                    |
-| Username           | `fieldmaps_qgis_training.wbnvnewslhigxwawcdji` |
+| Username           | `fieldmaps_qgis_training.lezmqhuucfwqknspgcdy` |
 | SSL                | Verify Full                                   |
 | Certificate        | `../backend/certs/supabase-root-2021.crt`     |
 | Schema / view      | `gis.sample_observations`                     |
 | Unique feature key | `fid`                                         |
 | Geometry / CRS     | `geom`, Point, EPSG:4326                      |
 
-The generated GIS password is stored outside this repository in the private Docker volume `fieldmaps_qgis_secrets`, file `/run/fieldmaps-qgis/training-password`. It is separate from the administrator password and the mobile test-account password. It was entered through QGIS's normal connection prompt and cached for the current session. It was not saved in the project or QGIS authentication manager. A fresh QGIS process may prompt for the scoped GIS password again; obtain it from the project administrator. Do not use the Supabase administrator password for this reader or save plaintext credentials in project files or connection exports.
+The generated GIS password is stored outside this repository in the private Docker volume `fieldmaps_qgis_secrets`, file `training-password`; read it with `docker run --rm -v fieldmaps_qgis_secrets:/s:ro fieldmaps-hosted-api cat /s/training-password`. It is separate from the administrator password and the mobile test-account password. Enter it through QGIS's normal connection prompt; do not save it in the project, the QGIS authentication manager without a master password, or a connection export. Do not use the Supabase administrator password for this reader or save plaintext credentials in project files.
 
 `pg_service.conf` contains only public connection settings. Its certificate path is specific to this checkout; update it if the checkout moves. Launch QGIS with `PGSERVICEFILE` pointing to this file and choose service `fieldmaps_training`. Alternatively, configure the same connection in QGIS and supply the root certificate through its connection/authentication settings.
 

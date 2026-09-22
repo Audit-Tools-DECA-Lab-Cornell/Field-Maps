@@ -1,6 +1,6 @@
 {
   "database_url": "postgresql+asyncpg://fieldmaps_api@/fieldmaps?host=/var/run/postgresql",
-  "issuer": "https://wbnvnewslhigxwawcdji.supabase.co/auth/v1",
-  "jwks_url": "https://wbnvnewslhigxwawcdji.supabase.co/auth/v1/.well-known/jwks.json",
+  "issuer": "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1",
+  "jwks_url": "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1/.well-known/jwks.json",
   "audience": "authenticated"
 }

@@ -1,6 +1,15 @@
 # Supabase development connection
 
-Verified September 18, 2026. Project: `wbnvnewslhigxwawcdji`.
+Project: **Field Maps GIS**, `lezmqhuucfwqknspgcdy`, in AWS `us-east-1` (session pooler `aws-0-us-east-1.pooler.supabase.com:5432`). It replaced the earlier development project on September 22, 2026.
+
+**Status, September 22, 2026.** The new project is provisioned and every tracked configuration points at it: `backend/config.hosted.json`, `backend/config.local.json`, `mobile/connection.config.json`, and `qgis/pg_service.conf`.
+
+- **Done and verified on the new project:** the three migrations applied in one transaction and recorded in `supabase_migrations.schema_migrations`; PostGIS 3.3.7 in `extensions`; the seven rollback-only assertions in `database/hosted/verify.sql` passed. New generated passwords for `fieldmaps_api` and `fieldmaps_qgis_training` were set as SCRAM verifiers, so no plain-text password reached the server, and both logins connect through the pooler with verified TLS. The QGIS login is read-only and is refused the private `fieldmaps` and `auth` schemas. `anon` and `authenticated` cannot use any FieldMaps schema, and every table has row-level security. The confirmed account `test-user@example.org` has observer access to the practice project.
+- **Docker:** the API password is in the new volume `fieldmaps_hosted_api_secrets` and the QGIS password in `fieldmaps_qgis_secrets`. The rebuilt `fieldmaps-hosted-api-1` answers `/health`, rejects requests without a token, and its own connection code logs in to the new database. The earlier `fieldops-hosted-api-1` container is stopped, and the `fieldops_*` volumes still hold the earlier project's credentials.
+- **Publishable key:** set in `mobile/connection.config.json`; the project's Auth settings endpoint accepts it, and the project signs tokens with an ES256 key that the API container fetched from its JWKS URL.
+- **Still to do:** public sign-up is still enabled (Auth settings report `disable_signup: false`), so turn it off, and turn on leaked-password protection; then sign in on the simulator and upload one practice record.
+
+Everything under "Verified and pending" was verified against the earlier project and has not been repeated on this one.
 
 The iOS simulator uses `http://127.0.0.1:8000`. That API now connects to **hosted Supabase PostgreSQL 17.6 / PostGIS 3.3.7**, through the IPv4 session pooler on port 5432. Supabase supplies both Auth and the observation database. The API process still runs on this computer; it has not been deployed publicly.
 
@@ -26,9 +35,9 @@ For Metro, use `pnpm start:simulator` in `mobile/`; its IPv4 setting matches the
 
 ## Account access for the first mobile upload
 
-The supplied test account is confirmed and has observer access to the practice project. The running API's restricted database connection returned that project for the account and no projects for an unrelated identity on the same connection pool. The user completed native sign-in and reported an uploaded observation; the API returned HTTP 200 and hosted readback confirmed the record. The following provisioning steps are for additional test accounts.
+On the earlier project, the supplied test account was confirmed and had observer access to the practice project. The running API's restricted database connection returned that project for the account and no projects for an unrelated identity on the same connection pool. The user completed native sign-in and reported an uploaded observation; the API returned HTTP 200 and hosted readback confirmed the record. The following provisioning steps are for additional test accounts.
 
-1. In [Supabase Authentication → Users](https://supabase.com/dashboard/project/wbnvnewslhigxwawcdji/auth/users), create an email/password test user with Auto Confirm enabled.
+1. In [Supabase Authentication → Users](https://supabase.com/dashboard/project/lezmqhuucfwqknspgcdy/auth/users), create an email/password test user with Auto Confirm enabled.
 2. Give the project administrator its User UID. Keep its password private and enter it only in the mobile Account screen.
 3. The administrator assigns that existing user to the practice project with this SQL, replacing `AUTH_USER_UUID`:
 
@@ -44,9 +53,38 @@ ON CONFLICT (user_id, project_id) DO NOTHING;
 
 Signing in alone grants no project access. Existing standalone practice observations remain practice records. Create a new observation after signing in and receiving project access; disconnect, save, then reconnect with the app open to check automatic upload.
 
+## Provision a new project
+
+Run these once per Supabase project, from the repository root. Keep every password out of tracked files; the only places they belong are the Docker volumes below and your own password manager.
+
+1. **Schema.** Apply the three files in `supabase/migrations/` in filename order, as the project owner, and record them in `supabase_migrations.schema_migrations` if you do not use the CLI: paste each into the dashboard SQL editor, or run `supabase link --project-ref lezmqhuucfwqknspgcdy` and then `supabase db push`. They create the private schemas, PostGIS in `extensions`, the practice project, and the `fieldmaps_api` and `fieldmaps_qgis_training` logins.
+2. **Login passwords.** Generate two passwords, for example with `openssl rand -base64 32`, and set them as the project owner:
+
+   ```sql
+   ALTER ROLE fieldmaps_api PASSWORD 'API_PASSWORD';
+   ALTER ROLE fieldmaps_qgis_training PASSWORD 'QGIS_PASSWORD';
+   ```
+
+3. **API secret volume.** Replace the API password without it touching the shell history or a file in the repository:
+
+   ```sh
+   docker compose --env-file /dev/null -f database/compose.hosted.yaml down
+   docker volume rm fieldmaps_hosted_api_secrets
+   docker volume create fieldmaps_hosted_api_secrets
+   read -rs FIELDMAPS_API_PASSWORD
+   printf '%s' "$FIELDMAPS_API_PASSWORD" | docker run --rm -i -v fieldmaps_hosted_api_secrets:/s alpine sh -c 'umask 077; cat > /s/database-password'
+   unset FIELDMAPS_API_PASSWORD
+   ```
+
+   Store the QGIS password the same way in `fieldmaps_qgis_secrets`, file `training-password`, so the administrator can hand it out. To read it back: `docker run --rm -v fieldmaps_qgis_secrets:/s:ro fieldmaps-hosted-api cat /s/training-password`.
+4. **Auth settings** in the dashboard: turn off **Allow new users to sign up**, since accounts are created by administrators, and turn on leaked-password protection.
+5. **Publishable key.** Copy the `sb_publishable_…` key from **Project Settings → API Keys** into `publishableKey` in `mobile/connection.config.json`, replacing the placeholder. It is public by design; never put a secret or service-role key there.
+6. **Test account.** Create a user and grant project access as described in [Account access](#account-access-for-the-first-mobile-upload).
+7. **Check.** `pnpm api:hosted:up`, then `curl http://127.0.0.1:8000/health`, sign in on the simulator, and upload one practice record.
+
 ## Database and credential setup
 
-The applied migrations in `supabase/migrations/` match hosted migration history. The initial migration installs PostGIS in `extensions`, creates private `fieldmaps`, `fieldmaps_meta`, and `gis` schemas, and seeds only the fictional practice project/site/form. The second migration removes browser API execution grants from the dashboard's RLS event-trigger function. The third adds the scoped QGIS training login. No app user or membership is seeded.
+On the earlier project, the applied migrations in `supabase/migrations/` matched hosted migration history. The initial migration installs PostGIS in `extensions`, creates private `fieldmaps`, `fieldmaps_meta`, and `gis` schemas, and seeds only the fictional practice project/site/form. The second migration removes browser API execution grants from the dashboard's RLS event-trigger function. The third adds the scoped QGIS training login. No app user or membership is seeded.
 
 `backend/config.hosted.json` contains public connection settings. The restricted `fieldmaps_api` login has no ownership or RLS bypass; it can insert observations and read rows permitted by the verified account's project memberships. The API uses a generated password stored only in the external Docker volume `fieldmaps_hosted_api_secrets`, at `/run/fieldmaps-secrets/database-password`, mode 0600, mounted read-only. The supplied administrator password was used transiently for provisioning and is not the API credential.
 
