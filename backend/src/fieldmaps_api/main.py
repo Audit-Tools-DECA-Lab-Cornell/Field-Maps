@@ -68,10 +68,11 @@ def create_app(
     # The management application runs on its own origin and sends an Authorization header, so
     # every call it makes is preflighted. Named origins only: a wildcard here would let any page
     # a manager has open spend their token.
-    if configuration.allowed_origins:
+    if configuration.allowed_origins or configuration.browser_origin_pattern:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=configuration.allowed_origins,
+            allow_origin_regex=configuration.browser_origin_pattern,
             allow_methods=["GET", "POST", "PUT"],
             allow_headers=["authorization", "content-type"],
             expose_headers=["etag"],

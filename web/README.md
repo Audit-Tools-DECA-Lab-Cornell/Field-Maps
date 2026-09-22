@@ -71,7 +71,9 @@ cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
 
 Leave it unset and the screen says so: it assembles the package and downloads the submission rather than pretending to upload it.
 
-The API must also name this origin. Browsers preflight a cross-origin request that carries an `Authorization` header, and the API allows no origin by default, so add the web origin to `browser_origins` in `backend/config.local.json` — see [the API README](../backend/README.md). Miss that step and the upload fails in the browser's network layer before the API is reached.
+The API must also name this origin. Browsers preflight a cross-origin request that carries an `Authorization` header, and the API allows no origin by default, so add the web origin to `browser_origins` in `backend/config.local.json` — see [the API README](../backend/README.md). Miss that step and the upload fails in the browser's network layer before the API is reached. Vercel preview deployments get a new hostname per branch, so those are covered by `browser_origin_pattern` rather than listed.
+
+Two things this cannot fix on its own. A page served over HTTPS may not call an API on `http://127.0.0.1`, so the deployed site needs a deployed API over HTTPS — pointing it at a laptop will not work. And uploading still needs a manager's token, below.
 
 Uploading needs an access token for an account with the **manager** role on the project. There is no web sign-in yet, so the screen has a field to paste one; that is a stopgap and is marked as one.
 

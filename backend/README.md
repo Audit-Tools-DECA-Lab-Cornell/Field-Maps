@@ -27,7 +27,8 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 	"issuer": "https://YOUR_PROJECT.supabase.co/auth/v1",
 	"jwks_url": "https://YOUR_PROJECT.supabase.co/auth/v1/.well-known/jwks.json",
 	"audience": "authenticated",
-	"browser_origins": ["http://localhost:3000"]
+	"browser_origins": ["http://localhost:3000", "https://field-maps.vercel.app"],
+	"browser_origin_pattern": "https://field-maps-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
 }
 ```
 
@@ -36,6 +37,13 @@ preflights any cross-origin call carrying an `Authorization` header, and the def
 list — no origin allowed — so base map upload from the web application fails until its origin is
 named here. It is an allowlist by design: a wildcard would let any page a signed-in manager has
 open spend their token.
+
+`browser_origin_pattern` covers the origins that cannot be listed one by one — Vercel names a
+preview deployment `<project>-git-<branch>-<team>.vercel.app`, a new host per branch. The pattern
+must match the whole origin (Starlette applies `fullmatch`), and the team slug is what makes it
+safe: a host ending in someone else's team, or in a suffix like `.vercel.app.evil.invalid`, does
+not match. Escape the dots. A pattern the regex engine cannot compile is refused at startup, not
+per request.
 
 These issuer/JWKS values are public. No Supabase service-role key is needed by this API. It validates the JWT signature, expiry, audience, and issuer and derives the user UUID from the signed subject. Legacy HS256 projects must switch to a supported asymmetric signing key before using this verifier. See [Supabase JWT documentation](https://supabase.com/docs/guides/auth/jwts).
 
