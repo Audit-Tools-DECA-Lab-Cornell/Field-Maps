@@ -8,14 +8,14 @@ INSERT INTO observations (
   '20000000-0000-4000-8000-000000000004', 'OTHER', now(),
   ST_SetSRID(ST_MakePoint(0, 0), 4326), '{"people":9}'
 );
-SET LOCAL ROLE fieldops_sample_reader;
+SET LOCAL ROLE fieldmaps_sample_reader;
 -- When that role queries its approved GIS layer, only the sample project is visible.
 SELECT pg_temp.assert_true(
   (SELECT count(*) = 1 AND min(observer_code) = 'QA' FROM gis.sample_observations),
   'sample GIS role cannot see another organization observations'
 );
 SELECT pg_temp.assert_rejected(
-  $$SELECT * FROM fieldops.observations$$, '42501', 'GIS role cannot read raw observation tables'
+  $$SELECT * FROM fieldmaps.observations$$, '42501', 'GIS role cannot read raw observation tables'
 );
 SELECT pg_temp.assert_rejected(
   $$UPDATE gis.sample_observations SET observer_code = 'CHANGED'$$,

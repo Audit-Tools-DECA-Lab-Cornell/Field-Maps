@@ -1,4 +1,4 @@
-# FieldOps observation API
+# FieldMaps observation API
 
 FastAPI, SQLAlchemy, and PostgreSQL/PostGIS implement the first authenticated, append-only upload slice. The mobile app saves to SQLite first; its foreground queue uploads when connected. QGIS can consume the same committed database records through a scoped GIS view. QGIS itself is not the synchronization server.
 
@@ -15,7 +15,7 @@ make -C database api-build api-test api-up
 
 The API listens at `http://127.0.0.1:8000`; `/docs` exposes its OpenAPI contract. `/health` is a process liveness check, not a database/auth readiness check. Stop with `make -C database stop`.
 
-The public `config.local.json` now identifies the FieldOps Supabase development project; see [current setup status](../docs/Supabase-Setup.md). Leaving both identity settings null disables authenticated access. Missing credentials return 401; a token presented without a configured verifier returns 503. No test-user shortcut or permissive auth mode exists on the running API. Tests use ephemeral RSA keys and synthetic identities in the separate `fieldops_api_test` database.
+The public `config.local.json` now identifies the FieldMaps Supabase development project; see [current setup status](../docs/Supabase-Setup.md). Leaving both identity settings null disables authenticated access. Missing credentials return 401; a token presented without a configured verifier returns 503. No test-user shortcut or permissive auth mode exists on the running API. Tests use ephemeral RSA keys and synthetic identities in the separate `fieldmaps_api_test` database.
 
 ## Configure a development identity provider
 
@@ -23,7 +23,7 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 
 ```json
 {
-	"database_url": "postgresql+asyncpg://fieldops_api@/fieldops?host=/var/run/postgresql",
+	"database_url": "postgresql+asyncpg://fieldmaps_api@/fieldmaps?host=/var/run/postgresql",
 	"issuer": "https://YOUR_PROJECT.supabase.co/auth/v1",
 	"jwks_url": "https://YOUR_PROJECT.supabase.co/auth/v1/.well-known/jwks.json",
 	"audience": "authenticated"
@@ -32,12 +32,12 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 
 These issuer/JWKS values are public. No Supabase service-role key is needed by this API. It validates the JWT signature, expiry, audience, and issuer and derives the user UUID from the signed subject. Legacy HS256 projects must switch to a supported asymmetric signing key before using this verifier. See [Supabase JWT documentation](https://supabase.com/docs/guides/auth/jwts).
 
-An administrator must add the Auth user's UUID to `fieldops.project_memberships`; signing in alone grants no project access. From an authorized local administrator SQL session, replace `AUTH_USER_UUID` in this statement:
+An administrator must add the Auth user's UUID to `fieldmaps.project_memberships`; signing in alone grants no project access. From an authorized local administrator SQL session, replace `AUTH_USER_UUID` in this statement:
 
 ```sql
-INSERT INTO fieldops.project_memberships (user_id, organization_id, project_id, role)
+INSERT INTO fieldmaps.project_memberships (user_id, organization_id, project_id, role)
 SELECT 'AUTH_USER_UUID'::uuid, organization_id, id, 'observer'
-FROM fieldops.projects
+FROM fieldmaps.projects
 WHERE id = '10000000-0000-4000-8000-000000000002'
 ON CONFLICT (user_id, project_id) DO NOTHING;
 ```

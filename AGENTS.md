@@ -1,6 +1,6 @@
-# AGENTS.md — FieldOps product workspace
+# AGENTS.md — FieldMaps product workspace
 
-FieldOps is one Git repository with independently managed applications. It is separate from Playspace, COPA, YEE, and their backend.
+FieldMaps is one Git repository with independently managed applications. It is separate from Playspace, COPA, YEE, and their backend.
 
 ## Routing
 

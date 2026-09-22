@@ -19,7 +19,7 @@ export function knownForms(): readonly FormDefinition[] {
   return forms;
 }
 
-/** `shell-v1` is the only version `backend/src/fieldops_api/schemas.py` accepts today. */
+/** `shell-v1` is the only version `backend/src/fieldmaps_api/schemas.py` accepts today. */
 export function isUploadable(version: string): boolean {
   return formFor(version)?.status === "published";
 }

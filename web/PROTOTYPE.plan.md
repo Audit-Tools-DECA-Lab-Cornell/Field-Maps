@@ -1,6 +1,6 @@
 # Product framing
 
-Build a prototype called **FieldOps Parcel Editor**.
+Build a prototype called **FieldMaps Parcel Editor**.
 
 This is a **visual and interaction prototype** for an internal GIS operations tool used by a field operations team to manage farm parcels, inspection records, and maintenance tasks. It simulates the kind of workflow complexity found in ArcGIS/QGIS-style operational editing software, but without production GIS infrastructure.
 
@@ -198,7 +198,7 @@ Height: approximately 56px.
 
 Left side:
 
-- Product name: **FieldOps Parcel Editor**
+- Product name: **FieldMaps Parcel Editor**
 - Small environment badge: **Prototype**
 - Region selector: **Central Valley Demo Region**
 - Current mode badge:

@@ -40,7 +40,7 @@ const record = shellObservationSchema.parse({
 describe("Local observation persistence", () => {
   it("restores the observation after closing and reopening a real SQLite file", async () => {
     // Given a saved observation in an on-disk database.
-    const directory = mkdtempSync(join(tmpdir(), "fieldops-db-"));
+    const directory = mkdtempSync(join(tmpdir(), "fieldmaps-db-"));
     const filename = join(directory, "observations.db");
     let database = new DatabaseSync(filename);
     try {

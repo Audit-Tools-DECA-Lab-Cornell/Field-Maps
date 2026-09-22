@@ -8,7 +8,7 @@ const csvValue = (value: string | number | boolean): string => {
 export function observationsToGeoJson(observations: ObservationPoint[]) {
 	return {
 		type: "FeatureCollection" as const,
-		name: "fieldops_observations",
+		name: "fieldmaps_observations",
 		crs: {
 			type: "name",
 			properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" }

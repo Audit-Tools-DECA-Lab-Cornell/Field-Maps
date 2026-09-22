@@ -1,5 +1,5 @@
 {
-  "database_url": "postgresql+asyncpg://fieldops_api@/fieldops?host=/var/run/postgresql",
+  "database_url": "postgresql+asyncpg://fieldmaps_api@/fieldmaps?host=/var/run/postgresql",
   "issuer": "https://wbnvnewslhigxwawcdji.supabase.co/auth/v1",
   "jwks_url": "https://wbnvnewslhigxwawcdji.supabase.co/auth/v1/.well-known/jwks.json",
   "audience": "authenticated"

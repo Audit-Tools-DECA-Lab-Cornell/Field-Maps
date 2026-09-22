@@ -7,7 +7,7 @@ from uuid import UUID
 import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-ISSUER: Final = "https://fieldops-test.invalid/auth/v1"
+ISSUER: Final = "https://fieldmaps-test.invalid/auth/v1"
 USER: Final = UUID("50000000-0000-4000-8000-000000000001")
 OUTSIDER: Final = UUID("50000000-0000-4000-8000-000000000002")
 VIEWER: Final = UUID("50000000-0000-4000-8000-000000000003")

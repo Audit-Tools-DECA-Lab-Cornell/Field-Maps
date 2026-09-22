@@ -1,4 +1,4 @@
-name: fieldops-local
+name: fieldmaps-local
 
 services:
   db:
@@ -7,11 +7,11 @@ services:
     network_mode: none
     entrypoint: ["/bin/sh", "/workspace/local-bootstrap.sh"]
     volumes:
-      - fieldops_data:/var/lib/postgresql
-      - fieldops_socket:/var/run/postgresql
+      - fieldmaps_data:/var/lib/postgresql
+      - fieldmaps_socket:/var/run/postgresql
       - .:/workspace:ro
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "fieldops_owner", "-d", "postgres"]
+      test: ["CMD", "pg_isready", "-U", "fieldmaps_owner", "-d", "postgres"]
       interval: 2s
       timeout: 5s
       retries: 30
@@ -23,11 +23,11 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - fieldops_socket:/var/run/postgresql
+      - fieldmaps_socket:/var/run/postgresql
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
-  fieldops_data:
-  fieldops_socket:
+  fieldmaps_data:
+  fieldmaps_socket:

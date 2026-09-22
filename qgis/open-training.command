@@ -10,4 +10,4 @@ if [ ! -x "$qgis_binary" ]; then
 fi
 
 export PGSERVICEFILE="$qgis_dir/pg_service.conf"
-exec "$qgis_binary" --project "$qgis_dir/fieldops-training.qgs"
+exec "$qgis_binary" --project "$qgis_dir/fieldmaps-training.qgs"

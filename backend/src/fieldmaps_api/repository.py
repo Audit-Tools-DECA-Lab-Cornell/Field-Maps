@@ -9,8 +9,8 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Result, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from fieldops_api import queries
-from fieldops_api.schemas import ObservationUpload, ProjectAccess, StoredObservation, UploadReceipt
+from fieldmaps_api import queries
+from fieldmaps_api.schemas import ObservationUpload, ProjectAccess, StoredObservation, UploadReceipt
 
 
 class UploadTarget(BaseModel):
@@ -27,7 +27,7 @@ async def user_transaction(
 ) -> AsyncGenerator[AsyncSession]:
     async with sessions.begin() as session:
         await session.execute(
-            text("SELECT set_config('fieldops.user_id', :user_id, true)"),
+            text("SELECT set_config('fieldmaps.user_id', :user_id, true)"),
             {"user_id": str(user_id)},
         )
         yield session

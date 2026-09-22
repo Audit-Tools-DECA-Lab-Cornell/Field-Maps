@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import { PwaRegister } from "@/components/app-shell/PwaRegister";
 
 export const metadata: Metadata = {
-	title: "FieldOps Offline Collector — Northstar Ag Operations",
+	title: "FieldMaps Offline Collector — Northstar Ag Operations",
 	description: "Offline field data collection prototype with QGIS exports and ArcGIS Feature Service handoff.",
 	manifest: "/manifest.webmanifest"
 };

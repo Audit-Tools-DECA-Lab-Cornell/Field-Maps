@@ -10,7 +10,7 @@ export interface LocalDatabase {
 
 class NewerDatabaseError extends Error {
   constructor(readonly version: number) {
-    super("This database belongs to a newer app. Update FieldOps to open it.");
+    super("This database belongs to a newer app. Update FieldMaps to open it.");
     this.name = "NewerDatabaseError";
   }
 }

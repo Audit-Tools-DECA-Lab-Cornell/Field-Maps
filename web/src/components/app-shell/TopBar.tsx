@@ -113,7 +113,7 @@ export function TopBar() {
 						<Icon name="boundary" size={16} />
 					</span>
 					<span style={{ fontWeight: 750, fontSize: 14, letterSpacing: "-0.01em" }}>
-						FieldOps Parcel Editor
+						FieldMaps Parcel Editor
 					</span>
 					<span className="fo-badge is-purple fo-badge--square">Prototype</span>
 				</div>

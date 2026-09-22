@@ -9,16 +9,16 @@ from jwt import PyJWKClient
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from fieldops_api.auth import Authentication, JwksVerifier, TokenVerifier, UnconfiguredVerifier
-from fieldops_api.config import Settings, read_local_settings
-from fieldops_api.database import database_connection
-from fieldops_api.repository import (
+from fieldmaps_api.auth import Authentication, JwksVerifier, TokenVerifier, UnconfiguredVerifier
+from fieldmaps_api.config import Settings, read_local_settings
+from fieldmaps_api.database import database_connection
+from fieldmaps_api.repository import (
     get_observation,
     list_projects,
     upload_observation,
     user_transaction,
 )
-from fieldops_api.schemas import ObservationUpload, ProjectAccess, StoredObservation, UploadReceipt
+from fieldmaps_api.schemas import ObservationUpload, ProjectAccess, StoredObservation, UploadReceipt
 
 
 def create_app(
@@ -51,7 +51,7 @@ def create_app(
         yield
         await engine.dispose()
 
-    app = FastAPI(title="FieldOps API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="FieldMaps API", version="0.1.0", lifespan=lifespan)
 
     @app.exception_handler(SQLAlchemyError)
     async def database_error(_request: Request, _error: SQLAlchemyError) -> JSONResponse:

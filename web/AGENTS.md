@@ -1,4 +1,4 @@
-# FieldOps web
+# FieldMaps web
 
 Next.js App Router / React / Leaflet prototype. Parent `AGENTS.md` contains product routing and operating rules.
 

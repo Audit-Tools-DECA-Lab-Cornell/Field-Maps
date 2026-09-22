@@ -1,8 +1,8 @@
 {
-  "name": "fieldops",
+  "name": "fieldmaps",
   "version": "0.1.0",
   "private": true,
-  "description": "Product commands for the FieldOps web, mobile, API, and spatial database",
+  "description": "Product commands for the FieldMaps web, mobile, API, and spatial database",
   "packageManager": "pnpm@10.17.1",
   "engines": {
     "node": ">=24.0.0"

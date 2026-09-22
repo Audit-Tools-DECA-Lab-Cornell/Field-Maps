@@ -1,13 +1,13 @@
 from pathlib import Path
 from ssl import CERT_REQUIRED, VERIFY_X509_STRICT
 
-from fieldops_api.config import Settings
-from fieldops_api.database import database_connection
+from fieldmaps_api.config import Settings
+from fieldmaps_api.database import database_connection
 
 
 def test_local_database_uses_socket_without_remote_tls() -> None:
     connection = database_connection(Settings())
-    assert connection.url.username == "fieldops_api"
+    assert connection.url.username == "fieldmaps_api"
     assert connection.ssl is None
 
 
@@ -16,7 +16,7 @@ def test_hosted_password_is_loaded_separately_and_tls_is_verified(tmp_path: Path
     password_file.write_text("test-password-with-@:/characters")
     settings = Settings.model_validate(
         {
-            "database_url": "postgresql+asyncpg://fieldops_api.project@pooler.example.test:5432/postgres",
+            "database_url": "postgresql+asyncpg://fieldmaps_api.project@pooler.example.test:5432/postgres",
             "database_password_file": str(password_file),
             "database_tls": True,
         }

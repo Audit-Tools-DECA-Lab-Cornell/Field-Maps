@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, HttpUrl, model_validator
 
 class Settings(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
-    database_url: str = "postgresql+asyncpg://fieldops_api@/fieldops?host=/var/run/postgresql"
+    database_url: str = "postgresql+asyncpg://fieldmaps_api@/fieldmaps?host=/var/run/postgresql"
     issuer: HttpUrl | None = None
     jwks_url: HttpUrl | None = None
     audience: str = "authenticated"

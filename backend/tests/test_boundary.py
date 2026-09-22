@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from fieldops_api.main import create_app
+from fieldmaps_api.main import create_app
 
 
 def test_upload_requires_authentication() -> None:

@@ -1,4 +1,4 @@
-# FieldOps quick reference
+# FieldMaps quick reference
 
 Read `AGENTS.md` for component routing and operating rules, `README.md` for the product overview, and `docs/Workspace.md` for setup and checks.
 

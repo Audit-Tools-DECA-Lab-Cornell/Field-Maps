@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: "FieldOps Offline Collector",
-		short_name: "FieldOps",
+		name: "FieldMaps Offline Collector",
+		short_name: "FieldMaps",
 		description: "Offline-first field observation capture with QGIS and ArcGIS handoff.",
 		start_url: "/",
 		display: "standalone",
@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
 		orientation: "any",
 		icons: [
 			{
-				src: "/fieldops-mark.svg",
+				src: "/fieldmaps-mark.svg",
 				sizes: "any",
 				type: "image/svg+xml",
 				purpose: "any"

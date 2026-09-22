@@ -1,24 +1,28 @@
 {
   "expo": {
-    "name": "FieldOps",
-    "slug": "fieldops-mobile",
+    "name": "FieldMaps",
+    "slug": "fieldmaps-mobile",
     "version": "0.1.0",
-    "scheme": "fieldops",
+    "scheme": "fieldmaps",
     "orientation": "default",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fieldops.collector.dev",
+      "bundleIdentifier": "com.fieldmaps.collector.dev",
       "requireFullScreen": true
     },
     "android": {
-      "package": "com.fieldops.collector.dev"
+      "package": "com.fieldmaps.collector.dev"
     },
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "plugins": [
       "expo-router",
       "expo-sqlite",
       "@maplibre/maplibre-react-native",
+      "expo-system-ui",
       "expo-secure-store",
       [
         "expo-screen-orientation",

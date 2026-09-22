@@ -1,6 +1,6 @@
 {
-	"database_url": "postgresql+asyncpg://fieldops_api.wbnvnewslhigxwawcdji@aws-0-us-west-2.pooler.supabase.com:5432/postgres",
-	"database_password_file": "/run/fieldops-secrets/database-password",
+	"database_url": "postgresql+asyncpg://fieldmops_api.wbnvnewslhigxwawcdji@aws-0-us-west-2.pooler.supabase.com:5432/postgres",
+	"database_password_file": "/run/fieldmaps-secrets/database-password",
 	"database_tls": true,
 	"database_tls_strict": false,
 	"database_ca_file": "/app/certs/supabase-root-2021.crt",

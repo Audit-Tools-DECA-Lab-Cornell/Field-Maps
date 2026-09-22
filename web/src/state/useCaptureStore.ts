@@ -69,7 +69,7 @@ export const useCaptureStore = create<CaptureState>()(
 			setHasHydrated: ready => set({ hasHydrated: ready })
 		}),
 		{
-			name: "fieldops-capture-v1",
+			name: "fieldmaps-capture-v1",
 			storage: createJSONStorage(() => localStorage),
 			partialize: state => ({ observations: state.observations }),
 			onRehydrateStorage: () => state => state?.setHasHydrated(true)

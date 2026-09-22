@@ -2,7 +2,7 @@
 	"version": "0.0.1",
 	"configurations": [
 		{
-			"name": "fieldops",
+			"name": "fieldmaps",
 			"runtimeExecutable": "pnpm",
 			"runtimeArgs": ["-C", ".", "dev"],
 			"port": 3000

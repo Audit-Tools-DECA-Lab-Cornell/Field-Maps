@@ -3,7 +3,7 @@ from ssl import VERIFY_X509_STRICT, SSLContext, create_default_context
 
 from sqlalchemy.engine import URL, make_url
 
-from fieldops_api.config import Settings
+from fieldmaps_api.config import Settings
 
 
 @dataclass(frozen=True, slots=True)

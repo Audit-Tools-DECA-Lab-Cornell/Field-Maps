@@ -33,9 +33,9 @@ The supplied test account is confirmed and has observer access to the practice p
 3. The administrator assigns that existing user to the practice project with this SQL, replacing `AUTH_USER_UUID`:
 
 ```sql
-INSERT INTO fieldops.project_memberships (user_id, organization_id, project_id, role)
+INSERT INTO fieldmaps.project_memberships (user_id, organization_id, project_id, role)
 SELECT u.id, p.organization_id, p.id, 'observer'
-FROM auth.users u CROSS JOIN fieldops.projects p
+FROM auth.users u CROSS JOIN fieldmaps.projects p
 WHERE u.id = 'AUTH_USER_UUID'::uuid
   AND u.email_confirmed_at IS NOT NULL
   AND p.id = '10000000-0000-4000-8000-000000000002'
@@ -46,9 +46,9 @@ Signing in alone grants no project access. Existing standalone practice observat
 
 ## Database and credential setup
 
-The applied migrations in `supabase/migrations/` match hosted migration history. The initial migration installs PostGIS in `extensions`, creates private `fieldops`, `fieldops_meta`, and `gis` schemas, and seeds only the fictional practice project/site/form. The second migration removes browser API execution grants from the dashboard's RLS event-trigger function. The third adds the scoped QGIS training login. No app user or membership is seeded.
+The applied migrations in `supabase/migrations/` match hosted migration history. The initial migration installs PostGIS in `extensions`, creates private `fieldmaps`, `fieldmaps_meta`, and `gis` schemas, and seeds only the fictional practice project/site/form. The second migration removes browser API execution grants from the dashboard's RLS event-trigger function. The third adds the scoped QGIS training login. No app user or membership is seeded.
 
-`backend/config.hosted.json` contains public connection settings. The restricted `fieldops_api` login has no ownership or RLS bypass; it can insert observations and read rows permitted by the verified account's project memberships. The API uses a generated password stored only in the external Docker volume `fieldops_hosted_api_secrets`, at `/run/fieldops-secrets/database-password`, mode 0600, mounted read-only. The supplied administrator password was used transiently for provisioning and is not the API credential.
+`backend/config.hosted.json` contains public connection settings. The restricted `fieldmaps_api` login has no ownership or RLS bypass; it can insert observations and read rows permitted by the verified account's project memberships. The API uses a generated password stored only in the external Docker volume `fieldmaps_hosted_api_secrets`, at `/run/fieldmaps-secrets/database-password`, mode 0600, mounted read-only. The supplied administrator password was used transiently for provisioning and is not the API credential.
 
 This volume is local secret storage for development, not a production secret manager. A new computer needs a separately provisioned API credential and volume. Do not delete the volume as a troubleshooting step; replacing it requires coordinated password rotation and an API restart. Production deployment must inject a runtime secret through its hosting platform.
 
@@ -64,7 +64,7 @@ The CLI configuration in `supabase/config.toml` describes an optional local Supa
 - **Advisor results:** the latest check flags [disabled leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection); address this Auth setting during deployment hardening. Two [RLS-without-policy notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) are intentional: organizations and migration metadata are administrator-only. [Unused-index notices](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index) are expected before traffic; retain the spatial and foreign-key indexes.
 - **Offline acceptance:** the user followed the disconnect/save/reconnect test and reported automatic upload. Hosted readback confirmed "Offline sync test", captured September 18, 2026 at 19:24:03.807 UTC and received at 19:24:10.399461 UTC, with revision 1 and matching coordinates, count, and notes in `gis.sample_observations`. Offline interaction was user-tested; database persistence and GIS-view readback were independently verified.
 
-**QGIS connection:** a separate `fieldops_qgis_training` login now inherits the scoped reader role. Its actual pooler login returns the two uploaded points with verified TLS; permission checks deny access to private application/Auth tables and observation edits. QGIS Desktop 4.2.2 is now installed: its native PostgreSQL layer returned both records, its attribute table displayed their answers, and its exported map canvas rendered both labeled points. The reusable project is `qgis/fieldops-training.qgs`; see [connection and reopening instructions](../qgis/README.md). No password is embedded in its layer sources. A fresh QGIS session may prompt for the scoped GIS credential.
+**QGIS connection:** a separate `fieldmaps_qgis_training` login now inherits the scoped reader role. Its actual pooler login returns the two uploaded points with verified TLS; permission checks deny access to private application/Auth tables and observation edits. QGIS Desktop 4.2.2 is now installed: its native PostgreSQL layer returned both records, its attribute table displayed their answers, and its exported map canvas rendered both labeled points. The reusable project is `qgis/fieldmaps-training.qgs`; see [connection and reopening instructions](../qgis/README.md). No password is embedded in its layer sources. A fresh QGIS session may prompt for the scoped GIS credential.
 
 The mobile queue currently uploads new points while the app is active. General form publishing, attachments, edit/delete synchronization, server-to-device downloads, and closed-app background synchronization remain outside this slice. The development mobile-to-database-to-QGIS path is verified for the two test observations; a production rollout and physical-device field trial remain unverified.
 

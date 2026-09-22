@@ -60,7 +60,7 @@ function open() {
   };
 }
 beforeEach(async () => {
-  directory = mkdtempSync(join(tmpdir(), "fieldops-sync-"));
+  directory = mkdtempSync(join(tmpdir(), "fieldmaps-sync-"));
   filename = join(directory, "records.db");
   open();
   await initializeDatabase(database);

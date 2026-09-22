@@ -11,7 +11,7 @@ export const shellV1: FormDefinition = parseFormDefinition({
   version: "shell-v1",
   title: "Practice form",
   summary: "Three practice fields against the bundled training map.",
-  source: "The original FieldOps shell; not a research instrument.",
+  source: "The original FieldMaps shell; not a research instrument.",
   status: "published",
   inclusion: "Practice only. These records are not part of Janet's variable library.",
   knownExportCollisions: [],

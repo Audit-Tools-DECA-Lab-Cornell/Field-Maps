@@ -1,6 +1,6 @@
-# Live FieldOps observations in QGIS
+# Live FieldMaps observations in QGIS
 
-The Supabase login `fieldops_qgis_training` is restricted to the fictional training project's `gis.sample_observations` view. It cannot read private application or Auth tables, edit observations, create objects in `public`, grant memberships, or bypass row policies. Its actual pooler login has been tested with TLS certificate and hostname verification; it returns both uploaded WGS84 points.
+The Supabase login `fieldmaps_qgis_training` is restricted to the fictional training project's `gis.sample_observations` view. It cannot read private application or Auth tables, edit observations, create objects in `public`, grant memberships, or bypass row policies. Its actual pooler login has been tested with TLS certificate and hostname verification; it returns both uploaded WGS84 points.
 
 This is a development reader for the practice project. Real research projects need their own scoped reader assignments and credential lifecycle.
 
@@ -11,25 +11,25 @@ This is a development reader for the practice project. Real research projects ne
 | Host               | `aws-0-us-west-2.pooler.supabase.com`         |
 | Port               | `5432` (session pooler)                       |
 | Database           | `postgres`                                    |
-| Username           | `fieldops_qgis_training.wbnvnewslhigxwawcdji` |
+| Username           | `fieldmaps_qgis_training.wbnvnewslhigxwawcdji` |
 | SSL                | Verify Full                                   |
 | Certificate        | `../backend/certs/supabase-root-2021.crt`     |
 | Schema / view      | `gis.sample_observations`                     |
 | Unique feature key | `fid`                                         |
 | Geometry / CRS     | `geom`, Point, EPSG:4326                      |
 
-The generated GIS password is stored outside this repository in the private Docker volume `fieldops_qgis_secrets`, file `/run/fieldops-qgis/training-password`. It is separate from the administrator password and the mobile test-account password. It was entered through QGIS's normal connection prompt and cached for the current session. It was not saved in the project or QGIS authentication manager. A fresh QGIS process may prompt for the scoped GIS password again; obtain it from the project administrator. Do not use the Supabase administrator password for this reader or save plaintext credentials in project files or connection exports.
+The generated GIS password is stored outside this repository in the private Docker volume `fieldmaps_qgis_secrets`, file `/run/fieldmaps-qgis/training-password`. It is separate from the administrator password and the mobile test-account password. It was entered through QGIS's normal connection prompt and cached for the current session. It was not saved in the project or QGIS authentication manager. A fresh QGIS process may prompt for the scoped GIS password again; obtain it from the project administrator. Do not use the Supabase administrator password for this reader or save plaintext credentials in project files or connection exports.
 
-`pg_service.conf` contains only public connection settings. Its certificate path is specific to this checkout; update it if the checkout moves. Launch QGIS with `PGSERVICEFILE` pointing to this file and choose service `fieldops_training`. Alternatively, configure the same connection in QGIS and supply the root certificate through its connection/authentication settings.
+`pg_service.conf` contains only public connection settings. Its certificate path is specific to this checkout; update it if the checkout moves. Launch QGIS with `PGSERVICEFILE` pointing to this file and choose service `fieldmaps_training`. Alternatively, configure the same connection in QGIS and supply the root certificate through its connection/authentication settings.
 
 ## Load and verify
 
-1. On this Mac, double-click `open-training.command` to launch the installed QGIS 4.2.2 with the service file and saved `fieldops-training.qgs` project. The launcher contains no password and assumes the current QGIS installation path. Its shell syntax and paths were checked; a fresh-process launch has not been tested.
-2. Supply the scoped GIS password if prompted. Select **FieldOps observations (live)**. The duplicate `sample_observations` layer from the initial connection experiment is retained but hidden.
+1. On this Mac, double-click `open-training.command` to launch the installed QGIS 4.2.2 with the service file and saved `fieldmaps-training.qgs` project. The launcher contains no password and assumes the current QGIS installation path. Its shell syntax and paths were checked; a fresh-process launch has not been tested.
+2. Supply the scoped GIS password if prompted. Select **FieldMaps observations (live)**. The duplicate `sample_observations` layer from the initial connection experiment is retained but hidden.
 3. Press **F6** to open the attribute table. It contains the online and offline test records. Coordinates and form answers come directly from the hosted database. The saved project styles and labels the two points; it does not include a basemap.
 4. After another mobile upload, refresh/reload the layer to see the new row. This connection reads live data; no file export is needed.
 
-For manual setup, create a PostgreSQL connection using service `fieldops_training`, list schema `gis` (disable “Only look in public”), add `sample_observations`, and choose `fid` if prompted for its unique identifier. QField is a separate application.
+For manual setup, create a PostgreSQL connection using service `fieldmaps_training`, list schema `gis` (disable “Only look in public”), add `sample_observations`, and choose `fid` if prompted for its unique identifier. QField is a separate application.
 
 Verified September 18, 2026 in QGIS Desktop 4.2.2: the PostgreSQL provider loaded two EPSG:4326 point features; the attribute table displayed **First sync test** and **Offline sync test** with editing disabled. QGIS's exported map canvas in `verified-observations.png` shows both styled points and labels. Both saved layer sources use the service without an inline password. The saved project and its adjacent attachments archive should stay together.
 

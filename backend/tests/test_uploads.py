@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
 
-from fieldops_api.schemas import ProjectAccess, StoredObservation, UploadReceipt
+from fieldmaps_api.schemas import ProjectAccess, StoredObservation, UploadReceipt
 from tests.signing import PROJECT, USER
 
 pytestmark = pytest.mark.integration

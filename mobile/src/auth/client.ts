@@ -6,7 +6,7 @@ import { cachedAccount } from "./cached-account";
 export async function createAuthClient() {
   if (!connection) return null;
   const storage = await import("expo-secure-store");
-  const storageKey = `fieldops-auth-${new URL(connection.supabaseUrl).hostname}`;
+  const storageKey = `fieldmaps-auth-${new URL(connection.supabaseUrl).hostname}`;
   const account = cachedAccount(await storage.getItemAsync(storageKey));
   const client = createClient(connection.supabaseUrl, connection.publishableKey, {
     auth: {

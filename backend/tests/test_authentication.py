@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from fieldops_api.auth import JwksVerifier
-from fieldops_api.main import create_app
+from fieldmaps_api.auth import JwksVerifier
+from fieldmaps_api.main import create_app
 from tests.signing import ISSUER, make_signer
 
 

@@ -1,4 +1,4 @@
-# FieldOps web prototype
+# FieldMaps web prototype
 
 This folder owns the Next.js application, dependencies, assets, and build configuration. Run the commands below from `web/`, or use `pnpm web:dev`, `pnpm web:build`, and `pnpm web:check` at the product root. See [workspace operations](../docs/Workspace.md) for centralized commands and deployment setup.
 

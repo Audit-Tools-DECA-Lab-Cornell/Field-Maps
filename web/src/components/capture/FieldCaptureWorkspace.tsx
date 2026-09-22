@@ -96,13 +96,13 @@ export function FieldCaptureWorkspace() {
 	};
 
 	const exportCsv = () => {
-		downloadText("fieldops-observations-qgis.csv", observationsToCsv(observations), "text/csv;charset=utf-8");
+		downloadText("fieldmaps-observations-qgis.csv", observationsToCsv(observations), "text/csv;charset=utf-8");
 		setNotice("QGIS-ready CSV downloaded with longitude and latitude columns.");
 	};
 
 	const exportGeoJson = () => {
 		downloadText(
-			"fieldops-observations.geojson",
+			"fieldmaps-observations.geojson",
 			JSON.stringify(observationsToGeoJson(observations), null, 2),
 			"application/geo+json"
 		);

@@ -17,7 +17,7 @@ import { interFonts } from "../src/theme-fonts";
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <View style={{ flex: 1, paddingVertical: 48, backgroundColor: colors.bg }}>
-      <ScreenMessage title="FieldOps could not open" detail={error.message} />
+      <ScreenMessage title="FieldMaps could not open" detail={error.message} />
       <View style={{ padding: space.wide }}>
         <PrimaryAction label="Try again" onPress={retry} />
       </View>
@@ -30,12 +30,12 @@ export default function RootLayout() {
   // A missing face falls back to the system font rather than holding the collector shut.
   const [fontsReady, fontError] = useFonts(interFonts);
   if (!fontsReady && !fontError)
-    return <ScreenMessage title="Opening FieldOps" detail="Preparing your local workspace…" />;
+    return <ScreenMessage title="Opening FieldMaps" detail="Preparing your local workspace…" />;
   return (
     <Suspense
-      fallback={<ScreenMessage title="Opening FieldOps" detail="Preparing your local workspace…" />}
+      fallback={<ScreenMessage title="Opening FieldMaps" detail="Preparing your local workspace…" />}
     >
-      <SQLiteProvider databaseName="fieldops-shell.db" onInit={initializeDatabase} useSuspense>
+      <SQLiteProvider databaseName="fieldmaps-shell.db" onInit={initializeDatabase} useSuspense>
         <AuthProvider>
           <SyncProvider>
             <FieldSessionProvider>

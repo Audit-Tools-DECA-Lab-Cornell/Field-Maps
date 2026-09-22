@@ -1,4 +1,4 @@
-**Production architecture recommendation for FieldOps**
+**Production architecture recommendation for FieldMaps**
 
 Research date: September 17, 2026. Status: proposed architecture, ready for review and a device proof of concept. This report does not claim that synchronization, hosting, or QGIS integration has been implemented or tested.
 
@@ -12,32 +12,32 @@ The confirmed requirements are our own custom app, offline collection, automatic
 
 **Products to build**
 
-| Product surface | Who uses it and what it does | Priority |
-| --- | --- | --- |
-| Mobile collector for Android and iOS, with deliberate tablet layouts | Download assignments and maps; place observations manually or with optional GPS; complete conditional forms; save and synchronize work | First release |
-| Web project workspace | Manage organizations, projects, sites and layers; select Janet’s variables; preview and publish forms; assign observers; review observations; export data | First release |
-| Research and analysis workspace within the same web app | Filter maps by time, site, round, and variable; show completeness and summaries; download coded analysis tables | Basic analysis first; advanced analysis later |
-| Internal support area within the same web app | Diagnose stalled synchronization, failed jobs, access problems, and version mismatches; audit privileged actions | Minimal version before external pilots |
-| GIS integration and developer interface | Read-only QGIS layers, GeoPackage/GeoJSON/CSV exports; later documented partner APIs and an optional QGIS publishing plugin | Basic QGIS integration first; plugin and partner automation later |
+| Product surface                                                      | Who uses it and what it does                                                                                                                              | Priority                                                          |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Mobile collector for Android and iOS, with deliberate tablet layouts | Download assignments and maps; place observations manually or with optional GPS; complete conditional forms; save and synchronize work                    | First release                                                     |
+| Web project workspace                                                | Manage organizations, projects, sites and layers; select Janet’s variables; preview and publish forms; assign observers; review observations; export data | First release                                                     |
+| Research and analysis workspace within the same web app              | Filter maps by time, site, round, and variable; show completeness and summaries; download coded analysis tables                                           | Basic analysis first; advanced analysis later                     |
+| Internal support area within the same web app                        | Diagnose stalled synchronization, failed jobs, access problems, and version mismatches; audit privileged actions                                          | Minimal version before external pilots                            |
+| GIS integration and developer interface                              | Read-only QGIS layers, GeoPackage/GeoJSON/CSV exports; later documented partner APIs and an optional QGIS publishing plugin                               | Basic QGIS integration first; plugin and partner automation later |
 
 A public site, help center, and onboarding pages can live alongside the web product. A separate desktop application is not needed initially. Keep the web manager usable on tablets, but make the native collector the primary field tool. Separate interfaces can share form definitions, calculations, translations, and API contracts without forcing a desktop map editor into a phone layout.
 
 **Recommended technologies**
 
-| Responsibility | Selection | Reason and boundary |
-| --- | --- | --- |
-| Mobile language and framework | TypeScript, React Native, Expo development builds, Expo Router | Reuses React skills while allowing native maps, storage, files, and device integration |
-| Web language and framework | TypeScript, React, Next.js App Router | Continues the existing prototype’s framework; suitable for project management and analysis |
-| Maps | MapLibre React Native and MapLibre GL JS | Related rendering ecosystems across native and web; map content and editing tools remain separate responsibilities |
-| Device data | SQLite through PowerSync’s supported native adapter, initially OP-SQLite | Durable local records and a managed change queue; prove compatibility on target devices |
-| Synchronization | PowerSync Cloud as the first candidate | Reduces replication work; our backend still owns accepted writes, authorization, and conflicts |
-| API and domain logic | Python, FastAPI, Pydantic | Fits GIS import/export processing and provides explicit validated API contracts |
-| Central data | PostgreSQL with PostGIS; SQLAlchemy, GeoAlchemy2, Alembic for access and migrations | Relational project data, spatial queries, transactions, and GIS interoperability |
-| Large files | Private object storage, initially Supabase Storage | Photos, imagery, exports, and downloadable map packages belong outside observation rows |
-| GIS processing | Containerized Python workers with GDAL; add Rasterio, Shapely, and pyproj as needed | Convert approved input formats, transform coordinates, validate geometry, and produce exports |
-| Long-running jobs | Celery with a managed Redis-compatible broker when map packaging/export jobs arrive | Separate slow processing from record synchronization; persist job intent and status in Postgres |
-| Contracts and form rules | OpenAPI-generated TypeScript clients; versioned JSON form definitions and a restricted rule format | Keep web/mobile/server behavior aligned without duplicating handwritten API types |
-| Delivery and verification | GitHub Actions, Expo EAS, pytest, Playwright, and native device acceptance tests | Exercise the full offline-to-server-to-QGIS path, including upgrades and failures |
+| Responsibility                | Selection                                                                                          | Reason and boundary                                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Mobile language and framework | TypeScript, React Native, Expo development builds, Expo Router                                     | Reuses React skills while allowing native maps, storage, files, and device integration                             |
+| Web language and framework    | TypeScript, React, Next.js App Router                                                              | Continues the existing prototype’s framework; suitable for project management and analysis                         |
+| Maps                          | MapLibre React Native and MapLibre GL JS                                                           | Related rendering ecosystems across native and web; map content and editing tools remain separate responsibilities |
+| Device data                   | SQLite through PowerSync’s supported native adapter, initially OP-SQLite                           | Durable local records and a managed change queue; prove compatibility on target devices                            |
+| Synchronization               | PowerSync Cloud as the first candidate                                                             | Reduces replication work; our backend still owns accepted writes, authorization, and conflicts                     |
+| API and domain logic          | Python, FastAPI, Pydantic                                                                          | Fits GIS import/export processing and provides explicit validated API contracts                                    |
+| Central data                  | PostgreSQL with PostGIS; SQLAlchemy, GeoAlchemy2, Alembic for access and migrations                | Relational project data, spatial queries, transactions, and GIS interoperability                                   |
+| Large files                   | Private object storage, initially Supabase Storage                                                 | Photos, imagery, exports, and downloadable map packages belong outside observation rows                            |
+| GIS processing                | Containerized Python workers with GDAL; add Rasterio, Shapely, and pyproj as needed                | Convert approved input formats, transform coordinates, validate geometry, and produce exports                      |
+| Long-running jobs             | Celery with a managed Redis-compatible broker when map packaging/export jobs arrive                | Separate slow processing from record synchronization; persist job intent and status in Postgres                    |
+| Contracts and form rules      | OpenAPI-generated TypeScript clients; versioned JSON form definitions and a restricted rule format | Keep web/mobile/server behavior aligned without duplicating handwritten API types                                  |
+| Delivery and verification     | GitHub Actions, Expo EAS, pytest, Playwright, and native device acceptance tests                   | Exercise the full offline-to-server-to-QGIS path, including upgrades and failures                                  |
 
 Use a small shared TypeScript package for form evaluation, stable codes, and generated client types. The Python server must independently validate answers and permission rules. Share rule fixtures across languages to verify equivalent results. React state and server-query caches can help the UI, but neither replaces the durable observation database.
 
@@ -71,11 +71,11 @@ Arbitrary QGIS desktop edits would bypass application validation. Treat those as
 
 **Offline design: three things must be downloaded and saved separately**
 
-| Offline component | Required behavior |
-| --- | --- |
-| Maps and site assets | Download a bounded area, required zoom levels, styles, fonts, imagery, and site geometry; validate completeness before showing “Ready offline” |
-| Project configuration | Keep a versioned local copy of assignments, variables, choices, rules, zone definitions, and round context |
-| Collected work | Save observations and pending changes transactionally; retain local photos and attachment status; recover after app and device restarts |
+| Offline component     | Required behavior                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Maps and site assets  | Download a bounded area, required zoom levels, styles, fonts, imagery, and site geometry; validate completeness before showing “Ready offline” |
+| Project configuration | Keep a versioned local copy of assignments, variables, choices, rules, zone definitions, and round context                                     |
+| Collected work        | Save observations and pending changes transactionally; retain local photos and attachment status; recover after app and device restarts        |
 
 MapLibre exposes offline region management, but this does not synchronize application records. The map supplier must separately permit the intended offline use. Evaluate MapTiler as a supplier and retain a path for institution-owned imagery. Its documented native offline packs establish capability in its SDK; they do not establish a blanket license or automatic interoperability with our selected React Native implementation. Verify the actual provider, plan, format, and integration. [MapLibre OfflineManager](https://maplibre.org/maplibre-react-native/docs/modules/offline-manager/), [MapTiler offline packs](https://docs.maptiler.com/mobile-sdk/ios/examples/offline-get-started/)
 
@@ -113,13 +113,13 @@ Use normalized tables for identities, memberships, assignments, form versions, r
 
 My default for the assumed small team is the following managed arrangement. It is a deployment recommendation, not a claim that the services have already been integrated.
 
-| Service | Initial choice | Adoption condition |
-| --- | --- | --- |
-| Web deployment | Vercel | Fits the existing Next.js application and preview workflow |
-| API and GIS workers | Render paid container services | Choose a location close to the database; verify GIS image size, memory, job duration, networking, and support needs |
-| Database, identity, and files | Supabase managed PostgreSQL/PostGIS, Auth, and private Storage | Use suitable paid capacity, explicit access policies, tested backups, and contractual region selection |
-| Device synchronization | PowerSync Cloud | Adopt after the offline, security, migration, locality, and cost proof of concept passes |
-| Supporting services | Expo EAS for mobile delivery; MapTiler evaluated for maps; Sentry plus OpenTelemetry for diagnostics | Check current plans, data handling, and target-device compatibility before purchase |
+| Service                       | Initial choice                                                                                       | Adoption condition                                                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Web deployment                | Vercel                                                                                               | Fits the existing Next.js application and preview workflow                                                          |
+| API and GIS workers           | Render paid container services                                                                       | Choose a location close to the database; verify GIS image size, memory, job duration, networking, and support needs |
+| Database, identity, and files | Supabase managed PostgreSQL/PostGIS, Auth, and private Storage                                       | Use suitable paid capacity, explicit access policies, tested backups, and contractual region selection              |
+| Device synchronization        | PowerSync Cloud                                                                                      | Adopt after the offline, security, migration, locality, and cost proof of concept passes                            |
+| Supporting services           | Expo EAS for mobile delivery; MapTiler evaluated for maps; Sentry plus OpenTelemetry for diagnostics | Check current plans, data handling, and target-device compatibility before purchase                                 |
 
 Vercel documents Next.js support. Render offers separate background workers and horizontal scaling; this makes it a reasonable operational fit for containerized GIS work. This is a preference for our workload, not a claim that Vercel cannot run Python APIs. [Next.js on Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs), [Render workers](https://render.com/docs/background-workers), [Render scaling](https://render.com/docs/scaling)
 
@@ -143,13 +143,13 @@ Plan translation keys, Unicode text, explicit time zones, locale-specific displa
 
 The following are proposed engineering acceptance targets, not measured capacity or vendor guarantees:
 
-| Area | Initial target to validate |
-| --- | --- |
-| Offline durability | A committed local observation survives app termination, reboot, temporary authentication failure, and failed synchronization; device loss before upload remains outside cloud recovery |
-| Representative device workload | Exercise 10,000 local observations, a 500 MB map package, and 30 days of offline project use; replace these assumptions with pilot measurements |
-| Reconnection and correctness | Test 100 devices reconnecting together, repeated delivery, stale revisions, partial attachments, and schema upgrades without duplicate accepted observations or lost drafts |
-| Service reliability | Establish and fund an initial 99.9% availability objective, server-record recovery point of at most 5 minutes, and recovery time of at most 4 hours; prove the actual recovery procedure |
-| Isolation and operability | No cross-organization downloads or writes; observe pending-work age, failed uploads, sync lag, rejected revisions, GIS job failures, and old-client versions |
+| Area                           | Initial target to validate                                                                                                                                                               |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Offline durability             | A committed local observation survives app termination, reboot, temporary authentication failure, and failed synchronization; device loss before upload remains outside cloud recovery   |
+| Representative device workload | Exercise 10,000 local observations, a 500 MB map package, and 30 days of offline project use; replace these assumptions with pilot measurements                                          |
+| Reconnection and correctness   | Test 100 devices reconnecting together, repeated delivery, stale revisions, partial attachments, and schema upgrades without duplicate accepted observations or lost drafts              |
+| Service reliability            | Establish and fund an initial 99.9% availability objective, server-record recovery point of at most 5 minutes, and recovery time of at most 4 hours; prove the actual recovery procedure |
+| Isolation and operability      | No cross-organization downloads or writes; observe pending-work age, failed uploads, sync lag, rejected revisions, GIS job failures, and old-client versions                             |
 
 Back up both data and files and perform restores. Supabase’s database backups do not contain Storage objects, so a database restore alone is incomplete recovery. [Supabase database backups](https://supabase.com/docs/guides/platform/backups)
 
@@ -169,13 +169,13 @@ AI-assisted coding can help implementation, but no AI feature is required to sav
 
 All five decisions below are proposed. Their acceptance depends on review and the proof of concept, not on this document being written.
 
-| Decision | Context and selection | Alternatives considered | Consequence and reconsideration trigger |
-| --- | --- | --- | --- |
-| ADR-001: Native collector plus web manager | Offline files, durable capture, tablet usability, and desktop project setup favor Expo/React Native plus Next.js | PWA-only, Flutter, separate Swift/Kotlin apps | Two interfaces, shared contracts/rules. Reconsider runtime if device/GIS requirements demand a different native SDK |
-| ADR-002: FastAPI modular backend | GIS transformations, exports, and a public typed API favor Python/FastAPI | All-TypeScript NestJS/Fastify; Django; early microservices | Two application languages and deliberate cross-language contracts. All-TypeScript becomes attractive if Python/GIS work is minimal or team skills change |
-| ADR-003: Postgres/PostGIS authority | Observations relate to tenants, forms, rounds, and geometry | Document-first storage or an ArcGIS feature service as primary authority | Strong GIS/relational fit; flexible answers need typed analysis views. Reconsider only for concrete external platform requirements |
-| ADR-004: Managed sync candidate | Offline replication has substantial correctness and maintenance costs | Custom SQLite outbox/cursor protocol; Electric with custom writes | PowerSync reduces transport work but adds vendor cost and security configuration. Adopt only after lifecycle, PostGIS, conflict, and tenancy tests pass |
-| ADR-005: Managed hosting, one primary region initially | Small-team delivery and unknown demand favor managed services | AWS-first regional infrastructure; active-active global writes | Faster operations with provider constraints. Choose AWS earlier for actual networking/residency/availability requirements; add regions by demand |
+| Decision                                               | Context and selection                                                                                            | Alternatives considered                                                  | Consequence and reconsideration trigger                                                                                                                  |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR-001: Native collector plus web manager             | Offline files, durable capture, tablet usability, and desktop project setup favor Expo/React Native plus Next.js | PWA-only, Flutter, separate Swift/Kotlin apps                            | Two interfaces, shared contracts/rules. Reconsider runtime if device/GIS requirements demand a different native SDK                                      |
+| ADR-002: FastAPI modular backend                       | GIS transformations, exports, and a public typed API favor Python/FastAPI                                        | All-TypeScript NestJS/Fastify; Django; early microservices               | Two application languages and deliberate cross-language contracts. All-TypeScript becomes attractive if Python/GIS work is minimal or team skills change |
+| ADR-003: Postgres/PostGIS authority                    | Observations relate to tenants, forms, rounds, and geometry                                                      | Document-first storage or an ArcGIS feature service as primary authority | Strong GIS/relational fit; flexible answers need typed analysis views. Reconsider only for concrete external platform requirements                       |
+| ADR-004: Managed sync candidate                        | Offline replication has substantial correctness and maintenance costs                                            | Custom SQLite outbox/cursor protocol; Electric with custom writes        | PowerSync reduces transport work but adds vendor cost and security configuration. Adopt only after lifecycle, PostGIS, conflict, and tenancy tests pass  |
+| ADR-005: Managed hosting, one primary region initially | Small-team delivery and unknown demand favor managed services                                                    | AWS-first regional infrastructure; active-active global writes           | Faster operations with provider constraints. Choose AWS earlier for actual networking/residency/availability requirements; add regions by demand         |
 
 ArcGIS SDKs can support a custom app with offline geodatabases and synchronization to ArcGIS feature services. Consider that path if customers specifically require their ArcGIS infrastructure and the supported SDK/language and commercial terms fit. It changes the data architecture; it is not automatically an easier route to our shared PostGIS design. [ArcGIS offline synchronization](https://developers.arcgis.com/kotlin/api-reference/arcgis-maps-kotlin/com.arcgismaps.tasks.offlinemaptask/-offline-map-sync-task/index.html)
 
@@ -191,4 +191,4 @@ A custom SQLite synchronization protocol is the fallback if PowerSync fails the 
 
 The first proof must also test an expired login, an app upgrade with pending writes, a permanently rejected record, two devices editing one record, a missing offline map asset, and an account switch. Passing a happy-path upload or a simulator test is insufficient to select the full production combination.
 
-This repository has a Next.js/React/Leaflet prototype, now located in `web/`. Preserve useful management UI and domain ideas, then introduce the backend and collector incrementally. This architecture report originally changed documentation only; it does not connect FieldOps to the separate Audit Tools backend or merge the products. See [workspace operations](Workspace.md) and [Supabase setup](Supabase-Setup.md) for subsequent implementation status.
+This repository has a Next.js/React/Leaflet prototype, now located in `web/`. Preserve useful management UI and domain ideas, then introduce the backend and collector incrementally. This architecture report originally changed documentation only; it does not connect FieldMaps to the separate Audit Tools backend or merge the products. See [workspace operations](Workspace.md) and [Supabase setup](Supabase-Setup.md) for subsequent implementation status.

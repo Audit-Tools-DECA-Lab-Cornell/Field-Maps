@@ -1,4 +1,4 @@
-// Core domain model for FieldOps Parcel Editor.
+// Core domain model for FieldMaps Parcel Editor.
 // All types are local — there is no backend. See PROTOTYPE.plan.md.
 
 export type EntityType = "parcel" | "asset" | "inspection";

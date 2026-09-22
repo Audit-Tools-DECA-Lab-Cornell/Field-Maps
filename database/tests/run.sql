@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP on
 BEGIN;
-SET LOCAL search_path = fieldops, public;
+SET LOCAL search_path = fieldmaps, public;
 
 CREATE FUNCTION pg_temp.assert_true(actual boolean, label text) RETURNS void
 LANGUAGE plpgsql AS $$
@@ -62,7 +62,7 @@ SELECT pg_temp.assert_true(
    FROM gis.sample_observations), 'QGIS projection preserves coordinates and typed answers'
 );
 SELECT pg_temp.assert_true(
-  (SELECT count(*) = 3 FROM fieldops_meta.schema_migrations), 'migration replay records each version once'
+  (SELECT count(*) = 3 FROM fieldmaps_meta.schema_migrations), 'migration replay records each version once'
 );
 \ir constraints.sql
 \ir access.sql

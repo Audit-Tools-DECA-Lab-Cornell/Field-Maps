@@ -29,7 +29,7 @@ export function MobileGate() {
 						lineHeight: 1.55,
 						color: "var(--text-2)"
 					}}>
-					<b>FieldOps Parcel Editor</b> is a dense field-operations workspace — a map, parcel inspector,
+					<b>FieldMaps Parcel Editor</b> is a dense field-operations workspace — a map, parcel inspector,
 					filters, and a sync queue side by side. It is designed for a desktop screen and is not optimized for
 					mobile.
 				</p>

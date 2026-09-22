@@ -15,12 +15,12 @@ pytestmark = pytest.mark.integration
 
 async def read_as_gis(observation_id: UUID) -> tuple[float, float, int, str]:
     engine = create_async_engine(
-        "postgresql+asyncpg://fieldops_owner@/fieldops_api_test?host=/var/run/postgresql",
+        "postgresql+asyncpg://fieldmaps_owner@/fieldmaps_api_test?host=/var/run/postgresql",
         poolclass=NullPool,
     )
     try:
         async with async_sessionmaker(engine).begin() as connection:
-            await connection.execute(text("SET LOCAL ROLE fieldops_sample_reader"))
+            await connection.execute(text("SET LOCAL ROLE fieldmaps_sample_reader"))
             result: Result[tuple[str]] = await connection.execute(
                 text(
                     "SELECT json_build_array(longitude, latitude, people, notes)::text "

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from fieldops_api.config import Settings
+from fieldmaps_api.config import Settings
 
 
 def test_unconfigured_local_api_is_valid_but_partial_identity_config_is_not() -> None:

@@ -7,4 +7,4 @@ COPY src ./src
 COPY tests ./tests
 COPY certs ./certs
 COPY config.local.json ./config.local.json
-CMD ["/app/.venv/bin/uvicorn", "--app-dir", "src", "fieldops_api.main:create_app_from_config", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/.venv/bin/uvicorn", "--app-dir", "src", "fieldmaps_api.main:create_app_from_config", "--factory", "--host", "0.0.0.0", "--port", "8000"]

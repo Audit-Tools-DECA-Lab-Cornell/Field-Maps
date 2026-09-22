@@ -314,7 +314,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fieldops-api"
+name = "fieldmaps-api"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

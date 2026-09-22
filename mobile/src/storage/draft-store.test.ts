@@ -52,7 +52,7 @@ const draft: ObservationDraft = {
 describe("Unfinished observations", () => {
   it("survives closing and reopening the database, so a force quit costs nothing", async () => {
     // Given a draft written as its answers were tapped.
-    const directory = mkdtempSync(join(tmpdir(), "fieldops-draft-"));
+    const directory = mkdtempSync(join(tmpdir(), "fieldmaps-draft-"));
     const filename = join(directory, "drafts.db");
     let database = new DatabaseSync(filename);
     try {

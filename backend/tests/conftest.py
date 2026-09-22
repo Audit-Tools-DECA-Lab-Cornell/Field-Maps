@@ -8,22 +8,22 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
-from fieldops_api.auth import JwksVerifier
-from fieldops_api.config import Settings
-from fieldops_api.main import create_app
+from fieldmaps_api.auth import JwksVerifier
+from fieldmaps_api.config import Settings
+from fieldmaps_api.main import create_app
 from tests.signing import ISSUER, PROJECT, USER, VIEWER, Signer, make_signer
 
 
 async def seed_memberships() -> None:
     engine = create_async_engine(
-        "postgresql+asyncpg://fieldops_owner@/fieldops_api_test?host=/var/run/postgresql",
+        "postgresql+asyncpg://fieldmaps_owner@/fieldmaps_api_test?host=/var/run/postgresql",
         poolclass=NullPool,
     )
     try:
         async with engine.begin() as connection:
             await connection.execute(
                 text(
-                    "INSERT INTO fieldops.project_memberships "
+                    "INSERT INTO fieldmaps.project_memberships "
                     "(user_id, organization_id, project_id, role) VALUES "
                     "(:user, '10000000-0000-4000-8000-000000000001', :project, :role) "
                     "ON CONFLICT (user_id, project_id) DO NOTHING",
@@ -48,7 +48,7 @@ def api_client(signer: Signer) -> Iterator[TestClient]:
         pytest.skip("Run make -C database api-test for real PostGIS integration")
     anyio.run(seed_memberships)
     settings = Settings(
-        database_url="postgresql+asyncpg://fieldops_api@/fieldops_api_test?host=/var/run/postgresql",
+        database_url="postgresql+asyncpg://fieldmaps_api@/fieldmaps_api_test?host=/var/run/postgresql",
     )
     with TestClient(create_app(settings, JwksVerifier(ISSUER, "authenticated", signer))) as client:
         client.headers["Authorization"] = f"Bearer {signer.issue()}"

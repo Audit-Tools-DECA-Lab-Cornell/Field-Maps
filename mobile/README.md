@@ -1,4 +1,4 @@
-# FieldOps mobile collector
+# FieldMaps mobile collector
 
 A native iOS/Android collector for observational play research: a researcher on a playground
 marks a child on a site map and answers a conditional questionnaire, usually offline, often
@@ -49,7 +49,7 @@ over the panel.
 
 ### What is deliberately not done
 
-- `janet-test-v1` is a **draft** version. `backend/src/fieldops_api/schemas.py` accepts only
+- `janet-test-v1` is a **draft** version. `backend/src/fieldmaps_api/schemas.py` accepts only
   `shell-v1`, so records collected against the instrument are held on the device and are never
   queued against a contract the server would reject. Publishing needs a matching API schema, an
   immutable `form_versions` row and a GIS view; that is a follow-up, not this change.
@@ -104,7 +104,7 @@ Tablets are locked to landscape, which on iPad also requires `ios.requireFullScr
 in landscape and may be turned upright. If the orientation module is missing, orientation is left
 free rather than the app refusing to open.
 
-`eas.json` also provides `development`, `simulator`, and `preview` profiles. Cloud builds have not been created; account/project configuration and physical-iOS signing remain setup tasks. The identifier `com.fieldops.collector.dev` is a development placeholder.
+`eas.json` also provides `development`, `simulator`, and `preview` profiles. Cloud builds have not been created; account/project configuration and physical-iOS signing remain setup tasks. The identifier `com.fieldmaps.collector.dev` is a development placeholder.
 
 ## Verify
 
@@ -211,7 +211,7 @@ References: [MapLibre Expo setup](https://maplibre.org/maplibre-react-native/doc
 
 ## Enable the connected development slice
 
-`connection.config.json` is now configured for the FieldOps Supabase development project. See [current setup status](../docs/Supabase-Setup.md). Setting it to `{ "connection": null }` restores standalone practice mode without accounts or a server. The new native modules load only for a configured connection. Regenerate the native configuration with `EXPO_NO_DOTENV=1 pnpm exec expo prebuild`, then rebuild with `pnpm ios` or `pnpm android` before enabling sign-in. The SecureStore plugin configures its native storage settings.
+`connection.config.json` is now configured for the FieldMaps Supabase development project. See [current setup status](../docs/Supabase-Setup.md). Setting it to `{ "connection": null }` restores standalone practice mode without accounts or a server. The new native modules load only for a configured connection. Regenerate the native configuration with `EXPO_NO_DOTENV=1 pnpm exec expo prebuild`, then rebuild with `pnpm ios` or `pnpm android` before enabling sign-in. The SecureStore plugin configures its native storage settings.
 
 Set these public values when the development auth project is ready:
 

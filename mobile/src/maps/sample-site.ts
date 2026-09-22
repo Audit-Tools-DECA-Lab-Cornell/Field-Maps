@@ -181,7 +181,7 @@ function base(
  * Both bases stay subdued so the observations read first, and markers keep a dark halo and a
  * light ring so they hold their contrast on either one.
  */
-export const planStyle = base("FieldOps plan base", {
+export const planStyle = base("FieldMaps plan base", {
   background: "#1b1d2b",
   site: "#20233a",
   siteEdge: "#2f3350",
@@ -189,7 +189,7 @@ export const planStyle = base("FieldOps plan base", {
   structureEdge: "#4a4e5e",
 });
 
-export const aerialStyle = base("FieldOps aerial fixture", {
+export const aerialStyle = base("FieldMaps aerial fixture", {
   background: "#20241d",
   site: "#272d20",
   siteEdge: "#333a29",
