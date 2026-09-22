@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Observation } from "../domain/observation";
+import type { ShellObservation } from "../domain/observation";
 
 export const syncScopeSchema = z.object({
   apiUrl: z.url(),
@@ -22,7 +22,7 @@ export const receiptSchema = z.object({
 });
 export type Receipt = Readonly<z.infer<typeof receiptSchema>>;
 
-export function uploadPayload(record: Observation) {
+export function uploadPayload(record: ShellObservation) {
   return {
     site_id: record.siteId,
     form_version: record.formVersion,
@@ -39,7 +39,7 @@ export type UploadResult =
   | { readonly kind: "retry" | "rejected" | "sign-in"; readonly message: string };
 
 export type Upload = (
-  record: Observation,
+  record: ShellObservation,
   token: string,
   signal: AbortSignal,
 ) => Promise<UploadResult>;

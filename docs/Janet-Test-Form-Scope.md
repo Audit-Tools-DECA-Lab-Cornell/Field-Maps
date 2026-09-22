@@ -46,3 +46,31 @@ Display rules must not reintroduce excluded fields. In particular, H169 referenc
 | G171, G173, G175, G177, G179; project zones; round inheritance | Supply project choice lists and decide which answers carry forward across observations, rounds, dates, and zones. Never fabricate the missing lists from examples. |
 
 The next code change should begin with form-definition parsing and condition fixtures, while these content decisions remain separate from the reusable engine. Full source review is in `QGIS-Field-Collection-Feasibility.md`.
+
+## Implementation status
+
+Updated September 22, 2026. The mobile collector now carries a reusable form engine and a
+`janet-test-v1` definition covering the candidate subset above: timestamp and initials, play event
+summary, child age range, both play type slots with their subtypes, CARS bands, and the wildlife
+branch. All 16 hidden rows remain excluded, and the definition records that decision explicitly.
+
+Steps 1 to 3 of the contract order are done on the device: the definition carries stable
+identifiers, a restricted declarative condition format and source row references; unique export
+names, dependency references and cycles are validated before the definition can be used; and
+answers save into the existing SQLite transaction and account-scoped queue alongside untouched
+`shell-v1` records. Answers hidden by a parent change are dropped from the payload, and the count
+is reported to the observer rather than discarded silently. Hidden required fields do not block a
+save, because only visible questions are validated.
+
+Steps 4 and 5 are not done. `janet-test-v1` is a draft version, so its records are held on the
+device and never queued: the API accepts only `shell-v1`, and there is no server form version or
+GIS view for the new answers yet. Publishing it needs dual acceptance in `backend`, an immutable
+`form_versions` row, and a typed analysis view.
+
+The questions carried forward are unresolved and are surfaced in the app rather than settled in
+code. The wildlife branch has no supplied export columns and no interaction type list, so its
+columns are empty and the list is marked as pending; the second play subtype slot keeps an
+independent answer but has no export column; presenting gender, the manufactured loose-parts
+collision on `Nat_LP_Intn_Binary`, and the "list to be provided" natural materials checklist are
+carried as protocol notes and their fields are held out of this version. Option codes in the
+definition are provisional implementation identifiers, not workbook values.

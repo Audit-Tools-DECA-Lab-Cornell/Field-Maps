@@ -1,91 +1,132 @@
 import { router } from "expo-router";
-import { ScrollView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ActionButton } from "../src/components/action-button";
-import { SiteMap } from "../src/maps/site-map";
+import { useEffect, useState } from "react";
+import { Text, View } from "react-native";
+import {
+  AttentionNote,
+  Chip,
+  FadeRule,
+  GhostAction,
+  LinkAction,
+  Prose,
+  RowButton,
+  RowHeading,
+  SectionLabel,
+} from "../src/components/chrome";
+import { PageScreen } from "../src/components/screen";
+import { availabilityChip, bundledPackages } from "../src/packages/bundled";
+import type { PackageSummary } from "../src/packages/site-package";
+import { useFieldSession } from "../src/session/provider";
+import { draftSummary } from "../src/storage/draft-store";
 import { useObservations } from "../src/storage/use-observations";
-import { colors } from "../src/theme";
+import { colors, space, textStyles } from "../src/theme";
 
-export default function SitesScreen() {
-  const insets = useSafeAreaInsets();
-  const { records, loading, error } = useObservations();
+const WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+
+export default function AssignmentsScreen() {
+  const { recovered, resumeRecovered, discardRecovered, openPackage, announce } = useFieldSession();
+  const { records } = useObservations();
+  const [summaries, setSummaries] = useState<readonly PackageSummary[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    void bundledPackages
+      .list()
+      .then((result) => {
+        if (active) setSummaries(result);
+      })
+      .catch(() => {
+        if (active) announce("The package list could not be read on this device.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [announce]);
+
+  async function open(summary: PackageSummary) {
+    if (summary.availability !== "on-device") {
+      announce(
+        summary.availability === "archived"
+          ? `${summary.name} is closed and read only.`
+          : `${summary.name} is not on this device. Package delivery is not built yet.`,
+      );
+      return;
+    }
+    const opened = await openPackage(summary.id);
+    if (opened) router.push("/brief");
+    else announce("That package could not be opened.");
+  }
+
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{
-        padding: 24,
-        paddingBottom: insets.bottom + 24,
-        gap: 24,
-        maxWidth: 680,
-        width: "100%",
-        alignSelf: "center",
-      }}
-    >
-      <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700", letterSpacing: 1.5 }}>
-          YOUR FIELD WORKSPACE
-        </Text>
-        <Text style={{ color: colors.ink, fontSize: 32, fontWeight: "600" }}>
-          Ready to explore.
-        </Text>
-        <Text style={{ color: colors.muted, fontSize: 16, lineHeight: 24 }}>
-          Open a site, place a point, and record what you see.
-        </Text>
-      </View>
-      <View
-        style={{
-          backgroundColor: colors.surface,
-          borderRadius: 22,
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: colors.border,
-        }}
-      >
-        <View pointerEvents="none" style={{ height: 185 }}>
-          <SiteMap preview />
+    <PageScreen>
+      {recovered && (
+        <View style={{ marginBottom: space.wide }}>
+          <AttentionNote title="A draft survived the crash" body={draftSummary(recovered)}>
+            <View style={{ flexDirection: "row", gap: space.loose }}>
+              <LinkAction
+                label="Resume it"
+                onPress={() => {
+                  void resumeRecovered().then((opened) => {
+                    if (opened) router.push("/field");
+                  });
+                }}
+              />
+              <LinkAction
+                label="Discard"
+                muted
+                onPress={() => {
+                  void discardRecovered();
+                }}
+              />
+            </View>
+          </AttentionNote>
         </View>
-        <View style={{ padding: 22, gap: 14 }}>
-          <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700", letterSpacing: 1 }}>
-            BUNDLED SAMPLE · AVAILABLE OFFLINE
-          </Text>
-          <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "600" }}>Sample garden</Text>
-          <Text style={{ color: colors.muted, fontSize: 15, lineHeight: 23 }}>
-            A fictional training map. Try the collection workflow before adding your QGIS site.
-          </Text>
-          <ActionButton label="Open site map" onPress={() => router.push("/collect")} />
-        </View>
+      )}
+
+      <SectionLabel>Assigned to you</SectionLabel>
+      <Text style={[textStyles.display, { color: colors.text, marginTop: space.tight }]}>
+        {WORDS[summaries.length] ?? summaries.length} studies waiting
+      </Text>
+
+      <View style={{ marginTop: space.wide }}>
+        {summaries.map((summary) => {
+          const chip = availabilityChip(summary.availability);
+          return (
+            <RowButton
+              key={summary.id}
+              disabled={summary.availability !== "on-device"}
+              accessibilityLabel={`${summary.name}. ${chip.label}.`}
+              onPress={() => {
+                void open(summary);
+              }}
+            >
+              <RowHeading title={summary.name} chip={chip.label} chipTone={chip.tone} />
+              <Text style={[textStyles.meta, { color: colors.neutral400, marginTop: 4 }]}>
+                {summary.meta}
+              </Text>
+            </RowButton>
+          );
+        })}
       </View>
-      <View style={{ gap: 12 }}>
-        <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "600" }}>
-          Your observations
-        </Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 15, lineHeight: 23 }}>
-          {error
-            ? "Saved records could not be loaded. Open the list to retry."
-            : loading
-              ? "Reading local records…"
-              : `${records.length} saved on this device. Open the list to see upload status.`}
-        </Text>
-        <ActionButton
-          label="View saved observations"
-          secondary
-          onPress={() => router.push("/observations")}
+
+      <FadeRule />
+      <Prose tone="faint">
+        Package delivery is stubbed. The two packages on this device are bundled with the app; the
+        others are rows only, so no download, cellular rule or hosted package format is implied
+        here.
+      </Prose>
+
+      <View style={{ marginTop: space.loose, gap: space.tight }}>
+        <GhostAction
+          label={`See the ${records.length} ${
+            records.length === 1 ? "record" : "records"
+          } on this device`}
+          onPress={() => router.push("/records")}
         />
+        <GhostAction label="Account and synchronisation" onPress={() => router.push("/account")} />
       </View>
-      <ActionButton
-        label="Account and synchronization"
-        secondary
-        onPress={() => router.push("/account")}
-      />
-      <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20, gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "600" }}>
-          For tonight’s test
-        </Text>
-        <Text style={{ color: colors.muted, fontSize: 15, lineHeight: 23 }}>
-          Add an observation, then close and reopen the app. The sample map and saved record stay on
-          this device.
-        </Text>
-      </View>
-    </ScrollView>
+
+      <View style={{ height: space.wide }} />
+      <Chip label="Offline first · nothing is fetched on the field screen" tone="muted" />
+    </PageScreen>
   );
 }

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { observationSchema } from "../domain/observation";
+import { shellObservationSchema } from "../domain/observation";
 import {
   initializeDatabase,
   type LocalDatabase,
@@ -21,7 +21,7 @@ const scope = syncScopeSchema.parse({
   userId: "50000000-0000-4000-8000-000000000001",
   projectId: "10000000-0000-4000-8000-000000000002",
 });
-const record = observationSchema.parse({
+const record = shellObservationSchema.parse({
   id: "83f254b5-8a7b-4b71-9591-a7ff880f4ad7",
   siteId: "sample-garden",
   formVersion: "shell-v1",

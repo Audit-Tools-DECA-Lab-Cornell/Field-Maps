@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import { colors } from "../theme";
+import { colors, space, textStyles } from "../theme";
 
 export function ScreenMessage({
   title,
@@ -11,17 +11,17 @@ export function ScreenMessage({
   return (
     <View
       style={{
-        padding: 24,
-        gap: 8,
-        backgroundColor: colors.canvas,
+        padding: space.wide,
+        gap: space.snug,
+        backgroundColor: colors.bg,
         flex: 1,
         justifyContent: "center",
       }}
     >
-      <Text selectable style={{ fontSize: 23, fontWeight: "600", color: colors.ink }}>
+      <Text selectable style={[textStyles.title, { color: colors.text }]}>
         {title}
       </Text>
-      <Text selectable style={{ fontSize: 16, lineHeight: 24, color: colors.muted }}>
+      <Text selectable style={[textStyles.body, { color: colors.neutral400, maxWidth: 520 }]}>
         {detail}
       </Text>
     </View>

@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { observationSchema } from "../domain/observation";
+import { shellObservationSchema } from "../domain/observation";
 import { receiptSchema, syncScopeSchema } from "./contracts";
 import { uploadObservation } from "./upload";
 
@@ -10,7 +10,7 @@ let status = 200;
 let response: unknown;
 let requestBody = "";
 let authorization: string | undefined;
-const record = observationSchema.parse({
+const record = shellObservationSchema.parse({
   id: "83f254b5-8a7b-4b71-9591-a7ff880f4ad7",
   siteId: "sample-garden",
   formVersion: "shell-v1",

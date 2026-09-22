@@ -1,10 +1,10 @@
 import ky, { TimeoutError } from "ky";
-import type { Observation } from "../domain/observation";
+import type { ShellObservation } from "../domain/observation";
 import { receiptSchema, type SyncScope, type UploadResult, uploadPayload } from "./contracts";
 
 export async function uploadObservation(
   scope: SyncScope,
-  record: Observation,
+  record: ShellObservation,
   token: string,
   signal: AbortSignal,
 ): Promise<UploadResult> {
