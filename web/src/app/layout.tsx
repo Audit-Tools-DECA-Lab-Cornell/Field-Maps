@@ -38,6 +38,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" className={inter.variable}>
+			<head>
+				<meta name="google-site-verification" content="kxlspCXgDMZBx65C7afIxXCO0kRB1aHuoBf02jy_rQ4" />
+			</head>
 			<body>
 				{children}
 				<PwaRegister />
