@@ -120,10 +120,11 @@ duplicate-ID protection, refusal to downgrade a newer schema, and the version 2 
 migration that adds the draft table without touching existing records. They do not substitute for
 device testing of Expo’s native SQLite adapter.
 
-Current automated verification, September 22, 2026: **68 Vitest cases** across eleven files —
+Current automated verification, September 22, 2026: **80 Vitest cases** across twelve files —
 the previous 28 for storage, sync and account identity, plus form-definition validation, engine
 visibility and pruning, the question-stack reducer, draft persistence and recovery, queueing by
-form version, and map clustering, nudging and scale. TypeScript, Biome, and iOS and Android Metro
+form version, the account and study an observation is bound to, the atomic save that
+retires its draft, and map clustering, nudging and scale. TypeScript, Biome, and iOS and Android Metro
 exports all pass.
 
 Standing build note, carried forward from the shell: a local Release build previously failed on

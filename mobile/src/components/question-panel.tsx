@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { ScrollView, Text, TextInput, View } from "react-native";
 import { ACTS } from "../forms/definition";
 import type { ResolvedQuestion } from "../forms/engine";
@@ -50,31 +50,18 @@ export function QuestionPanel({
 
   const [text, setText] = useState(typeof value === "string" ? value : "");
   const [shown, setShown] = useState(question.id);
-  const flush = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Reload the field only when the question changes. Re-reading it whenever the stored answer
-  // lands would let a debounced write arrive after a newer keystroke and undo the character.
+  // Reload the field only when the question changes, not whenever the stored answer lands.
   if (shown !== question.id) {
     setShown(question.id);
     setText(typeof value === "string" ? value : "");
   }
-  useEffect(
-    () => () => {
-      if (flush.current) clearTimeout(flush.current);
-    },
-    [],
-  );
 
   function type(next: string) {
     const cleaned = question.kind === "number" ? next.replace(/[^0-9]/g, "") : next;
     setText(cleaned);
-    if (flush.current) clearTimeout(flush.current);
-    // Typing is written to the draft a beat after it stops, rather than on every keystroke.
-    flush.current = setTimeout(() => onWrite(cleaned), 300);
-  }
-
-  function commit() {
-    if (flush.current) clearTimeout(flush.current);
-    onWrite(text);
+    // Straight through to the draft. Debouncing this would drop the characters typed in the
+    // moment before a force quit, and never losing them is the point of the draft store.
+    onWrite(cleaned);
   }
 
   return (
@@ -177,7 +164,6 @@ export function QuestionPanel({
             accessibilityLabel={question.label}
             value={text}
             onChangeText={type}
-            onBlur={commit}
             multiline={question.kind === "text" && (question.rows ?? 1) > 1}
             numberOfLines={question.rows ?? 1}
             keyboardType={question.kind === "number" ? "number-pad" : "default"}
@@ -223,10 +209,7 @@ export function QuestionPanel({
         {(question.kind === "many" || question.kind === "text" || question.kind === "number") && (
           <PrimaryAction
             label="Continue"
-            onPress={() => {
-              commit();
-              onAdvance();
-            }}
+            onPress={onAdvance}
             style={{ marginTop: space.base + 3 }}
           />
         )}

@@ -141,6 +141,50 @@ export function dependencies(question: Question): readonly string[] {
  * Structural problems that must be resolved before a definition is used: duplicate
  * identifiers, colliding export columns, dangling references and dependency cycles.
  */
+/**
+ * The option codes a question can actually hold, including the ones its dynamic sets supply.
+ * Null when the source has not supplied the list yet, so a condition on it cannot be checked.
+ */
+function declaredOptionCodes(question: Question): ReadonlySet<string> | null {
+  if (question.optionsPending !== undefined) return null;
+  if (question.kind !== "one" && question.kind !== "many") return null;
+  const codes = new Set(question.options.map((option) => option.code));
+  if (question.dynamicFrom)
+    for (const set of Object.values(question.dynamicFrom.sets))
+      for (const option of set.options) codes.add(option.code);
+  return codes.size > 0 ? codes : null;
+}
+
+/**
+ * A condition that names an option the question cannot hold would never match, silently hiding
+ * or revealing the wrong questions. Catch it here rather than in the field.
+ */
+function conditionProblems(
+  owner: string,
+  condition: Condition,
+  byId: ReadonlyMap<string, Question>,
+): readonly string[] {
+  if (condition.kind === "all" || condition.kind === "any")
+    return condition.of.flatMap((part) => conditionProblems(owner, part, byId));
+  const target = byId.get(condition.question);
+  if (!target || condition.kind === "answered") return [];
+  const problems: string[] = [];
+  if (condition.kind === "includes" && target.kind !== "many")
+    problems.push(
+      `"${owner}" tests whether "${target.id}" includes an option, but it is not a multi-select.`,
+    );
+  if (condition.kind !== "includes" && target.kind === "many")
+    problems.push(
+      `"${owner}" compares "${target.id}" to a single option, but it holds several. Use includes.`,
+    );
+  const codes = declaredOptionCodes(target);
+  if (codes && !codes.has(condition.option))
+    problems.push(
+      `"${owner}" tests "${target.id}" against "${condition.option}", which is not one of its options.`,
+    );
+  return problems;
+}
+
 export function validateFormDefinition(form: FormDefinition): readonly string[] {
   const problems: string[] = [];
   const byId = new Map<string, Question>();
@@ -170,6 +214,9 @@ export function validateFormDefinition(form: FormDefinition): readonly string[] 
         problems.push(`"${question.id}" is a choice question with no options.`);
     if (!isChoice && question.options.length > 0)
       problems.push(`"${question.id}" is not a choice question but carries options.`);
+
+    if (question.dependsOn)
+      problems.push(...conditionProblems(question.id, question.dependsOn, byId));
 
     for (const reference of dependencies(question)) {
       const target = byId.get(reference);

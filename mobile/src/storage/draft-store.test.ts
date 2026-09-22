@@ -3,8 +3,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
+import { instrumentObservationSchema } from "../domain/observation";
 import { clearDraft, type ObservationDraft, readDraft, saveDraft } from "./draft-store";
-import { initializeDatabase, type LocalDatabase } from "./observation-store";
+import {
+  commitObservation,
+  initializeDatabase,
+  type LocalDatabase,
+  listObservations,
+} from "./observation-store";
 
 function adapter(database: DatabaseSync): LocalDatabase {
   return {
@@ -153,6 +159,56 @@ describe("Unfinished observations", () => {
         total: 1,
       });
       expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 3 });
+    } finally {
+      database.close();
+    }
+  });
+});
+
+const finished = instrumentObservationSchema.parse({
+  id: draft.id,
+  siteId: draft.siteId,
+  formVersion: "janet-test-v1",
+  coordinates: draft.coordinates,
+  observer: "JL",
+  answers: { ...draft.answers, observer_initials: "JL" },
+  context: draft.context,
+  placement: { source: "hand", gpsAccuracyMetres: null },
+  createdAt: "2026-09-22T14:32:00.000Z",
+  storageStatus: "local-only",
+});
+
+describe("Finishing an observation", () => {
+  it("stores the record and retires its draft in one step", async () => {
+    // Given an observation in progress.
+    const database = new DatabaseSync(":memory:");
+    try {
+      await initializeDatabase(adapter(database));
+      await saveDraft(adapter(database), "local", draft);
+      // When it is saved.
+      await commitObservation(adapter(database), finished, "local");
+      // Then the record exists and nothing is left to be offered back on the next launch.
+      expect(await listObservations(adapter(database), "local")).toHaveLength(1);
+      expect(await readDraft(adapter(database), "local")).toBeNull();
+    } finally {
+      database.close();
+    }
+  });
+
+  it("keeps the draft when the record cannot be stored", async () => {
+    // Given a record identifier that is already taken, so the insert must fail.
+    const database = new DatabaseSync(":memory:");
+    try {
+      await initializeDatabase(adapter(database));
+      await commitObservation(adapter(database), finished, "local");
+      await saveDraft(adapter(database), "local", draft);
+      // When the same observation is committed a second time.
+      const second = commitObservation(adapter(database), finished, "local");
+      // Then the whole step rolls back: no duplicate record, and the draft is still recoverable
+      // rather than deleted against a save that never happened.
+      await expect(second).rejects.toThrow();
+      expect(await listObservations(adapter(database), "local")).toHaveLength(1);
+      expect(await readDraft(adapter(database), "local")).not.toBeNull();
     } finally {
       database.close();
     }

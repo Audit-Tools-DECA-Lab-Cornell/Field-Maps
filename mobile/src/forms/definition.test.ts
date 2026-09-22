@@ -103,6 +103,51 @@ describe("Form definition validation", () => {
     expect(() => parseFormDefinition(definition)).toThrow(/required but its option list/);
   });
 
+  it("refuses a condition testing an option the question cannot hold", () => {
+    // Given a rule whose option code is a typo.
+    const definition = form([
+      choice("parent"),
+      choice("child", {
+        dependsOn: { kind: "equals", question: "parent", option: "yse" },
+      }),
+    ]);
+    // When it is parsed.
+    // Then it is rejected, rather than silently never revealing the child question.
+    expect(() => parseFormDefinition(definition)).toThrow(/not one of its options/);
+  });
+
+  it("refuses a condition whose operator does not match the question it tests", () => {
+    // Given an includes test against a single choice, and an equals test against a multi-select.
+    const wrongIncludes = form([
+      choice("parent"),
+      choice("child", { dependsOn: { kind: "includes", question: "parent", option: "yes" } }),
+    ]);
+    const wrongEquals = form([
+      choice("parent", { kind: "many" }),
+      choice("child", { dependsOn: { kind: "equals", question: "parent", option: "yes" } }),
+    ]);
+    // When each is parsed.
+    // Then both are named, because either would evaluate to the wrong answer at run time.
+    expect(() => parseFormDefinition(wrongIncludes)).toThrow(/not a multi-select/);
+    expect(() => parseFormDefinition(wrongEquals)).toThrow(/holds several/);
+  });
+
+  it("checks an option supplied by a dynamic set, and skips a list that has not arrived", () => {
+    // Given a condition on a question whose options are still to be provided.
+    const pending = form([
+      choice("parent", {
+        options: [],
+        optionsPending: "The workbook does not supply this list.",
+      }),
+      choice("child", {
+        dependsOn: { kind: "equals", question: "parent", option: "anything" },
+      }),
+    ]);
+    // When it is parsed.
+    // Then the unverifiable option is allowed rather than guessed at.
+    expect(parseFormDefinition(pending).questions).toHaveLength(2);
+  });
+
   it("refuses a dynamic option set keyed by an answer its parent cannot give", () => {
     // Given a subtype set for a play type that is not in the parent's options.
     const definition = form([

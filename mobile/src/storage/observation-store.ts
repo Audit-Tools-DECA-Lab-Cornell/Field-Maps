@@ -94,19 +94,52 @@ export function initialSyncState(record: Observation, scope: string) {
   return scope === "local" || !isUploadable(record.formVersion) ? "local-only" : "pending";
 }
 
+const INSERT_OBSERVATION =
+  "INSERT INTO observations (id, created_at, payload, owner_scope, sync_state) VALUES (?, ?, ?, ?, ?)";
+
 export async function saveObservation(
   db: LocalDatabase,
   record: Observation,
   scope = "local",
 ): Promise<void> {
   await db.runAsync(
-    "INSERT INTO observations (id, created_at, payload, owner_scope, sync_state) VALUES (?, ?, ?, ?, ?)",
+    INSERT_OBSERVATION,
     record.id,
     record.createdAt,
     JSON.stringify(record),
     scope,
     initialSyncState(record, scope),
   );
+}
+
+/**
+ * Finishing an observation: store the record and retire its draft in one transaction.
+ *
+ * Done as two statements, a crash between them would leave a draft carrying an identifier the
+ * observations table already holds — recovery would offer it back, and saving it again would
+ * fail the primary key forever.
+ */
+export async function commitObservation(
+  db: LocalDatabase,
+  record: Observation,
+  scope = "local",
+): Promise<void> {
+  await db.execAsync("BEGIN IMMEDIATE;");
+  try {
+    await db.runAsync(
+      INSERT_OBSERVATION,
+      record.id,
+      record.createdAt,
+      JSON.stringify(record),
+      scope,
+      initialSyncState(record, scope),
+    );
+    await db.runAsync("DELETE FROM observation_drafts WHERE owner_scope = ?", scope);
+    await db.execAsync("COMMIT;");
+  } catch (error) {
+    await db.execAsync("ROLLBACK;");
+    throw error;
+  }
 }
 
 export async function listObservations(db: LocalDatabase, scope = "local"): Promise<Observation[]> {

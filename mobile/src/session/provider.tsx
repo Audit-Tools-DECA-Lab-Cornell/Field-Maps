@@ -33,8 +33,9 @@ import {
   readDraft,
   saveDraft,
 } from "../storage/draft-store";
-import { saveObservation } from "../storage/observation-store";
+import { commitObservation } from "../storage/observation-store";
 import { useSync } from "../sync/provider";
+import { type ObservationIdentity, ownershipProblem, packageSwitchProblem } from "./ownership";
 
 /**
  * One observation period: the package, the zone and round it is stamped with, and the
@@ -48,6 +49,10 @@ export type SaveOutcome =
   | { readonly ok: true; readonly heldOnly: boolean }
   | { readonly ok: false; readonly problems: readonly ReviewProblem[]; readonly message?: string };
 
+export type OpenOutcome =
+  | { readonly ok: true; readonly sitePackage: SitePackage }
+  | { readonly ok: false; readonly reason: string };
+
 type FieldSessionValue = {
   readonly sitePackage: SitePackage | null;
   readonly form: FormDefinition | null;
@@ -60,7 +65,9 @@ type FieldSessionValue = {
   readonly status: string;
   readonly recovered: ObservationDraft | null;
   readonly context: RoundContext | null;
-  openPackage: (id: string) => Promise<SitePackage | undefined>;
+  /** The observation currently open, if any — an unfinished one blocks opening another study. */
+  readonly inProgress: ObservationIdentity | null;
+  openPackage: (id: string) => Promise<OpenOutcome>;
   chooseZone: (zone: SiteZone) => void;
   chooseRound: (round: number) => void;
   toggleFreshPeriod: () => void;
@@ -87,7 +94,8 @@ const missing: FieldSessionValue = {
   status: "",
   recovered: null,
   context: null,
-  openPackage: async () => undefined,
+  inProgress: null,
+  openPackage: async () => ({ ok: false, reason: "No workspace is open." }),
   chooseZone: () => {},
   chooseRound: () => {},
   toggleFreshPeriod: () => {},
@@ -123,9 +131,16 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState("Offline-first collector ready.");
   const [recovered, setRecovered] = useState<ObservationDraft | null>(null);
 
+  const [inProgress, setInProgress] = useState<ObservationIdentity | null>(null);
+
   const stateRef = useRef(state);
-  const identity = useRef<{ id: string; startedAt: string } | null>(null);
+  const identity = useRef<ObservationIdentity | null>(null);
   const form = sitePackage ? (formFor(sitePackage.formVersion) ?? null) : null;
+
+  const holdIdentity = useCallback((next: ObservationIdentity | null) => {
+    identity.current = next;
+    setInProgress(next);
+  }, []);
 
   const context: RoundContext | null =
     sitePackage && zone
@@ -142,9 +157,13 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
 
   const persist = useCallback(
     (next: SessionState, coordinate: Coordinate | null) => {
-      if (!ready || !sitePackage || !context || !identity.current) return;
+      const owner = identity.current;
+      if (!ready || !sitePackage || !context || !owner) return;
+      // The account or study changed underneath an open observation: its draft belongs to
+      // whoever started it, so nothing is written into the new account's slot.
+      if (ownershipProblem(owner, key, sitePackage.id) !== null) return;
       const draft = observationDraftSchema.safeParse({
-        id: identity.current.id,
+        id: owner.id,
         formVersion: sitePackage.formVersion,
         packageId: sitePackage.id,
         siteId: sitePackage.siteId,
@@ -153,7 +172,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         placement: coordinate ? { source: "hand", gpsAccuracyMetres: null } : null,
         answers: next.answers,
         questionIndex: next.index,
-        startedAt: identity.current.startedAt,
+        startedAt: owner.startedAt,
         updatedAt: new Date().toISOString(),
       });
       if (!draft.success) return;
@@ -182,23 +201,57 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     };
   }, [database, key, ready]);
 
+  // Signing out or signing in as someone else must not carry an open observation across the
+  // boundary: the in-memory session is closed, and its draft stays under the account that
+  // started it, ready to be recovered when that account signs back in.
+  const lastKey = useRef(key);
+  useEffect(() => {
+    if (lastKey.current === key) return;
+    lastKey.current = key;
+    if (identity.current === null) return;
+    const previous = identity.current;
+    holdIdentity(null);
+    setPlaced(null);
+    setArmed(false);
+    stateRef.current = startSession();
+    setState(stateRef.current);
+    setStatus(
+      `Your account changed. The unfinished observation in ${previous.packageName} was closed; its draft is kept for the account that started it.`,
+    );
+  }, [holdIdentity, key]);
+
   const apply = useCallback((next: SessionState) => {
     stateRef.current = next;
     setState(next);
   }, []);
 
-  const openPackage = useCallback(async (id: string) => {
+  const openPackage = useCallback(async (id: string): Promise<OpenOutcome> => {
+    const open = identity.current;
+    // Switching study under an open observation would stamp its answers with another package's
+    // form and context, and overwrite its draft. Finish or discard it first; nothing is lost.
+    const blocked = packageSwitchProblem(open, id);
+    if (blocked !== null) return { ok: false, reason: blocked };
     const opened = await bundledPackages.open(id);
-    if (!opened) return undefined;
+    if (!opened) return { ok: false, reason: "That package could not be opened." };
     setSitePackage(opened);
-    setZone(opened.zones[0] ?? null);
-    setRound(opened.rounds[0] ?? 1);
-    return opened;
+    if (!open) {
+      setZone(opened.zones[0] ?? null);
+      setRound(opened.rounds[0] ?? 1);
+    }
+    return { ok: true, sitePackage: opened };
   }, []);
 
   const place = useCallback(
     (coordinate: Coordinate) => {
-      identity.current ??= { id: randomUUID(), startedAt: new Date().toISOString() };
+      if (!sitePackage) return;
+      identity.current ??= {
+        id: randomUUID(),
+        startedAt: new Date().toISOString(),
+        owner: key,
+        packageId: sitePackage.id,
+        packageName: sitePackage.name,
+      };
+      holdIdentity(identity.current);
       setPlaced(coordinate);
       setArmed(false);
       setRecovered(null);
@@ -209,7 +262,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         "Point placed by hand. This build records no device location, so no GPS accuracy is stored beside it.",
       );
     },
-    [apply, persist],
+    [apply, holdIdentity, key, persist, sitePackage],
   );
 
   const nudgeTo = useCallback(
@@ -242,22 +295,25 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
 
   const reset = useCallback(
     (keep: Answers) => {
-      identity.current = null;
+      holdIdentity(null);
       setPlaced(null);
       setArmed(false);
       apply(startSession(keep));
     },
-    [apply],
+    [apply, holdIdentity],
   );
 
   const save = useCallback(async (): Promise<SaveOutcome> => {
-    if (!form || !sitePackage || !context || !placed || !identity.current)
+    const owner = identity.current;
+    if (!form || !sitePackage || !context || !placed || !owner)
       return { ok: false, problems: [], message: "Place a point before saving." };
+    const mismatch = ownershipProblem(owner, key, sitePackage.id);
+    if (mismatch !== null) return { ok: false, problems: [], message: mismatch };
     const found = reviewProblems(form, stateRef.current.answers);
     if (found.length > 0) return { ok: false, problems: found };
     const placement: Placement = { source: "hand", gpsAccuracyMetres: null };
     const built = buildObservation({
-      id: identity.current.id,
+      id: owner.id,
       form,
       answers: stateRef.current.answers,
       coordinates: placed,
@@ -268,8 +324,9 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     });
     if (!built.ok) return { ok: false, problems: [], message: built.message };
     try {
-      await saveObservation(database, built.record, key);
-      await clearDraft(database, key);
+      // One transaction: a record can never be stored while its draft survives to be offered
+      // back under an identifier the observations table already holds.
+      await commitObservation(database, built.record, key);
     } catch (cause) {
       return {
         ok: false,
@@ -314,12 +371,18 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     setRound(draft.context.round);
     setFreshPeriod(draft.context.freshPeriod);
     setPlaced(draft.coordinates);
-    identity.current = { id: draft.id, startedAt: draft.startedAt };
+    holdIdentity({
+      id: draft.id,
+      startedAt: draft.startedAt,
+      owner: key,
+      packageId: opened.id,
+      packageName: opened.name,
+    });
     apply({ index: draft.questionIndex, answers: draft.answers, notice: null });
     setRecovered(null);
     setStatus("Draft restored — every answer was written to storage as you tapped it.");
     return opened;
-  }, [apply, recovered]);
+  }, [apply, holdIdentity, key, recovered]);
 
   const discardRecovered = useCallback(async () => {
     setRecovered(null);
@@ -341,6 +404,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         status,
         recovered,
         context,
+        inProgress,
         openPackage,
         chooseZone: setZone,
         chooseRound: setRound,

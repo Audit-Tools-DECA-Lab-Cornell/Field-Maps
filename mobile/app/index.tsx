@@ -23,7 +23,15 @@ import { colors, space, textStyles } from "../src/theme";
 const WORDS = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
 
 export default function AssignmentsScreen() {
-  const { recovered, resumeRecovered, discardRecovered, openPackage, announce } = useFieldSession();
+  const {
+    recovered,
+    inProgress,
+    discard,
+    resumeRecovered,
+    discardRecovered,
+    openPackage,
+    announce,
+  } = useFieldSession();
   const { records } = useObservations();
   const [summaries, setSummaries] = useState<readonly PackageSummary[]>([]);
 
@@ -51,9 +59,9 @@ export default function AssignmentsScreen() {
       );
       return;
     }
-    const opened = await openPackage(summary.id);
-    if (opened) router.push("/brief");
-    else announce("That package could not be opened.");
+    const outcome = await openPackage(summary.id);
+    if (outcome.ok) router.push("/brief");
+    else announce(outcome.reason);
   }
 
   return (
@@ -77,6 +85,20 @@ export default function AssignmentsScreen() {
                   void discardRecovered();
                 }}
               />
+            </View>
+          </AttentionNote>
+        </View>
+      )}
+
+      {inProgress && !recovered && (
+        <View style={{ marginBottom: space.wide }}>
+          <AttentionNote
+            title="An observation is still open"
+            body={`It belongs to ${inProgress.packageName}. Finish or discard it before opening another study — every answer is already on the device.`}
+          >
+            <View style={{ flexDirection: "row", gap: space.loose }}>
+              <LinkAction label="Go back to it" onPress={() => router.push("/field")} />
+              <LinkAction label="Discard" muted onPress={discard} />
             </View>
           </AttentionNote>
         </View>
