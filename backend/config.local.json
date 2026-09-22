@@ -2,5 +2,10 @@
   "database_url": "postgresql+asyncpg://fieldmaps_api@/fieldmaps?host=/var/run/postgresql",
   "issuer": "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1",
   "jwks_url": "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1/.well-known/jwks.json",
-  "audience": "authenticated"
+  "audience": "authenticated",
+  "browser_origins": [
+    "http://localhost:3000",
+    "https://field-maps.vercel.app",
+    "http://localhost:5173"
+  ]
 }
