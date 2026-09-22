@@ -35,4 +35,13 @@ Verified September 18, 2026 in QGIS Desktop 4.2.2: the PostgreSQL provider loade
 
 This slice is read-only in QGIS; edits made through other database accounts do not synchronize back to devices. QGIS refresh is explicit, not a push subscription. The mobile offline test was performed by the user; this verification confirms its persisted result is readable and rendered in QGIS.
 
+## Fall Creek Elementary playground
+
+`fall-creek/build.sh [path/to/Ithaca_QGIS]` regenerates the mobile app's Fall Creek site from the Ithaca QGIS project (`DECA_FALCR26001`) and its drone orthomosaic. `Ithaca_QGIS/` is not committed; it defaults to the repository root. The script runs QGIS 4.2.2's bundled Python (override the app with `QGIS_APP`) and writes two outputs:
+
+- `build.py` writes `mobile/src/maps/sites/fall-creek/`: surface, equipment and tree GeoJSON, a downsampled `aerial.jpg`, and `site.json` with the centre, pan bounds, zone and image corners. Regenerate these files rather than editing them.
+- `qgis_project.py` writes `Ithaca_QGIS/Corrected/`: a GeoPackage, a GeoTIFF, a corrected copy of the project, and an `open-in-qgis.command` launcher. The source project is not modified. Add the live observations layer by hand after the project opens (service `fieldmaps_training`); QGIS 4.2.2 crashed when the password prompt appeared during project load.
+
+The source drawings sit in Montana because their reference XYZ layers were saved with CRS EPSG:2261 instead of EPSG:3857. Both scripts undo that per coordinate; `build.py`'s docstring explains the correction.
+
 References: [QGIS PostgreSQL and service connections](https://docs.qgis.org/3.44/en/docs/user_manual/managing_data_source/opening_data.html#connecting-to-postgresql), [QGIS official downloads](https://qgis.org/download/), [Supabase TLS](https://supabase.com/docs/guides/platform/ssl-enforcement).

@@ -62,7 +62,7 @@ column.
   materials checklist (Test G171 says "list to be provided") — all three are carried as protocol
   notes on the form and are read from the site brief rather than shipped as if they were settled.
 - Option codes are provisional implementation identifiers, distinct from export column names.
-- Site package delivery is **stubbed** behind `PackageProvider`. The two packages on the device
+- Site package delivery is **stubbed** behind `PackageProvider`. The three packages on the device
   are bundled with the app; the other rows are fixtures. No download, cellular policy or hosted
   package format is implied.
 - GPS accuracy has a place in the record and is stored as `null`: this build asks for no location
@@ -193,7 +193,11 @@ upload queue, and are offered back after a force quit. Uninstalling the app stil
 local data.
 
 The sample map is hand-authored training geometry and is not a real QGIS export or survey. The
-aerial base is a fixture style, not imagery. A real site package requires its geometry/imagery,
+aerial base is a fixture style, not imagery. The Fall Creek Elementary package is the exception:
+its bases and layers are the QGIS drawings and drone orthomosaic, generated into
+`src/maps/sites/fall-creek/` by `qgis/fall-creek/build.sh` (regenerate, don't edit). It has one
+whole-playground zone and collects the practice form under site id `sample-garden`, the only pair
+the API accepts today, so its records upload as practice records. A real site package requires its geometry/imagery,
 georeferencing, supported formats, and offline-use rights. Package delivery is stubbed behind
 `PackageProvider` in `src/packages/`, so ingestion can replace the fixtures without rebuilding the
 field flow. Nothing on the field screen touches the network.
@@ -212,7 +216,7 @@ encryption configuration. Use test data for this development slice.
 | `src/forms/fixtures/` | The versioned `shell-v1` and `janet-test-v1` definitions |
 | `src/packages/` | The site package interface and the bundled fixture provider |
 | `src/session/` | The observation period: package, zone, round, draft persistence, and saving |
-| `src/maps/` | Native map, bundled training geometry, base styles, and clustering maths |
+| `src/maps/` | Native map, bundled training geometry, the generated Fall Creek site, base styles, and clustering maths |
 | `src/domain/` | Observation contracts and the record builder for each form version |
 | `src/storage/` | SQLite schema, observation repository, draft store, and focused-screen reads |
 | `src/auth/` | Secure session persistence and offline account identity |

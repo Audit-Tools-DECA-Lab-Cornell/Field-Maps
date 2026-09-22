@@ -1,2 +1,5 @@
 *.qgs~
 *.qgz~
+__pycache__/
+.claude/
+.agents/

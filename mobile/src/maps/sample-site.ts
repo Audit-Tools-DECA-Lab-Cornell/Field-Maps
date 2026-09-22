@@ -102,6 +102,8 @@ export type SiteZone = {
   readonly south: number;
   readonly east: number;
   readonly north: number;
+  /** The zoom that frames the zone; the map opens and recentres here. Defaults to 17.4. */
+  readonly zoom?: number;
 };
 
 export const siteZones: readonly SiteZone[] = [

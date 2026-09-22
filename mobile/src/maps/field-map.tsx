@@ -35,6 +35,7 @@ type Props = {
 };
 
 const NUDGE_METRES = 0.5;
+const DEFAULT_ZOOM = 17.4;
 
 /**
  * Layers are returned as an array rather than a fragment: the source clones each direct child to
@@ -103,10 +104,11 @@ export function FieldMap({
   onBack,
 }: Props) {
   const camera = useRef<CameraRef>(null);
+  const home = zone.zoom ?? DEFAULT_ZOOM;
   const [base, setBase] = useState<"plan" | "aerial">("plan");
   const [layersOpen, setLayersOpen] = useState(false);
   const [hidden, setHidden] = useState<readonly string[]>([]);
-  const [zoom, setZoom] = useState(17.4);
+  const [zoom, setZoom] = useState(home);
   const [selected, setSelected] = useState<string | null>(null);
 
   const clusters = useMemo(() => clusterPoints(records, zoom), [records, zoom]);
@@ -145,7 +147,7 @@ export function FieldMap({
       >
         <Camera
           ref={camera}
-          initialViewState={{ center: zone.centre, zoom: 17.4 }}
+          initialViewState={{ center: zone.centre, zoom: home }}
           minZoom={15.5}
           maxZoom={21}
           maxBounds={sitePackage.bounds}
@@ -364,7 +366,7 @@ export function FieldMap({
         <MapSquareButton
           glyph="◎"
           accessibilityLabel="Recentre on this zone"
-          onPress={() => camera.current?.easeTo({ center: zone.centre, zoom: 17.4, duration: 280 })}
+          onPress={() => camera.current?.easeTo({ center: zone.centre, zoom: home, duration: 280 })}
         />
         <MapPill label={scaleLabel(zoom, zone.centre[1])} />
       </View>

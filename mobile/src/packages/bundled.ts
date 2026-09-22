@@ -1,4 +1,14 @@
 import {
+  fallCreekAerial,
+  fallCreekBounds,
+  fallCreekCentre,
+  fallCreekEquipment,
+  fallCreekPlan,
+  fallCreekTrees,
+  fallCreekZone,
+  fallCreekZoneGeometry,
+} from "../maps/fall-creek";
+import {
   aerialStyle,
   planStyle,
   sampleBounds,
@@ -87,6 +97,53 @@ const practice: SitePackage = {
   layers,
 };
 
+const fallCreekLayers: readonly PackageLayer[] = [
+  {
+    id: "equipment",
+    name: "Play equipment",
+    data: fallCreekEquipment,
+    plan: { type: "fill", color: "#2d3042", outline: "#6b6f82", dashed: false },
+    aerial: { type: "fill", color: "#ffffff0a", outline: "#e4e7f5b3", dashed: false },
+  },
+  {
+    id: "trees",
+    name: "Trees",
+    data: fallCreekTrees,
+    plan: { type: "fill", color: "#2b3527d9", outline: "#41553a", dashed: false },
+    aerial: { type: "fill", color: "#00000000", outline: "#c4dcb4b3", dashed: false },
+  },
+  {
+    id: "zones",
+    name: "Zone polygons",
+    data: fallCreekZoneGeometry,
+    plan: { type: "fill", color: "#9184d90f", outline: "#796cbf", dashed: true },
+    aerial: { type: "fill", color: "#9184d914", outline: "#968ae0", dashed: true },
+  },
+];
+
+/**
+ * The real playground from QGIS. It collects the practice form under the practice site id, the
+ * only pair the API accepts today, so its records upload and appear in QGIS.
+ */
+const fallCreek: SitePackage = {
+  id: "fall-creek-playground",
+  name: "Fall Creek Elementary playground",
+  meta: "Drone survey · QGIS drawings · practice form · uploads to the API",
+  availability: "on-device",
+  formVersion: "shell-v1",
+  version: "v1",
+  siteId: "sample-garden",
+  sizeOnDevice: "Bundled with the app",
+  zones: [fallCreekZone],
+  rounds: [1],
+  inheritedContext:
+    "Records upload as practice records (sample-garden) until the API accepts this site.",
+  centre: fallCreekCentre,
+  bounds: fallCreekBounds,
+  bases: { plan: fallCreekPlan, aerial: fallCreekAerial },
+  layers: fallCreekLayers,
+};
+
 const undownloaded: readonly PackageSummary[] = [
   {
     id: "cedar-park-baseline",
@@ -104,7 +161,7 @@ const undownloaded: readonly PackageSummary[] = [
   },
 ];
 
-const packages: readonly SitePackage[] = [riverside, practice];
+const packages: readonly SitePackage[] = [fallCreek, riverside, practice];
 
 export const bundledPackages: PackageProvider = {
   async list() {
