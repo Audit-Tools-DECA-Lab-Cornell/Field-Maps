@@ -7,5 +7,8 @@ COPY src ./src
 COPY tests ./tests
 COPY certs ./certs
 COPY config.local.json config.hosted.json config.render.json ./
+# The build metadata travels with the image so the check that these two agree runs
+# wherever the tests run, including inside the container.
+COPY Dockerfile .dockerignore ./
 # Shell form so PORT is expanded: hosts that assign a port set it, and 8000 is the local default.
 CMD /app/.venv/bin/uvicorn --app-dir src fieldmaps_api.main:create_app_from_config --factory --host 0.0.0.0 --port ${PORT:-8000}
