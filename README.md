@@ -57,6 +57,6 @@ Next implementation scope: publishing [Janet's versioned test form](docs/Janet-T
 
 - [Web prototype](web/README.md) and [mobile collector](mobile/README.md)
 - [Backend API](backend/README.md), [local spatial database](database/README.md), and [hosted Supabase setup](docs/Supabase-Setup.md)
-- [QGIS project and connection](qgis/README.md)
+- [QGIS project and connection](qgis/README.md) and [testing on a real QGIS base map](docs/QGIS-Base-Map-Testing.md)
 - [Production architecture](docs/Production-Architecture-Recommendation.md) and [QGIS feasibility research](docs/QGIS-Field-Collection-Feasibility.md)
 - [Design brief](docs/Claude-Design-Brief.md) and [workspace management](docs/Workspace.md)
