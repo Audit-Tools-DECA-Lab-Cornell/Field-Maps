@@ -1,59 +1,45 @@
-# FieldMaps web prototype
+# FieldMaps web
 
-This folder owns the Next.js application, dependencies, assets, and build configuration. Run the commands below from `web/`, or use `pnpm web:dev`, `pnpm web:build`, and `pnpm web:check` at the product root. See [workspace operations](../docs/Workspace.md) for centralized commands and deployment setup.
+The management side of FieldMaps: projects, places, instruments, base map packages, the QGIS connection, and the observations the [native collector](../mobile/README.md) writes into the shared spatial database.
 
-The [native mobile collector](../mobile/README.md) has real authenticated uploads to PostGIS and verified QGIS readback. This web demonstration still simulates sync. Design references are in the [Claude Design brief](../docs/Claude-Design-Brief.md) and `../designs/`.
+This application and the collector are one product, so they carry one design system — **Nocturne**, in the `nocturne` folder under [`designs/_ds`](../designs). Its values live in [`src/app/globals.css`](src/app/globals.css) and are the values [`mobile/src/theme.ts`](../mobile/src/theme.ts) already uses: the same ground, the same accent, the same type scale to the half pixel, the same 0.70× density scale. Change them together or the two applications drift.
 
-The confirmed product direction is our custom mobile app plus web management and a shared spatial backend. The older product comparisons below describe the original web prototype; the current recommendation is in [the architecture report](../docs/Production-Architecture-Recommendation.md).
+## What is real
 
-A showcase-ready prototype for collecting mapped observations in the field, keeping them on the device when connectivity is unavailable, and handing the data to QGIS or ArcGIS.
+The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **This application has not been connected to the API.** Every record, count, chart and connection value on its screens comes from fixtures under [`src/data/`](src/data), generated in the browser from a fixed seed.
 
-The application has two connected demonstrations:
+That is stated on the screens themselves — in the top bar, along the status footer, and in a note on each section that could otherwise be mistaken for live state. Keep it that way. When a section is wired to the API, the note comes off that section and not before.
 
-- **Operations console:** parcel status, asset layers, inspections, boundary editing, validation, and a sync queue.
-- **Field collector:** tablet-friendly point capture, configurable form fields, local persistence, offline reference layers, QGIS exports, and an ArcGIS request preview.
+The fixtures mirror the real schema rather than a convenient one: `database/migrations/0001_initial.sql` is the authority for what an organization, project, site, form version and observation are, and [`src/types/domain.ts`](src/types/domain.ts) does not invent a concept the schema does not have. The site geometry is the training site the collector already carries, copied coordinate for coordinate from `mobile/src/maps/sample-site.ts`, so a zone on this map is the polygon the observer tapped inside.
 
-## 90-second demo
+## Sections
 
-1. Click **Open field collector**. On a tablet-sized screen, the collector opens automatically.
-2. Switch **Online** to **Offline**. The remote tile basemap disappears, while the packaged parcel layers and saved points remain usable.
-3. Click **Add point**, tap the map, complete the form, and click **Save offline**. The observation stays in the local queue across a reload.
-4. Download **QGIS CSV** or **GeoJSON**, or open **ArcGIS payload** to show the Feature Service request shape.
-5. Try syncing while offline, reconnect, and click **Sync changes**.
+| Route           | What it is                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `/`             | Overview — what the field returned, coverage against the protocol target, and what is blocking |
+| `/observations` | Data review — one filter set, a coordinated map and table over it, and the record itself       |
+| `/places`       | Sites and the zones inside them                                                                |
+| `/instrument`   | Variable library, display logic and form versions                                              |
+| `/basemaps`     | Turning a QGIS project into a package an observer can carry offline                            |
+| `/qgis`         | The connection that reads the same database                                                    |
 
-## What the prototype proves
+Filters and the selected record live in the URL, so a filtered view can be sent to a colleague, opened in a second tab, and undone with the back button.
 
-- A point can be positioned by tapping a georeferenced map, without relying on the device GPS.
-- Typed fields can combine required text, date/time, controlled choices, optional notes, and follow-up flags.
-- Observations are stored in browser-local persistent storage before any network request.
-- CSV exports include numeric `longitude` and `latitude` columns that QGIS can load as a delimited-text point layer.
-- GeoJSON exports use longitude/latitude coordinates in EPSG:4326 and open directly as a vector layer.
-- ArcGIS additions can be represented as point geometry plus attributes and sent to a writable Feature Service layer through `applyEdits`.
+## Design rules this application keeps
 
-## Honest prototype boundaries
+- **One theme.** The collector has one; a manager reading a field record should see the colours the observer saw.
+- **State is a glyph plus a word plus a colour**, in that order, so the colour is never load-bearing. The vocabulary is in [`src/lib/states.ts`](src/lib/states.ts) and nothing invents a state beside it.
+- **The accent is a line and a glow, never a flood.** Primary actions are an accent outline. Selection is a two-pixel accent bar plus a tint.
+- **Rules fade to transparent at their ends** — the `.rule` class. Box outlines and in-control separators stay solid.
+- **Charts use the accent ramp alone.** Nine play types are not nine hues: identity comes from the row label, magnitude from the bar. Sequential magnitude is one hue, dim to bright, and the number is always written in the cell as well.
+- **Hierarchy is size and space.** Nothing is bolder than weight 500.
+- **Nothing tappable goes below 44 px**, focus is the 2 px accent `:focus-visible` ring, and motion stops under `prefers-reduced-motion`.
 
-- The **Sync changes** action is simulated. The **ArcGIS payload** panel shows the real request structure, but no organization URL, layer schema, authentication, conflict resolution, or production writes are configured.
-- OpenStreetMap tiles are used only while online. The demo never bulk downloads or pre-caches map tiles. Offline mode uses bundled vector reference data; a production deployment would package licensed raster/vector basemaps.
-- QGIS Desktop is file-oriented, so the prototype exports interoperable CSV and GeoJSON. Automatic multi-user synchronization would normally use QField/QFieldSync, QFieldCloud, or an OGC transaction service.
-- Local browser storage is suitable for a demo. Production field data needs a durable local database, migrations, encryption decisions, audit metadata, and tested conflict handling.
-
-## Recommended production paths
-
-### ArcGIS-first organization
-
-Use ArcGIS Maps SDKs for Native Apps when offline basemap packages, editable local geodatabases, attachments, and two-way Feature Service synchronization are required. The web collector can remain useful as an administrative or lightweight connected client.
-
-### QGIS-first organization
-
-Use QGIS to author the project and QFieldSync to package offline layers and a basemap for QField. QField records changes in the field and QFieldSync or QFieldCloud synchronizes them back to the source project.
-
-### Vendor-neutral custom application
-
-Keep the local-first collection model, export GeoJSON/CSV for simple handoff, and add adapters for ArcGIS Feature Services or QGIS Server WFS transactions when automatic sync is justified.
+The shared chrome is [`src/components/nocturne/chrome.tsx`](src/components/nocturne/chrome.tsx), deliberately parallel to `mobile/src/components/chrome.tsx`. When one side gains a primitive, give the other the same one.
 
 ## Public policy pages
 
-`/privacy` and `/privacy/delete-data` are the privacy policy and data deletion pages for the native mobile collector, for its Google Play listing. They live in `src/app/(legal)/`, use the collector's Nocturne palette, and are prerendered as static pages. Every statement was checked against the mobile, backend and database code; update the pages before the app collects anything new.
+`/privacy` and `/privacy/delete-data` are the privacy policy and data deletion pages for the native collector, for its Google Play listing. They live in `src/app/(legal)/`, carry their own stylesheet because they follow the visitor's light or dark system setting, and are prerendered as static pages. Every statement was checked against the mobile, backend and database code; update the pages before the app collects anything new.
 
 Facts only the operator can supply live in `src/app/(legal)/policy.ts`: the operator (DECA Lab at Cornell University, led by Professor Janet Loebach), the privacy contact, and the developer. The server host, retention periods and deletion time are marked "Assumed" there and need confirming with the lab. Any field set back to `null` brings back a visible draft notice and an inline "to be confirmed" marker.
 
@@ -64,32 +50,27 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). No API key, account or network is needed: the default map base is bundled vector geometry, and the street tile base is the only thing on any screen that fetches.
 
 Quality checks:
 
 ```bash
-pnpm lint
+pnpm check   # typecheck and lint
 pnpm build
 ```
 
 ## Technical shape
 
-- Next.js 16 App Router and TypeScript
-- React Leaflet and local GeoJSON reference layers
-- Zustand stores, including persisted field observations
-- Progressive Web App manifest and same-origin offline shell cache
-- Client-side CSV, GeoJSON, and ArcGIS request generation
+- Next.js 16 App Router, React 19, TypeScript
+- Tailwind v4, with the Nocturne tokens registered in `@theme` so the utilities _are_ the design system
+- Inter, self-hosted through `next/font`, so chrome never waits on a network
+- React Leaflet, rendered browser-side only, over bundled GeoJSON or dark street tiles
+- Client-side CSV, GeoJSON and codebook generation
+- Progressive Web App manifest and a same-origin offline shell cache
 
-No API key or account is required for the prototype.
+## What this application deliberately does not do
 
-## Research sources
-
-- [ArcGIS FeatureLayer `applyEdits`](https://developers.arcgis.com/javascript/latest/references/core/layers/FeatureLayer/#applyEdits)
-- [ArcGIS REST API: layer-level Apply Edits](https://developers.arcgis.com/rest/services-reference/enterprise/apply-edits-feature-service-layer/)
-- [ArcGIS offline mapping apps](https://developers.arcgis.com/documentation/offline-mapping-apps/)
-- [ArcGIS Field Maps overview](https://doc.arcgis.com/en/field-maps/get-started/get-started.htm)
-- [QGIS delimited text and coordinate fields](https://docs.qgis.org/3.44/en/docs/user_manual/managing_data_source/supported_data.html#delimited-text-files)
-- [QFieldSync offline packaging and synchronization](https://docs.qfield.org/get-started/tutorials/get-started-qfs/)
-- [QGIS Server services and WFS transactions](https://docs.qgis.org/3.44/en/docs/server_manual/services.html)
-- [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/)
+- **Collect observations.** The collector does that, on a device, offline. A browser form beside it would be a second way to enter the same record and a second thing to keep in step.
+- **Draw zones or create sites.** Zones come from the QGIS project a base map package is prepared from. A second authority beside QGIS would drift from it.
+- **Edit or publish the instrument.** Publishing needs the API to accept a second form version, an immutable server-side version record and a typed GIS view. Until those exist, this reads the instrument and shows what is blocking its first version.
+- **Claim a sync path of its own.** QGIS reads the live database; exports are for analysis, backup and interoperability, and say so.

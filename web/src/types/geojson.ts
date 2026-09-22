@@ -1,8 +1,8 @@
-// Lightweight GeoJSON helper aliases used across the map layer.
-// Leaflet expects [lat, lng] tuples while GeoJSON stores [lng, lat] — the
-// helpers in lib/geometry.ts handle the conversion.
-
-import type { FieldMarkerAsset, ParcelAsset } from "./domain";
+/**
+ * The slice of GeoJSON this application draws. Positions are [longitude, latitude] in EPSG:4326,
+ * as RFC 7946 and the database both require; Leaflet wants [latitude, longitude], so every handoff
+ * to the map goes through `toLatLng` in `lib/geometry.ts` rather than reordering by hand.
+ */
 
 /** GeoJSON position: [longitude, latitude]. */
 export type LngLat = [number, number];
@@ -10,9 +10,18 @@ export type LngLat = [number, number];
 /** Leaflet position: [latitude, longitude]. */
 export type LatLng = [number, number];
 
-export type AnyFeature = ParcelAsset | FieldMarkerAsset;
+export type Geometry =
+	| { type: "Point"; coordinates: number[] }
+	| { type: "LineString"; coordinates: number[][] }
+	| { type: "Polygon"; coordinates: number[][][] };
 
-export interface FeatureCollection<T> {
+export interface Feature {
+	type: "Feature";
+	properties: Record<string, unknown>;
+	geometry: Geometry;
+}
+
+export interface FeatureCollection {
 	type: "FeatureCollection";
-	features: T[];
+	features: Feature[];
 }

@@ -6,7 +6,7 @@ FieldMaps is one Git repository with independently managed applications. It is s
 
 | Folder              | Responsibility                                                            |
 | ------------------- | ------------------------------------------------------------------------- |
-| `web/`              | Next.js App Router web prototype; read its local AGENTS.md                |
+| `web/`              | Next.js App Router management application; read its local AGENTS.md       |
 | `mobile/`           | Expo / React Native offline collector and account-scoped SQLite queue     |
 | `backend/`          | FastAPI authentication and observation API                                |
 | `database/`         | Local PostGIS, migrations, seeds, and SQL/API integration tests           |
@@ -14,7 +14,7 @@ FieldMaps is one Git repository with independently managed applications. It is s
 | `qgis/`             | Scoped read-only live project and public connection configuration         |
 | `docs/`, `designs/` | Product requirements, architecture, operational guides, design references |
 
-Read the owning component's README before changing it. Root `README.md` and `docs/Workspace.md` describe common operations. The web prototype still uses simulated sync; native mobile uploads have been verified through hosted PostGIS into QGIS.
+Read the owning component's README before changing it. Root `README.md` and `docs/Workspace.md` describe common operations. The web application reads local fixtures and is not connected to the API; native mobile uploads have been verified through hosted PostGIS into QGIS. Web and mobile share one design system, Nocturne — change its tokens in both apps together.
 
 ## Commands and boundaries
 

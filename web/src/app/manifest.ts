@@ -2,13 +2,14 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: "FieldMaps Offline Collector",
+		name: "FieldMaps",
 		short_name: "FieldMaps",
-		description: "Offline-first field observation capture with QGIS and ArcGIS handoff.",
+		description: "Manage FieldMaps projects, places, instruments and collected observations.",
 		start_url: "/",
 		display: "standalone",
-		background_color: "#0a1418",
-		theme_color: "#0f1f25",
+		// Nocturne's ground and surface, the same two values the collector opens on.
+		background_color: "#161826",
+		theme_color: "#161826",
 		orientation: "any",
 		// The FieldMaps app icon; sources and rebuild steps are in mobile/assets/icon-source/.
 		icons: [

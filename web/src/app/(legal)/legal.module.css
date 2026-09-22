@@ -26,6 +26,10 @@
 
 @media (prefers-color-scheme: light) {
 	.page {
+		/* The workspace is dark-only, so the root sets `color-scheme: dark`. These public pages
+		   follow the visitor's system setting, and their scrollbars and form controls have to
+		   follow with them. */
+		color-scheme: light;
 		--legal-bg: #f7f7fb;
 		--legal-surface: #ffffff;
 		--legal-rule: rgba(22, 24, 38, 0.12);
