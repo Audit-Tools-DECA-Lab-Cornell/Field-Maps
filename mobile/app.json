@@ -9,7 +9,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fieldmaps.collector.dev",
-      "requireFullScreen": true
+      "requireFullScreen": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.fieldmaps.collector.dev"
@@ -34,6 +37,12 @@
     "experiments": {
       "typedRoutes": true
     },
-    "backgroundColor": "#161826"
+    "backgroundColor": "#161826",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3b38a05c-e875-4ba6-a5df-eee550c22d5c"
+      }
+    }
   }
 }
