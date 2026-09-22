@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from typing import ClassVar, Self
@@ -46,5 +47,19 @@ class Settings(BaseModel):
         return self
 
 
+CONFIG_VARIABLE = "FIELDMAPS_CONFIG"
+DEFAULT_CONFIG = Path("config.local.json")
+
+
+def configured_path() -> Path:
+    """Name the configuration file to read: FIELDMAPS_CONFIG, or the local development one."""
+    named = os.environ.get(CONFIG_VARIABLE, "").strip()
+    return Path(named) if named else DEFAULT_CONFIG
+
+
 def read_local_settings() -> Settings:
-    return Settings.model_validate_json(Path("config.local.json").read_bytes())
+    path = configured_path()
+    if not path.is_file():
+        msg = f"No configuration at {path}; set {CONFIG_VARIABLE} to the file the service reads"
+        raise FileNotFoundError(msg)
+    return Settings.model_validate_json(path.read_bytes())

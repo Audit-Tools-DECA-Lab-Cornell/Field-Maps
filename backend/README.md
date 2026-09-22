@@ -59,6 +59,34 @@ ON CONFLICT (user_id, project_id) DO NOTHING;
 
 Rebuild/restart the API after public config changes. Configure the same provider and project in [mobile connection settings](../mobile/README.md#enable-the-connected-development-slice), then rebuild the native development client for SecureStore and NetInfo. The Supabase account's database is not used by this local slice: Supabase supplies identity; observations remain in local PostGIS.
 
+## Deploy it
+
+The image carries every configuration it might run under and picks one at startup from the
+`FIELDMAPS_CONFIG` environment variable. Unset, it reads `config.local.json`, which is the local
+development file and names a Unix socket — so a deployed container that does not set this
+variable answers `/health` and fails every request that touches the database.
+
+On [Render](https://render.com/docs/docker), deploying `backend/Dockerfile`:
+
+| What | Where | Value |
+| ---- | ----- | ----- |
+| Environment variable | `FIELDMAPS_CONFIG` | `config.render.json` |
+| Secret File | `database-password` | the `fieldmaps_api` role's password, nothing else in the file |
+
+That is the whole list. Everything else — the pooler URL, the TLS settings, the CA path, the
+identity provider, the browser origins — is public and lives in `config.render.json`, which
+differs from `config.hosted.json` only in where the password is read from: Render mounts Secret
+Files at `/etc/secrets/<name>`, and `make api-hosted-up` mounts a volume at
+`/run/fieldmaps-secrets`.
+
+`PORT` is set by the host and the container honours it, falling back to 8000. Choose a region
+close to the database; this configuration points at `aws-0-us-east-1`.
+
+Two things a deployment still needs that are not in this repository: the web application's
+origin must appear in `browser_origins` before a browser there can call the API, and
+`NEXT_PUBLIC_FIELDMAPS_API_URL` in the web deployment must name the API. Missing either one and
+base map upload fails in the browser rather than at the API.
+
 ## Contract and guarantees
 
 | Endpoint                                         | Behavior                                                          |
