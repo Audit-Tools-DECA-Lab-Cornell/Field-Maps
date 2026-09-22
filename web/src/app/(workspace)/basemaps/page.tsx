@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/app-shell/PageHeader";
+import { PackageUpload } from "@/components/basemaps/PackageUpload";
 import { AttentionNote, Chip, FadeRule, Prose, SectionLabel } from "@/components/nocturne/chrome";
 import { BASEMAP_PACKAGES } from "@/data/basemaps";
 import { SITES } from "@/data/project";
@@ -79,6 +80,10 @@ export default function BasemapsPage() {
 
 				<FadeRule className="my-wide" />
 
+				<PackageUpload />
+
+				<FadeRule className="my-wide" />
+
 				<div className="grid grid-cols-1 gap-wide lg:grid-cols-2">
 					<section className="max-w-[60ch]">
 						<SectionLabel>The failure that matters most</SectionLabel>
@@ -96,17 +101,17 @@ export default function BasemapsPage() {
 					</section>
 
 					<section className="max-w-[60ch]">
-						<SectionLabel>What is not built yet</SectionLabel>
+						<SectionLabel>What reaches a device</SectionLabel>
 						<h2 className="mt-tight mb-base text-heading text-text">
-							Nothing here uploads or prepares anything
+							Preparing one is real; carrying it is not, yet
 						</h2>
 						<AttentionNote
-							title="Package delivery is stubbed in both applications"
-							body="The collector’s two packages are bundled with the app itself; there is no hosted package format, no download, and no cellular policy. These rows describe the steps a real preparation must pass, so the shape is agreed before any of it is written — they are not a pipeline that runs."
+							title="The collector still reads its bundled packages"
+							body="A package prepared here is stored, versioned and downloadable from the API, but the collector has not been switched from its bundled geometry to fetching one. That is the next piece: a hosted package provider on the device, with the download and cellular policy that belong to it."
 						/>
 						<Prose tone="faint" className="mt-base">
-							When it is real, the upload lands here and the collector’s package list stops being a
-							fixture.
+							Until then the loop is the one in the QGIS base map testing guide: prepare here to see the
+							checks, and put the same exports into the collector’s source to see them on a device.
 						</Prose>
 					</section>
 				</div>

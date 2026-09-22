@@ -26,9 +26,24 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 	"database_url": "postgresql+asyncpg://fieldmaps_api@/fieldmaps?host=/var/run/postgresql",
 	"issuer": "https://YOUR_PROJECT.supabase.co/auth/v1",
 	"jwks_url": "https://YOUR_PROJECT.supabase.co/auth/v1/.well-known/jwks.json",
-	"audience": "authenticated"
+	"audience": "authenticated",
+	"browser_origins": ["http://localhost:3000", "https://field-maps.vercel.app"],
+	"browser_origin_pattern": "https://field-maps-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
 }
 ```
+
+`browser_origins` names the origins the management application is served from. A browser
+preflights any cross-origin call carrying an `Authorization` header, and the default is an empty
+list — no origin allowed — so base map upload from the web application fails until its origin is
+named here. It is an allowlist by design: a wildcard would let any page a signed-in manager has
+open spend their token.
+
+`browser_origin_pattern` covers the origins that cannot be listed one by one — Vercel names a
+preview deployment `<project>-git-<branch>-<team>.vercel.app`, a new host per branch. The pattern
+must match the whole origin (Starlette applies `fullmatch`), and the team slug is what makes it
+safe: a host ending in someone else's team, or in a suffix like `.vercel.app.evil.invalid`, does
+not match. Escape the dots. A pattern the regex engine cannot compile is refused at startup, not
+per request.
 
 These issuer/JWKS values are public. No Supabase service-role key is needed by this API. It validates the JWT signature, expiry, audience, and issuer and derives the user UUID from the signed subject. Legacy HS256 projects must switch to a supported asymmetric signing key before using this verifier. See [Supabase JWT documentation](https://supabase.com/docs/guides/auth/jwts).
 
@@ -51,8 +66,14 @@ Rebuild/restart the API after public config changes. Configure the same provider
 | `GET /v1/projects`                               | Projects visible to the verified account                          |
 | `PUT /v1/projects/{project}/observations/{uuid}` | Validate and commit a new point or acknowledge an identical retry |
 | `GET /v1/projects/{project}/observations/{uuid}` | Read a permitted observation                                      |
+| `POST /v1/projects/{project}/packages`            | Check a base map submission and store a prepared package version  |
+| `GET /v1/projects/{project}/packages`             | List prepared package versions and their state                    |
+| `GET /v1/projects/{project}/packages/{package}`   | Read one package's manifest and every check it ran                |
+| `GET /v1/projects/{project}/packages/{package}/archive` | Download the zip; the ETag is its `sha256`                  |
 
-The PUT body contains `site_id`, `form_version`, `[longitude, latitude]` coordinates, `observer`, integer `people` (0–999), `notes`, and timezone-aware `observed_at`. This version accepts only the sample site and practice form; it does not implement Janet's full variable library.
+The PUT body contains `site_id`, `form_version`, `[longitude, latitude]` coordinates, `observer`, timezone-aware `observed_at`, and the answers as further top-level keys. The site and form version are resolved against the project's own rows rather than two string literals, and each answer is validated against that form version's stored definition, so a new instrument is a seeded form version and not a code change. Unknown sites and forms are still rejected, and an answer that fails its field's type or bounds returns 422.
+
+A package submission carries the site and form version, the GeoJSON layers (`ground` and `zones` required, `paths` and `trees` optional) and optionally the `.qgz`/`.qgs` project file, base64 encoded so no multipart dependency is needed. Preparation runs five checks — layers present, layer sources, coordinate reference, imagery licence, derived geometry — and stores the result either way: a blocked package keeps its reasons but does not download. Network tile sources block unless their host is allow-listed, because imagery permission is granted rather than assumed. The archive carries no clock, so its `sha256` is a content identity: the same submission prepared again next month is byte-identical, and the ETag is stable. When it was prepared lives on the row and in the API response, not inside the zip. Rows are immutable and preparing one needs the manager role.
 
 A 200 receipt includes observation/project/user UUIDs, original `received_at`, and `accepted_revision: 1`. A receipt is returned only after commit. Identical retries return the original receipt; conflicting content returns 409 and preserves the original. The authenticated user and normalized payload fingerprint are immutable. A lost response can therefore be retried without duplicate records.
 
@@ -62,7 +83,7 @@ Project membership is enforced in both the API lookup and database row policies.
 
 `make -C database api-test` passes 24 tests against real PostGIS, including token rejection, membership checks, connection-pool isolation, conflicting/concurrent retries, input boundaries, and restricted GIS readback. Python Ruff and BasedPyright also pass. The separate SQL suite passes 19 assertions. Native sign-in, mobile-to-running-API reconnect, and QGIS Desktop refresh still need a configured account/device acceptance run.
 
-This is a local development service. The shared Unix socket uses local trust and must not be deployed as production database authentication. The hosted development database now has adapted migrations, restricted runtime credentials, and verified TLS. Production rollout still needs approved region/retention choices, a public HTTPS API deployment, managed secret injection, network restrictions, backups, monitoring, and API resource limits. The API has no general form engine, attachments, update/delete synchronization, download cursor, or closed-app mobile background synchronization yet.
+This is a local development service. The shared Unix socket uses local trust and must not be deployed as production database authentication. The hosted development database now has adapted migrations, restricted runtime credentials, and verified TLS. Production rollout still needs approved region/retention choices, a public HTTPS API deployment, managed secret injection, network restrictions, backups, monitoring, and API resource limits. The API has no attachments, update/delete synchronization, download cursor, or closed-app mobile background synchronization yet. Package archives live in a `bytea` column capped at 16 MB, which keeps them transactional with their manifest and checks and under the same row policies; moving to object storage later means replacing one column. The device cannot fetch a package yet.
 
 Use QGIS read-only access for this slice; arbitrary GIS edits do not yet synchronize back to devices. The local database has no TCP listener, so a QGIS Desktop connection is not provisioned by these commands. The GIS test validates the database view, not the desktop application's behavior.
 

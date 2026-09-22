@@ -36,4 +36,14 @@ SELECT EXISTS (
   \ir migrations/0003_spatial_interface.sql
   INSERT INTO fieldmaps_meta.schema_migrations (version) VALUES ('0003_spatial_interface');
 \endif
+SELECT EXISTS (
+  SELECT FROM fieldmaps_meta.schema_migrations WHERE version = '0004_site_packages'
+) AS packages_applied
+\gset
+\if :packages_applied
+  \echo FieldMaps migration 0004 already applied.
+\else
+  \ir migrations/0004_site_packages.sql
+  INSERT INTO fieldmaps_meta.schema_migrations (version) VALUES ('0004_site_packages');
+\endif
 COMMIT;

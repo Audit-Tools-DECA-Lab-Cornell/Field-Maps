@@ -6,7 +6,7 @@ This application and the collector are one product, so they carry one design sys
 
 ## What is real
 
-The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **This application has not been connected to the API.** Every record, count, chart and connection value on its screens comes from fixtures under [`src/data/`](src/data), generated in the browser from a fixed seed.
+The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **Only one screen is connected to the API.** Base map upload posts a real package to `POST /v1/projects/{project}/packages` and renders the checks the server returns. Every other record, count, chart and connection value comes from fixtures under [`src/data/`](src/data), generated in the browser from a fixed seed.
 
 That is stated on the screens themselves — in the top bar, along the status footer, and in a note on each section that could otherwise be mistaken for live state. Keep it that way. When a section is wired to the API, the note comes off that section and not before.
 
@@ -16,14 +16,15 @@ The fixtures mirror the real schema rather than a convenient one: `database/migr
 
 ## Sections
 
-| Route           | What it is                                                                                     |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| `/`             | Overview — what the field returned, coverage against the protocol target, and what is blocking |
-| `/observations` | Data review — one filter set, a coordinated map and table over it, and the record itself       |
-| `/places`       | Sites and the zones inside them                                                                |
-| `/instrument`   | Variable library, display logic and form versions                                              |
-| `/basemaps`     | Turning a QGIS project into a package an observer can carry offline                            |
-| `/qgis`         | The connection that reads the same database                                                    |
+| Route           | What it is                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| `/`             | The landing page — what the product is, and what is built, open and not built yet               |
+| `/overview`     | Overview — what the field returned, coverage against the protocol target, and what is blocking  |
+| `/observations` | Data review — one filter set, a coordinated map and table over it, and the record itself        |
+| `/places`       | Sites and the zones inside them                                                                 |
+| `/instrument`   | Variable library, display logic and form versions                                               |
+| `/basemaps`     | Turning a QGIS project into a package: uploading layers, and the checks the server runs on them |
+| `/qgis`         | The connection that reads the same database                                                     |
 
 Filters and the selected record live in the URL, so a filtered view can be sent to a colleague, opened in a second tab, and undone with the back button.
 
@@ -54,6 +55,28 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). No API key, account or network is needed: the default map base is bundled vector geometry, and the street tile base is the only thing on any screen that fetches.
 
+## Connect it to the API
+
+One screen talks to the API: base map upload. It reads a single public variable.
+
+```bash
+cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
+```
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_FIELDMAPS_API_URL` | The API's origin, no trailing slash — `http://127.0.0.1:8000` locally, `https://api.example.org` deployed |
+
+`NEXT_PUBLIC_` variables are compiled into the browser bundle, so this one is public by construction. Never put a token or key beside it. Next.js reads `.env.local` at build time, so restart `pnpm dev` after changing it; on Vercel, set it in **Project → Settings → Environment Variables** and redeploy, since a running deployment will not pick it up.
+
+Leave it unset and the screen says so: it assembles the package and downloads the submission rather than pretending to upload it.
+
+The API must also name this origin. Browsers preflight a cross-origin request that carries an `Authorization` header, and the API allows no origin by default, so add the web origin to `browser_origins` in `backend/config.local.json` — see [the API README](../backend/README.md). Miss that step and the upload fails in the browser's network layer before the API is reached. Vercel preview deployments get a new hostname per branch, so those are covered by `browser_origin_pattern` rather than listed.
+
+Two things this cannot fix on its own. A page served over HTTPS may not call an API on `http://127.0.0.1`, so the deployed site needs a deployed API over HTTPS — pointing it at a laptop will not work. And uploading still needs a manager's token, below.
+
+Uploading needs an access token for an account with the **manager** role on the project. There is no web sign-in yet, so the screen has a field to paste one; that is a stopgap and is marked as one.
+
 Quality checks:
 
 ```bash
@@ -73,6 +96,7 @@ pnpm build
 ## What this application deliberately does not do
 
 - **Collect observations.** The collector does that, on a device, offline. A browser form beside it would be a second way to enter the same record and a second thing to keep in step.
-- **Draw zones or create sites.** Zones come from the QGIS project a base map package is prepared from. A second authority beside QGIS would drift from it.
-- **Edit or publish the instrument.** Publishing needs the API to accept a second form version, an immutable server-side version record and a typed GIS view. Until those exist, this reads the instrument and shows what is blocking its first version.
+- **Draw zones or create sites.** Zones come from the QGIS project a base map package is prepared from; the upload screen carries the exported `zones` layer to the server, which derives the boxes. A second authority beside QGIS would drift from it.
+- **Edit or publish the instrument.** The API now accepts any seeded form version and validates answers against its stored definition, and `form_versions` rows are already immutable, so what publishing still needs is an editor here and a typed GIS view over the answers. Until those exist, this reads the instrument and shows what is blocking its first version.
+- **Deliver a package to a device.** A prepared package is stored, versioned and downloadable from the API, but the collector still reads its bundled geometry. The hosted package provider on the device, with the download and cellular policy that belong to it, is the next piece.
 - **Claim a sync path of its own.** QGIS reads the live database; exports are for analysis, backup and interoperability, and say so.

@@ -31,10 +31,9 @@ def test_upload_is_committed_and_identical_retry_has_same_receipt(api_client: Te
     assert receipt == UploadReceipt.model_validate_json(replay.content)
     assert receipt.user_id == USER
     stored = StoredObservation.model_validate_json(api_client.get(url).content)
-    assert (stored.coordinates, stored.people, stored.notes, stored.revision) == (
+    assert (stored.coordinates, stored.answers, stored.revision) == (
         (-76.485, 42.448),
-        3,
-        "Offline café",
+        {"people": 3, "notes": "Offline café"},
         1,
     )
 
@@ -53,7 +52,7 @@ def test_changed_retry_cannot_overwrite_original(api_client: TestClient) -> None
     assert api_client.put(url, json=payload).status_code == 200
     conflict = api_client.put(url, json={**payload, "people": 7})
     assert conflict.status_code == 409
-    assert StoredObservation.model_validate_json(api_client.get(url).content).people == 3
+    assert StoredObservation.model_validate_json(api_client.get(url).content).answers["people"] == 3
 
 
 def test_simultaneous_retries_create_one_record(api_client: TestClient) -> None:

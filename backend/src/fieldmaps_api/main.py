@@ -3,22 +3,35 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from jwt import PyJWKClient
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from fieldmaps_api.auth import Authentication, JwksVerifier, TokenVerifier, UnconfiguredVerifier
 from fieldmaps_api.config import Settings, read_local_settings
 from fieldmaps_api.database import database_connection
+from fieldmaps_api.packages import PackageSubmission
 from fieldmaps_api.repository import (
     get_observation,
+    get_package,
+    list_packages,
     list_projects,
+    prepare_package,
+    read_package_archive,
     upload_observation,
     user_transaction,
 )
-from fieldmaps_api.schemas import ObservationUpload, ProjectAccess, StoredObservation, UploadReceipt
+from fieldmaps_api.schemas import (
+    ObservationUpload,
+    PackageDetail,
+    PackageSummary,
+    ProjectAccess,
+    StoredObservation,
+    UploadReceipt,
+)
 
 
 def create_app(
@@ -52,6 +65,19 @@ def create_app(
         await engine.dispose()
 
     app = FastAPI(title="FieldMaps API", version="0.1.0", lifespan=lifespan)
+    # The management application runs on its own origin and sends an Authorization header, so
+    # every call it makes is preflighted. Named origins only: a wildcard here would let any page
+    # a manager has open spend their token.
+    if configuration.allowed_origins or configuration.browser_origin_pattern:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=configuration.allowed_origins,
+            allow_origin_regex=configuration.browser_origin_pattern,
+            allow_methods=["GET", "POST", "PUT"],
+            allow_headers=["authorization", "content-type"],
+            expose_headers=["etag"],
+            max_age=600,
+        )
 
     @app.exception_handler(SQLAlchemyError)
     async def database_error(_request: Request, _error: SQLAlchemyError) -> JSONResponse:
@@ -88,7 +114,64 @@ def create_app(
         async with user_transaction(sessions, user_id) as session:
             return await get_observation(session, project_id, observation_id)
 
+    register_package_routes(app, sessions, authenticate)
+
     return app
+
+
+def register_package_routes(
+    app: FastAPI,
+    sessions: async_sessionmaker[AsyncSession],
+    authenticate: Authentication,
+) -> None:
+    """Site packages: preparing one, listing them, and handing the archive to a device."""
+
+    @app.post("/v1/projects/{project_id}/packages", status_code=201)
+    async def prepare(
+        project_id: UUID,
+        submission: PackageSubmission,
+        user_id: Annotated[UUID, Depends(authenticate)],
+    ) -> PackageDetail:
+        """Prepare a site package from a QGIS export, and record what every check found."""
+        async with user_transaction(sessions, user_id) as session:
+            return await prepare_package(session, project_id, user_id, submission)
+
+    @app.get("/v1/projects/{project_id}/packages")
+    async def packages(
+        project_id: UUID,
+        user_id: Annotated[UUID, Depends(authenticate)],
+        site: Annotated[str | None, Query(max_length=100)] = None,
+    ) -> list[PackageSummary]:
+        async with user_transaction(sessions, user_id) as session:
+            return await list_packages(session, project_id, site)
+
+    @app.get("/v1/projects/{project_id}/packages/{package_id}")
+    async def package(
+        project_id: UUID,
+        package_id: UUID,
+        user_id: Annotated[UUID, Depends(authenticate)],
+    ) -> PackageDetail:
+        async with user_transaction(sessions, user_id) as session:
+            return await get_package(session, project_id, package_id)
+
+    @app.get("/v1/projects/{project_id}/packages/{package_id}/archive")
+    async def archive(
+        project_id: UUID,
+        package_id: UUID,
+        user_id: Annotated[UUID, Depends(authenticate)],
+    ) -> Response:
+        """Hand over the package itself, for a device about to carry it into the field."""
+        async with user_transaction(sessions, user_id) as session:
+            payload, digest = await read_package_archive(session, project_id, package_id)
+        return Response(
+            payload,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="package-{package_id}.zip"',
+                # The digest the manifest was stored with, so a device can verify what it fetched.
+                "ETag": f'"{digest}"',
+            },
+        )
 
 
 def create_app_from_config() -> FastAPI:

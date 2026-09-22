@@ -21,7 +21,7 @@ export function RailNav({ counts }: { readonly counts: Readonly<Record<string, s
 			aria-label="Sections"
 			className="flex gap-hair overflow-x-auto p-snug [scrollbar-width:none] md:flex-col md:overflow-x-visible">
 			{SECTIONS.map(section => {
-				const active = section.href === "/" ? pathname === "/" : pathname.startsWith(section.href);
+				const active = pathname === section.href || pathname.startsWith(`${section.href}/`);
 				const count = counts[section.href];
 				return (
 					<Link

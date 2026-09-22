@@ -9,7 +9,7 @@ export interface Section {
 }
 
 export const SECTIONS: readonly Section[] = [
-	{ href: "/", label: "Overview", blurb: "What the field returned, and what is blocking it" },
+	{ href: "/overview", label: "Overview", blurb: "What the field returned, and what is blocking it" },
 	{ href: "/observations", label: "Observations", blurb: "Every record, on the map and in the table" },
 	{ href: "/places", label: "Places", blurb: "Sites, zones and rounds" },
 	{ href: "/instrument", label: "Instrument", blurb: "Variables, display logic and versions" },

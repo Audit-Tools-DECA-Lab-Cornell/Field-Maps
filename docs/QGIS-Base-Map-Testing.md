@@ -6,9 +6,9 @@ Written September 21, 2026 against the code in this repository. Nothing below ha
 
 ## Read this first: three facts that shape the steps
 
-1. **There is no "upload a map" feature.** The app has no import screen and no package download. Site maps ship inside the app as code (`mobile/src/maps/sample-site.ts`, used by `mobile/src/packages/bundled.ts`). "Uploading" your map means putting exported files in the repository and reloading the app.
+1. **The server accepts a base map package; the phone does not fetch one yet.** The web application's **Base maps** screen uploads your exported layers and optional `.qgz` to `POST /v1/projects/{project}/packages`, where the API checks them, derives zones and an extent, and stores an immutable versioned archive. The collector still reads its site geometry from code (`mobile/src/maps/sample-site.ts`, used by `mobile/src/packages/bundled.ts`), so getting your map onto a _device_ still means putting exported files in the repository and reloading the app. Part 4 below is that path.
 2. **The app draws vector shapes only, not imagery.** Its base map is your site outline, buildings, paths, zones, and trees drawn as flat shapes. Satellite imagery lives in QGIS, not on the phone.
-3. **Only the practice package uploads.** The API accepts `site_id = "sample-garden"` and form `shell-v1` only (`backend/src/fieldmaps_api/schemas.py`). To see your points in QGIS, put your site's geometry into the **Sample garden practice** package and keep its `siteId` unchanged. Points collected on Riverside (`janet-test-v1`) stay on the device.
+3. **Observation uploads now resolve the site and form from the database.** The API takes any `site_id` and `form_version` that exist in the project and validates each answer against that form's definition, rather than the two string literals it used to accept. A site or form you have not seeded is still rejected, so unless `janet-test-v1` and its site have been inserted, put your geometry into the **Sample garden practice** package and keep its `siteId` unchanged to see your points in QGIS.
 
 ## The whole flow
 
@@ -71,12 +71,12 @@ Other sources:
 
 Create one GeoPackage file holding one layer per kind of shape. The app understands these five:
 
-| Layer       | Geometry | Required field              | Shown in the app as                                 |
-| ----------- | -------- | --------------------------- | --------------------------------------------------- |
-| `ground`    | Polygon  | `kind` = `site` or `structure` | Site outline and buildings in the base map        |
-| `paths`     | Line     | none                        | Paths overlay                                       |
-| `trees`     | Point    | none                        | Trees overlay                                       |
-| `zones`     | Polygon  | `id`, `label`               | Zone polygons overlay and the zone picker on the brief |
+| Layer    | Geometry | Required field                 | Shown in the app as                                    |
+| -------- | -------- | ------------------------------ | ------------------------------------------------------ |
+| `ground` | Polygon  | `kind` = `site` or `structure` | Site outline and buildings in the base map             |
+| `paths`  | Line     | none                           | Paths overlay                                          |
+| `trees`  | Point    | none                           | Trees overlay                                          |
+| `zones`  | Polygon  | `id`, `label`                  | Zone polygons overlay and the zone picker on the brief |
 
 1. **Layer → Create Layer → New GeoPackage Layer…**
 2. Database: `my-site.gpkg`. Table name: `ground`. Geometry type: **Polygon**. CRS: **EPSG:4326**.
@@ -111,6 +111,31 @@ Also note the whole site's extent: right-click `ground` → **Properties → Inf
 
 ---
 
+## Part 3b (optional): upload the package to the server (about 5 minutes)
+
+This stores your site as a prepared, versioned package the API can serve. It does not change what the phone shows; Part 4 still does that.
+
+1. Export `zones` as GeoJSON too, the same way as the other layers (EPSG:4326, `RFC7946` = `YES`). Each zone feature needs `id` and `label`.
+2. Start the web application (`pnpm dev`) and open **Base maps**.
+3. Pick the site and the form version, attach `ground.json` and `zones.json` (both required) plus `paths.json`, `trees.json` and your `.qgz` if you have them, and paste an access token for an account with the **manager** role on the project.
+4. Submit. The server runs five checks and shows each one:
+
+   | Check                | What it means                                                                                                                                                                                             |
+   | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Layers present       | `ground` and `zones` are there and parse as GeoJSON                                                                                                                                                       |
+   | Layer sources        | every layer the project file names has geometry in the upload                                                                                                                                             |
+   | Coordinate reference | every position is inside WGS 84, and no layer declares another CRS. The project's own CRS is reported, not enforced: Part 1 has you draw over Web Mercator tiles, and what ships is the exported geometry |
+   | Imagery licence      | a network tile source blocks unless its host is allow-listed; institution-held files pass                                                                                                                 |
+   | Derived geometry     | zones become boxes and the site gets a padded extent                                                                                                                                                      |
+
+   A blocked package is still stored with its reasons; it just will not download.
+
+5. `GET /v1/projects/{project}/packages` lists versions, and `.../packages/{id}/archive` returns the zip. The archive is deterministic: the same submission yields the same `sha256`, which is also the ETag.
+
+If the web application has no API configured (`NEXT_PUBLIC_FIELDMAPS_API_URL`), the screen downloads the assembled submission instead of pretending to upload it.
+
+---
+
 ## Part 4: Load your site into the app (about 15 minutes)
 
 All edits are in `mobile/src/maps/sample-site.ts`. The practice and Riverside packages both read this file, so both will show your site.
@@ -126,8 +151,10 @@ All edits are in `mobile/src/maps/sample-site.ts`. The practice and Riverside pa
 2. Set the camera centre and pan limits from Part 3 (`[longitude, latitude]` and `[west, south, east, north]`):
 
    ```ts
-   export const sampleCenter: Coordinate = [-76.4850, 42.4480];
-   export const sampleBounds: LngLatBounds = [-76.4870, 42.4466, -76.4830, 42.4494];
+   export const sampleCenter: Coordinate = [-76.485, 42.448];
+   export const sampleBounds: LngLatBounds = [
+     -76.487, 42.4466, -76.483, 42.4494,
+   ];
    ```
 
 3. Replace the hand-drawn `ground`, `sitePaths`, and `siteTrees` objects with your data:
@@ -184,20 +211,20 @@ QGIS reprojects the EPSG:4326 points onto the EPSG:3857 base map automatically.
 
 ## Troubleshooting
 
-| What you see                                   | Cause                                                        | Fix                                                                                     |
-| ---------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Shapes appear in the ocean off Africa          | Exported in a projected CRS, not EPSG:4326                   | Re-export with CRS **EPSG:4326**                                                        |
-| Site outline missing, paths and trees visible  | `ground` features lack `kind = site` / `kind = structure`    | Fill in the `kind` field and re-export                                                  |
-| `Unable to resolve module ./sites/.../x.geojson` | Metro does not import `.geojson`                          | Rename the file to `.json`                                                              |
-| TypeScript error on the imported JSON          | JSON imports have a loose type                               | Keep the `as FeatureCollection` cast from Part 4                                        |
-| Record stays on the device, never syncs        | Collected on Riverside (`janet-test-v1`), or `siteId` was changed | Collect on **Sample garden practice**; keep `siteId: "sample-garden"`             |
-| Record shows "needs attention"                 | API rejected it or is not running                            | Check `pnpm api:hosted:up`, then retry from the Account screen                          |
-| QGIS certificate / SSL error                   | `sslrootcert` in `pg_service.conf` does not match this checkout | Point it at `backend/certs/supabase-root-2021.crt` in your checkout                  |
-| New point missing in QGIS                      | Layer not refreshed                                          | Right-click the layer → **Refresh**                                                     |
+| What you see                                     | Cause                                                             | Fix                                                                   |
+| ------------------------------------------------ | ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Shapes appear in the ocean off Africa            | Exported in a projected CRS, not EPSG:4326                        | Re-export with CRS **EPSG:4326**                                      |
+| Site outline missing, paths and trees visible    | `ground` features lack `kind = site` / `kind = structure`         | Fill in the `kind` field and re-export                                |
+| `Unable to resolve module ./sites/.../x.geojson` | Metro does not import `.geojson`                                  | Rename the file to `.json`                                            |
+| TypeScript error on the imported JSON            | JSON imports have a loose type                                    | Keep the `as FeatureCollection` cast from Part 4                      |
+| Record stays on the device, never syncs          | Collected on Riverside (`janet-test-v1`), or `siteId` was changed | Collect on **Sample garden practice**; keep `siteId: "sample-garden"` |
+| Record shows "needs attention"                   | API rejected it or is not running                                 | Check `pnpm api:hosted:up`, then retry from the Account screen        |
+| QGIS certificate / SSL error                     | `sslrootcert` in `pg_service.conf` does not match this checkout   | Point it at `backend/certs/supabase-root-2021.crt` in your checkout   |
+| New point missing in QGIS                        | Layer not refreshed                                               | Right-click the layer → **Refresh**                                   |
 
 ## Not supported yet
 
 - Satellite imagery or raster tiles on the phone. Offline imagery needs a packaged tile format (MBTiles or PMTiles), licensing that allows offline use, and code in `mobile/src/maps/` to load it.
-- Importing a QGIS project or GeoPackage directly into the app, or downloading site packages. Delivery is stubbed behind `PackageProvider` in `mobile/src/packages/site-package.ts`.
-- Uploads for any site other than `sample-garden` or any form other than `shell-v1`. See [the Janet test form scope](Janet-Test-Form-Scope.md).
+- Downloading a prepared package onto a device. The server prepares, versions and serves one; the collector has not been switched from its bundled geometry to fetching one, and delivery is still stubbed behind `PackageProvider` in `mobile/src/packages/site-package.ts`.
+- Reading a `.qgz` project's layer geometry. The uploaded project file is read for its title, CRS and layer sources, which is what the imagery-licence and coordinate checks need; the features themselves come from the GeoJSON layers you upload beside it.
 - Editing observations in QGIS and sending changes back to devices.
