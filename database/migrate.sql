@@ -46,4 +46,14 @@ SELECT EXISTS (
   \ir migrations/0004_site_packages.sql
   INSERT INTO fieldmaps_meta.schema_migrations (version) VALUES ('0004_site_packages');
 \endif
+SELECT EXISTS (
+  SELECT FROM fieldmaps_meta.schema_migrations WHERE version = '0005_package_policy_identity'
+) AS package_identity_applied
+\gset
+\if :package_identity_applied
+  \echo FieldMaps migration 0005 already applied.
+\else
+  \ir migrations/0005_package_policy_identity.sql
+  INSERT INTO fieldmaps_meta.schema_migrations (version) VALUES ('0005_package_policy_identity');
+\endif
 COMMIT;

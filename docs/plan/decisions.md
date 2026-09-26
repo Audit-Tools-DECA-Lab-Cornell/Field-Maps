@@ -1,0 +1,56 @@
+# Decisions, open questions, running cost
+
+This file is part of the [FieldMaps production plan](README.md) and defines no tasks. It records why the plan is shaped the way it is. The earlier proposals in `docs/Production-Architecture-Recommendation.md` (ADR-001 to ADR-005) still stand, except where a decision below changes them.
+
+## Decision log
+
+| # | Date | Decision | Why | Consequence |
+|---|---|---|---|---|
+| D1 | 2026-09-22 | **Self-serve organizations.** Anyone may sign up; orgs and projects are created **on the web only**. | User decision. Public sign-up is already on. | New tables: organizations, members and invitations (DB-05). Org-creation limits (BE-07, BE-09). Mobile has no org-setup screens. |
+| D2 | 2026-09-22 | **PowerSync for mobile sync, now.** Resolves ADR-004. | User decision. Managed replication, and it leaves room for later two-way edits. | Gated by SYNC-01. Replaces expo-sqlite with op-sqlite. Needs server-side rejection storage (BE-12) and Storage for archives (DB-12). If SYNC-01 fails, the fallback is the existing outbox plus ETag pulls. |
+| D3 | 2026-09-22 | **Email + password, 6-digit email codes.** No social login in v1. | Codes work when the email is opened on another device and need no deep-link session. No Apple 4.8 obligation. | Custom SMTP is mandatory (OPS-02), and the templates use `{{ .Token }}` (OPS-03). |
+| D4 | 2026-09-22 | **A server Training project** that every account joins. | Removes bundled practice data, and trains observers on the real pipeline. | Seeded by DB-07. Training observations are visible only to their creator and purged after 30 days. |
+| D5 | 2026-09-22 | **1 developer, 13 weeks to the pilot.** | User answer. | The phase board and cut list in the [README](README.md#phase-board). |
+| D6 | 2026-09-22 | **Budget undecided.** | User answer. | The running cost below. Production creation (OPS-09) waits for approval (Q5). |
+| D7 | 2026-09-22 | **`supabase/migrations/` is the only migration source.** The local stack is `supabase start`. | Local and hosted had diverged: `0004` was never applied to hosted, so package routes return 503. | DB-01, DB-02, DB-03. The `database/migrations/` track is retired after parity is proven. |
+| D8 | 2026-09-22 | **The mobile form format is canonical.** The server evaluates the same conditions. | It is richer and already validated; the server format could not express Janet's form. | CON-02, BE-10, MOB-13. |
+| D9 | 2026-09-22 | **CAPTCHA deferred.** | Supabase applies CAPTCHA to every client once enabled, so mobile would first need a WebView Turnstile. Email confirmation plus rate limits cover the pilot. | Revisit if abusive sign-ups appear (post-pilot). |
+| D10 | 2026-09-22 | **GIS access:** per-project read-only database logins for the pilot; OGC API Features with project keys after the pilot. | Database logins work today in QGIS. Keys are the self-serve-safe path; QGIS sends them with its "API Header" auth method. | GIS-02 (pilot), GIS-06 (later). |
+| D11 | 2026-09-22 | **Package archives go to Supabase Storage.** | They exceed PowerSync's 15 MB row cap; signed URLs suit large downloads. | DB-12, BE-13, MOB-14. Storage is not in database backups, so packages are recovered by re-upload (OPS-10). |
+| D12 | 2026-09-22 | **Authorization lives in the database, not in JWT claims.** | Claims go stale until refresh; memberships are already checked per request. | No Custom Access Token hook. BE-02 asserts that the API role cannot bypass RLS. |
+
+| D13 | 2026-09-26 | **Training is a new platform org and project with fixed IDs** (`…-0101` / `…-0102`). The seeded practice project `…-0002` stays a normal project. | Converting `…-0002` would purge the two verified records after 30 days, and would expose trainees through the owner-executed sample view. | DB-07; the purge is keyed on the fixed project ID, never the flag. GIS-03 retires the sample view and its login. |
+| D14 | 2026-09-26 | **Membership and invitation writes go only through `fieldmaps_private` functions.** Every role check names the caller. | Last-owner, last-manager and single-use-code rules race or recurse when written as RLS. A widened memberships policy turned role checks into "anyone on the project" (reproduced). | DB-05, DB-06, BE-07, BE-16. |
+| D15 | 2026-09-26 | **The staging/preview build keeps the legacy bundle ID `com.fieldmaps.collector.dev` during the transition.** Local development moves to `com.fieldmaps.collector.local`. | Existing test installs hold the only copy of unsent records in their app sandbox. A new bundle ID is a different app that cannot read them. | MOB-01, MOB-02, MOB-11. |
+| D16 | 2026-09-26 | **GIS views and reader logins are named from the project UUID, not from codes.** | Codes are unique only per org, may contain hyphens, and names over 63 bytes are truncated. Code-based names collide across tenants. | GIS-01, GIS-02, BE-15. |
+| D17 | 2026-09-26 | **`Depends:` is the single source of truth.** `Blocks:` is generated by `pnpm plan:check --fix`. | The review found 73 one-sided Depends/Blocks pairs. Hand-kept duplicates drift. | `docs/plan/check-plan.mjs` also rejects cycles, dependencies on later phases, and board mismatches. |
+
+To add a decision, append a row with the next number. Never edit a past row. Supersede it with a new row that references it.
+
+## Open questions
+
+| # | Question | Who answers | Blocks |
+|---|---|---|---|
+| Q1 | App name in the stores, and the bundle ID prefix (for example `edu.cornell.fieldmaps`) | User | MOB-20, OPS-11 |
+| Q2 | IRB constraints: retention period, whether photos are ever allowed, the observer-initials policy | User and Janet | OPS-11 privacy labels, the Training purge window (DB-07) |
+| Q3 | Should an observer's map show other observers' records? | Janet | An optional post-pilot stream (sync-powersync.md) |
+| Q4 | Janet's protocol decisions in `docs/Janet-Test-Form-Scope.md`: missing export columns, the loose-parts collision, the natural-materials list, carry-forward rules | Janet | Publishing her form (BE-11 / WEB-09), GIS-01 column names |
+| Q5 | Budget approval for the running cost below | User | OPS-09 (week 10) |
+| Q6 | The domain that sends auth email (for example `fieldmaps.app` or a lab domain) | User | OPS-02 |
+| Q7 | May the pre-Storage test packages on staging lose their archives (DB-14)? They can be re-prepared from the QGIS source. | User | DB-14, OPS-17 |
+
+## Running cost
+
+These are approximate figures from 2026-09-22 research. Check current pricing before buying anything.
+
+| Service | Staging | Production (pilot) | Why it is needed |
+|---|---|---|---|
+| Supabase | Free | Pro, about $25/mo | Daily backups, leaked-password protection, no pausing |
+| PowerSync | Free (deprovisions after 7 idle days, leaving a WAL-holding slot) | Pro, from $49/mo | Reliable replication |
+| Render (API) | Starter, about $7/mo | Starter/Standard, $7–25/mo | An always-on HTTPS API for sync |
+| Resend (SMTP) | Free (3,000 emails/mo) | Free, then $20/mo | Auth emails reach users at all |
+| Vercel | Hobby | Pro, $20/mo if the use is commercial | Hobby is non-commercial only |
+| Sentry | Free | Free developer tier | Errors across the three apps |
+| App stores / EAS | none | Apple $99/yr, Google $25 once, EAS free tier | Distribution |
+
+The pilot total is roughly **$110–150 per month** plus store fees.
