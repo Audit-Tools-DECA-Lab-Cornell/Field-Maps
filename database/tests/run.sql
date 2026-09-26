@@ -61,8 +61,12 @@ SELECT pg_temp.assert_true(
     AND notes = 'Database test' AND ST_SRID(geom) = 4326 AND fid > 0
    FROM gis.sample_observations), 'QGIS projection preserves coordinates and typed answers'
 );
+-- The exact ledger, in order: a replay adds nothing, and a new migration must be listed here.
 SELECT pg_temp.assert_true(
-  (SELECT count(*) = 3 FROM fieldmaps_meta.schema_migrations), 'migration replay records each version once'
+  (SELECT array_agg(version ORDER BY version) FROM fieldmaps_meta.schema_migrations)
+    = ARRAY['0001_initial', '0002_observation_uploads', '0003_spatial_interface',
+            '0004_site_packages', '0005_package_policy_identity'],
+  'migration replay records each version once'
 );
 \ir constraints.sql
 \ir access.sql

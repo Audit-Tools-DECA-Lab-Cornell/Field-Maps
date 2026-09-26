@@ -6,9 +6,12 @@ PROJECTS: Final = text("""
 SELECT json_build_object('project_id', p.id, 'organization_id', p.organization_id,
   'name', p.name, 'role', m.role)::text
 FROM fieldmaps.projects p JOIN fieldmaps.project_memberships m ON m.project_id = p.id
+WHERE m.user_id = fieldmaps.request_user_id()
 ORDER BY p.name, p.id
 """)
 
+# Every membership join names the caller: RLS on project_memberships is not what makes a role
+# check correct, so widening who may read memberships cannot turn one member into another.
 # The site and the form are resolved by code within the project, and the form's own definition
 # comes back with them: what an answer may be is the instrument's decision, not the API's.
 UPLOAD_TARGET: Final = text("""
@@ -18,7 +21,8 @@ FROM fieldmaps.projects p
 JOIN fieldmaps.project_memberships m ON m.project_id = p.id
 JOIN fieldmaps.sites s ON s.project_id = p.id AND s.code = :site
 JOIN fieldmaps.form_versions f ON f.project_id = p.id AND f.code = :form
-WHERE p.id = :project AND m.role IN ('observer', 'manager')
+WHERE p.id = :project AND m.user_id = fieldmaps.request_user_id()
+  AND m.role IN ('observer', 'manager')
 """)
 
 INSERT_OBSERVATION: Final = text("""
@@ -54,7 +58,7 @@ FROM fieldmaps.projects p
 JOIN fieldmaps.project_memberships m ON m.project_id = p.id
 JOIN fieldmaps.sites s ON s.project_id = p.id AND s.code = :site
 JOIN fieldmaps.form_versions f ON f.project_id = p.id AND f.code = :form
-WHERE p.id = :project AND m.role = 'manager'
+WHERE p.id = :project AND m.user_id = fieldmaps.request_user_id() AND m.role = 'manager'
 """)
 
 NEXT_PACKAGE_VERSION: Final = text("""
@@ -75,7 +79,8 @@ INSERT INTO fieldmaps.package_checks (package_id, position, step, state, detail)
 VALUES (:package, :position, :step, :state, :detail)
 """)
 
-# The archive column is deliberately absent: a list must not drag megabytes per row.
+# The archive column is deliberately absent: a list must not drag megabytes per row. The site
+# filter is cast because asyncpg cannot infer a type for a bare `$n IS NULL` parameter.
 PACKAGES: Final = text("""
 SELECT json_build_object('package_id', k.id, 'site_code', s.code, 'form_version', f.code,
   'version', k.version, 'state', k.state, 'archive_bytes', octet_length(k.archive),
@@ -83,7 +88,8 @@ SELECT json_build_object('package_id', k.id, 'site_code', s.code, 'form_version'
 FROM fieldmaps.site_packages k
 JOIN fieldmaps.sites s ON s.id = k.site_id
 JOIN fieldmaps.form_versions f ON f.id = k.form_version_id
-WHERE k.project_id = :project AND (:site IS NULL OR s.code = :site)
+WHERE k.project_id = :project
+  AND (CAST(:site AS text) IS NULL OR s.code = CAST(:site AS text))
 ORDER BY s.code, k.version DESC
 """)
 

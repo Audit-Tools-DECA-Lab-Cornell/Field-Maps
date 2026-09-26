@@ -1,9 +1,14 @@
 -- Hosted counterpart of database/migrations/0004_site_packages.sql.
 --
 -- The package routes read and write these tables unconditionally, so until this is applied the
--- hosted API answers every package request with 503. The table and policy definitions are the
--- local migration's, unchanged; what this file adds is what every hosted migration carries: the
--- `fieldmaps_meta` ledger row and explicit revokes from Supabase's browser roles.
+-- hosted API answers every package request with 503. The tables and triggers are the local
+-- migration's, unchanged. The policies are the local 0004 policies as tightened by the local
+-- 0005_package_policy_identity: every membership test names the caller explicitly instead of
+-- relying on the memberships SELECT policy to hide other members' rows (widening that policy
+-- would otherwise let any member pass a manager check), and a package's checks can only be
+-- written by a current manager in the transaction that prepared it. What this file adds besides
+-- is what every hosted migration carries: explicit revokes from Supabase's browser roles and the
+-- `fieldmaps_meta` ledger rows.
 
 CREATE TABLE fieldmaps.site_packages (
   id uuid PRIMARY KEY,
@@ -63,20 +68,30 @@ GRANT INSERT (package_id, position, step, state, detail)
 -- Anyone on the project may read a package: an observer's device has to fetch it.
 CREATE POLICY assigned_packages ON fieldmaps.site_packages FOR SELECT TO fieldmaps_api
   USING (EXISTS (SELECT FROM fieldmaps.project_memberships m
-    WHERE m.project_id = site_packages.project_id));
+    WHERE m.project_id = site_packages.project_id
+      AND m.user_id = fieldmaps.request_user_id()));
 CREATE POLICY assigned_package_checks ON fieldmaps.package_checks FOR SELECT TO fieldmaps_api
   USING (EXISTS (SELECT FROM fieldmaps.site_packages p
     JOIN fieldmaps.project_memberships m ON m.project_id = p.project_id
-    WHERE p.id = package_checks.package_id));
+    WHERE p.id = package_checks.package_id
+      AND m.user_id = fieldmaps.request_user_id()));
 
 -- Preparing one is a manager's act, and the row records which manager.
 CREATE POLICY manager_prepares_package ON fieldmaps.site_packages FOR INSERT TO fieldmaps_api
   WITH CHECK (prepared_by = fieldmaps.request_user_id()
     AND EXISTS (SELECT FROM fieldmaps.project_memberships m
-      WHERE m.project_id = site_packages.project_id AND m.role = 'manager'));
+      WHERE m.project_id = site_packages.project_id
+        AND m.user_id = fieldmaps.request_user_id() AND m.role = 'manager'));
+-- A package's checks are part of preparing it: only the preparing manager, still a manager, and
+-- only in the transaction that inserted the package (its clock_timestamp() default is never
+-- earlier than this transaction's start). Otherwise an "immutable" package could gain checks later.
 CREATE POLICY manager_prepares_package_checks ON fieldmaps.package_checks FOR INSERT TO fieldmaps_api
   WITH CHECK (EXISTS (SELECT FROM fieldmaps.site_packages p
-    WHERE p.id = package_checks.package_id AND p.prepared_by = fieldmaps.request_user_id()));
+    JOIN fieldmaps.project_memberships m ON m.project_id = p.project_id
+    WHERE p.id = package_checks.package_id
+      AND p.prepared_by = fieldmaps.request_user_id()
+      AND p.prepared_at >= transaction_timestamp()
+      AND m.user_id = fieldmaps.request_user_id() AND m.role = 'manager'));
 
 -- The initial migration's revokes covered only the tables that existed then.
 REVOKE ALL ON fieldmaps.site_packages, fieldmaps.package_checks
@@ -84,4 +99,5 @@ REVOKE ALL ON fieldmaps.site_packages, fieldmaps.package_checks
 REVOKE ALL ON FUNCTION fieldmaps.preserve_site_package()
   FROM PUBLIC, anon, authenticated, service_role;
 
-INSERT INTO fieldmaps_meta.schema_migrations(version) VALUES ('0004_site_packages');
+INSERT INTO fieldmaps_meta.schema_migrations(version)
+  VALUES ('0004_site_packages'), ('0005_package_policy_identity');

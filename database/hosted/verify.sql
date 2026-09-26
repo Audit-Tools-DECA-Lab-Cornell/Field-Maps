@@ -8,6 +8,22 @@ BEGIN
   END IF;
 END;
 $$;
+CREATE FUNCTION pg_temp.assert_rejected(statement text, expected_state text, label text)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE actual_state text;
+BEGIN
+  BEGIN
+    EXECUTE statement;
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS actual_state = RETURNED_SQLSTATE;
+  END;
+  IF actual_state IS DISTINCT FROM expected_state THEN
+    RAISE EXCEPTION 'FAIL: %, expected SQLSTATE %, got %', label, expected_state, actual_state;
+  END IF;
+END;
+$$;
+-- Privilege checks use has_any_column_privilege: grants here are column-limited, and
+-- has_table_privilege would stay false after a column-level grant slipped in.
 
 INSERT INTO fieldmaps.project_memberships (user_id, organization_id, project_id, role)
 VALUES ('50000000-0000-4000-8000-000000000001',
@@ -32,8 +48,8 @@ SELECT pg_temp.assert_true(
    WHERE id = '50000000-0000-4000-8000-000000000002'), 'API geometry readback');
 SELECT set_config('fieldmaps.user_id', '50000000-0000-4000-8000-000000000003', true);
 SELECT pg_temp.assert_true((SELECT count(*) = 0 FROM fieldmaps.observations), 'unassigned user sees no observations');
-SELECT pg_temp.assert_true(NOT has_table_privilege(current_user, 'fieldmaps.observations', 'UPDATE'), 'API cannot edit observations');
-SELECT pg_temp.assert_true(NOT has_table_privilege(current_user, 'fieldmaps.project_memberships', 'INSERT'), 'API cannot assign memberships');
+SELECT pg_temp.assert_true(NOT has_any_column_privilege(current_user, 'fieldmaps.observations', 'UPDATE'), 'API cannot edit observations');
+SELECT pg_temp.assert_true(NOT has_any_column_privilege(current_user, 'fieldmaps.project_memberships', 'INSERT'), 'API cannot assign memberships');
 RESET ROLE;
 SET LOCAL ROLE fieldmaps_sample_reader;
 SELECT pg_temp.assert_true(
@@ -43,6 +59,12 @@ SELECT pg_temp.assert_true(
 RESET ROLE;
 
 -- Site packages (supabase/migrations/20260923120000_site_packages.sql).
+-- A fixture site of its own, so the synthetic package can never collide with a real upload's
+-- (site, version) and the counts below see only the package this script prepares.
+INSERT INTO fieldmaps.sites (id, organization_id, project_id, code, name)
+VALUES ('50000000-0000-4000-8000-000000000006',
+  '10000000-0000-4000-8000-000000000001',
+  '10000000-0000-4000-8000-000000000002', 'hosted-verification', 'Hosted verification fixture');
 INSERT INTO fieldmaps.project_memberships (user_id, organization_id, project_id, role)
 VALUES ('50000000-0000-4000-8000-000000000004',
   '10000000-0000-4000-8000-000000000001',
@@ -54,18 +76,28 @@ INSERT INTO fieldmaps.site_packages
    manifest, archive, archive_sha256, prepared_by)
 VALUES ('50000000-0000-4000-8000-000000000005',
   '10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002',
-  '10000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000004',
+  '50000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000004',
   1, 'ready', '{"format":"verification"}', '\x01', repeat('b', 64), fieldmaps.request_user_id());
-SELECT pg_temp.assert_true((SELECT count(*) = 1 FROM fieldmaps.site_packages), 'manager reads the package it prepared');
+SELECT pg_temp.assert_true((SELECT count(*) = 1 FROM fieldmaps.site_packages WHERE id = '50000000-0000-4000-8000-000000000005'), 'manager reads the package it prepared');
 SELECT set_config('fieldmaps.user_id', '50000000-0000-4000-8000-000000000001', true);
-SELECT pg_temp.assert_true((SELECT count(*) = 1 FROM fieldmaps.site_packages), 'observer on the project reads the package');
+SELECT pg_temp.assert_true((SELECT count(*) = 1 FROM fieldmaps.site_packages WHERE id = '50000000-0000-4000-8000-000000000005'), 'observer on the project reads the package');
+SELECT pg_temp.assert_rejected($$
+  INSERT INTO fieldmaps.site_packages
+    (id, organization_id, project_id, site_id, form_version_id, version, state,
+     manifest, archive, archive_sha256, prepared_by)
+  VALUES ('50000000-0000-4000-8000-000000000007',
+    '10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000002',
+    '50000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000004',
+    2, 'ready', '{"format":"verification"}', '\x01', repeat('b', 64),
+    fieldmaps.request_user_id())$$,
+  '42501', 'observer cannot prepare a package on a project that has a manager');
 SELECT set_config('fieldmaps.user_id', '50000000-0000-4000-8000-000000000003', true);
 SELECT pg_temp.assert_true((SELECT count(*) = 0 FROM fieldmaps.site_packages), 'unassigned user sees no packages');
-SELECT pg_temp.assert_true(NOT has_table_privilege(current_user, 'fieldmaps.site_packages', 'UPDATE'), 'API cannot edit packages');
+SELECT pg_temp.assert_true(NOT has_any_column_privilege(current_user, 'fieldmaps.site_packages', 'UPDATE'), 'API cannot edit packages');
 RESET ROLE;
 SELECT pg_temp.assert_true(
-  NOT has_table_privilege('anon', 'fieldmaps.site_packages', 'SELECT')
-  AND NOT has_table_privilege('authenticated', 'fieldmaps.site_packages', 'SELECT'),
+  NOT has_any_column_privilege('anon', 'fieldmaps.site_packages', 'SELECT')
+  AND NOT has_any_column_privilege('authenticated', 'fieldmaps.site_packages', 'SELECT'),
   'browser roles cannot read packages');
 ROLLBACK;
-SELECT 'Twelve hosted assertions passed; synthetic memberships, observation and package rolled back' AS result;
+SELECT 'Thirteen hosted assertions passed; synthetic memberships, observation, site and package rolled back' AS result;
