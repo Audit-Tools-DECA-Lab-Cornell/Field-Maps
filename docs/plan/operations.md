@@ -18,7 +18,7 @@ Environments are described in [architecture.md](architecture.md#environments). R
 ## Tasks
 
 ### OPS-01: Staging Auth settings for public sign-up
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: MOB-05, WEB-04
+Status: todo · Phase 0 · Size S · Depends: none · Blocks: OPS-09
 Needs user: apply the settings in the Supabase dashboard for project `lezmqhuucfwqknspgcdy`.
 Read first: `docs/Supabase-Setup.md`; <https://supabase.com/docs/guides/deployment/going-into-prod>.
 Do:
@@ -38,7 +38,8 @@ Done when:
 Verify: check the dashboard values. A sign-up on staging returns "confirmation required".
 
 ### OPS-02: Custom SMTP via Resend
-Status: todo · Phase 0 · Size S · Depends: Q6 in [decisions.md](decisions.md#open-questions) (the sending domain) · Blocks: OPS-03, MOB-05, WEB-04
+Status: todo · Phase 0 · Size S · Depends: none · Blocks: OPS-03, OPS-09
+Needs user: Q6 in [decisions.md](decisions.md#open-questions) (the sending domain).
 Needs user: a Resend account, the DNS records for the sending domain, and SMTP settings in Supabase.
 Do:
 1. Write the setup steps into `docs/Supabase-Setup.md` under "Email delivery":
@@ -52,13 +53,13 @@ Done when: a sign-up email reaches an address that is not a team member.
 Verify: a test sign-up to a personal inbox receives the email within 1 minute.
 
 ### OPS-03: Email templates with 6-digit codes
-Status: todo · Phase 0 · Size S · Depends: OPS-02 · Blocks: MOB-05, WEB-04
+Status: todo · Phase 0 · Size S · Depends: OPS-02 · Blocks: OPS-09
 Needs user: paste the templates into the Supabase dashboard (staging, and later production).
 Read first: <https://supabase.com/docs/guides/auth/auth-email-templates>.
 Do:
 1. Create `supabase/templates/confirm-signup.html`, `recovery.html` and `email-change.html`.
    - Each shows `{{ .Token }}` prominently: "Your FieldMaps code is 123456".
-   - Each includes a secondary `{{ .TokenHash }}` link for web users.
+   - They carry **codes only**, with no link (decision D3). A `{{ .TokenHash }}` link would need a confirm route the web does not have, and would put a one-time token in a URL.
    - Use Nocturne-neutral HTML with inline styles and no tracking pixels.
 2. Reference them from `supabase/config.toml` (`[auth.email.template.*]`), so the local stack (DB-02) uses the same files.
 
@@ -67,7 +68,7 @@ Done when: local Mailpit and staging both show the 6-digit code.
 Verify: `supabase start`; sign up locally; the Mailpit message shows the code.
 
 ### OPS-04: Render staging service for the API
-Status: todo · Phase 0 · Size M · Depends: BE-01, BE-02 · Blocks: SYNC-01, MOB-01 (staging URL), WEB-05
+Status: todo · Phase 0 · Size M · Depends: BE-01, BE-02 · Blocks: OPS-09, SYNC-01
 Needs user: a Render account and service, the Secret File `database-password`, and later `supabase-secret-key` (BE-08).
 Read first: `backend/README.md` ("Deploy it"); `backend/config.render.json`; `backend/Dockerfile`.
 Do:
@@ -78,21 +79,21 @@ Do:
    - region Virginia (near `aws-0-us-east-1`);
    - plan Starter.
 2. Remove the localhost origins from `config.render.json`, and add the staging Vercel origin and preview pattern.
-3. Document the URL in `docs/Supabase-Setup.md` and `backend/README.md`.
+3. Document the URL in `docs/Supabase-Setup.md` and `backend/README.md`, and put it in `mobile/config/staging.json` (MOB-01).
 
 Done when: the staging API answers `/ready` 200 over HTTPS, and rejects a request with no token with 401 and the error envelope.
 
 Verify: `curl -s https://<staging-api>/ready` and `curl -s -o /dev/null -w '%{http_code}' https://<staging-api>/v1/projects` (expect 401).
 
 ### OPS-05: Vercel environment for web auth
-Status: todo · Phase 1 · Size S · Depends: WEB-03 · Blocks: WEB-04
+Status: todo · Phase 1 · Size S · Depends: WEB-03 · Blocks: none
 Needs user: the Vercel project settings (Root Directory `web`) and the environment variables.
 Do:
 1. Document these in `web/README.md`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `FIELDMAPS_API_URL` (server-only; replaces `NEXT_PUBLIC_FIELDMAPS_API_URL` once WEB-05 lands)
-   - `SENTRY_DSN`
+   - `SENTRY_DSN` (server) and `NEXT_PUBLIC_SENTRY_DSN` (browser). A DSN is public; the `NEXT_PUBLIC_` one is fixed at build time
 2. The user sets them for Preview (staging) and Production.
 
 Done when: a preview deployment can sign in against staging.
@@ -100,7 +101,7 @@ Done when: a preview deployment can sign in against staging.
 Verify: sign in on a preview URL.
 
 ### OPS-06: GitHub Actions CI
-Status: todo · Phase 0 · Size M · Depends: DB-02 (for the backend and database jobs) · Blocks: DB-03
+Status: todo · Phase 0 · Size M · Depends: DB-02 · Blocks: DB-03, OPS-09
 Read first: the root `package.json` scripts; `Makefile`; `docs/Workspace.md` ("Development and checks").
 Do:
 1. Create `.github/workflows/ci.yml` with these jobs:
@@ -108,7 +109,7 @@ Do:
    - `mobile`: install, typecheck, lint, test;
    - `backend`: uv sync, ruff, basedpyright, then pytest against `supabase start` using the Supabase CLI setup action;
    - `database`: SQL assertions against the same stack;
-   - `contracts`: `pnpm contracts:generate`, then `git diff --exit-code` (after CON-03);
+   - `contracts`: `pnpm contracts:generate`, then `git diff --exit-code`. Add it here if CON-03 is already done; otherwise CON-03 adds it;
    - `plan`: `node docs/plan/check-plan.mjs`.
 2. Use Node 24 and pnpm 10.17.1. Cache pnpm and uv.
 3. CI never touches hosted services.
@@ -118,7 +119,7 @@ Done when: CI is green on a pull request.
 Verify: the Actions run on the next pull request.
 
 ### OPS-07: Sentry projects
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: BE-02, MOB-20, WEB-15
+Status: todo · Phase 0 · Size S · Depends: none · Blocks: MOB-20, OPS-09, QA-06, WEB-16
 Needs user: a Sentry account and three projects (api, web, mobile). The DSNs are set as runtime environment variables only.
 Do:
 1. Document the DSN variable names per app.
@@ -127,7 +128,7 @@ Do:
 Done when: each app sends a test event (verified later in QA-06).
 
 ### OPS-08: PowerSync staging instance
-Status: todo · Phase 2 · Size S · Depends: SYNC-01, DB-11 · Blocks: SYNC-02, MOB-09
+Status: todo · Phase 2 · Size S · Depends: DB-11, OPS-15, SYNC-01 · Blocks: MOB-09, OPS-09, SYNC-02
 Needs user: a PowerSync Cloud account, a US-region instance, and the `powersync_role` password.
 Read first: [sync-powersync.md](sync-powersync.md#source-database).
 Do:
@@ -136,10 +137,14 @@ Do:
 3. Set `max_slot_wal_keep_size` on staging. Document how to monitor `pg_replication_slots`.
 4. Record the instance URL (public) in `mobile/config/staging.json` (MOB-01).
 
-Done when: the instance shows "replicating" and SYNC-02 can deploy.
+Done when:
+- the instance shows "replicating";
+- a staging row change reaches the PowerSync diagnostics app;
+- SYNC-02 can deploy.
 
 ### OPS-09: Production environment
-Status: todo · Phase 4 (week 10) · Size L · Depends: Q5 budget approval, OPS-01…OPS-08, DB-* for Phases 0–2 · Blocks: OPS-11, QA-05
+Status: todo · Phase 4 · Size L · Depends: OPS-01, OPS-02, OPS-03, OPS-04, OPS-06, OPS-07, OPS-08, OPS-17, QA-01, QA-02 · Blocks: OPS-10, OPS-11, OPS-12, QA-05
+Needs user: Q5, budget approval (week 10).
 Needs user: every step. The new Supabase project is on Pro, and PowerSync on Pro.
 Do:
 1. Write `docs/Production-Runbook.md` covering these, in order:
@@ -147,6 +152,10 @@ Do:
    - apply `supabase/migrations` in order;
    - set the role passwords;
    - Auth settings (OPS-01), SMTP (OPS-02), templates (OPS-03), leaked-password protection (OPS-13), the Before-User-Created hook (DB-08);
+   - enable pg_cron (DB-07);
+   - **Pending account deletions.** `SELECT user_id, deleted_at FROM fieldmaps.profiles WHERE deleted_at IS NOT NULL`. Each row is an account whose Auth deletion must still be finished, with the Admin API or the dashboard (BE-08);
+   - **Upload the Training site package** through BE-13, as a temporary Training manager (DB-07 step 6);
+   - **Create the pilot project's QGIS reader login** with `grant-gis-reader.sql` (GIS-02);
    - the Render production service;
    - the PowerSync production instance;
    - Vercel production environment variables;
@@ -167,7 +176,8 @@ Do:
 Done when: the drill is recorded with its measured times.
 
 ### OPS-11: Store listings and submission
-Status: todo · Phase 4 · Size L · Depends: MOB-20, WEB-14, Q1 (app name and bundle ID) · Blocks: QA-05
+Status: todo · Phase 4 · Size L · Depends: BE-08, MOB-07, MOB-20, OPS-09, WEB-14 · Blocks: QA-05
+Needs user: Q1 (app name and bundle ID).
 Needs user: the Apple Developer and Google Play accounts, the listings, and review submission.
 Do:
 1. Prepare `docs/Store-Submission.md`:
@@ -181,22 +191,69 @@ Do:
 Done when: both internal tracks install on the pilot devices.
 
 ### OPS-12: Monitoring and alerts
-Status: todo · Phase 4 · Size S · Depends: OPS-09 · Blocks: none
+Status: todo · Phase 4 · Size S · Depends: OPS-09 · Blocks: QA-06
 Do:
 1. Render health alerts.
 2. An uptime monitor on `/ready`.
 3. A weekly Supabase advisors run, with results noted.
 4. PowerSync: replication lag and upload errors in its dashboard, and an alert when `pg_replication_slots` retained WAL exceeds 512 MB.
 5. Sentry alert rules for new issues.
+6. A daily check that alerts when a profile has had `deleted_at` set for more than 24 hours. That is a pending account deletion (BE-08).
 
 Done when: `docs/Production-Runbook.md` lists each alert and who receives it.
 
 ### OPS-13: Auth hardening switches
-Status: todo · Phase 1 (staging) / Phase 4 (production) · Size S · Depends: DB-08 · Blocks: none
+Status: todo · Phase 1 · Size S · Depends: DB-08, OPS-14 · Blocks: none
 Needs user: dashboard changes.
 Do:
-1. Enable the Before User Created hook, pointing at `fieldmaps_private.before_user_created` (DB-08).
+1. Enable the Before User Created hook, pointing at `fieldmaps_auth_hooks.before_user_created` (DB-08). This needs the function on staging (OPS-14). For production, OPS-09 repeats these switches.
 2. Enable leaked-password protection on Pro.
 3. Record that CAPTCHA is deferred (decision D9), and why.
 
 Done when: `docs/Supabase-Setup.md` states each switch and its date.
+
+### OPS-14: Apply the Phase 0–1 migrations to staging
+Status: todo · Phase 1 · Size S · Depends: DB-04, DB-05, DB-06, DB-07, DB-08 · Blocks: OPS-13
+Needs user: every step. Staging is the current project, `lezmqhuucfwqknspgcdy`.
+Do:
+1. `supabase link --project-ref lezmqhuucfwqknspgcdy`, then `supabase migration list`, then `supabase db push`.
+   - Apply migrations in order through the CLI. Never paste single files into the SQL editor: a later file can reference objects an earlier one creates, and the editor records no CLI history.
+   - `db push` applies **every** pending file. The list must show exactly the files this task names; if a later phase's file is present, stop and push from a checkout without it.
+   - Enable pg_cron in the dashboard first (DB-07).
+2. Run `database/hosted/verify.sql` with stop-on-error.
+3. Record the applied versions (`TABLE fieldmaps_meta.schema_migrations`) and the verify output, with the date, in `docs/Supabase-Setup.md`.
+
+Done when: staging's ledger lists every migration from DB-04 to DB-08, and `verify.sql` passes there.
+
+### OPS-15: Apply the Phase 2 migrations to staging
+Status: todo · Phase 2 · Size S · Depends: BE-13, DB-09, DB-10, DB-11, DB-12, DB-14 · Blocks: OPS-08
+Needs user: every step, including Q7: DB-14 discards the pre-Storage test archives.
+Do:
+1. **Deploy BE-13's API code to Render staging before pushing.** DB-14 drops `site_packages.archive`, which older code still writes.
+2. Follow the same procedure as OPS-14 for DB-09, DB-10, DB-12, DB-14 and DB-11 (in file order).
+   - `supabase migration list` must show only these as pending.
+   - Before pushing, confirm DB-14's list of pre-Storage test packages.
+3. Set the `powersync_role` password out-of-band afterwards.
+4. Check `SELECT tablename FROM pg_publication_tables WHERE pubname = 'powersync'` against DB-11.
+
+Done when:
+- staging's ledger lists these migrations;
+- `verify.sql` passes;
+- the publication matches DB-11;
+- a package prepared on staging after this has a `storage_path`.
+
+### OPS-16: Apply the Phase 3 migrations to staging
+Status: todo · Phase 3 · Size S · Depends: GIS-01 · Blocks: GIS-02
+Needs user: every step.
+Do: the same procedure as OPS-14, for GIS-01.
+
+Done when: staging's ledger lists GIS-01's migration, and `verify.sql` passes, including the GIS reader assertions.
+
+### OPS-17: Apply the Phase 3–4 migrations to staging
+Status: todo · Phase 4 · Size S · Depends: DB-13, GIS-03 · Blocks: OPS-09
+Needs user: every step.
+Do: the same procedure as OPS-14, for GIS-03 and DB-13.
+- Before GIS-03, confirm that nothing still reads the sample view.
+
+Done when: staging's ledger lists every migration in `supabase/migrations/`, and `verify.sql` passes. Production (OPS-09) is created only from a migration set proven here.
+

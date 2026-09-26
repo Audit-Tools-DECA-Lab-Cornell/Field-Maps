@@ -30,7 +30,7 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 src/app/
   (marketing)/page.tsx                       /
   (legal)/privacy/…                          /privacy, /privacy/delete-data
-  (auth)/sign-in, sign-up, verify, forgot-password, reset-password, invite/[token]
+  (auth)/sign-in, sign-up, verify, forgot-password, reset-password, invite   (token in the URL fragment)
   (app)/onboarding/page.tsx                  create org + first project
   (app)/o/[org]/…                            org home: projects, members, settings
   (app)/o/[org]/p/[project]/{overview,observations,sites,sites/[site],instrument,team,gis,settings}
@@ -46,7 +46,8 @@ The rail is Overview, Observations, Sites, Instrument, Team, GIS. The header hol
 ## Tasks
 
 ### WEB-01: Quick fix so the package upload reaches a real project
-Status: todo · Phase 0 · Size S · Depends: DB-01 · Blocks: none. WEB-08 supersedes this task.
+Status: todo · Phase 0 · Size S · Depends: DB-01 · Blocks: WEB-08
+Superseded later by WEB-08, which takes the project and site from the route.
 Read first: `src/components/basemaps/PackageUpload.tsx`, `src/lib/packages.ts`, `src/data/project.ts`.
 Do:
 1. Add `NEXT_PUBLIC_FIELDMAPS_PROJECT_ID`, a UUID. When it is set, the upload uses it instead of `PROJECT.id`.
@@ -71,7 +72,7 @@ Do:
 Done when: after a rebuild the cache name changes, and `curl localhost:3000/robots.txt` shows the rules.
 
 ### WEB-03: Supabase SSR foundation and proxy
-Status: todo · Phase 1 · Size M · Depends: OPS-01 · Blocks: WEB-04, WEB-05, OPS-05
+Status: todo · Phase 1 · Size M · Depends: DB-02 · Blocks: OPS-05, WEB-04, WEB-05, WEB-16
 Read first: <https://supabase.com/docs/guides/auth/server-side/nextjs>; <https://nextjs.org/docs/app/api-reference/file-conventions/proxy>.
 Do:
 1. Add `@supabase/ssr` and `@supabase/supabase-js`, with exact versions pinned in `web/package.json`.
@@ -83,9 +84,10 @@ Do:
 Done when: an unauthenticated visit to `/o` redirects to sign-in, and a signed-in visit passes.
 
 ### WEB-04: Authentication pages
-Status: todo · Phase 1 · Size M · Depends: WEB-03, OPS-02, OPS-03 · Blocks: WEB-06, WEB-15
+Status: todo · Phase 1 · Size M · Depends: DB-02, WEB-03 · Blocks: WEB-06, WEB-15
 Do: build these pages with Nocturne chrome and 44 px targets:
-- `/sign-up`: email and password (8 characters or more), then `signUp`, then `/verify?email=…`.
+- `/sign-up`: email and password (8 characters or more), then `signUp`, then `/verify`.
+  - The email travels in `sessionStorage` or an httpOnly cookie, never in the URL. URLs end up in request logs, history and Sentry breadcrumbs.
 - `/verify`: 6-digit code, `verifyOtp({type: 'email'})`, and resend with a cooldown.
 - `/sign-in`: distinct errors for wrong credentials, unconfirmed email (links to verify), and rate limiting.
 - `/forgot-password` → `/reset-password`: code, then new password (`verifyOtp({type: 'recovery'})`, then `updateUser`).
@@ -96,7 +98,7 @@ After sign-in, go to `next`, the last project, or `/onboarding`.
 Done when: every flow works against the local stack, with codes read from Mailpit.
 
 ### WEB-05: Server-side API client
-Status: todo · Phase 1 · Size M · Depends: WEB-03, CON-03, CON-04, BE-06 · Blocks: WEB-06 through WEB-12
+Status: todo · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, WEB-03 · Blocks: WEB-06, WEB-12
 Do:
 1. Create `src/lib/api/client.ts` and mark it `server-only`. It fetches `FIELDMAPS_API_URL` (a server environment variable, not `NEXT_PUBLIC_`) with the session's access token and `cache: 'no-store'`, typed by the generated `schema.d.ts`. It maps the error envelope to typed errors (`errors.ts`).
 2. Mutations go through Server Actions that call this client. Each action checks auth itself.
@@ -106,36 +108,46 @@ Do:
 Done when: one server component renders `/v1/me` data, and the typecheck passes against the generated types.
 
 ### WEB-06: Onboarding, organization and project routes, account page
-Status: todo · Phase 1 · Size L · Depends: WEB-04, WEB-05, BE-07, BE-08 · Blocks: WEB-07 through WEB-13
+Status: todo · Phase 1 · Size L · Depends: BE-06, BE-07, BE-08, WEB-04, WEB-05 · Blocks: WEB-07, WEB-08, WEB-09, WEB-10, WEB-11, WEB-14, WEB-15
 Do:
 1. `/onboarding`:
    - create an org (name, auto slug) and the first project (name, code, timezone) through `POST /v1/orgs`;
    - or show "You were invited? Open your invitation link."
-2. `/invite/[token]`:
-   - send a signed-out visitor to sign up or sign in with `next`;
-   - then call `POST /v1/invitations/redeem`, then open the project.
+2. `/invite` (the token in the URL **fragment**, `/invite#t=…`):
+   - The fragment never reaches the server, the logs or the referrer.
+   - The page reads it client-side and keeps it in `sessionStorage` through sign-up or sign-in. `next` points at `/invite`, without the token.
+   - Then it calls `POST /v1/invitations/preview`, and shows "Join {project} ({org}) as {role}?".
+   - `POST /v1/invitations/redeem` runs only on that confirmation. Opening a link never enrols anyone silently.
+   - Set `Referrer-Policy: no-referrer` on `/invite` and `/verify`.
+   - Add a Sentry `beforeBreadcrumb` rule that drops URLs under `/invite` and any `email` parameter (WEB-16).
 3. `/o/[org]` lists the projects and org settings, including org members when the user is an admin.
 4. Move the existing workspace sections under `/o/[org]/p/[project]/…`, and rename `/places` to `sites`, `/basemaps` into `sites/[site]`, and `/qgis` to `gis`. Keep the fixture reads and **their notices** until WEB-08 to WEB-12 wire each screen. Add redirects from the old paths.
-5. Header: the org and project switcher from `/v1/me`, and the account menu. Remove the `VIEWER` fixture.
-6. `/account`: profile (`PATCH /v1/me`) and delete account (`DELETE /v1/me`, with a two-step confirm and a `sole_owner` message).
+5. Header: the org and project switcher from `/v1/me`, and the account menu. Remove the `VIEWER` fixture, and the marketing page's `ORGANIZATION.name`; the landing page names the product, not a tenant.
+6. `/account`: profile (`PATCH /v1/me`) and delete account.
+   - Deletion calls `DELETE /v1/me` behind a two-step confirm, with a `sole_owner` message.
+   - On 202, show "Deletion is finishing" and retry up to 3 times over about 30 seconds while the session is valid.
+   - Then sign out (204 or 202 alike).
+   - The server keeps the durable record (BE-08).
 7. Add `error.tsx`, `not-found.tsx`, and a `loading.tsx` for each section.
 
 Done when: J1 steps 1–2 work end to end against the local stack, and the old URLs redirect.
 
 ### WEB-07: Team page (members, invitations, join codes)
-Status: todo · Phase 1 · Size M · Depends: WEB-06, BE-07 · Blocks: none
+Status: todo · Phase 1 · Size M · Depends: BE-07, WEB-06 · Blocks: WEB-15
 Do:
-1. List members with their role, and let a manager change a role or remove someone. The UI blocks removing the last manager, and the API enforces it too.
-2. Invitations:
+1. List members with their role, and let a manager change a role or remove someone.
+   - The UI blocks removing the last manager, and the API enforces it too.
+   - On the organization page (`/o/[org]`), owners and admins manage org members the same way. Only owners see `admin` and `owner` controls, and ownership moves only through "Transfer ownership".
+2. Invitations, for a project (project roles) or, on the organization page, for the org (`member` or `admin`):
    - create one with a role, an optional email, a use limit and an expiry;
-   - show the link and the 8-character code **once**, with copy buttons and a QR code of `fieldmaps://join?code=`;
+   - show the link (`/invite#t=…`) and the 8-character code **once**, with copy buttons and a QR code of `fieldmaps://join?code=`;
    - list active invitations and revoke them.
 3. Observer devices come from DB-10 `devices`, once it exists.
 
 Done when: a manager creates a code on the web and an observer redeems it on mobile (MOB-06).
 
 ### WEB-08: Sites and packages on real data
-Status: todo · Phase 3 · Size M · Depends: WEB-06, BE-13 · Blocks: WEB-11
+Status: todo · Phase 3 · Size M · Depends: BE-13, WEB-01, WEB-06 · Blocks: none
 Do:
 1. `sites`:
    - list from the API;
@@ -143,24 +155,27 @@ Do:
    - `sites/[site]` shows the zones (real polygons) on the map, the package versions with their checks, and the current version.
 2. Move `PackageUpload` here and delete the pasted token. The site code comes from the route, the project UUID from the route, and the token from the session.
 3. Offer a package download through the `archive` route.
-4. Remove the notices from these screens. Delete `src/data/basemaps.ts` and any part of `src/data/project.ts` that nothing uses.
+4. Remove the notices from these screens.
+   - Delete `src/data/basemaps.ts`.
+   - Replace `src/data/site-geometry.ts` in `ZonePlan` and `project.ts` with zones and ground from the sites API.
+   - Delete any part of `src/data/project.ts` that nothing uses.
 
 Done when: J1 step 3 works, and no fixture remains on these routes.
 
 ### WEB-09: Instrument on real data
-Status: todo · Phase 3 · Size M · Depends: WEB-06, BE-11 · Blocks: none
+Status: todo · Phase 3 · Size M · Depends: BE-11, WEB-06, WEB-10 · Blocks: none
 Cut option: if the schedule slips, keep this screen read-only and seed Janet's version with a migration.
 Do:
 1. Forms, then versions, each with its state. Show a version's questions and display rules, read from the definition.
 2. Manager actions:
    - import a draft (paste or upload JSON) and show every validation problem;
    - publish, then retire.
-3. Remove the notices here. Delete `src/data/instrument.ts` once nothing reads it.
+3. Remove the notices here. This task owns deleting `src/data/instrument.ts`: after WEB-10 has moved `FilterRail` and the markers off it, remove every remaining import and the file.
 
 Done when: Janet's definition from `contracts/forms/` imports and publishes locally.
 
 ### WEB-10: Observations on real data
-Status: todo · Phase 3 · Size L · Depends: WEB-06, BE-14, WEB-02 · Blocks: none
+Status: todo · Phase 3 · Size L · Depends: BE-14, WEB-02, WEB-06 · Blocks: WEB-09, WEB-13
 Read first: `src/components/observations/*`, `src/lib/filters.ts`.
 Do:
 1. Keep the filters in the URL, now project-scoped. Load one page at a time with a cursor.
@@ -170,21 +185,28 @@ Do:
    - show zones from the site's current package.
 3. The table is virtualized, or paged at 100 rows. The detail pane reads from the API.
 4. Fix the mislabel: `Rel_Round` is not the collection round (`ObservationDetail.tsx:59`).
-5. Delete `src/data/observations.ts` and remove the notices.
+5. Replace every remaining fixture read on this screen before removing its notice:
+   - `FilterRail`'s zone, round and observer options come from the zones API and the summary (BE-14);
+   - its play types and quality flags come from the form definition, not `src/data/instrument.ts`;
+   - marker shapes (`markers.ts`, `shapeForPlayType`) come from the definition;
+   - dates use the project's or site's timezone from the API, not `SITE_TIME_ZONE` (`src/lib/format.ts`, `ObservationDetail`).
+6. Delete `src/data/observations.ts`, and stop `LeafletCanvas` importing `src/data/site-geometry.ts`. Only then remove the notices.
 
 Done when: 10,000 synthetic observations on the local stack scroll and filter smoothly, and the filters survive a page reload.
 
 ### WEB-11: Overview on real data
-Status: todo · Phase 3 · Size M · Depends: WEB-06, BE-14 · Blocks: none
+Status: todo · Phase 3 · Size M · Depends: BE-14, WEB-06 · Blocks: none
 Cut option: show counts only, without charts.
 Do: build the overview tiles and the coverage matrix from `GET …/summary`. Charts use only the accent ramp (`web/README.md` rules). Delete client-side aggregation over fixtures (`src/lib/analysis.ts`) that nothing uses anymore.
 
 Done when: the overview matches SQL counts on the local stack.
 
 ### WEB-12: GIS page and exports
-Status: todo · Phase 3 · Size S · Depends: BE-14, BE-15, GIS-04 · Blocks: none
+Status: todo · Phase 3 · Size S · Depends: BE-14, BE-15, GIS-01, GIS-04, WEB-05 · Blocks: none
 Do:
-1. Export buttons (CSV, GeoJSON) that apply the current filters.
+1. Export buttons (CSV, GeoJSON) that apply the current filters and call BE-14's server exports.
+   - Delete the client-side generation over fixtures (`src/lib/exports.ts`).
+   - Once `site-geometry.ts` has no importers left (WEB-08, WEB-10), delete it too.
 2. The QGIS connection panel reads from `/gis-access`: public settings only, the per-project service name, and the typed layer names. Link to the `qgis/README.md` steps.
 
 Done when: the exported CSV opens with the codebook columns, and the panel shows the real settings for a project with a grant.
@@ -199,7 +221,7 @@ Do:
 Done when: there is no horizontal scroll and no clipped pane at those three sizes. Record screenshots in the task notes.
 
 ### WEB-14: Legal pages for public sign-up
-Status: todo · Phase 1 · Size S · Depends: none · Blocks: OPS-11
+Status: todo · Phase 1 · Size S · Depends: WEB-06 · Blocks: OPS-11
 Read first: `src/app/(legal)/privacy/page.tsx` (`:78-80` and `:281` say administrators create accounts); `src/app/(legal)/policy.ts`.
 Do:
 1. Describe public sign-up, email-code verification, and what data an account holds.
@@ -211,7 +233,7 @@ Do:
 Done when: nothing on the page contradicts public sign-up, and the deletion path works without the app.
 
 ### WEB-15: End-to-end tests with Playwright
-Status: todo · Phase 4 · Size M · Depends: WEB-04, WEB-06, WEB-07, DB-02, OPS-07 · Blocks: QA-04
+Status: todo · Phase 4 · Size M · Depends: DB-02, WEB-04, WEB-06, WEB-07 · Blocks: QA-04
 Do: add `web/e2e/`, running against the local stack and reading codes from the Mailpit API. Cover:
 - sign-up, verify, onboarding, then the org and project exist;
 - sign in and reset password;
@@ -220,3 +242,19 @@ Do: add `web/e2e/`, running against the local stack and reading codes from the M
 - account deletion.
 
 Done when: the suite passes locally and in CI (OPS-06).
+
+### WEB-16: Web error reporting
+Status: todo · Phase 4 · Size S · Depends: OPS-07, WEB-03 · Blocks: QA-06
+Do:
+1. Add `@sentry/nextjs` for server, edge and browser.
+   - Server and edge read `SENTRY_DSN`.
+   - The browser reads `NEXT_PUBLIC_SENTRY_DSN`, which is fixed at build time (OPS-05). A DSN is public.
+2. Apply the OPS-07 scrubbing:
+   - no request bodies;
+   - no `answers`;
+   - no emails;
+   - a `beforeBreadcrumb` rule that drops `/invite` URLs and `email` parameters (WEB-06).
+3. Add a hidden `/account/sentry-test` action, for signed-in platform admins only, that throws once.
+
+Done when: a server-side and a browser-side test error from the preview deployment both appear in Sentry, with no personal data in their breadcrumbs.
+

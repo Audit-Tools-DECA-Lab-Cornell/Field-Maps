@@ -20,8 +20,8 @@ Authorization is stored in the database and checked on every request. It is not 
 
 | Level | Role | Can |
 |---|---|---|
-| Organization | `owner` | Everything an admin can do, plus delete the org and manage admins. Every org has at least one owner. |
-| Organization | `admin` | Create projects, manage org members, act as a manager on every project in the org |
+| Organization | `owner` | Everything an admin can do, plus delete the org, manage admins and transfer ownership. Every org has at least one owner. |
+| Organization | `admin` | Create projects, invite and remove `member`s, act as a manager on every project in the org. Admins cannot touch `owner` or `admin` rows (DB-06). |
 | Organization | `member` | Belong to the org; project access comes from project roles |
 | Project | `manager` | Sites and packages, form versions, invitations, members, exports |
 | Project | `observer` | Collect and upload; read the project's sites, forms, packages and their own observations |
@@ -39,7 +39,7 @@ The project roles `manager`, `observer` and `viewer` already exist (`supabase/mi
 2. Onboarding: create the organization "DECA Lab" and the first project "Riverside Play Study".
 3. Sites: upload the QGIS export (the ground and zones layers plus the `.qgz`). The checks pass, and version 1 becomes the site's current package.
 4. Instrument: import Janet's form definition as a draft, see the validation results, then publish.
-5. Team: create an 8-character observer join code, or email invitations.
+5. Team: create an 8-character observer join code, or an invitation link (shown once, to copy).
 6. Overview: watch observations arrive, with coverage by zone and round.
 
 ### J2: The observer collects (mobile)

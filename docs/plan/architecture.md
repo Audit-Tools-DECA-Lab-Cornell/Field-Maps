@@ -58,16 +58,30 @@ flowchart LR
 ## Security rules
 
 1. **Every write goes through FastAPI.** Neither client writes to Postgres or Storage directly, except for uploading to a Storage URL the API has signed.
-2. **The Data API stays closed for FieldMaps schemas.** `fieldmaps`, `fieldmaps_private` and `gis` are never exposed or granted to `anon`, `authenticated` or `service_role`. DB-04 adds default-privilege revokes and a test.
-3. **There are two read paths, each with its own boundary:**
-   - Web reads go through FastAPI, where RLS on `fieldmaps_api` applies.
-   - Mobile reads go through PowerSync. PowerSync replicates with `BYPASSRLS`, so the **stream definitions are the security boundary**. They live in the repository (SYNC-02) and are tested by QA-02.
-4. **The API asserts at startup that its role cannot bypass RLS** (`NOT rolbypassrls`, BE-02). The API's role checks join memberships without their own `user_id` filter and rely on RLS for it (`backend/src/fieldmaps_api/queries.py:8,18-21`).
+2. **The Data API stays closed for FieldMaps schemas.**
+   - `fieldmaps`, `fieldmaps_private`, `fieldmaps_auth_hooks` and `gis` are never exposed or granted to `anon`, `authenticated` or `service_role`.
+   - DB-04 adds the **global** default-privilege revoke for functions (a per-schema revoke is a no-op; verified), plus a coverage test.
+3. **There are three read paths, each with its own boundary:**
+   - **Web** reads go through FastAPI, where RLS on `fieldmaps_api` applies.
+   - **Mobile** reads go through PowerSync. PowerSync replicates with `BYPASSRLS`, so the **stream definitions are the security boundary**. They live in the repository (SYNC-02) and are tested by QA-02.
+   - **QGIS** reads `gis` views as a member of `fieldmaps_gis_reader`. The boundary is three things together:
+     - RLS policies `TO fieldmaps_gis_reader`, keyed on active, non-training grants;
+     - column-limited SELECT;
+     - no USAGE on `fieldmaps`, so raw tables cannot be named (GIS-01).
+4. **Role checks name the caller.**
+   - Every membership test, in a policy or an API query, filters on `fieldmaps.request_user_id()` or goes through a `fieldmaps_private` helper (BE-16, DB-05).
+   - Never rely on the memberships SELECT policy to hide other members' rows. Once managers may read their project's memberships, a check like `EXISTS (… m.role = 'manager')` would pass for anyone on the project (reproduced).
+   - The API also asserts at startup that its role cannot bypass RLS (`NOT rolbypassrls`, BE-02).
 5. **SECURITY DEFINER functions:**
    - They live only in `fieldmaps_private`.
-   - Each has `search_path = ''` and `EXECUTE` granted only to `fieldmaps_api` (or to `supabase_auth_admin` for Auth hooks).
-   - Each checks `fieldmaps.request_user_id()`.
+   - Each has `search_path = ''`.
+   - `EXECUTE` is granted only to `fieldmaps_api`, or to nobody when another definer function calls it (`publish_gis_view`).
+   - **Read helpers** used in RLS (`my_project_ids()`, `has_project_role()` …) return no rows or `false` when `fieldmaps.request_user_id()` is NULL. They never raise.
+   - **Functions that change data** raise when there is no identity. Each authorizes the caller against the rows it touches: a non-null identity alone is not authorization.
    - Nothing uses SECURITY DEFINER just to get past a permission error.
+   - **The audit trigger is the one deliberate exception.** `fieldmaps_private.audit_row()` and `audit_export()` (DB-13) are SECURITY DEFINER, with EXECUTE revoked from everyone. Triggers run as the statement's user, and `fieldmaps_api` must never hold INSERT on `audit_events`, or it could forge audit rows.
+   - **Function parameters are prefixed** (`p_project_id` …). In SQL functions a column shadows a same-named parameter; this was verified to turn a manager check into "manager of any project".
+   - **Auth hooks are also an exception.** They are SECURITY INVOKER in `fieldmaps_auth_hooks`, with `EXECUTE` only for `supabase_auth_admin`. They make no `request_user_id()` check, because none is set during sign-up, and they return `'{}'::jsonb` on success (DB-08).
 6. **No authorization data in `user_metadata`.** Users can edit it. Authorization data never comes from JWT claims beyond `sub`, `iss`, `aud` and `exp`. Tokens with `is_anonymous` are rejected (BE-05).
 7. **Files never go into synced rows.**
    - Package archives move from `bytea` to Storage (DB-12, BE-13), because PowerSync caps a row at 15 MB and archives can reach 16 MiB.
@@ -78,8 +92,8 @@ flowchart LR
 
 | Environment | Supabase | PowerSync | API | Web | Mobile |
 |---|---|---|---|---|---|
-| local | `supabase start` (Mailpit, `auth` schema, PostGIS) from DB-02 | none, or a self-hosted container, optional | `uv run` or Docker against local Supabase | `pnpm dev` | dev build with `APP_ENV=development` |
-| staging | the current project `lezmqhuucfwqknspgcdy` | Cloud Free (OPS-08) | Render staging (OPS-04) | Vercel preview | EAS `preview` |
+| local | `supabase start` (Mailpit, `auth` schema, PostGIS) from DB-02 | none: sync flows are tested against staging (MOB-21) | `uv run` or Docker against local Supabase | `pnpm dev` | dev build with `APP_ENV=development` (`com.fieldmaps.collector.local`) |
+| staging | the current project `lezmqhuucfwqknspgcdy` | Cloud Free (OPS-08) | Render staging (OPS-04) | Vercel preview | EAS `preview` (`com.fieldmaps.collector.dev`, D15) |
 | production | a new project, Pro (OPS-09) | Cloud Pro | Render production | Vercel production | EAS `production` |
 
 Each environment gets its own PowerSync instance and replication slot. Never point two PowerSync instances at one Supabase project; slots are limited (see [sync-powersync.md](sync-powersync.md#source-database)).
@@ -119,6 +133,11 @@ This is every piece of dummy data that must be gone before the pilot, and the ta
 | Developer copy across `mobile/app/*` and `mobile/src/*/provider.tsx` | Explanations of stubs | Copy for field users | MOB-15 |
 | `web/src/data/observations.ts` | 132 seeded records | `GET /v1/projects/{p}/observations` | WEB-10 |
 | `web/src/data/project.ts` | Viewer fixed as Janet; fixture org, project and sites; illustrative QGIS values | The session, `/v1/me`, the sites API, `/gis-access` | WEB-06, WEB-08, WEB-12 |
+| `web/src/data/site-geometry.ts` | Hand-drawn training geometry used by `LeafletCanvas`, `ZonePlan` and `project.ts` | Zones and ground from the sites API | WEB-08, WEB-10, WEB-12 |
+| `web/src/lib/exports.ts` | Client-side CSV/GeoJSON over the fixtures | BE-14's server exports | WEB-12 |
+| `web/src/components/observations/FilterRail.tsx`, `markers.ts` | Zone, round and observer options from `ACTIVE_SITE`; play types, flags and marker shapes from `data/instrument.ts` | Zones API, summary, form definition | WEB-10 |
+| `web/src/lib/format.ts`, `ObservationDetail` | `SITE_TIME_ZONE = "America/New_York"` | Project and site timezones from the API | WEB-10 |
+| `web/src/app/(marketing)/page.tsx` | `ORGANIZATION.name` from fixtures | Static product copy, with no tenant name | WEB-06 |
 | `web/src/data/basemaps.ts`, `web/src/components/basemaps/PackageUpload.tsx:92,166-181` | Fixture packages, a fixture project ID, a pasted token | The packages API, project from the route, token from the server session | WEB-01, WEB-08 |
 | `web/src/data/instrument.ts` | Fixture variables, rules and versions | The forms and versions API | WEB-09 |
 | `web/src/lib/analysis.ts` over the fixtures | Client-side aggregation | `GET …/summary` | WEB-11 |

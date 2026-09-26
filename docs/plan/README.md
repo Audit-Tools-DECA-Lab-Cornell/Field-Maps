@@ -53,16 +53,22 @@ The full decision log, the running cost and the open questions are in [decisions
    - Never renumber a task.
    - Retire one by setting `Status: dropped (reason)`.
    - Add a task with the next free number in its file.
-4. **Dependencies are written as IDs:** `Depends:` and `Blocks:`. If you change an interface another task relies on, update that task's `Read first` or `Done when` line in its own file.
+4. **Dependencies are written as IDs, on the Status line.**
+   - `Depends:` is the source of truth. Only hard prerequisites go there: something the task cannot do without.
+   - `Blocks:` is generated from everyone else's `Depends:`. Never edit it by hand. Run `pnpm plan:check --fix` after changing any `Depends:`.
+   - Anything that is not a task (a user decision, a question) goes on a `Needs user:` line, not in `Depends:`.
+   - If you change an interface another task relies on, update that task's `Read first` or `Done when` line in its own file.
 5. **Sizes:**
    - `S` is half a day or less.
    - `M` is 1–2 days.
    - `L` is 3–5 days.
    - Anything larger must be split.
 6. **Check the plan after editing it.** Run `node docs/plan/check-plan.mjs`, or `pnpm plan:check` from the root. It fails when any of these is true:
-   - an ID is referenced but not defined;
-   - an ID is defined twice;
-   - a defined task has no `Status:` line.
+   - an ID is referenced but not defined, or is defined twice or outside its owning file;
+   - a task heading is not followed directly by a valid `Status:` line with a phase and `Depends:`;
+   - `Depends:` and `Blocks:` disagree (run `--fix`);
+   - a task depends on a dropped task, on a task in a later phase, or on itself through a cycle;
+   - the phase board below omits a scheduled task, or lists it under a different phase.
 7. **When a task finishes:**
    - set its status to `done`;
    - add one line saying what now works and how it was verified;
@@ -95,8 +101,8 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 **Demo:** CI green; staging API on HTTPS; a sign-up email arrives with a code; a package upload works against staging.
 
 - **Data:** DB-01, DB-02, DB-03, DB-04
-- **API:** BE-01, BE-02, BE-03, BE-04, BE-05
-- **Contracts:** CON-01, CON-02 (start), CON-03
+- **API:** BE-01, BE-02, BE-03, BE-04, BE-05, BE-16 (done)
+- **Contracts:** CON-01, CON-02, CON-03
 - **Operations:** OPS-01, OPS-02, OPS-03, OPS-04, OPS-06, OPS-07
 - **Mobile:** MOB-01
 - **Web:** WEB-01, WEB-02
@@ -108,7 +114,7 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 - **Data:** DB-05, DB-06, DB-07, DB-08
 - **API:** BE-06, BE-07, BE-08, BE-09
 - **Contracts:** CON-04
-- **Operations:** OPS-05, OPS-13
+- **Operations:** OPS-05, OPS-13, OPS-14
 - **Mobile:** MOB-02, MOB-03, MOB-04, MOB-05, MOB-06, MOB-07, MOB-08
 - **Web:** WEB-03, WEB-04, WEB-05, WEB-06, WEB-07, WEB-14
 - **Verification:** QA-01
@@ -117,11 +123,12 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 
 **Demo:** the manager uploads a QGIS package and publishes Janet's form. The observer downloads the site, collects offline and syncs, and the row appears in PostGIS.
 
-- **Sync:** SYNC-01 (a gate: nothing below starts until it passes), SYNC-02
-- **Data:** DB-09, DB-10, DB-11, DB-12
+- **Sync:** SYNC-01, SYNC-02
+  - SYNC-01 gates only the PowerSync-specific work: DB-11, OPS-08, SYNC-02, and MOB-09 onwards.
+  - The server work that either sync design needs starts at once: DB-09, DB-10, DB-12, and BE-10 to BE-13.
+- **Data:** DB-09, DB-10, DB-11, DB-12, DB-14
 - **API:** BE-10, BE-11, BE-12, BE-13
-- **Contracts:** CON-02 (finish)
-- **Operations:** OPS-08
+- **Operations:** OPS-08, OPS-15
 - **Mobile:** MOB-09, MOB-10, MOB-11, MOB-12, MOB-13, MOB-14, MOB-15
 - **Verification:** QA-02, QA-03
 
@@ -132,15 +139,16 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 - **API:** BE-14, BE-15
 - **Web:** WEB-08, WEB-09, WEB-10, WEB-11, WEB-12, WEB-13
 - **GIS:** GIS-01, GIS-02, GIS-03, GIS-04
+- **Operations:** OPS-16
 
 ### Phase 4: Mobile UX and hardening (weeks 9–12)
 
 **Demo:** TestFlight and Play internal builds run against production. The isolation suites pass and a restore drill is done.
 
 - **Mobile:** MOB-16, MOB-17, MOB-18, MOB-19, MOB-20, MOB-21
-- **Web:** WEB-15
+- **Web:** WEB-15, WEB-16
 - **Data:** DB-13
-- **Operations:** OPS-09, OPS-10, OPS-11, OPS-12
+- **Operations:** OPS-09, OPS-10, OPS-11, OPS-12, OPS-17
 - **Verification:** QA-04
 
 ### Phase 5: Pilot (week 13)
@@ -151,11 +159,15 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 
 ### Critical path
 
+Three lanes run in parallel and meet at MOB-10:
+
 ```
-OPS-02 → OPS-03 → MOB-05 ─┐
-DB-02 → DB-05 → DB-06 → BE-06/BE-07 → MOB-06 ─┤→ SYNC-01 → DB-11 → OPS-08 → MOB-09 → MOB-10/MOB-13/MOB-14 → QA-03 → QA-05
-CON-02 → BE-10 → BE-12 ───────────────────────┘
+Identity: DB-04 → DB-05 → DB-06 → BE-06 → BE-07 → MOB-06
+Server:   CON-02 → BE-10 → BE-12 ─────────────────────────────┐
+Sync:     SYNC-01 → DB-11 → OPS-15 → OPS-08 → SYNC-02 → MOB-09 ┴→ MOB-10 → MOB-11 → QA-03 → QA-05
 ```
+
+`node docs/plan/check-plan.mjs` proves the Depends graph has no cycle, and that nothing depends on a later phase.
 
 ### Cut list if the schedule slips
 
@@ -171,8 +183,19 @@ Cut in this order:
 - Already defined as tasks: GIS-06, GIS-07, GIS-08.
 - Get an ID only when scheduled: photo attachments, closed-app background upload, a visual form builder, CAPTCHA on mobile, billing and quotas, an "other observers" map layer, MapLibre on the web, multi-region hosting.
 
-## Status at plan creation (2026-09-23)
+## Status (2026-09-26)
 
-- **Works today.** Offline save, upload and the PostGIS/QGIS read path were verified on 2026-09-18 with two practice records. Package preparation in the API is real and tested locally.
-- **DB-01 is `doing`.** The hosted migration file and its verification assertions are written. Applying them to staging still needs the user.
+- **Works today.**
+  - Offline save, upload and the PostGIS/QGIS read path were verified on 2026-09-18 with two practice records.
+  - Package preparation in the API is real and tested.
+- **BE-16 is `done`.**
+  - Every API role check names the caller.
+  - The package list no longer returns 503.
+  - The SQL suite's stale ledger assertion is fixed.
+  - Verified by 19 SQL assertions, 59 API tests, Ruff and BasedPyright.
+- **DB-01 is `doing`.**
+  - The hosted migration now carries caller-scoped package policies.
+  - Its 13 hosted assertions pass on a disposable PostGIS, including a rerun after a real package exists.
+  - Applying it to staging still needs the user.
+- **Review of PR 9.** Greptile's six findings and about 45 further defects from a verified review pass are folded into the task texts above (see decisions D13–D17).
 - **Everything else is `todo`.**
