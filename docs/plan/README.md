@@ -183,7 +183,7 @@ Cut in this order:
 - Already defined as tasks: GIS-06, GIS-07, GIS-08.
 - Get an ID only when scheduled: photo attachments, closed-app background upload, a visual form builder, CAPTCHA on mobile, billing and quotas, an "other observers" map layer, MapLibre on the web, multi-region hosting.
 
-## Status (2026-09-26)
+## Status (2026-09-26, evening)
 
 - **Works today.**
   - Offline save, upload and the PostGIS/QGIS read path were verified on 2026-09-18 with two practice records.
@@ -193,9 +193,8 @@ Cut in this order:
   - The package list no longer returns 503.
   - The SQL suite's stale ledger assertion is fixed.
   - Verified by 19 SQL assertions, 59 API tests, Ruff and BasedPyright.
-- **DB-01 is `doing`.**
-  - The hosted migration now carries caller-scoped package policies.
-  - Its 13 hosted assertions pass on a disposable PostGIS, including a rerun after a real package exists.
-  - Applying it to staging still needs the user.
+- **DB-01 is `done`.**
+  - The site-package tables, with caller-scoped policies, are on staging (migration `20260926200655`).
+  - `verify.sql` passes all 13 assertions there, and the advisors report nothing new.
 - **Review of PR 9.** Greptile's six findings and about 45 further defects from a verified review pass are folded into the task texts above (see decisions D13–D17).
 - **Everything else is `todo`.**

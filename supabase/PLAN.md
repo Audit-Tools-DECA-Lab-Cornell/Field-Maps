@@ -16,7 +16,7 @@ Related plan files:
 
 **Schema today** (Postgres 17, PostGIS 3.3 in `extensions` on hosted):
 - Tables: `organizations`, `projects`, `sites`, `form_versions` (immutable by trigger), `observations`, `project_memberships` (roles `observer`, `manager`, `viewer`), `site_packages`, `package_checks`.
-- Hosted gets the last two from `supabase/migrations/20260923120000_site_packages.sql` (DB-01, not yet applied).
+- Hosted got the last two from `supabase/migrations/20260926200655_site_packages.sql`, applied to staging on 2026-09-26 (DB-01).
 - Ledger versions `0001`–`0005` exist; the next free number is `0006`.
 
 **Identity.**
@@ -93,8 +93,8 @@ Related plan files:
 ## Tasks
 
 ### DB-01: Port site packages to the hosted migrations
-Status: doing (written and tested locally; applying to staging needs the user) · Phase 0 · Size S · Depends: none · Blocks: DB-12, SYNC-01, WEB-01
-Read first: `supabase/migrations/20260923120000_site_packages.sql`; `database/migrations/0004_site_packages.sql` and `0005_package_policy_identity.sql`; `database/hosted/verify.sql`.
+Status: done (2026-09-26) · Phase 0 · Size S · Depends: none · Blocks: DB-12, SYNC-01, WEB-01
+Read first: `supabase/migrations/20260926200655_site_packages.sql`; `database/migrations/0004_site_packages.sql` and `0005_package_policy_identity.sql`; `database/hosted/verify.sql`.
 Done so far (2026-09-26):
 - **The hosted migration** holds local `0004`'s tables and triggers, and `0005`'s tightened policies:
   - every membership test names the caller;
@@ -115,20 +115,14 @@ Done so far (2026-09-26):
   - with a deliberately widened memberships policy, a viewer still cannot prepare a package.
   - The local SQL suite (19 assertions) and all 59 API tests pass with `0005`.
 
-Remaining:
-1. **Needs user:** apply the migration to staging with `supabase link --project-ref lezmqhuucfwqknspgcdy` then `supabase db push`, as the project owner.
-   - Not the SQL editor: it records no CLI migration history, so OPS-14's push would run the file again and fail.
-   - If it was already pasted, run `supabase migration repair --status applied 20260923120000` first.
-2. **Needs user:** run `database/hosted/verify.sql` on staging with stop-on-error. Expect "Thirteen hosted assertions passed…".
-3. Update the dated status of these docs:
-   - `docs/Supabase-Setup.md`: four migration files, 13 assertions;
-   - `database/README.md`: its hosted section still says seven assertions.
+Applied to staging (2026-09-26, with the user's approval):
+- The migration was applied through the Supabase connector. It is recorded as `20260926200655` in `supabase_migrations.schema_migrations`, which is why the repo file carries that version (the same convention as the earlier hosted files). The `fieldmaps_meta` ledger now reads `0001`–`0005`.
+- `database/hosted/verify.sql` passed all 13 assertions on staging, and the rollback left no synthetic rows.
+- The security advisors report nothing new.
+- `docs/Supabase-Setup.md` and `database/README.md` are updated.
 
-Done when:
-- `POST /v1/projects/{p}/packages` against staging returns 201 for a manager (with WEB-01 or curl);
-- the docs are updated.
-
-Verify: `curl` with a staging manager token; `verify.sql` output.
+Still open, and owned by other tasks:
+- A real `POST /v1/projects/{p}/packages` against staging needs a deployed HTTPS API (OPS-04) or `pnpm api:hosted:up`, plus a manager account and the real project UUID. That end-to-end upload is WEB-01's "done when".
 
 ### DB-02: Local Supabase stack as the development and test database
 Status: todo · Phase 0 · Size L · Depends: none · Blocks: DB-03, DB-04, MOB-05, MOB-21, OPS-06, SYNC-01, WEB-03, WEB-04, WEB-15

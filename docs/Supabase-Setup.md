@@ -2,6 +2,13 @@
 
 Project: **Field Maps GIS**, `lezmqhuucfwqknspgcdy`, in AWS `us-east-1` (session pooler `aws-0-us-east-1.pooler.supabase.com:5432`). It replaced the earlier development project on September 22, 2026.
 
+**Update, September 26, 2026.**
+- **Site packages are on staging.** `supabase/migrations/20260926200655_site_packages.sql` was applied through the Supabase connector. It is recorded as version `20260926200655` in `supabase_migrations.schema_migrations`, and as `0004_site_packages` and `0005_package_policy_identity` in the `fieldmaps_meta` ledger.
+- **`database/hosted/verify.sql` passed all 13 rollback-only assertions** on staging, including the six package checks. Afterwards, no synthetic membership, site, observation or package remained.
+- **The security advisors report nothing new.** They still show the two intentional RLS-without-policy notices and leaked-password protection (below).
+- **Public sign-up is now on.** The user changed it on September 22. The "Auth hardening" line below predates that. The remaining sign-up settings (confirm email, codes, SMTP, redirect URLs) are OPS-01 to OPS-03 in `docs/plan/operations.md`.
+- **Staging now has four migrations.** Apply later ones only with `supabase db push`, per OPS-14 to OPS-17.
+
 **Status, September 22, 2026.** The new project is provisioned and every tracked configuration points at it: `backend/config.hosted.json`, `backend/config.local.json`, `mobile/connection.config.json`, and `qgis/pg_service.conf`.
 
 - **Done and verified on the new project:** the three migrations applied in one transaction and recorded in `supabase_migrations.schema_migrations`; PostGIS 3.3.7 in `extensions`; the seven rollback-only assertions in `database/hosted/verify.sql` passed. New generated passwords for `fieldmaps_api` and `fieldmaps_qgis_training` were set as SCRAM verifiers, so no plain-text password reached the server, and both logins connect through the pooler with verified TLS. The QGIS login is read-only and is refused the private `fieldmaps` and `auth` schemas. `anon` and `authenticated` cannot use any FieldMaps schema, and every table has row-level security. The confirmed account `test-user@example.org` has observer access to the practice project.
@@ -58,7 +65,7 @@ Signing in alone grants no project access. Existing standalone practice observat
 
 Run these once per Supabase project, from the repository root. Keep every password out of tracked files; the only places they belong are the Docker volumes below and your own password manager.
 
-1. **Schema.** Apply the three files in `supabase/migrations/` in filename order, as the project owner, and record them in `supabase_migrations.schema_migrations` if you do not use the CLI: paste each into the dashboard SQL editor, or run `supabase link --project-ref lezmqhuucfwqknspgcdy` and then `supabase db push`. They create the private schemas, PostGIS in `extensions`, the practice project, and the `fieldmaps_api` and `fieldmaps_qgis_training` logins.
+1. **Schema.** Apply the files in `supabase/migrations/` in filename order, as the project owner: run `supabase link --project-ref <ref>` and then `supabase db push`. Pasting into the SQL editor does not record `supabase_migrations.schema_migrations`, so a later push would run the file again. They create the private schemas, PostGIS in `extensions`, the practice project, and the `fieldmaps_api` and `fieldmaps_qgis_training` logins.
 2. **Login passwords.** Generate two passwords, for example with `openssl rand -base64 32`, and set them as the project owner:
 
    ```sql
@@ -78,7 +85,7 @@ Run these once per Supabase project, from the repository root. Keep every passwo
    ```
 
    Store the QGIS password the same way in `fieldmaps_qgis_secrets`, file `training-password`, so the administrator can hand it out. To read it back: `docker run --rm -v fieldmaps_qgis_secrets:/s:ro fieldmaps-hosted-api cat /s/training-password`.
-4. **Auth settings** in the dashboard: turn off **Allow new users to sign up**, since accounts are created by administrators, and turn on leaked-password protection.
+4. **Auth settings** in the dashboard: public sign-up is on (decision D1 in `docs/plan/decisions.md`). Apply OPS-01's checklist (confirm email, 6-digit codes, password length, redirect URLs), then custom SMTP (OPS-02) and leaked-password protection (OPS-13).
 5. **Publishable key.** Copy the `sb_publishable_…` key from **Project Settings → API Keys** into `publishableKey` in `mobile/connection.config.json`, replacing the placeholder. It is public by design; never put a secret or service-role key there.
 6. **Test account.** Create a user and grant project access as described in [Account access](#account-access-for-the-first-mobile-upload).
 7. **Check.** `pnpm api:hosted:up`, then `curl http://127.0.0.1:8000/health`, sign in on the simulator, and upload one practice record.

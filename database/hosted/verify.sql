@@ -58,7 +58,7 @@ SELECT pg_temp.assert_true(
   'restricted GIS view returns the uploaded point');
 RESET ROLE;
 
--- Site packages (supabase/migrations/20260923120000_site_packages.sql).
+-- Site packages (supabase/migrations/20260926200655_site_packages.sql).
 -- A fixture site of its own, so the synthetic package can never collide with a real upload's
 -- (site, version) and the counts below see only the package this script prepares.
 INSERT INTO fieldmaps.sites (id, organization_id, project_id, code, name)
