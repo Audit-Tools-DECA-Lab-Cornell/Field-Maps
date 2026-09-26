@@ -6,7 +6,8 @@
 // - `Depends:` and `Blocks:` disagree (X blocks Y exactly when Y depends on X);
 // - a task depends on a dropped task, on a task scheduled in a later phase, or on itself
 //   through a cycle;
-// - the README phase board omits a task or lists it under a different phase than its own.
+// - the README phase board omits a task, lists it more than once, or lists it under a different
+//   phase than its own.
 // Run from any directory: `node docs/plan/check-plan.mjs` (or `pnpm plan:check` at the root).
 //
 // `Depends:` is the source of truth. `Blocks:` is derived from it: run with `--fix` (or
@@ -185,8 +186,10 @@ for (const [id, task] of tasks) {
 	if (task.status === "dropped" || task.phase === POST_PILOT) continue;
 	const phases = onBoard.get(id);
 	if (!phases) problems.push(`${id}: missing from the README phase board (its phase is ${task.phase})`);
-	else if (!phases.includes(task.phase))
-		problems.push(`${id}: on the board under phase ${phases.join("/")}, but its Status says phase ${task.phase}`);
+	else if (phases.length > 1)
+		problems.push(`${id}: listed ${phases.length} times on the board (phases ${phases.join(", ")}); list it once, under phase ${task.phase}`);
+	else if (phases[0] !== task.phase)
+		problems.push(`${id}: on the board under phase ${phases[0]}, but its Status says phase ${task.phase}`);
 }
 
 const counts = Object.fromEntries(statuses.map((s) => [s, 0]));

@@ -269,6 +269,11 @@ Do: add one migration, `identity_tenancy`. The **order inside the file matters**
    - `assigned_observation_uploads`: `created_by = request_user_id() AND upload_hash IS NOT NULL AND fieldmaps_private.has_project_role(project_id, ARRAY['observer','manager'])`.
    - `manager_prepares_package`: `prepared_by = request_user_id() AND fieldmaps_private.has_project_role(project_id, ARRAY['manager'])`.
    - Keep `manager_prepares_package_checks` as DB-01 wrote it, apart from moving its membership test to `has_project_role`.
+   - **In the same change, rewrite BE-16's three API queries** (`backend/src/fieldmaps_api/queries.py`) onto the helpers. Today they require a membership row; after this migration an org owner or admin acts as manager without one.
+     - `PROJECTS`: `WHERE p.id IN (SELECT fieldmaps_private.my_project_ids())`, with the role taken from the caller's own membership, or `manager` for an org owner/admin without one.
+     - `UPLOAD_TARGET`: `has_project_role(p.id, ARRAY['observer','manager'])`.
+     - `PACKAGE_TARGET`: `has_project_role(p.id, ARRAY['manager'])`.
+     - Add an API test: an org admin with no project membership lists the project and can prepare a package.
 4. **Read policies** for the new tables and memberships, all `TO fieldmaps_api`. Least privilege: nothing here exists for "curiosity" reads.
    - `profiles`:
      - read your own row, and profiles of members of projects where you are a manager (`has_project_role(…, ARRAY['manager'])`), excluding Training;
@@ -534,12 +539,12 @@ Do: add migration `powersync`. It is idempotent, because SYNC-01 may have left a
    `site_packages` is published only after DB-14 has dropped its `archive` bytea. With the column present, the snapshot's `SELECT *` would read rows of up to 16 MiB, over PowerSync's 15 MB row cap. That is why this task depends on DB-14.
 4. **Local stack:** guard the role creation so `supabase start` still works if the local `postgres` role cannot grant REPLICATION. Document which case applies.
 
-Done when:
-- the migration applies locally and, through OPS-15, on staging;
+Done when, on the local stack:
+- the migration applies;
 - `SELECT tablename FROM pg_publication_tables WHERE pubname = 'powersync'` lists exactly the tables above;
 - `site_packages` has no `archive` column.
 
-OPS-08 then proves that replication works, including the initial snapshot of every table.
+Applying it to staging is OPS-15's job, and proving replication (including the initial snapshot of every table) is OPS-08's. A DB task's "done" never requires a staging push, because the push depends on the DB task.
 
 ### DB-12: Sites, zones, and packages in Storage
 Status: todo · Phase 2 · Size M · Depends: DB-01, DB-05 · Blocks: BE-13, DB-11, OPS-15, SYNC-02

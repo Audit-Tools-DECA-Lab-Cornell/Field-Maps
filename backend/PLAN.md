@@ -270,8 +270,8 @@ Do:
 3. **Idempotency by content, not by body hash.** When the insert affects no row, load the existing row.
    - It is an **accepted replay** when `created_by` is the caller, `project_id` matches, and either:
      - the canonical content matches: `site_id`, `form_version_id`, `observed_at`, the point, `observer_code` and the pruned answers, compared after BE-10 normalization. `device_id` and `app_version` are excluded, because they vary between attempts; or
-     - the stored row came from the legacy `PUT` (`device_id IS NULL`). A record that MOB-11 re-sends after a lost response can never match the old body hash, and the server already holds it; the row is not modified.
-   - Otherwise it is rejected with `conflict`.
+     - the stored row came from the legacy `PUT` (`device_id IS NULL`), **and** its content matches once both sides are normalized through BE-10's `shell-v1` adapter. That adapter maps the stored code-keyed answers (`people`, `notes`) to question ids, and the envelope's numbers to JSON numbers. A record that MOB-11 re-sends after a lost response matches this way, even though it can never match the old body hash.
+   - Otherwise, including a legacy row whose content differs, it is rejected with `conflict`, and the stored row is not modified.
    - Do not compare `upload_hash`. It hashes the raw request body (`repository.py:75`), so an envelope can never match a row written through the legacy `PUT`.
    - An accepted upload or replay sets `resolved_at` on **every** unresolved rejection for (caller, observation id).
 4. **Rejected results.** Map each of these to a `rejected` result with its code:
@@ -291,7 +291,8 @@ Do:
 
 Done when the tests cover:
 - a mixed batch: accepted, replayed, rejected by validation, rejected by a constraint violation placed **before** a valid operation (both get results, and the rejection row exists), and unsupported;
-- an observation created through the legacy `PUT`, then replayed through `/v1/sync/upload` as an envelope, is accepted, and no rejection is written;
+- an observation created through the legacy `PUT`, then replayed through `/v1/sync/upload` as the faithfully mapped envelope, is accepted, and no rejection is written;
+- the same legacy id sent with changed answers or placement is rejected as `conflict`, and the stored row is unchanged;
 - the same envelope sent twice with a different `app_version` is accepted both times;
 - a user from org B naming org A's project gets a rejection with a NULL project, and A's manager sees nothing;
 - a deadlock mid-batch returns 503, and the earlier operations stay committed;

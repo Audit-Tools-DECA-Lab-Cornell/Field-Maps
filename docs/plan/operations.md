@@ -229,12 +229,16 @@ Done when: staging's ledger lists every migration from DB-04 to DB-08, and `veri
 Status: todo · Phase 2 · Size S · Depends: BE-13, DB-09, DB-10, DB-11, DB-12, DB-14 · Blocks: OPS-08
 Needs user: every step, including Q7: DB-14 discards the pre-Storage test archives.
 Do:
-1. **Deploy BE-13's API code to Render staging before pushing.** DB-14 drops `site_packages.archive`, which older code still writes.
-2. Follow the same procedure as OPS-14 for DB-09, DB-10, DB-12, DB-14 and DB-11 (in file order).
-   - `supabase migration list` must show only these as pending.
-   - Before pushing, confirm DB-14's list of pre-Storage test packages.
-3. Set the `powersync_role` password out-of-band afterwards.
-4. Check `SELECT tablename FROM pg_publication_tables WHERE pubname = 'powersync'` against DB-11.
+The order is expand, deploy, contract. Each step must finish before the next.
+1. **Expand.** Push DB-09, DB-10 and DB-12, using the OPS-14 procedure.
+   - `db push` applies every pending file, so push from a checkout whose newest migration is DB-12's (for example a `git worktree` at that commit).
+   - The running API keeps working: DB-12 only adds columns and makes `archive` nullable.
+2. **Deploy.** Deploy BE-13's API code to Render staging. It needs DB-12's `storage_path` and `archive_bytes`, which now exist.
+3. **Contract.** From the current checkout, confirm DB-14's list of pre-Storage test packages, then push DB-14 and DB-11 (in file order).
+   - `supabase migration list` must show only these two as pending.
+   - DB-14 drops `archive`, which only the old API code wrote.
+4. Set the `powersync_role` password out-of-band.
+5. Check `SELECT tablename FROM pg_publication_tables WHERE pubname = 'powersync'` against DB-11.
 
 Done when:
 - staging's ledger lists these migrations;

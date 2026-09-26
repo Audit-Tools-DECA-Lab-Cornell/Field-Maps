@@ -68,7 +68,7 @@ The full decision log, the running cost and the open questions are in [decisions
    - a task heading is not followed directly by a valid `Status:` line with a phase and `Depends:`;
    - `Depends:` and `Blocks:` disagree (run `--fix`);
    - a task depends on a dropped task, on a task in a later phase, or on itself through a cycle;
-   - the phase board below omits a scheduled task, or lists it under a different phase.
+   - the phase board below omits a scheduled task, lists it more than once, or lists it under a different phase.
 7. **When a task finishes:**
    - set its status to `done`;
    - add one line saying what now works and how it was verified;

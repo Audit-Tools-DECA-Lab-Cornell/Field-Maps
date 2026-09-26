@@ -79,8 +79,11 @@ Do:
    - `bundleIdSuffix`
 3. Drop `projectId` from the config. New code takes the project from `/v1/me` (MOB-04).
    - **Keep the old store's scope key frozen until MOB-11 has migrated it.** The existing SQLite store keys every record, draft and upload by `JSON.stringify([apiUrl, issuer, userId, projectId])` (`src/sync/contracts.ts:12-14`), and uploads only rows whose key equals the current one.
-   - Add `src/data/legacy/scope.ts`, which builds that key from constants equal to today's values: `http://127.0.0.1:8000`, the lezmq issuer, and project `10000000-0000-4000-8000-000000000002`. Make `useAccount()` and the old coordinator use it.
-   - Uploads still go to the configured `apiUrl`. Only the key is frozen.
+   - Add `src/data/legacy/scope.ts`, which builds that **key** from constants equal to today's values: `http://127.0.0.1:8000`, the lezmq issuer, and project `10000000-0000-4000-8000-000000000002`. Use it only to read and write `owner_scope`.
+   - **Split the key from the upload destination.** Today `uploadObservation` builds its request URL from `scope.apiUrl` (`src/sync/upload.ts:13`), so a frozen scope would send uploads to the device's own localhost.
+     - Pass the old coordinator a separate `destination`: `{apiUrl: config.apiUrl, projectId: '10000000-0000-4000-8000-000000000002'}`.
+     - `uploadObservation` builds its URL from `destination`, never from the key.
+     - Receipt checks compare against `destination.projectId` and the user id.
    - Without this, `useAccount()` fails `syncScopeSchema` and falls back to `"local"`. Every new record would then be saved as local-only, and existing records would vanish from view.
 4. Expose the config through `expo-constants` `extra`, and keep the zod validation now in `src/sync/config.ts`, moved to `src/platform/config.ts`. Keep the rule that plain HTTP is allowed only for localhost.
 5. Set `APP_ENV` per profile in `eas.json` `env`. Keep `EXPO_NO_DOTENV=1`.
@@ -91,7 +94,7 @@ Do:
 
 Done when:
 - `APP_ENV=staging pnpm exec expo config --type public` shows the staging values;
-- a record saved before this change still lists and uploads after it (test);
+- a record saved before this change still lists after it, and uploads **to the configured `apiUrl`** (test with a fake HTTP client that asserts the request host);
 - typecheck and tests pass.
 
 ### MOB-02: Session storage that fits (LargeSecureStore)
