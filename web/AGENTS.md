@@ -11,7 +11,7 @@ Next.js App Router management application for FieldMaps. Parent `AGENTS.md` cont
 
 - This application and the collector share one design system, Nocturne. The tokens in `src/app/globals.css` are the values `mobile/src/theme.ts` uses. Change them together, and add a primitive to `src/components/nocturne/chrome.tsx` and `mobile/src/components/chrome.tsx` together.
 - Take every colour, size, spacing and radius from the tokens. Do not hard-code a hex, a font name or a pixel value the tokens already carry.
-- One theme, no theme switcher. State is a glyph plus a word plus a colour. The accent is a line, never a flood. Charts use the accent ramp alone.
+- One chrome theme, no theme switcher. Map canvases are the exception: they take a palette (Day, Night) from `contracts/map-palettes.json`, the same file the collector reads, and never a colour of their own. State is a glyph plus a word plus a colour. The accent is a line, never a flood. Charts use the accent ramp alone.
 
 ## Honesty
 

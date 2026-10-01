@@ -500,3 +500,10 @@ Do: create `mobile/maestro/` with the flows below.
 - delete account
 
 Done when: every flow passes on the iOS simulator, and the run command is in `mobile/README.md`.
+
+### MOB-22: Map palettes on the field map (Day, Night, Aerial)
+Status: doing (code and tests in place 2026-10-01; not yet run on a device) · Phase 1 · Size S · Depends: none · Blocks: none
+Added 2026-10-01 after Janet found the QGIS layers hard to read on the dark plan (decision D18 in [decisions.md](../docs/plan/decisions.md)).
+Do: read `contracts/map-palettes.json` in `src/maps/palette.ts`; build every plan base and layer paint from a palette; replace the Plan/Aerial toggle with a Day · Night · Aerial control, Day by default, remembered for the app session.
+Done when: the field map opens in Day on a simulator or device, the QGIS surfaces read clearly, and Night and Aerial still match today's look.
+Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test` (142 tests passed on 2026-10-01), plus a recorded device or simulator check.

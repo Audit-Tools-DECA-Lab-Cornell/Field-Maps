@@ -285,3 +285,8 @@ Do: five steps (organization and slug, first project and timezone, site and the 
 Done when: every step is keyboard reachable, the banner states that nothing is saved, and the page passes `pnpm --dir web check`.
 
 Verified 2026-10-01: all five steps walked in the browser (slug and project code derive from the names, a join code is generated, the join-screen mock names the project and org), the page is `noindex`, every control is at least 44 px tall, and `pnpm --dir web check` passes.
+
+### WEB-19: Map palettes on the web maps (Day, Night)
+Status: done (2026-10-01) · Phase 1 · Size S · Depends: none · Blocks: none
+Added 2026-10-01 with MOB-22 (decision D18). The observations map and the package-upload preview read `contracts/map-palettes.json` through `src/lib/map-palette.ts`; a Day · Night switch on the observations map is shared by both maps and remembered in the browser. Light or dark CARTO tiles follow the palette.
+Verified 2026-10-01: `pnpm --dir web check` passes; in the browser the switch flips the site fill between the Day and Night colours and the choice survives a reload. The ground repaint around the site on a palette change was not seen in a browser (the pane was hidden).

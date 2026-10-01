@@ -115,8 +115,8 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 - **API:** BE-06, BE-07, BE-08, BE-09
 - **Contracts:** CON-04
 - **Operations:** OPS-05, OPS-13, OPS-14
-- **Mobile:** MOB-02, MOB-03, MOB-04, MOB-05, MOB-06, MOB-07, MOB-08
-- **Web:** WEB-03, WEB-04, WEB-05, WEB-06, WEB-07, WEB-14, WEB-17, WEB-18
+- **Mobile:** MOB-02, MOB-03, MOB-04, MOB-05, MOB-06, MOB-07, MOB-08, MOB-22
+- **Web:** WEB-03, WEB-04, WEB-05, WEB-06, WEB-07, WEB-14, WEB-17, WEB-18, WEB-19
 - **Verification:** QA-01
 
 ### Phase 2: PowerSync and real data on mobile (weeks 4–7)

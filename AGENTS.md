@@ -17,7 +17,7 @@ FieldMaps is one Git repository with independently managed applications. It is s
 
 **Production plan:** start at `docs/plan/README.md`, which is the index, conventions and phase board. Each component's `PLAN.md` holds that component's tasks: `supabase/`, `backend/`, `mobile/`, `web/` and `qgis/`. Tasks are identified by ID. A task's status lives only in its owning file. Run `pnpm plan:check` after editing any plan file.
 
-Read the owning component's README before changing it. Root `README.md` and `docs/Workspace.md` describe common operations. The web application reads local fixtures and is not connected to the API; native mobile uploads have been verified through hosted PostGIS into QGIS. Web and mobile share one design system, Nocturne — change its tokens in both apps together.
+Read the owning component's README before changing it. Root `README.md` and `docs/Workspace.md` describe common operations. The web application reads local fixtures and is not connected to the API; native mobile uploads have been verified through hosted PostGIS into QGIS. Web and mobile share one design system, Nocturne — change its tokens in both apps together. Map canvases take their colours from `contracts/map-palettes.json` (Day, the default, and Night), which both apps read.
 
 ## Commands and boundaries
 
