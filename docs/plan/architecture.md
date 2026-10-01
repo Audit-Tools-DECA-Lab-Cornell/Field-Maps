@@ -19,7 +19,7 @@ This file is part of the [FieldMaps production plan](README.md) and defines no t
 - FastAPI with 8 routes (`backend/src/fieldmaps_api/main.py`).
 - Verifies Supabase ES256 JWTs through JWKS.
 - Runs as the restricted role `fieldmaps_api`, under RLS keyed on the transaction-local GUC `fieldmaps.user_id`.
-- Package preparation is real (`packages.py`, `qgis_project.py`).
+- Package preparation is real (`domain/packages.py`, `domain/qgis_project.py`).
 
 **Database**
 - Supabase Postgres 17 with PostGIS in `extensions`, project `lezmqhuucfwqknspgcdy`.

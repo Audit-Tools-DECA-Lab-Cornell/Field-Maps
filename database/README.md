@@ -18,22 +18,32 @@ The starter runs pinned Supabase CLI 2.118.0 and generates an ignored API passwo
 
 `pnpm db:test` runs the SQL suite and `hosted/verify.sql` on the local database. Fixtures and temporary role grants roll back. API tests use generated UUIDs and the restricted runtime login; their committed observations/packages remain until an explicit local reset. No integration test silently skips when the stack is unavailable.
 
+The separate Auth-hook suite connects through Docker as local `supabase_admin`, then switches to the actual restricted Auth role for behavioral checks. Supabase reserves that role, so the ordinary `postgres` test connection cannot grant itself membership. Application SQL tests and the hosted verification script still run as `postgres`.
+
 ## Schema and access
 
 The schema now includes profiles linked to Auth users, organizations, organization members, projects, project memberships, invitations, sites, immutable form versions, observations, immutable site packages and package checks. Composite foreign keys enforce project/organization boundaries.
 
 Organization owners/admins act as managers on their organization's projects. Project managers can read their collaborators' profiles and memberships, except Training memberships. Browser roles and `service_role` cannot access application tables or execute application functions. `fieldmaps_api` cannot bypass RLS or directly grant membership. Column-limited grants allow only the documented profile, organization and project edits.
 
-Tenancy writes go through `fieldmaps_private` functions with a fixed empty search path, current-user authorization and organization locks. Invitation redemption checks the current Auth email, confirmation and use limit. Account forgetting removes memberships and leaves a durable anonymized profile marker until Auth deletion. Training membership insertion becomes active when DB-07 adds the Training project.
+Tenancy writes go through `fieldmaps_private` functions with a fixed empty search path, current-user authorization and organization locks. Invitation redemption checks the current Auth email, confirmation and use limit. Account forgetting removes memberships and leaves a durable anonymized profile marker until Auth deletion.
+
+Profile initialization now enrolls active users in the separate Training project. Training observations are visible only to their creator, including for temporary project managers. Platform organization memberships are forbidden. A daily pg_cron job purges observations received more than 30 days ago from the fixed Training project only. The original practice project is unchanged. See the [Training runbook](../docs/Training-Runbook.md) for retention checks and temporary package-upload access. The Training form is a frozen copy of the canonical Janet definition; its lifecycle and downloadable site package remain later tasks.
 
 `gis.sample_observations` remains a fixed practice-project view, read-only to `fieldmaps_sample_reader`. Its readback tests exercise PostgreSQL, not QGIS Desktop.
+
+The Before User Created hook blocks disposable email domains at signup. Only Supabase Auth can invoke it or read its RLS-protected blocklist; browser and application roles have no access. The hook uses a pinned community list with no network request during signup. See [the email policy](Blocked-Email-Domains.md) for source attribution, updates and hosted activation boundaries.
 
 ## Verification
 
 Verified locally on 2026-09-26: a fresh migration reset, 94 mobile tests, 63 API tests, 88 SQL assertions and 18 hosted-script assertions on the local database. Python lint and type checks pass.
 
+DB-07 verified locally on 2026-09-30: incremental migration, 109 SQL assertions, 23 hosted-script assertions on the local database and 63 API tests. The SQL suite compares the full Training definition with the canonical JSON, tests trainee isolation and executes the scheduled purge command with cutoff and unrelated-project fixtures. All SQL fixtures roll back; no hosted deployment or device acceptance is implied.
+
+DB-08 verified locally on 2026-09-30: 125 SQL assertions and 27 hosted-script assertions on the local database. Real local Auth signup returned the specified HTTP 400 rejection for a blocked address without creating an account, and HTTP 200 with a persisted account for a permanent address. Synthetic signup accounts were removed afterward. Local Auth was restarted without resetting data to load the hook configuration.
+
 The SQL tests cover geometry, immutable forms, replay ledger, restricted GIS reads, private default privileges, tenancy RLS, ownership limits, invitations and account forgetting. API tests cover upload/package regressions, organization-admin access without project membership, simultaneous invitation redemption and simultaneous last-manager demotion.
 
 DB-03 retired the historical Docker migration track after [all five CI jobs passed](https://github.com/Audit-Tools-DECA-Lab-Cornell/Field-Maps/actions/runs/36273492260). See [the canonical-migrations decision](../docs/decisions/0001-canonical-migrations.md).
 
-Hosted migration application remains a separate operation. `hosted/verify.sql` now requires the DB-04/05/06 migrations and checks their security boundary; applying files locally does not deploy them.
+Hosted migration application remains a separate operation. `hosted/verify.sql` now requires the DB-04 through DB-08 migrations and checks their security boundary; applying files locally does not deploy them or enable a hosted Auth hook.

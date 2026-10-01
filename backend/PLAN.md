@@ -5,12 +5,13 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - **Database objects** these tasks rely on are `DB-*` tasks in [supabase/PLAN.md](../supabase/PLAN.md).
 - **Layering and module boundaries** are in [architecture.md](../docs/plan/architecture.md#layering-inside-each-component).
 
-## Context (verified 2026-09-22)
+## Context (updated 2026-09-30)
 
 **Code layout**
-- `main.py` builds the app, with every route as a closure inside `create_app`. There is no `APIRouter`.
-- `repository.py` mixes transaction handling, use cases, data access and `HTTPException`s. `queries.py` holds raw SQL constants.
-- Pure domain modules: `forms.py` (answer validation), `packages.py` (package preparation and 5 checks), `geojson.py`, `qgis_project.py`.
+- `main.py` assembles the app and includes routers for tenancy, collection and sites.
+- Routers manage authenticated transactions through `deps.py`; services own use cases and raise domain errors; repositories execute SQL from matching `queries/` modules.
+- `errors.py` provides the error envelope, OpenAPI models and exception handler.
+- Pure domain modules live under `domain/`: `forms.py`, `packages.py`, `geojson.py` and `qgis_project.py`.
 
 **Routes** (8 today): `/health`, `GET /v1/projects`, `PUT`/`GET` observation, and 4 package routes.
 
@@ -20,7 +21,7 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - Ignores `is_anonymous`.
 
 **Per-request identity.**
-- Every request runs in `user_transaction`, which sets `fieldmaps.user_id` (`repository.py:38-48`).
+- Every request runs in `user_transaction`, which sets `fieldmaps.user_id` (`deps.py`).
 - Since BE-16 (2026-09-26), every role-check query names the caller: `m.user_id = fieldmaps.request_user_id()`.
 - Correctness no longer depends on the memberships SELECT policy hiding other members' rows. DB-05 widens that policy for managers.
 
@@ -29,9 +30,9 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - Every `SQLAlchemyError` is turned into a 503. That includes programming errors, and it hid the package-list bug fixed in BE-16.
 - The Dockerfile runs as root, installs dev dependencies and copies `tests/` into the image.
 
-**Forms.** `forms.py` validates the **server** format (`code`, `type`, no conditions). The mobile format is different; CON-02 and BE-10 fix that.
+**Forms.** `domain/forms.py` validates the **server** format (`code`, `type`, no conditions). The mobile format is different; CON-02 and BE-10 fix that.
 
-**Tests.** 59 API tests run against real PostGIS (`backend/tests/`, 2026-09-26). Every change keeps them green.
+**Tests.** The suite covers real local Supabase plus pure domain and HTTP boundary behavior. BE-03 preserves the existing upload/package scenarios and adds error-envelope coverage.
 
 ## Target layout
 
@@ -97,7 +98,8 @@ Done when: the new tests cover all of these:
 Verify: `pnpm backend:test`; `pnpm backend:check`.
 
 ### BE-03: Restructure into routers, services and repositories, with the error envelope
-Status: todo · Phase 0 · Size M · Depends: none · Blocks: BE-04, BE-06, BE-07, BE-09, CON-04, GIS-06
+Status: done (2026-10-01) · Phase 0 · Size M · Depends: none · Blocks: BE-04, BE-06, BE-07, BE-09, CON-04, GIS-06
+Evidence: routers, services, repositories and query modules preserve all eight routes and twelve SQL statements; pure modules moved to `domain/`. Domain and framework exceptions use the documented envelope and OpenAPI model. The local backend suite passed 74 tests before the final malformed-body case; all 12 final error-boundary tests passed separately. Ruff and BasedPyright pass. The combined 75-test rerun on 2026-10-01 could not complete because Docker was unavailable; database-dependent acceptance must be repeated when local Supabase is running. CORS preflight responses retain their existing middleware behavior.
 Read first: every file in `src/fieldmaps_api/`; [contracts.md](../docs/plan/contracts.md#error-envelope).
 Do:
 1. Move the code into the target layout above. **This is a behaviour-preserving refactor:** the same routes, status codes and bodies, except that errors adopt the envelope.
@@ -206,7 +208,7 @@ Done when the tests (with the Admin API mocked) cover:
 Status: todo · Phase 1 · Size S · Depends: BE-03 · Blocks: none
 Do:
 1. Add a body-size middleware:
-   - 24 MB for `POST …/packages`, which carries JSON plus a base64 project file (limits in `packages.py:33-36`);
+   - 24 MB for `POST …/packages`, which carries JSON plus a base64 project file (limits in `domain/packages.py`);
    - 4 MB for `POST /v1/sync/upload`. MOB-10 sizes batches to fit, and treats a 413 as "retry with a smaller batch", never as success;
    - 256 KB for everything else.
    - It rejects oversize bodies **before** parsing, with 413 `validation_failed`.
@@ -221,7 +223,7 @@ Done when: the tests cover 413 and 429, including 429 on preview.
 
 ### BE-10: Canonical form validator
 Status: todo · Phase 2 · Size L · Depends: CON-02 · Blocks: BE-11, BE-12, BE-14
-Read first: `contracts/form-definition.schema.json`, `contracts/forms/*.json`, `contracts/forms/cases/*.json`; `mobile/src/forms/engine.ts` (the reference behaviour); `src/fieldmaps_api/forms.py`.
+Read first: `contracts/form-definition.schema.json`, `contracts/forms/*.json`, `contracts/forms/cases/*.json`; `mobile/src/forms/engine.ts` (the reference behaviour); `src/fieldmaps_api/domain/forms.py`.
 Do:
 1. Rewrite `domain/forms.py` to parse the canonical definition with Pydantic models that mirror the JSON Schema. That schema is generated in `io: "input"` mode (CON-02).
    - Use `extra="ignore"` and the same defaults as the zod schema, so the server accepts every definition the device accepts.
@@ -255,7 +257,7 @@ Done when: the lifecycle is covered by tests, and publishing Janet's definition 
 
 ### BE-12: The sync upload endpoint for PowerSync
 Status: todo · Phase 2 · Size L · Depends: BE-10, DB-10 · Blocks: MOB-10, QA-03
-Read first: the `POST /v1/sync/upload` semantics in [contracts.md](../docs/plan/contracts.md#post-v1syncupload-semantics); `repository.py:56-105` (the idempotent upload to reuse); [sync-powersync.md](../docs/plan/sync-powersync.md).
+Read first: the `POST /v1/sync/upload` semantics in [contracts.md](../docs/plan/contracts.md#post-v1syncupload-semantics); `services/collection.py` and `repositories/collection.py` (the idempotent upload to reuse); [sync-powersync.md](../docs/plan/sync-powersync.md).
 Do:
 1. **Accept the body as `{operations: [raw objects]}`**, and validate each operation separately.
    - One malformed operation becomes one rejected result.
@@ -272,7 +274,7 @@ Do:
      - the canonical content matches: `site_id`, `form_version_id`, `observed_at`, the point, `observer_code` and the pruned answers, compared after BE-10 normalization. `device_id` and `app_version` are excluded, because they vary between attempts; or
      - the stored row came from the legacy `PUT` (`device_id IS NULL`), **and** its content matches once both sides are normalized through BE-10's `shell-v1` adapter. That adapter maps the stored code-keyed answers (`people`, `notes`) to question ids, and the envelope's numbers to JSON numbers. A record that MOB-11 re-sends after a lost response matches this way, even though it can never match the old body hash.
    - Otherwise, including a legacy row whose content differs, it is rejected with `conflict`, and the stored row is not modified.
-   - Do not compare `upload_hash`. It hashes the raw request body (`repository.py:75`), so an envelope can never match a row written through the legacy `PUT`.
+   - Do not compare `upload_hash`. It hashes the raw request body (`services/collection.py`), so an envelope can never match a row written through the legacy `PUT`.
    - An accepted upload or replay sets `resolved_at` on **every** unresolved rejection for (caller, observation id).
 4. **Rejected results.** Map each of these to a `rejected` result with its code:
    - validation (BE-10);
@@ -302,13 +304,13 @@ Done when the tests cover:
 ### BE-13: Sites, zones and packages in Storage
 Status: todo · Phase 2 · Size L · Depends: DB-12 · Blocks: DB-14, GIS-07, MOB-14, OPS-15, WEB-08
 Needs user: a Storage S3 access key (Project Settings → Storage), provided as a runtime Secret File. It is never committed.
-Read first: `domain/packages.py` (`469-478` bounding-box zones; `31` the empty allow-list); `repository.py` (`prepare_package`, `read_package_archive`); DB-12.
+Read first: `domain/packages.py` (`469-478` bounding-box zones; `31` the empty allow-list); `services/sites.py` and `repositories/sites.py` (`prepare_package`, `read_package_archive`); DB-12.
 Do:
 1. `GET/POST /v1/projects/{p}/sites`, where POST creates a site and requires a manager, and `GET …/sites/{s}/zones`.
 2. On a successful prepare:
    - write the archive to `site-packages/{org}/{project}/{site}/{version}.zip` in Storage (a sha256-named key is fine);
    - store `storage_path` and `archive_bytes`, and **stop writing `archive`**:
-     - remove it from `INSERT_PACKAGE` (`queries.py`);
+     - remove it from `INSERT_PACKAGE` (`queries/sites.py`);
      - read `archive_bytes` from its column instead of `octet_length(archive)` in `PACKAGES` and `PACKAGE_DETAIL`;
      - make `PACKAGE_ARCHIVE` read `storage_path`;
    - insert the `zones` polygons from the `zones` layer (real geometry, not bounding boxes);
@@ -353,7 +355,7 @@ Done when: the tests pass, and the response never contains a secret.
 ### BE-16: Name the caller in every role-check query
 Status: done (2026-09-26) · Phase 0 · Size S · Depends: none · Blocks: DB-05
 What now works:
-- **Role checks name the caller.** `PROJECTS`, `UPLOAD_TARGET` and `PACKAGE_TARGET` in `backend/src/fieldmaps_api/queries.py` filter on `m.user_id = fieldmaps.request_user_id()`. The API's role checks stay correct when DB-05 lets managers read other members' rows. Without this, a viewer on a project that has a manager passes the manager check; that was reproduced against real PostGIS.
+- **Role checks name the caller.** `PROJECTS`, `UPLOAD_TARGET` and `PACKAGE_TARGET` in `backend/src/fieldmaps_api/queries/{tenancy,collection,sites}.py` filter on `m.user_id = fieldmaps.request_user_id()`. The API's role checks stay correct when DB-05 lets managers read other members' rows. Without this, a viewer on a project that has a manager passes the manager check; that was reproduced against real PostGIS.
 - **The package list works.** `GET /v1/projects/{p}/packages` failed on every call with 503, because asyncpg cannot infer a type for the bare `:site IS NULL`. It now casts the site filter to text.
 - **The SQL suite is green again.** `database/tests/run.sql`'s ledger assertion expected three migrations, and had been failing since `0004`. It now asserts the exact ordered version list.
 
@@ -361,4 +363,3 @@ Verified by:
 - the 19 local SQL assertions;
 - all 59 API tests, via `make -C database api-build api-test`;
 - Ruff and BasedPyright.
-

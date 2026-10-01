@@ -1,4 +1,5 @@
 import type { Answers, FormDefinition } from "../forms/definition";
+import { pruneAnswers, reviewProblems } from "../forms/engine";
 import {
   type Coordinate,
   instrumentObservationSchema,
@@ -36,6 +37,9 @@ function text(answers: Answers, id: string): string {
 }
 
 export function buildObservation(input: ObservationInput): BuildResult {
+  if (reviewProblems(input.form, input.answers).length > 0)
+    return { ok: false, message: "Check the answers against the form requirements." };
+  const { answers } = pruneAnswers(input.form, input.answers);
   const shared = {
     id: input.id,
     coordinates: input.coordinates,
@@ -43,14 +47,14 @@ export function buildObservation(input: ObservationInput): BuildResult {
     storageStatus: "local-only",
   };
   if (input.form.version === "shell-v1") {
-    const count = Number(text(input.answers, "people"));
+    const { people } = answers;
     const parsed = shellObservationSchema.safeParse({
       ...shared,
       siteId: "sample-garden",
       formVersion: "shell-v1",
-      observer: text(input.answers, "observer"),
-      people: Number.isInteger(count) ? count : Number.NaN,
-      notes: text(input.answers, "notes"),
+      observer: text(answers, "observer"),
+      people,
+      notes: text(answers, "notes"),
     });
     return parsed.success
       ? { ok: true, record: parsed.data }
@@ -61,8 +65,8 @@ export function buildObservation(input: ObservationInput): BuildResult {
       ...shared,
       siteId: input.siteId,
       formVersion: "janet-test-v1",
-      observer: text(input.answers, "observer_initials"),
-      answers: input.answers,
+      observer: text(answers, "observer_initials"),
+      answers,
       context: input.context,
       placement: input.placement,
     });

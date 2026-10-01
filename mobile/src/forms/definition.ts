@@ -116,7 +116,7 @@ export const formDefinitionSchema = z.object({
 });
 export type FormDefinition = Readonly<z.infer<typeof formDefinitionSchema>>;
 
-export type AnswerValue = string | readonly string[];
+export type AnswerValue = string | number | readonly string[];
 export type Answers = Readonly<Record<string, AnswerValue>>;
 
 function referencedQuestions(condition: Condition): readonly string[] {

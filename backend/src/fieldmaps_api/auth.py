@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import Annotated, ClassVar, Protocol
+from typing import ClassVar, Protocol
 from uuid import UUID
 
 import anyio
 import jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, ValidationError
+
+from fieldmaps_api.errors import StorageUnavailableError, TokenInvalidError
 
 
 class TokenClaims(BaseModel):
@@ -46,31 +46,14 @@ class JwksVerifier:
             )
             return TokenClaims.model_validate(claims).sub
         except jwt.PyJWKClientConnectionError as error:
-            raise HTTPException(503, "Sign-in verification is temporarily unavailable") from error
+            message = "Sign-in verification is temporarily unavailable"
+            raise StorageUnavailableError(message) from error
         except (jwt.InvalidTokenError, jwt.PyJWKClientError, ValidationError) as error:
-            raise HTTPException(
-                401, "Sign in again to synchronize", headers={"WWW-Authenticate": "Bearer"}
-            ) from error
+            raise TokenInvalidError from error
 
 
 @dataclass(frozen=True, slots=True)
 class UnconfiguredVerifier:
     async def verify(self, _token: str) -> UUID:
-        raise HTTPException(503, "Sign-in provider has not been configured")
-
-
-class Authentication:
-    def __init__(self, verifier: TokenVerifier) -> None:
-        self.verifier: TokenVerifier = verifier
-
-    async def __call__(
-        self,
-        credentials: Annotated[
-            HTTPAuthorizationCredentials | None, Depends(HTTPBearer(auto_error=False))
-        ],
-    ) -> UUID:
-        if credentials is None:
-            raise HTTPException(
-                401, "Sign in to synchronize", headers={"WWW-Authenticate": "Bearer"}
-            )
-        return await self.verifier.verify(credentials.credentials)
+        message = "Sign-in provider has not been configured"
+        raise StorageUnavailableError(message)

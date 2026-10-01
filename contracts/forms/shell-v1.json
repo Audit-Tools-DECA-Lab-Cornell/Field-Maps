@@ -1,0 +1,58 @@
+{
+  "version": "shell-v1",
+  "title": "Practice form",
+  "summary": "Three practice fields against the bundled training map.",
+  "source": "The original FieldMaps shell; not a research instrument.",
+  "status": "published",
+  "inclusion": "Practice only. These records are not part of Janet's variable library.",
+  "knownExportCollisions": [],
+  "protocolNotes": [],
+  "questions": [
+    {
+      "id": "observer",
+      "code": "Observer",
+      "exportColumn": "observer",
+      "act": "Record",
+      "label": "Who is observing?",
+      "hint": "Up to twelve characters.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": true,
+      "placeholder": "e.g. JL",
+      "rows": 1,
+      "maxLength": 12,
+      "source": "Practice form"
+    },
+    {
+      "id": "people",
+      "code": "People",
+      "exportColumn": "people",
+      "act": "Social",
+      "label": "How many people are here?",
+      "kind": "number",
+      "options": [],
+      "columns": 1,
+      "required": true,
+      "placeholder": "0–999",
+      "min": 0,
+      "max": 999,
+      "source": "Practice form"
+    },
+    {
+      "id": "notes",
+      "code": "Notes",
+      "exportColumn": "notes",
+      "act": "Record",
+      "label": "What do you notice?",
+      "hint": "Optional field notes.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "rows": 4,
+      "maxLength": 1000,
+      "source": "Practice form"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ export type ResolvedQuestion = Question;
 
 export function isAnswered(value: AnswerValue | undefined): value is AnswerValue {
   if (value === undefined) return false;
+  if (typeof value === "number") return true;
   return typeof value === "string" ? value.trim() !== "" : value.length > 0;
 }
 
@@ -55,13 +56,20 @@ export function visibleQuestions(
   form: FormDefinition,
   answers: Answers,
 ): readonly ResolvedQuestion[] {
-  return form.questions
-    .filter((question) => !question.dependsOn || evaluate(question.dependsOn, answers))
-    .map((question) => resolveQuestion(question, answers));
+  const active: Record<string, AnswerValue> = {};
+  const visible: ResolvedQuestion[] = [];
+  for (const question of form.questions) {
+    if (question.dependsOn && !evaluate(question.dependsOn, active)) continue;
+    visible.push(resolveQuestion(question, active));
+    const value = answers[question.id];
+    if (value !== undefined) active[question.id] = value;
+  }
+  return visible;
 }
 
 function retainValue(question: ResolvedQuestion, value: AnswerValue): AnswerValue | null {
-  if (question.kind === "text" || question.kind === "number")
+  if (question.kind === "number") return typeof value === "number" ? value : null;
+  if (question.kind === "text")
     return typeof value === "string" && value.trim() !== "" ? value : null;
   const codes = new Set(question.options.map((option) => option.code));
   if (question.kind === "one") return typeof value === "string" && codes.has(value) ? value : null;
@@ -100,6 +108,8 @@ export function pruneAnswers(form: FormDefinition, answers: Answers): Pruned {
         continue;
       }
       next[id] = kept;
+      if (Array.isArray(value) && Array.isArray(kept) && value.length !== kept.length)
+        changed = true;
     }
     current = next;
     if (!changed) return { answers: current, dropped };
@@ -108,8 +118,38 @@ export function pruneAnswers(form: FormDefinition, answers: Answers): Pruned {
 
 export type ReviewProblem = {
   readonly question: ResolvedQuestion;
-  readonly reason: "required" | "range";
+  readonly reason: "required" | "range" | "type" | "option" | "duplicate" | "maxLength";
 };
+
+function answerProblem(
+  question: ResolvedQuestion,
+  value: AnswerValue,
+): ReviewProblem["reason"] | null {
+  switch (question.kind) {
+    case "number":
+      if (typeof value !== "number") return "type";
+      return !Number.isInteger(value) ||
+        (question.min !== undefined && value < question.min) ||
+        (question.max !== undefined && value > question.max)
+        ? "range"
+        : null;
+    case "text":
+      if (typeof value !== "string") return "type";
+      return question.maxLength !== undefined && Array.from(value).length > question.maxLength
+        ? "maxLength"
+        : null;
+    case "one":
+      if (typeof value !== "string") return "type";
+      if (value.trim() === "") return null;
+      return question.options.some((option) => option.code === value) ? null : "option";
+    case "many": {
+      if (typeof value === "string" || typeof value === "number") return "type";
+      if (new Set(value).size !== value.length) return "duplicate";
+      const codes = new Set(question.options.map((option) => option.code));
+      return value.every((code) => codes.has(code)) ? null : "option";
+    }
+  }
+}
 
 /**
  * What blocks a save. Validation happens only at review, never while a question is on screen:
@@ -119,15 +159,14 @@ export function reviewProblems(form: FormDefinition, answers: Answers): readonly
   const problems: ReviewProblem[] = [];
   for (const question of visibleQuestions(form, answers)) {
     const value = answers[question.id];
-    if (!isAnswered(value)) {
+    if (value === undefined) {
       if (question.required) problems.push({ question, reason: "required" });
       continue;
     }
-    if (question.kind !== "number" || typeof value !== "string") continue;
-    const count = Number(value);
-    const below = question.min !== undefined && count < question.min;
-    const above = question.max !== undefined && count > question.max;
-    if (!Number.isInteger(count) || below || above) problems.push({ question, reason: "range" });
+    const reason = answerProblem(question, value);
+    if (reason !== null) problems.push({ question, reason });
+    else if (question.required && !isAnswered(value))
+      problems.push({ question, reason: "required" });
   }
   return problems;
 }
@@ -149,13 +188,14 @@ export function optionLabel(question: ResolvedQuestion, code: string): string {
 /** What the reviewer reads on the review sheet. */
 export function answerSummary(question: ResolvedQuestion, value: AnswerValue | undefined): string {
   if (!isAnswered(value)) return question.required ? "Required" : "Not answered";
+  if (typeof value === "number") return String(value);
   if (typeof value === "string")
     return question.kind === "one" ? optionLabel(question, value) : value;
   return value.map((code) => optionLabel(question, code)).join(", ");
 }
 
 export type ExportedAnswers = {
-  readonly columns: Readonly<Record<string, string | readonly string[]>>;
+  readonly columns: Answers;
   /** Answers with no approved export column yet, named so the gap stays visible. */
   readonly withoutColumn: readonly ResolvedQuestion[];
 };
@@ -165,7 +205,7 @@ export type ExportedAnswers = {
  * A question whose export name is still an open protocol decision is reported, not guessed.
  */
 export function exportAnswers(form: FormDefinition, answers: Answers): ExportedAnswers {
-  const columns: Record<string, string | readonly string[]> = {};
+  const columns: Record<string, AnswerValue> = {};
   const withoutColumn: ResolvedQuestion[] = [];
   for (const question of visibleQuestions(form, answers)) {
     const value = answers[question.id];

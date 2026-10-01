@@ -15,6 +15,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
+    "contracts:forms": "node scripts/contracts-forms.mts",
     "start:simulator": "EXPO_NO_DOTENV=1 node --dns-result-order=ipv4first node_modules/expo/bin/cli start --dev-client --localhost"
   },
   "dependencies": {

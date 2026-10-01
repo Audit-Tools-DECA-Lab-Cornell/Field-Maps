@@ -7,7 +7,7 @@ from typing import cast
 import pytest
 from pydantic import ValidationError
 
-from fieldmaps_api.packages import (
+from fieldmaps_api.domain.packages import (
     PackageError,
     PackageSubmission,
     PreparationCheck,

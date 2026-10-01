@@ -17,7 +17,7 @@ Related plan files:
 **Schema today** (Postgres 17, PostGIS 3.3 in `extensions` on hosted):
 - Tables: `organizations`, `projects`, `sites`, `form_versions` (immutable by trigger), `observations`, `project_memberships` (roles `observer`, `manager`, `viewer`), `site_packages`, `package_checks`.
 - The user reports applying `supabase/migrations/20260923120000_site_packages.sql` (DB-01); hosted acceptance was not repeated in this implementation.
-- Ledger versions `0001`–`0008` exist locally; the next free number is `0009`.
+- Ledger versions `0001`–`0012` exist locally; the next free number is `0013`.
 
 **Identity.**
 - The API sets `fieldmaps.user_id` per transaction, and `fieldmaps.request_user_id()` reads it.
@@ -28,7 +28,7 @@ Related plan files:
 - The policies from the initial migration still rely on the memberships SELECT policy showing each account only its own rows. They are rewritten in DB-05, **before** anything lets members see other members' rows.
 - A widened memberships policy would otherwise turn "a manager exists on this project" into "you are a manager". This was reproduced: a viewer prepared a site package.
 
-**Local foundation now implemented:** profiles linked to Auth, organization memberships, invitations, private tenancy functions, caller-scoped RLS and concurrency tests. Public HTTP identity/tenancy endpoints remain BE-06/07; Training data remains DB-07.
+**Local foundation now implemented:** profiles linked to Auth, organization memberships, invitations, private tenancy functions, caller-scoped RLS, the isolated Training project and concurrency tests. Public HTTP identity/tenancy endpoints remain BE-06/07.
 
 **Canonical migration track (2026-09-26).**
 - DB-03 removed the historical `database/migrations/0001-0005` track, its ledger, seeds and Docker bootstrap after CI passed.
@@ -271,7 +271,7 @@ Do: add one migration, `identity_tenancy`. The **order inside the file matters**
    - `assigned_observation_uploads`: `created_by = request_user_id() AND upload_hash IS NOT NULL AND fieldmaps_private.has_project_role(project_id, ARRAY['observer','manager'])`.
    - `manager_prepares_package`: `prepared_by = request_user_id() AND fieldmaps_private.has_project_role(project_id, ARRAY['manager'])`.
    - Keep `manager_prepares_package_checks` as DB-01 wrote it, apart from moving its membership test to `has_project_role`.
-   - **In the same change, rewrite BE-16's three API queries** (`backend/src/fieldmaps_api/queries.py`) onto the helpers. Today they require a membership row; after this migration an org owner or admin acts as manager without one.
+   - **In the same change, rewrite BE-16's three API queries** (`backend/src/fieldmaps_api/queries/{tenancy,collection,sites}.py`) onto the helpers. Today they require a membership row; after this migration an org owner or admin acts as manager without one.
      - `PROJECTS`: `WHERE p.id IN (SELECT fieldmaps_private.my_project_ids())`, with the role taken from the caller's own membership, or `manager` for an org owner/admin without one.
      - `UPLOAD_TARGET`: `has_project_role(p.id, ARRAY['observer','manager'])`.
      - `PACKAGE_TARGET`: `has_project_role(p.id, ARRAY['manager'])`.
@@ -402,7 +402,8 @@ The functions:
 Done when: all function tests pass, and DB-04's coverage test still passes.
 
 ### DB-07: Training organization and project
-Status: todo · Phase 1 · Size M · Depends: CON-02, DB-05, DB-06 · Blocks: BE-06, DB-09, MOB-06, OPS-14
+Status: done (2026-09-30) · Phase 1 · Size M · Depends: CON-02, DB-05, DB-06 · Blocks: BE-06, DB-09, MOB-06, OPS-14
+Verified locally: incremental migration; 109 SQL assertions, 23 hosted-script assertions and 63 API tests pass. Training enrollment, private observations, canonical form equality and fixed-project retention work; [operator runbook](../docs/Training-Runbook.md) added. Hosted application, form lifecycle and site-package upload remain separate tasks.
 Read first: decisions D4 and D13 in [decisions.md](../docs/plan/decisions.md); `supabase/migrations/20260918185806_fieldops_initial.sql:212-230` (the seeded practice org and project, which stay as they are).
 Do: add migration `training`.
 1. **Create a new platform org and project with fixed IDs (D13):**
@@ -431,7 +432,8 @@ Done when:
 - project `…-0002` and its rows are unchanged.
 
 ### DB-08: Before-User-Created hook
-Status: todo · Phase 1 · Size S · Depends: DB-06 · Blocks: OPS-13, OPS-14
+Status: done (2026-09-30) · Phase 1 · Size S · Depends: DB-06 · Blocks: OPS-13, OPS-14
+Verified locally: 125 SQL assertions and 27 hosted-script assertions pass, including calls as the actual Auth role. After a volume-preserving local restart, Auth rejected a disposable signup with HTTP 400 and the specified message and accepted a permanent signup with HTTP 200; synthetic accounts were removed. [Pinned source and maintenance](../database/Blocked-Email-Domains.md); hosted activation remains OPS-13/14.
 Read first: <https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook>; [architecture.md rule 5](../docs/plan/architecture.md#security-rules) (hooks are the invoker exception).
 Do: add migration `auth_hooks`.
 1. Create schema `fieldmaps_auth_hooks`. Grant `USAGE` only to `supabase_auth_admin`, never `fieldmaps_private`.

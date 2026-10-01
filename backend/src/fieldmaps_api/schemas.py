@@ -12,7 +12,8 @@ from pydantic import (
     model_validator,
 )
 
-from fieldmaps_api.packages import PreparationCheck
+from fieldmaps_api.domain.forms import FormDefinition
+from fieldmaps_api.domain.packages import PreparationCheck
 
 #: A site or form version is named by its code within a project, which is what the collector
 #: carries and what an export column is keyed by.
@@ -111,3 +112,11 @@ class PackageSummary(BaseModel):
 class PackageDetail(PackageSummary):
     manifest: JsonValue
     checks: list[PreparationCheck]
+
+
+class UploadTarget(BaseModel):
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+    organization_id: UUID
+    site_id: UUID
+    form_version_id: UUID
+    definition: FormDefinition

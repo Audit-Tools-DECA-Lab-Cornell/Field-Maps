@@ -26,6 +26,7 @@ column.
   option identifiers, a restricted declarative condition format, dynamic option sets, and
   validation of duplicate export columns, dangling references and dependency cycles. Workbook
   rule text is carried as provenance and never executed.
+- **Shared JSON contracts** in [`../contracts/`](../contracts/README.md). The fixture modules import the canonical definitions; `pnpm contracts:forms` generates their input JSON Schema. The shared cases cover conditional visibility, hidden-answer pruning, types, duplicate selections, options, numeric ranges and text limits. Numeric answers remain numbers in session state, drafts, exports and stored observations. Server parity remains BE-10.
 - **Two form versions side by side.** The original practice form is now the `shell-v1`
   definition, unchanged in record shape and upload payload. `janet-test-v1` implements the
   candidate subset in [the Janet scope](../docs/Janet-Test-Form-Scope.md) — timestamp and
@@ -125,6 +126,8 @@ not rotate a locked app either.
 
 ## Verify
 
+CON-01/02 verification, September 29, 2026: **137 Vitest tests** pass, including 39 shared contract cases and schema drift checking. TypeScript, full mobile Biome checks and both iOS/Android Metro exports pass. Numeric answers survive SQLite draft close/reopen and observation serialization; practice upload tests remain green. Metro watches `../contracts/` so the native bundles include the canonical JSON. No device run or hosted form publication is claimed.
+
 ```bash
 pnpm typecheck
 pnpm lint
@@ -213,7 +216,8 @@ encryption configuration. Use test data for this development slice.
 | --- | --- |
 | `app/` | Routes: assignments, site brief, field, review, saved, records, account |
 | `src/forms/` | Form definitions, validation, the visibility engine, and the question-stack reducer |
-| `src/forms/fixtures/` | The versioned `shell-v1` and `janet-test-v1` definitions |
+| `src/forms/fixtures/` | Thin imports of the canonical JSON definitions in `../contracts/forms/` |
+| `scripts/contracts-forms.mts` | Generates the shared input JSON Schema from the mobile Zod definition |
 | `src/packages/` | The site package interface and the bundled fixture provider |
 | `src/session/` | The observation period: package, zone, round, draft persistence, and saving |
 | `src/maps/` | Native map, bundled training geometry, the generated Fall Creek site, base styles, and clustering maths |

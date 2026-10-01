@@ -90,6 +90,18 @@ base map upload fails in the browser rather than at the API.
 
 ## Contract and guarantees
 
+The app factory in `main.py` includes `routers/tenancy.py`, `routers/collection.py` and `routers/sites.py`. Routers keep authenticated transactions open around services; they complete the transaction before returning an upload receipt or package response. `deps.py` sets the caller's database identity for each transaction. Services own validation, preparation and conflict decisions; repositories perform typed SQL access through matching `queries/` modules. Pure form and map-package logic lives under `domain/`.
+
+API exceptions use one response envelope, also declared in OpenAPI:
+
+```json
+{"error":{"code":"validation_failed","message":"Request validation failed","details":{"fields":[{"id":"coordinates","problem":"Field required"}]}}}
+```
+
+Missing credentials use `unauthenticated`; rejected tokens use `token_invalid`. Both remain HTTP 401 with a Bearer challenge. Validation responses contain field identifiers and messages without the submitted input or validation context. Unexpected failures return a generic HTTP 500 response. Rejected CORS preflights retain the middleware's existing plain-text HTTP 400 response.
+
+Success bodies, URLs, status codes, archive headers and retry behavior are unchanged by BE-03. The mobile uploader decides retry/sign-in/rejection from status codes; the web package client also branches on status and displays error text. Neither depends on the former `detail` property. SQLAlchemy exceptions still produce HTTP 503; finer database error classification, readiness and observability remain BE-02.
+
 | Endpoint                                         | Behavior                                                          |
 | ------------------------------------------------ | ----------------------------------------------------------------- |
 | `GET /v1/projects`                               | Projects visible to the verified account                          |
@@ -110,7 +122,7 @@ Project membership is enforced in both the API lookup and database row policies.
 
 ## Verification and limits
 
-`pnpm backend:test` exercises real local Supabase, including token rejection, membership checks, connection-pool isolation, conflicting/concurrent retries, input boundaries, and restricted GIS readback. Python Ruff and BasedPyright also pass. The local SQL suite passes 78 assertions, followed by 18 assertions from the hosted verification script run locally. Native sign-in, mobile-to-running-API reconnect, and QGIS Desktop refresh still need a configured account/device acceptance run.
+`pnpm backend:test` exercises real local Supabase, including token rejection, membership checks, connection-pool isolation, conflicting/concurrent retries, input boundaries, and restricted GIS readback. It also covers the error envelope, framework errors, sanitized failures and OpenAPI responses. Run `pnpm backend:check` for Ruff and BasedPyright. Current SQL verification is recorded in [the database README](../database/README.md). Native sign-in, mobile-to-running-API reconnect, and QGIS Desktop refresh still need a configured account/device acceptance run.
 
 This is a local development service. Local Supabase is development infrastructure and must not be deployed as a production database. The hosted development database now has adapted migrations, restricted runtime credentials, and verified TLS. Production rollout still needs approved region/retention choices, a public HTTPS API deployment, managed secret injection, network restrictions, backups, monitoring, and API resource limits. The API has no attachments, update/delete synchronization, download cursor, or closed-app mobile background synchronization yet. Package archives live in a `bytea` column capped at 16 MB, which keeps them transactional with their manifest and checks and under the same row policies; moving to object storage later means replacing one column. The device cannot fetch a package yet.
 

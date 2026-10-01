@@ -13,13 +13,13 @@ Backend tasks in [backend/PLAN.md](../../backend/PLAN.md) implement these shapes
 
 Today the mobile form format and the server form format disagree:
 
-| | Mobile (`mobile/src/forms/definition.ts`) | Server (`backend/src/fieldmaps_api/forms.py`) |
+| | Mobile (`mobile/src/forms/definition.ts`) | Server (`backend/src/fieldmaps_api/domain/forms.py`) |
 |---|---|---|
 | Question key | `id` | `code` |
 | Kind names | `kind: one \| many \| text \| number` | `type: choice \| multi-choice \| integer \| …` |
 | Range names | `min` / `max` | `minimum` / `maximum` |
 | Conditions | `dependsOn` conditions | none |
-| Hidden required fields | optional | rejected when missing (`forms.py:50-55`) |
+| Hidden required fields | optional | rejected when missing (`domain/forms.py`) |
 
 API types are also written by hand twice: `web/src/lib/packages.ts:17-37` and `mobile/src/sync/contracts.ts`. And the `janet-test-v1` form cannot upload.
 
@@ -46,7 +46,7 @@ Rules both sides must implement identically:
    - The device drops them.
    - The server drops any that still arrive, and reports their ids as `pruned` in the per-operation result. It never rejects the observation for them: a parity bug must cost one hidden answer, not a record.
 3. **Required.** A question is required only while it is visible.
-4. **Types.** `number` answers are JSON numbers (the mobile code currently stores strings, `mobile/src/domain/observation.ts:38`). `one` answers are an option code. `many` answers are an array of distinct option codes. `text` answers respect `maxLength`.
+4. **Types.** `number` answers are finite JSON numbers, validated as integers against the definition's bounds. `one` answers are an option code. `many` answers are an array of distinct option codes. `text` answers respect `maxLength`, counted in Unicode code points.
 5. **Workbook rule text** is provenance only and is never executed.
 6. **`status`** now lives on the server row (`form_versions.state`, DB-09), not inside the definition. The definition's own `status` field is ignored once DB-09 lands.
 7. **The JSON Schema describes the input.**
@@ -87,6 +87,7 @@ The current `PUT /v1/projects/{p}/observations/{uuid}` body (`site_id`, `form_ve
 
 | Code | HTTP | SQLSTATE |
 |---|---|---|
+| `bad_request` | 400 | |
 | `unauthenticated` | 401 | |
 | `token_invalid` | 401 | |
 | `account_deleted` | 403 | `FM005` |
@@ -94,6 +95,7 @@ The current `PUT /v1/projects/{p}/observations/{uuid}` body (`site_id`, `form_ve
 | `role_required` | 403 | `FM006`, `42501` |
 | `limit_reached` | 403 | `FM001` |
 | `not_found` | 404 | `FM007` |
+| `method_not_allowed` | 405 | |
 | `invitation_invalid` | 404 | `FM003` |
 | `conflict` | 409 | `FM008`, `23505` |
 | `sole_owner` | 409 | `FM002` |
@@ -109,7 +111,7 @@ The current `PUT /v1/projects/{p}/observations/{uuid}` body (`site_id`, `form_ve
 
 ## API endpoint catalog (v1)
 
-This is the full target surface. **Exists** means it is already in `backend/src/fieldmaps_api/main.py`. The owning task implements each endpoint.
+This is the full target surface. **Exists** means it is already served by `backend/src/fieldmaps_api/main.py` and its `routers/` modules. The owning task implements each endpoint.
 
 | Module | Method and path | Who | Owner |
 |---|---|---|---|
@@ -163,7 +165,8 @@ These follow PowerSync's guidance: <https://docs.powersync.com/handling-writes/w
 ## Tasks
 
 ### CON-01: Create the `contracts/` folder and its rules
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: CON-02, CON-03
+Status: done (2026-09-29) · Phase 0 · Size S · Depends: none · Blocks: CON-02, CON-03
+Evidence: `contracts/README.md` documents generators, consumers, editing rules and shared-case semantics. Root routing and layout link the folder. No shared runtime package or dependencies were introduced.
 Read first: this file; `docs/Workspace.md` (dependency boundaries).
 Do:
 1. Create `contracts/README.md` with the tree above, what generates each file, and who consumes it.
@@ -176,10 +179,11 @@ Done when:
 Verify: `node docs/plan/check-plan.mjs`.
 
 ### CON-02: Make the form definition canonical and share test cases
-Status: todo · Phase 0 · Size M · Depends: CON-01 · Blocks: BE-10, DB-07, DB-09, GIS-01, MOB-13
+Status: done (2026-09-29) · Phase 0 · Size M · Depends: CON-01 · Blocks: BE-10, DB-07, DB-09, GIS-01, MOB-13
+Evidence: generated input JSON Schema, canonical JSON for both forms and 39 shared cases. Mobile runs every case file and checks schema drift; 137 tests, TypeScript/Biome and iOS/Android Metro exports pass. Numeric input, observation building and SQLite draft recovery preserve JSON numbers. Metro watches `contracts/`. Server parity remains BE-10; native-device and hosted acceptance were not run.
 Read first:
 - `mobile/src/forms/definition.ts`, `mobile/src/forms/engine.ts`, `mobile/src/forms/fixtures/*.ts`
-- `backend/src/fieldmaps_api/forms.py`
+- `backend/src/fieldmaps_api/domain/forms.py`
 - `docs/Janet-Test-Form-Scope.md`
 
 Do:

@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
 
+from fieldmaps_api.errors import ErrorEnvelope
 from fieldmaps_api.schemas import ProjectAccess, StoredObservation, UploadReceipt
 from tests.signing import PROJECT, USER
 
@@ -52,6 +53,7 @@ def test_changed_retry_cannot_overwrite_original(api_client: TestClient) -> None
     assert api_client.put(url, json=payload).status_code == 200
     conflict = api_client.put(url, json={**payload, "people": 7})
     assert conflict.status_code == 409
+    assert ErrorEnvelope.model_validate_json(conflict.content).error.code == "conflict"
     assert StoredObservation.model_validate_json(api_client.get(url).content).answers["people"] == 3
 
 

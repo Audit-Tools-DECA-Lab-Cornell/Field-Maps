@@ -1,0 +1,1559 @@
+{
+  "formVersion": "janet-test-v1",
+  "definitions": {
+    "rules": {
+      "version": "contract-rules-test",
+      "title": "Contract rules",
+      "summary": "Synthetic cases; not a research instrument.",
+      "source": "CON-02 tests",
+      "status": "draft",
+      "inclusion": "Tests only",
+      "unknownFutureKey": "ignored",
+      "questions": [
+        {
+          "id": "gate",
+          "code": "gate",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "gate",
+          "kind": "one",
+          "source": "Synthetic contract test only",
+          "options": [
+            {
+              "code": "yes",
+              "label": "Yes"
+            },
+            {
+              "code": "no",
+              "label": "No"
+            }
+          ]
+        },
+        {
+          "id": "detail",
+          "code": "detail",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "detail",
+          "kind": "text",
+          "source": "Synthetic contract test only",
+          "required": true,
+          "dependsOn": {
+            "kind": "equals",
+            "question": "gate",
+            "option": "yes"
+          }
+        },
+        {
+          "id": "tags",
+          "code": "tags",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "tags",
+          "kind": "many",
+          "source": "Synthetic contract test only",
+          "options": [
+            {
+              "code": "red",
+              "label": "Red"
+            },
+            {
+              "code": "blue",
+              "label": "Blue"
+            }
+          ]
+        },
+        {
+          "id": "count",
+          "code": "count",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "count",
+          "kind": "number",
+          "source": "Synthetic contract test only",
+          "min": 0,
+          "max": 3
+        },
+        {
+          "id": "note",
+          "code": "note",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "note",
+          "kind": "text",
+          "source": "Synthetic contract test only",
+          "maxLength": 3,
+          "unknownQuestionKey": "ignored"
+        },
+        {
+          "id": "nested",
+          "code": "nested",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "nested",
+          "kind": "text",
+          "source": "Synthetic contract test only",
+          "required": true,
+          "dependsOn": {
+            "kind": "all",
+            "of": [
+              {
+                "kind": "equals",
+                "question": "gate",
+                "option": "yes"
+              },
+              {
+                "kind": "answered",
+                "question": "detail"
+              }
+            ]
+          }
+        },
+        {
+          "id": "either",
+          "code": "either",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "either",
+          "kind": "text",
+          "source": "Synthetic contract test only",
+          "dependsOn": {
+            "kind": "any",
+            "of": [
+              {
+                "kind": "includes",
+                "question": "tags",
+                "option": "red"
+              },
+              {
+                "kind": "equals",
+                "question": "gate",
+                "option": "yes"
+              }
+            ]
+          }
+        },
+        {
+          "id": "unless_no",
+          "code": "unless_no",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "unless_no",
+          "kind": "text",
+          "source": "Synthetic contract test only",
+          "dependsOn": {
+            "kind": "notEquals",
+            "question": "gate",
+            "option": "no"
+          }
+        }
+      ]
+    },
+    "defaults": {
+      "version": "defaults-test",
+      "title": "Defaults",
+      "summary": "Default and unknown-key contract test.",
+      "source": "CON-02 synthetic tests",
+      "status": "draft",
+      "inclusion": "Tests only",
+      "futureProperty": "ignored",
+      "questions": [
+        {
+          "id": "note",
+          "code": "note",
+          "exportColumn": "",
+          "act": "Record",
+          "label": "Note",
+          "kind": "text",
+          "source": "Synthetic test",
+          "futureProperty": "ignored"
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "empty-required-answers",
+      "steps": [
+        {
+          "answers": {},
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "age_range",
+                "reason": "required"
+              },
+              {
+                "id": "play_type_1",
+                "reason": "required"
+              },
+              {
+                "id": "observer_initials",
+                "reason": "required"
+              },
+              {
+                "id": "play_event_summary",
+                "reason": "required"
+              }
+            ],
+            "answers": {},
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "required-answers-complete",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play."
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wildlife-unanswered",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play."
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wildlife-no",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "no"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "no"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wildlife-yes",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "yes"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "wildlife_type",
+              "wildlife_other",
+              "wildlife_description",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "yes"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wildlife-on-then-off",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "yes",
+            "wildlife_other": "Watching ducks",
+            "wildlife_description": "At the pond"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "wildlife_type",
+              "wildlife_other",
+              "wildlife_description",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "yes",
+              "wildlife_other": "Watching ducks",
+              "wildlife_description": "At the pond"
+            },
+            "dropped": []
+          }
+        },
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "no",
+            "wildlife_other": "Watching ducks",
+            "wildlife_description": "At the pond"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "no"
+            },
+            "dropped": [
+              "wildlife_other",
+              "wildlife_description"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "hidden-answer-pruned-without-error",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": [
+              "wildlife_description"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "first-play-subtype",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "play_subtype_1": "gross_motor"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "play_subtype_1": "gross_motor"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "second-play-slot-independent",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "play_subtype_1": "gross_motor",
+            "play_type_2": "bio",
+            "play_subtype_2": "plants"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "play_subtype_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "play_subtype_1": "gross_motor",
+              "play_type_2": "bio",
+              "play_subtype_2": "plants"
+            },
+            "dropped": [],
+            "options": {
+              "play_subtype_1": [
+                "gross_motor",
+                "fine_motor",
+                "vestibular",
+                "rough_and_tumble"
+              ],
+              "play_subtype_2": [
+                "plants",
+                "wildlife",
+                "care"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "second-slot-does-not-borrow-first-options",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "play_type_2": "bio",
+            "play_subtype_2": "gross_motor"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "play_subtype_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "play_subtype_2",
+                "reason": "option"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "play_type_2": "bio"
+            },
+            "dropped": [
+              "play_subtype_2"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale-first-subtype-after-parent-change",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "imaginative",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "play_subtype_1": "gross_motor"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "play_subtype_1",
+                "reason": "option"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "imaginative",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": [
+              "play_subtype_1"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown-age-option",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "unknown",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play."
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "age_range",
+                "reason": "option"
+              }
+            ],
+            "answers": {
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": [
+              "age_range"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "single-choice-rejects-array",
+      "steps": [
+        {
+          "answers": {
+            "age_range": [
+              "age_3_5"
+            ],
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play."
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "age_range",
+                "reason": "type"
+              }
+            ],
+            "answers": {
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": [
+              "age_range"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "summary-maxlength",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "play_event_summary",
+                "reason": "maxLength"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "summary-at-limit",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "initials-maxlength",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "ABCDEFGHIJK",
+            "play_event_summary": "Watching children play."
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "observer_initials",
+                "reason": "maxLength"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "ABCDEFGHIJK",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wildlife-description-maxlength",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "yes",
+            "wildlife_description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "wildlife_type",
+              "wildlife_other",
+              "wildlife_description",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "wildlife_description",
+                "reason": "maxLength"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "yes",
+              "wildlife_description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "wildlife-description-at-limit",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "yes",
+            "wildlife_description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "wildlife_type",
+              "wildlife_other",
+              "wildlife_description",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "yes",
+              "wildlife_description": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "blank-required-summary",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "   "
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "play_event_summary",
+                "reason": "required"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL"
+            },
+            "dropped": [
+              "play_event_summary"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "text-rejects-number",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": 12,
+            "play_event_summary": "Watching children play."
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "observer_initials",
+                "reason": "type"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "play_event_summary": "Watching children play."
+            },
+            "dropped": [
+              "observer_initials"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "pending-options-reject-invented-code",
+      "steps": [
+        {
+          "answers": {
+            "age_range": "age_3_5",
+            "play_type_1": "physical",
+            "observer_initials": "JL",
+            "play_event_summary": "Watching children play.",
+            "wildlife_interaction": "yes",
+            "wildlife_type": "feeding"
+          },
+          "expected": {
+            "visible": [
+              "age_range",
+              "play_type_1",
+              "play_subtype_1",
+              "play_type_2",
+              "cars_intensity",
+              "wildlife_interaction",
+              "wildlife_type",
+              "wildlife_other",
+              "wildlife_description",
+              "observer_initials",
+              "play_event_summary"
+            ],
+            "problems": [
+              {
+                "id": "wildlife_type",
+                "reason": "option"
+              }
+            ],
+            "answers": {
+              "age_range": "age_3_5",
+              "play_type_1": "physical",
+              "observer_initials": "JL",
+              "play_event_summary": "Watching children play.",
+              "wildlife_interaction": "yes"
+            },
+            "dropped": [
+              "wildlife_type"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "defaults-omitted-and-unknown-keys",
+      "definition": "defaults",
+      "steps": [
+        {
+          "answers": {},
+          "expected": {
+            "visible": [
+              "note"
+            ],
+            "problems": [],
+            "answers": {},
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "hidden-required-question",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "gate": "no"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note"
+            ],
+            "problems": [],
+            "answers": {
+              "gate": "no"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "visible-required-question",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "gate": "yes"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "detail",
+              "tags",
+              "count",
+              "note",
+              "either",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "detail",
+                "reason": "required"
+              }
+            ],
+            "answers": {
+              "gate": "yes"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nested-required-question",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "gate": "yes",
+            "detail": "here"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "detail",
+              "tags",
+              "count",
+              "note",
+              "nested",
+              "either",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "nested",
+                "reason": "required"
+              }
+            ],
+            "answers": {
+              "gate": "yes",
+              "detail": "here"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "hidden-answers-cannot-reveal-descendants",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "gate": "no",
+            "detail": "old",
+            "nested": "old"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note"
+            ],
+            "problems": [],
+            "answers": {
+              "gate": "no"
+            },
+            "dropped": [
+              "detail",
+              "nested"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "many-distinct",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "tags": [
+              "red",
+              "blue"
+            ]
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "either",
+              "unless_no"
+            ],
+            "problems": [],
+            "answers": {
+              "tags": [
+                "red",
+                "blue"
+              ]
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "many-duplicate",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "tags": [
+              "red",
+              "red"
+            ]
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "either",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "tags",
+                "reason": "duplicate"
+              }
+            ],
+            "answers": {
+              "tags": [
+                "red",
+                "red"
+              ]
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "many-unknown-option",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "tags": [
+              "blue",
+              "unknown"
+            ]
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "tags",
+                "reason": "option"
+              }
+            ],
+            "answers": {
+              "tags": [
+                "blue"
+              ]
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "many-rejects-scalar",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "tags": "red"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "tags",
+                "reason": "type"
+              }
+            ],
+            "answers": {},
+            "dropped": [
+              "tags"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-zero",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "count": 0
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [],
+            "answers": {
+              "count": 0
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-upper-bound",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "count": 3
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [],
+            "answers": {
+              "count": 3
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-over-bound",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "count": 4
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "count",
+                "reason": "range"
+              }
+            ],
+            "answers": {
+              "count": 4
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-below-bound",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "count": -1
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "count",
+                "reason": "range"
+              }
+            ],
+            "answers": {
+              "count": -1
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-fraction",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "count": 1.5
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "count",
+                "reason": "range"
+              }
+            ],
+            "answers": {
+              "count": 1.5
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "number-rejects-string",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "count": "2"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "count",
+                "reason": "type"
+              }
+            ],
+            "answers": {},
+            "dropped": [
+              "count"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "many-empty",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "tags": []
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [],
+            "answers": {},
+            "dropped": [
+              "tags"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "unicode-text-codepoints",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "note": "🦆🦆🦆"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [],
+            "answers": {
+              "note": "🦆🦆🦆"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "unicode-text-over-limit",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "note": "🦆🦆🦆🦆"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "tags",
+              "count",
+              "note",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "note",
+                "reason": "maxLength"
+              }
+            ],
+            "answers": {
+              "note": "🦆🦆🦆🦆"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    }
+  ]
+}

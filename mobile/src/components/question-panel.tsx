@@ -48,12 +48,13 @@ export function QuestionPanel({
   const itemWidth = gridWidth > 0 ? (gridWidth - GAP * (cols - 1)) / cols : undefined;
   const actIndex = ACTS.indexOf(question.act);
 
-  const [text, setText] = useState(typeof value === "string" ? value : "");
+  const inputText = typeof value === "string" || typeof value === "number" ? String(value) : "";
+  const [text, setText] = useState(inputText);
   const [shown, setShown] = useState(question.id);
   // Reload the field only when the question changes, not whenever the stored answer lands.
   if (shown !== question.id) {
     setShown(question.id);
-    setText(typeof value === "string" ? value : "");
+    setText(inputText);
   }
 
   function type(next: string) {

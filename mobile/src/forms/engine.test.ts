@@ -124,7 +124,7 @@ describe("Validation at review", () => {
 
   it("reports a number outside its supplied bounds", () => {
     // Given a practice record with an impossible count.
-    const problems = reviewProblems(shellV1, { observer: "JL", people: "1000" });
+    const problems = reviewProblems(shellV1, { observer: "JL", people: 1000 });
     // Then the range is reported rather than stored.
     expect(problems.map((problem) => [problem.question.id, problem.reason])).toEqual([
       ["people", "range"],

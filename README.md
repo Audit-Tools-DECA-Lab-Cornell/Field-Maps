@@ -11,6 +11,7 @@ field-maps/
 ├── web/          Next.js management application, source, public assets, and build config
 ├── mobile/       Expo / React Native collector with SQLite and MapLibre
 ├── backend/      FastAPI authentication and observation API
+├── contracts/    Shared JSON schemas, form definitions and validation cases
 ├── database/     Local Supabase tooling, SQL tests and hosted verification
 ├── supabase/     Canonical schema migrations, local Supabase configuration and seeds
 ├── qgis/         Read-only live project, connection settings, and launcher

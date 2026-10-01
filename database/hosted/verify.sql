@@ -122,5 +122,59 @@ RESET ROLE;
 CREATE FUNCTION pg_temp.hosted_default_probe() RETURNS integer LANGUAGE sql AS 'SELECT 1';
 SELECT pg_temp.assert_true(NOT has_function_privilege('anon', 'pg_temp.hosted_default_probe()', 'EXECUTE'),
   'new functions are private by default');
+
+SET LOCAL ROLE fieldmaps_api;
+SELECT set_config('fieldmaps.user_id', '50000000-0000-4000-8000-000000000001', true);
+SELECT fieldmaps_private.ensure_profile(NULL);
+SELECT pg_temp.assert_true(EXISTS (
+  SELECT FROM fieldmaps.project_memberships
+  WHERE project_id = '10000000-0000-4000-8000-000000000102'
+    AND user_id = fieldmaps.request_user_id() AND role = 'observer'
+), 'profile setup enrolls the observer in Training');
+INSERT INTO fieldmaps.observations
+  (id, organization_id, project_id, site_id, form_version_id, observer_code,
+   observed_at, geom, answers, created_by, upload_hash)
+VALUES ('50000000-0000-4000-8000-000000000011',
+  '10000000-0000-4000-8000-000000000101', '10000000-0000-4000-8000-000000000102',
+  '10000000-0000-4000-8000-000000000103', '10000000-0000-4000-8000-000000000104',
+  'QA', now(), fieldmaps.make_point(-76.485, 42.448), '{}',
+  fieldmaps.request_user_id(), repeat('c', 64));
+SELECT pg_temp.assert_true(EXISTS (
+  SELECT FROM fieldmaps.observations WHERE id = '50000000-0000-4000-8000-000000000011'
+), 'trainee reads their own observation');
+SELECT set_config('fieldmaps.user_id', '50000000-0000-4000-8000-000000000004', true);
+SELECT fieldmaps_private.ensure_profile(NULL);
+SELECT pg_temp.assert_true(NOT EXISTS (
+  SELECT FROM fieldmaps.observations WHERE id = '50000000-0000-4000-8000-000000000011'
+), 'another trainee cannot read the observation');
+RESET ROLE;
+SET LOCAL ROLE fieldmaps_sample_reader;
+SELECT pg_temp.assert_true(NOT EXISTS (
+  SELECT FROM gis.sample_observations WHERE observation_id = '50000000-0000-4000-8000-000000000011'
+), 'GIS reader cannot see Training observations');
+RESET ROLE;
+SELECT pg_temp.assert_true(NOT EXISTS (
+  SELECT FROM fieldmaps.organization_members WHERE organization_id = '10000000-0000-4000-8000-000000000101'
+), 'Training enrollment creates no platform organization members');
+SELECT pg_temp.assert_true(NOT has_schema_privilege('fieldmaps_api', 'fieldmaps_auth_hooks', 'USAGE')
+  AND NOT has_function_privilege('authenticated', 'fieldmaps_auth_hooks.before_user_created(jsonb)', 'EXECUTE')
+  AND NOT has_function_privilege('service_role', 'fieldmaps_auth_hooks.before_user_created(jsonb)', 'EXECUTE'),
+  'signup hook is outside the application and browser boundary');
+SELECT set_config('fieldmaps.user_id', '', true);
+SELECT pg_temp.assert_true(
+  has_schema_privilege('supabase_auth_admin', 'fieldmaps_auth_hooks', 'USAGE')
+  AND has_function_privilege('supabase_auth_admin', 'fieldmaps_auth_hooks.before_user_created(jsonb)', 'EXECUTE')
+  AND has_table_privilege('supabase_auth_admin', 'fieldmaps_auth_hooks.blocked_email_domains', 'SELECT')
+  AND EXISTS (SELECT FROM pg_policies WHERE schemaname = 'fieldmaps_auth_hooks'
+    AND tablename = 'blocked_email_domains' AND policyname = 'auth_admin_reads'
+    AND roles = ARRAY['supabase_auth_admin']::name[] AND cmd = 'SELECT' AND qual = 'true'),
+  'Auth receives both table privileges and an RLS read policy');
+SELECT pg_temp.assert_true(
+  fieldmaps_auth_hooks.before_user_created('{"user":{"email":"qa@mailinator.com"}}')
+    = '{"error":{"http_code":400,"message":"Use a permanent email address."}}'::jsonb,
+  'signup hook rejects disposable email without an application identity');
+SELECT pg_temp.assert_true(
+  fieldmaps_auth_hooks.before_user_created('{"user":{"email":"qa@cornell.edu"}}') = '{}'::jsonb,
+  'signup hook accepts permanent email');
 ROLLBACK;
-SELECT 'Eighteen hosted assertions passed; synthetic memberships, observation, site and package rolled back' AS result;
+SELECT 'Hosted assertions passed; synthetic accounts, memberships, observations, site and package rolled back' AS result;

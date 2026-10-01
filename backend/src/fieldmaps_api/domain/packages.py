@@ -21,8 +21,8 @@ from typing import ClassVar, Final, Literal
 
 from pydantic import Base64Bytes, BaseModel, ConfigDict, Field
 
-from fieldmaps_api import qgis_project
-from fieldmaps_api.geojson import FeatureCollection, declared_crs_is_wgs84, positions
+from fieldmaps_api.domain import qgis_project
+from fieldmaps_api.domain.geojson import FeatureCollection, declared_crs_is_wgs84, positions
 
 PACKAGE_FORMAT: Final = 1
 

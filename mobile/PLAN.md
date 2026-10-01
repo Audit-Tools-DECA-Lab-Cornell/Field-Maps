@@ -388,7 +388,7 @@ Done when: the brief, field and review screens work against a synced published f
 
 ### MOB-14: Hosted site packages
 Status: todo · Phase 2 · Size L · Depends: BE-13, MOB-09 · Blocks: MOB-15
-Read first: `src/packages/site-package.ts`, `src/packages/bundled.ts`, `src/maps/field-map.tsx`; the manifest format in `backend/src/fieldmaps_api/domain/packages.py` (moved there by BE-03; before BE-03 it is `packages.py:127-137`).
+Read first: `src/packages/site-package.ts`, `src/packages/bundled.ts`, `src/maps/field-map.tsx`; the manifest format in `backend/src/fieldmaps_api/domain/packages.py` (moved there by BE-03).
 Do:
 1. Studies list:
    - sites from sync, with `current_package_id`;

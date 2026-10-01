@@ -35,7 +35,7 @@ export const shellObservationSchema = z.object({
 });
 export type ShellObservation = Readonly<z.infer<typeof shellObservationSchema>>;
 
-export const answerValueSchema = z.union([z.string(), z.array(z.string())]);
+export const answerValueSchema = z.union([z.string(), z.number().finite(), z.array(z.string())]);
 
 /** What the site brief fixes for a round and stamps onto every observation inside it. */
 export const roundContextSchema = z.object({

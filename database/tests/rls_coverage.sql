@@ -1,11 +1,11 @@
 SELECT pg_temp.assert_true(NOT EXISTS (
   SELECT FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
-  WHERE n.nspname = 'fieldmaps' AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity
+  WHERE n.nspname IN ('fieldmaps', 'fieldmaps_auth_hooks') AND c.relkind IN ('r', 'p') AND NOT c.relrowsecurity
 ), 'every application table enables RLS');
 SELECT pg_temp.assert_true(NOT EXISTS (
   SELECT FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
   CROSS JOIN (VALUES ('anon'), ('authenticated'), ('service_role')) r(name)
-  WHERE n.nspname IN ('fieldmaps', 'fieldmaps_private', 'gis')
+  WHERE n.nspname IN ('fieldmaps', 'fieldmaps_private', 'fieldmaps_auth_hooks', 'gis')
     AND c.relkind IN ('r', 'p', 'v', 'm')
     AND (has_any_column_privilege(r.name, c.oid, 'SELECT,INSERT,UPDATE,REFERENCES')
       OR has_table_privilege(r.name, c.oid, 'DELETE,TRUNCATE,TRIGGER'))

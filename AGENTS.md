@@ -9,6 +9,7 @@ FieldMaps is one Git repository with independently managed applications. It is s
 | `web/`              | Next.js App Router management application; read its local AGENTS.md       |
 | `mobile/`           | Expo / React Native offline collector and account-scoped SQLite queue     |
 | `backend/`          | FastAPI authentication and observation API                                |
+| `contracts/`        | Shared JSON schemas, canonical form definitions and cross-language cases; read its README |
 | `database/`         | Local Supabase tooling, SQL/API tests, and hosted verification           |
 | `supabase/`         | Canonical schema migrations, local Supabase configuration and seeds               |
 | `qgis/`             | Scoped read-only live project and public connection configuration         |

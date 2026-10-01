@@ -13,9 +13,9 @@ Decision D10 in [decisions.md](../docs/plan/decisions.md) sets the pilot's acces
 ## Context (verified 2026-09-22)
 
 **Inbound: QGIS packages today**
-- The API accepts GeoJSON layers `ground` and `zones` (required) and `paths` and `trees` (optional), plus an optional `.qgz` or `.qgs`. Five checks run: source project, layer sources, coordinate reference, imagery licence, and archive (`backend/src/fieldmaps_api/packages.py`, `qgis_project.py`).
-- Zones are reduced to bounding boxes (`packages.py:469-478`).
-- The imagery allow-list is an empty constant (`packages.py:31`).
+- The API accepts GeoJSON layers `ground` and `zones` (required) and `paths` and `trees` (optional), plus an optional `.qgz` or `.qgs`. Five checks run: source project, layer sources, coordinate reference, imagery licence, and archive (`backend/src/fieldmaps_api/domain/packages.py`, `domain/qgis_project.py`).
+- Zones are reduced to bounding boxes (`domain/packages.py`).
+- The imagery allow-list is an empty constant (`domain/packages.py`).
 - There is no GDAL, GeoPackage or raster support.
 - The hosted database lacked the package tables until DB-01.
 

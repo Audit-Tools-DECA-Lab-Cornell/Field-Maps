@@ -155,7 +155,7 @@ Do:
    - Auth settings (OPS-01), SMTP (OPS-02), templates (OPS-03), leaked-password protection (OPS-13), the Before-User-Created hook (DB-08);
    - enable pg_cron (DB-07);
    - **Pending account deletions.** `SELECT user_id, deleted_at FROM fieldmaps.profiles WHERE deleted_at IS NOT NULL`. Each row is an account whose Auth deletion must still be finished, with the Admin API or the dashboard (BE-08);
-   - **Upload the Training site package** through BE-13, as a temporary Training manager (DB-07 step 6);
+   - **Upload the Training site package** through BE-13, as a temporary Training manager (DB-07 step 6; [Training runbook](../Training-Runbook.md));
    - **Create the pilot project's QGIS reader login** with `grant-gis-reader.sql` (GIS-02);
    - the Render production service;
    - the PowerSync production instance;

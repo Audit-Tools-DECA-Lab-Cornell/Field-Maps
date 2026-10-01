@@ -1,11 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { visibleQuestions } from "./engine";
 import { janetTestV1 } from "./fixtures/janet-test-v1";
+import { shellV1 } from "./fixtures/shell-v1";
 import { questionAt, reduceSession, startSession } from "./session";
 
 const at = (state: Parameters<typeof questionAt>[1]) => questionAt(janetTestV1, state)?.id;
 
 describe("Answering one question at a time", () => {
+  it("stores numeric input as a number and distinguishes blank from zero", () => {
+    const zero = reduceSession(shellV1, startSession(), {
+      kind: "write",
+      question: "people",
+      value: "0",
+    });
+    expect(zero.state.answers).toEqual({ people: 0 });
+    const blank = reduceSession(shellV1, zero.state, {
+      kind: "write",
+      question: "people",
+      value: "",
+    });
+    expect(blank.state.answers).toEqual({});
+  });
   it("moves on by itself after a single choice, but not when the choice is cleared", () => {
     // Given the first question on screen.
     const start = startSession();

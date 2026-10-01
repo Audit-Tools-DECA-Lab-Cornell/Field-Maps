@@ -3,31 +3,7 @@ BEGIN;
 GRANT fieldmaps_api, fieldmaps_sample_reader TO postgres WITH SET TRUE;
 SET LOCAL search_path = fieldmaps, extensions, public;
 
-CREATE FUNCTION pg_temp.assert_true(actual boolean, label text) RETURNS void
-LANGUAGE plpgsql AS $$
-BEGIN
-  IF actual IS DISTINCT FROM true THEN
-    RAISE EXCEPTION 'FAIL: %', label;
-  END IF;
-  RAISE NOTICE 'PASS: %', label;
-END;
-$$;
-
-CREATE FUNCTION pg_temp.assert_rejected(statement text, expected_state text, label text)
-RETURNS void LANGUAGE plpgsql AS $$
-DECLARE actual_state text;
-BEGIN
-  BEGIN
-    EXECUTE statement;
-  EXCEPTION WHEN OTHERS THEN
-    GET STACKED DIAGNOSTICS actual_state = RETURNED_SQLSTATE;
-  END;
-  IF actual_state IS DISTINCT FROM expected_state THEN
-    RAISE EXCEPTION 'FAIL: %, expected %, got %', label, expected_state, actual_state;
-  END IF;
-  RAISE NOTICE 'PASS: %', label;
-END;
-$$;
+\ir assertions.sql
 GRANT EXECUTE ON FUNCTION pg_temp.assert_true(boolean, text),
   pg_temp.assert_rejected(text, text, text) TO fieldmaps_api, fieldmaps_sample_reader;
 
@@ -68,7 +44,7 @@ SELECT pg_temp.assert_true(
 SELECT pg_temp.assert_true(
   (SELECT array_agg(version ORDER BY version) FROM fieldmaps_meta.schema_migrations)
     = ARRAY['0001_initial', '0002_observation_uploads', '0003_spatial_interface',
-            '0004_site_packages', '0005_package_policy_identity', '0006_default_privileges', '0007_identity_tenancy', '0008_tenancy_functions', '0009_invitation_membership_guard', '0010_tenancy_role_guards'],
+            '0004_site_packages', '0005_package_policy_identity', '0006_default_privileges', '0007_identity_tenancy', '0008_tenancy_functions', '0009_invitation_membership_guard', '0010_tenancy_role_guards', '0011_training', '0012_auth_hooks'],
   'migration replay records each version once'
 );
 \ir constraints.sql
@@ -76,5 +52,6 @@ SELECT pg_temp.assert_true(
 \ir rls_coverage.sql
 \ir tenancy.sql
 \ir tenancy_functions.sql
+\ir training.sql
 ROLLBACK;
 \echo All database scenarios passed; test records rolled back.

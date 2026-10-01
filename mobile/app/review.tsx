@@ -77,8 +77,8 @@ export default function ReviewScreen() {
         <View style={{ marginTop: space.base + 3 }}>
           <AttentionNote
             role="alert"
-            title={`${blocked.length} required ${blocked.length === 1 ? "answer is" : "answers are"} still empty`}
-            body="Saving is blocked until these have answers. Nothing you have entered is lost."
+            title={`${blocked.length} ${blocked.length === 1 ? "answer needs" : "answers need"} attention`}
+            body="Check the highlighted answers and their requirements before saving. Nothing you have entered is lost."
           />
         </View>
       )}

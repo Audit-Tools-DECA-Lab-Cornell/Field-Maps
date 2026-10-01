@@ -100,17 +100,20 @@ export function reduceSession(
         autoAdvance: false,
       };
     }
-    case "write":
+    case "write": {
+      const question = form.questions.find((entry) => entry.id === action.question);
+      const value =
+        action.value.trim() === ""
+          ? undefined
+          : question?.kind === "number"
+            ? Number(action.value)
+            : action.value;
       return {
-        state: withAnswer(
-          form,
-          state,
-          action.question,
-          action.value.trim() === "" ? undefined : action.value,
-        ),
+        state: withAnswer(form, state, action.question, value),
         destination: "stay",
         autoAdvance: false,
       };
+    }
     case "next": {
       const visible = visibleQuestions(form, state.answers);
       const next = Math.min(state.index, Math.max(visible.length - 1, 0)) + 1;

@@ -70,7 +70,7 @@ Tooling entry points should run root `pnpm dev` or use `web/` as their working d
 
 Keep web UI in `web/`, native collection and local persistence in `mobile/`, authentication and server contracts in `backend/`, and schema/access rules in `database/` and `supabase/`. Product requirements and cross-component contract decisions belong in `docs/`. QGIS files remain in `qgis/` so their configured certificate/service paths remain valid.
 
-When changing a payload or form version, coordinate the mobile contract, server validation, database representation, and GIS columns in one review. Preserve old form versions and pending uploads. Shared definitions can be introduced when the form engine needs them; there is no empty shared-code package to maintain now.
+When changing a payload or form version, coordinate the mobile contract, server validation, database representation, and GIS columns in one review. Preserve old form versions and pending uploads. [Shared contracts](../contracts/README.md) hold JSON schemas, form definitions and cross-language cases without a shared runtime package. Run `pnpm --dir mobile contracts:forms` to regenerate the input schema. Mobile consumes these definitions now; backend form parity is BE-10.
 
 There are no new nested Git repositories, submodules, branches, commits, or deployment projects. CI and release automation remain separate follow-up work; the root checks provide their eventual entry points.
 

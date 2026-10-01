@@ -57,13 +57,18 @@ describe("Unfinished observations", () => {
     let database = new DatabaseSync(filename);
     try {
       await initializeDatabase(adapter(database));
-      await saveDraft(adapter(database), "local", draft);
+      const numericDraft = {
+        ...draft,
+        formVersion: "shell-v1",
+        answers: { observer: "JL", people: 0 },
+      };
+      await saveDraft(adapter(database), "local", numericDraft);
       database.close();
       // When the app reopens the file.
       database = new DatabaseSync(filename);
       await initializeDatabase(adapter(database));
       // Then the point, the answers and the place in the stack all come back.
-      expect(await readDraft(adapter(database), "local")).toEqual(draft);
+      expect(await readDraft(adapter(database), "local")).toEqual(numericDraft);
     } finally {
       database.close();
       rmSync(directory, { recursive: true });

@@ -1,0 +1,48 @@
+# Shared contracts
+
+Language-neutral JSON shared by the independently managed mobile, web and API applications. There is no shared runtime package or dependency installation here. Task status belongs in [the contract plan](../docs/plan/contracts.md).
+
+| File | Source and editing rule | Consumers |
+| --- | --- | --- |
+| `form-definition.schema.json` | Generated from `mobile/src/forms/definition.ts` using Zod's `io: "input"` mode. Never edit by hand. | Definition tooling; backend structural validation in BE-10 |
+| `forms/shell-v1.json`, `forms/janet-test-v1.json` | Canonical, reviewed definitions. Initially exported from the mobile fixtures; edit the JSON, not the thin TypeScript imports. | Mobile registry/tests now; Training seeds (DB-07), publishing (DB-09), backend validation (BE-10) and GIS later |
+| `forms/cases/*.cases.json` | Hand-authored expected behavior. Never regenerate expectations from the engine. | Mobile Vitest now; the same cases in Python during BE-10 |
+| `openapi.json` | Not created yet. BE-04 generates it from FastAPI; never edit by hand. | CON-03 will generate separate web/mobile TypeScript clients |
+
+## Generate and verify
+
+With Node 24 and pnpm 10.17.1, from the repository root:
+
+```sh
+pnpm --dir mobile contracts:forms
+pnpm --dir mobile test
+pnpm mobile:check
+pnpm plan:check
+```
+
+The form generator only writes the JSON Schema. It does not overwrite authored forms or cases. The mobile suite compares the committed schema to fresh generation and discovers every `*.cases.json` file. Run the generator twice and confirm the second run makes no change. CI already runs these tests through its mobile job; CON-03 adds OpenAPI generation later.
+
+## Definition rules
+
+The input schema accepts omitted defaults and unknown properties. Parsing fills the defaults and discards unknown properties. JSON Schema checks structure; it does not replace `parseFormDefinition`'s reference, cycle, ordering and export-column checks. Server parity requires those checks too.
+
+Question IDs and option codes identify answers; labels may change without changing those identifiers. Export columns are only for analysis. Preserve unresolved protocol notes, empty export names and pending option lists. Do not infer new research fields or choices from test fixtures. `janet-test-v1` remains a draft and is not enabled for upload by this work. Published versions require a new version for changes.
+
+Number answers are finite JSON numbers, validated as integers against `min` and `max`. Single choices hold an option code; multiple choices hold distinct option codes. Text limits count Unicode code points, matching JSON Schema and Python string length. Blank text and empty selections count as unanswered. A present value of the wrong type is invalid even when the question is optional.
+
+Visibility follows authored dependency order. Hidden answers cannot reveal descendants. Validate visible answers before pruning: `required`, `type`, `range`, `option`, `duplicate` and `maxLength` errors block saving. Hidden answers are pruned without errors. The interactive mobile pruning helper also removes stale options after a parent changes; that cleanup must not make an invalid incoming payload pass validation. The builder validates first and then prunes.
+
+## Shared case format
+
+Each file names a `formVersion`, an optional-use `definitions` map of synthetic test forms, and a `cases` array. A case has a unique `id`, an optional `definition` key selecting one of those synthetic forms, and ordered `steps`. Without that key it uses `forms/<formVersion>.json`.
+
+Each step supplies a complete `answers` snapshot and an `expected` object:
+
+- `visible`: question IDs in authored order, before interactive option cleanup.
+- `problems`: ordered `{ "id", "reason" }` objects from validating the supplied visible answers.
+- `answers` and `dropped`: the interactive cleanup result and fully removed question IDs. Partial multi-choice cleanup retains the question.
+- `options`, when present: resolved option codes for named dynamic questions.
+
+Only a step with no problems can be saved. Multi-step cases model parent-answer changes; each step is a full snapshot, not a patch. Synthetic forms cover input kinds and conditions absent from Janet's current subset. They are test data, not proposed research variables. The defaults case omits every defaulted property and includes unknown properties.
+
+BE-10 must run these cases through Python before claiming server parity. Native device, hosted upload and QGIS acceptance are separate checks.
