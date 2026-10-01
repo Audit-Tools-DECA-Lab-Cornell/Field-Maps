@@ -50,6 +50,7 @@ export default function LandingPage() {
 					<div className="mt-wide flex flex-wrap items-center gap-snug">
 						<PrimaryAction href="/overview">Open the workspace</PrimaryAction>
 						<SecondaryAction href="/qgis">See the QGIS connection</SecondaryAction>
+						<SecondaryAction href="/onboarding">See the set-up flow</SecondaryAction>
 					</div>
 				</section>
 
