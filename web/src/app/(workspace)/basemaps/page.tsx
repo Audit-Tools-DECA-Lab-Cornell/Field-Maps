@@ -19,7 +19,7 @@ export default function BasemapsPage() {
 			<PageHeader
 				kicker="From QGIS to the device"
 				title={`${plural(BASEMAP_PACKAGES.length, "base map package")}`}
-				lead="A .qgz file is not a package. It references its sources, so preparation resolves them, checks the CRS, renders only the imagery the licence permits, and only then produces something downloadable."
+				lead="A .qgz file is not a package. It references its sources, so preparation resolves them, checks the CRS, renders only the imagery the licence permits, and only then produces something downloadable. Below, dropping the exported layers previews them on a map and checks them in the browser before anything is sent — the server's own checks still have the last word."
 			/>
 
 			<div className="px-gutter pb-page">

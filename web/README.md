@@ -66,6 +66,7 @@ cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
 | Variable | Value |
 | --- | --- |
 | `NEXT_PUBLIC_FIELDMAPS_API_URL` | The API's origin, no trailing slash — `http://127.0.0.1:8000` locally, `https://api.example.org` deployed |
+| `NEXT_PUBLIC_FIELDMAPS_PROJECT_ID` | The project UUID the base map screen uploads packages to. Unset, it falls back to the fixture `PROJECT.id`, which is not a UUID and the API will refuse — WEB-01's quick fix, superseded by WEB-08 taking the project from the route. |
 
 `NEXT_PUBLIC_` variables are compiled into the browser bundle, so this one is public by construction. Never put a token or key beside it. Next.js reads `.env.local` at build time, so restart `pnpm dev` after changing it; on Vercel, set it in **Project → Settings → Environment Variables** and redeploy, since a running deployment will not pick it up.
 

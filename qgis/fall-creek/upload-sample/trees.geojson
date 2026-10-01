@@ -1,0 +1,161 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4955251,
+          42.450632
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4955007,
+          42.4504508
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4955044,
+          42.4505329
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4959947,
+          42.4503577
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4955413,
+          42.4512388
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4955408,
+          42.451164
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4958333,
+          42.4509498
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4956283,
+          42.4513385
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4956919,
+          42.4513398
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4958081,
+          42.4513362
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4959397,
+          42.4513333
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.4960756,
+          42.4513322
+        ]
+      }
+    }
+  ]
+}

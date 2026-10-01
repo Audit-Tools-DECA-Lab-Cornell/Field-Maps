@@ -1,32 +1,56 @@
 "use client";
 
-import { useId, useState } from "react";
+import dynamic from "next/dynamic";
+import { useId, useMemo, useState } from "react";
 
 import { AttentionNote, Chip, Input, PrimaryAction, Prose, SectionLabel } from "@/components/nocturne/chrome";
 import { PUBLISHED_VERSION } from "@/data/instrument";
-import { PROJECT, SITES } from "@/data/project";
+import { PROJECT } from "@/data/project";
+import { formatCount, plural } from "@/lib/format";
 import {
+	analyzeLayer,
 	apiBaseUrl,
+	approximateAreaSqMeters,
+	type BBox,
 	LAYER_NAMES,
 	type LayerName,
 	LayerReadError,
+	type LayerSlotState,
+	matchSlot,
 	type PackageDetail,
 	type PackageSubmission,
+	type ProjectSlotState,
 	readLayer,
 	readProjectFile,
 	REQUIRED_LAYERS,
-	submitPackage
+	resolveProjectId,
+	runClientChecks,
+	SLOT_LABELS,
+	SLOT_ORDER,
+	type SlotTarget,
+	submitPackage,
+	type UnassignedFile,
+	unionBbox
 } from "@/lib/packages";
 import { PREP_STATES } from "@/lib/states";
 import type { PrepState } from "@/types/domain";
 
+import { LayerDropZone } from "./LayerDropZone";
+
 /**
  * Preparing a package from what QGIS wrote.
  *
- * The files are read here and sent as one JSON document, but nothing is decided here: the server
- * runs the five checks and this screen reports what came back, blocking reasons included. A
- * package that fails is still recorded, because the reason is the useful part.
+ * Files are read here, as soon as they're dropped or chosen, well enough to preview them on a map
+ * and run the checks a browser can run without a round trip. Nothing is decided here, though: the
+ * server runs its own five checks after upload and this screen reports what came back, blocking
+ * reasons included. A package that fails is still recorded, because the reason is the useful part.
  */
+
+// Leaflet touches `window` on import, so the preview only ever renders in the browser.
+const LayerPreviewMap = dynamic(() => import("./LayerPreviewMap"), {
+	ssr: false,
+	loading: () => <div className="h-72 w-full rounded-md bg-map" />
+});
 
 const CHECK_STATE: Record<string, PrepState> = {
 	passed: "done",
@@ -35,34 +59,117 @@ const CHECK_STATE: Record<string, PrepState> = {
 	skipped: "waiting"
 };
 
-type Chosen = Partial<Record<LayerName, File>>;
+const EMPTY_SLOTS: Record<LayerName, LayerSlotState> = {
+	ground: { kind: "empty" },
+	paths: { kind: "empty" },
+	trees: { kind: "empty" },
+	zones: { kind: "empty" }
+};
+
+function formatBbox(bbox: BBox): string {
+	const [west, south, east, north] = bbox;
+	return `${west.toFixed(5)}, ${south.toFixed(5)} → ${east.toFixed(5)}, ${north.toFixed(5)}`;
+}
+
+function formatArea(sqMeters: number): string {
+	const rounded = formatCount(Math.round(sqMeters));
+	return sqMeters >= 10_000 ? `${(sqMeters / 10_000).toFixed(2)} ha (${rounded} m²)` : `${rounded} m²`;
+}
 
 export function PackageUpload() {
 	const baseUrl = apiBaseUrl();
+	const projectId = resolveProjectId(PROJECT.id);
 	const fieldId = useId();
-	const [site, setSite] = useState(SITES[0]?.code ?? "");
+
+	const [site, setSite] = useState("sample-garden");
 	const [formVersion, setFormVersion] = useState(PUBLISHED_VERSION.code);
-	const [layers, setLayers] = useState<Chosen>({});
-	const [project, setProject] = useState<File | null>(null);
+	const [slots, setSlots] = useState<Record<LayerName, LayerSlotState>>(EMPTY_SLOTS);
+	const [projectSlot, setProjectSlot] = useState<ProjectSlotState>({ kind: "empty" });
+	const [unassigned, setUnassigned] = useState<readonly UnassignedFile[]>([]);
 	const [token, setToken] = useState("");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [result, setResult] = useState<PackageDetail | null>(null);
 
-	const missing = REQUIRED_LAYERS.filter(name => layers[name] === undefined);
-	const ready = missing.length === 0 && site !== "" && formVersion !== "";
+	async function assignLayer(name: LayerName, file: File) {
+		setSlots(current => ({ ...current, [name]: { kind: "reading", file } }));
+		try {
+			const collection = await readLayer(file);
+			setSlots(current => ({
+				...current,
+				[name]: { kind: "ready", file, collection, analysis: analyzeLayer(collection) }
+			}));
+		} catch (raised) {
+			const message = raised instanceof LayerReadError ? raised.message : `${file.name} could not be read.`;
+			setSlots(current => ({ ...current, [name]: { kind: "error", file, message } }));
+		}
+	}
+
+	/** A whole drop or a whole file-picker selection at once: auto-place what a name confidently matches. */
+	function ingestFiles(incoming: File[]) {
+		if (incoming.length === 0) return;
+		const claimedLayers = new Set<LayerName>(LAYER_NAMES.filter(name => slots[name].kind !== "empty"));
+		let claimedProject = projectSlot.kind !== "empty";
+		const parked: UnassignedFile[] = [];
+		for (const file of incoming) {
+			const guess = matchSlot(file.name);
+			if (guess === "project" && !claimedProject) {
+				claimedProject = true;
+				setProjectSlot({ kind: "ready", file });
+				continue;
+			}
+			if (guess !== null && guess !== "project" && !claimedLayers.has(guess)) {
+				claimedLayers.add(guess);
+				void assignLayer(guess, file);
+				continue;
+			}
+			parked.push({ id: crypto.randomUUID(), file, guess });
+		}
+		if (parked.length > 0) setUnassigned(current => [...current, ...parked]);
+	}
+
+	function removeUnassigned(id: string) {
+		setUnassigned(current => current.filter(entry => entry.id !== id));
+	}
+
+	function assignUnassigned(id: string, target: SlotTarget) {
+		const entry = unassigned.find(item => item.id === id);
+		if (entry === undefined) return;
+		setUnassigned(current => current.filter(item => item.id !== id));
+		if (target === "project") setProjectSlot({ kind: "ready", file: entry.file });
+		else void assignLayer(target, entry.file);
+	}
+
+	const requiredReady = REQUIRED_LAYERS.every(name => slots[name].kind === "ready");
+	const missing = REQUIRED_LAYERS.filter(name => slots[name].kind !== "ready");
+	const ready = requiredReady && site.trim() !== "" && formVersion.trim() !== "";
+
+	const clientChecks = useMemo(() => runClientChecks(slots), [slots]);
+
+	const overallBbox = useMemo(() => {
+		const boxes: BBox[] = [];
+		for (const name of LAYER_NAMES) {
+			const slot = slots[name];
+			if (slot.kind === "ready" && slot.analysis.bbox !== null) boxes.push(slot.analysis.bbox);
+		}
+		return boxes.length === 0 ? null : boxes.reduce((a, b) => unionBbox(a, b));
+	}, [slots]);
+
+	const groundSlot = slots.ground;
+	const groundAreaSqMeters = groundSlot.kind === "ready" ? approximateAreaSqMeters(groundSlot.collection) : null;
+	const hasAnyLayer = LAYER_NAMES.some(name => slots[name].kind === "ready");
 
 	async function build(): Promise<PackageSubmission> {
 		const collected: PackageSubmission["layers"] = {};
 		for (const name of LAYER_NAMES) {
-			const file = layers[name];
-			if (file !== undefined) collected[name] = await readLayer(file);
+			const slot = slots[name];
+			if (slot.kind === "ready") collected[name] = slot.collection;
 		}
 		return {
 			site_code: site,
 			form_version: formVersion,
 			layers: collected,
-			...(project === null ? {} : { project_file: await readProjectFile(project) })
+			...(projectSlot.kind === "ready" ? { project_file: await readProjectFile(projectSlot.file) } : {})
 		};
 	}
 
@@ -89,7 +196,7 @@ export function PackageUpload() {
 				);
 				return;
 			}
-			setResult(await submitPackage(baseUrl, PROJECT.id, token, submission));
+			setResult(await submitPackage(baseUrl, projectId.id, token, submission));
 		} catch (raised) {
 			setError(raised instanceof LayerReadError ? raised.message : "The upload could not be completed.");
 		} finally {
@@ -101,20 +208,23 @@ export function PackageUpload() {
 		<section className="max-w-[70ch]">
 			<SectionLabel>Prepare a package</SectionLabel>
 			<h2 className="mt-tight mb-base text-heading text-text">From a QGIS export to a downloadable package</h2>
+			<p className="mb-base text-micro text-neutral-600" translate="no">
+				Project {projectId.id}
+				{!projectId.valid &&
+					" — this isn't shaped like a UUID. Set NEXT_PUBLIC_FIELDMAPS_PROJECT_ID to the one staging uses, or the server will refuse the upload."}
+			</p>
 
 			<div className="grid grid-cols-1 gap-base sm:grid-cols-2">
 				<label className="block">
-					<span className="mb-hair block text-micro text-neutral-500">Site</span>
-					<select
+					<span className="mb-hair block text-micro text-neutral-500">Site code</span>
+					<Input
 						value={site}
+						name="site-code"
+						autoComplete="off"
+						spellCheck={false}
 						onChange={event => setSite(event.target.value)}
-						className="min-h-9 w-full rounded-md border border-rule bg-raised px-snug py-tight text-detail text-text">
-						{SITES.map(entry => (
-							<option key={entry.id} value={entry.code}>
-								{entry.name} ({entry.code})
-							</option>
-						))}
-					</select>
+					/>
+					<span className="mt-hair block text-micro text-neutral-600">Site lists arrive with WEB-08.</span>
 				</label>
 				<label className="block">
 					<span className="mb-hair block text-micro text-neutral-500">Form version</span>
@@ -128,40 +238,103 @@ export function PackageUpload() {
 				</label>
 			</div>
 
-			<div className="mt-loose flex flex-col gap-tight">
-				{LAYER_NAMES.map(name => (
-					<label
-						key={name}
-						className="flex flex-wrap items-center gap-snug border-b border-rule-faint py-snug">
-						<span className="w-24 shrink-0 text-detail text-neutral-300">
-							{name}
-							{REQUIRED_LAYERS.includes(name) && <span className="text-attention-text"> ·</span>}
-						</span>
-						<input
-							id={`${fieldId}-${name}`}
-							type="file"
-							accept=".json,.geojson,application/json,application/geo+json"
-							onChange={event => setLayers(current => ({ ...current, [name]: event.target.files?.[0] }))}
-							className="min-w-0 flex-1 text-micro text-neutral-500 file:mr-snug file:min-h-8 file:rounded-md file:border file:border-rule file:bg-transparent file:px-snug file:text-micro file:text-neutral-300"
-						/>
-					</label>
-				))}
-				<label className="flex flex-wrap items-center gap-snug border-b border-rule-faint py-snug">
-					<span className="w-24 shrink-0 text-detail text-neutral-300">project</span>
-					<input
-						type="file"
-						accept=".qgz,.qgs"
-						onChange={event => setProject(event.target.files?.[0] ?? null)}
-						className="min-w-0 flex-1 text-micro text-neutral-500 file:mr-snug file:min-h-8 file:rounded-md file:border file:border-rule file:bg-transparent file:px-snug file:text-micro file:text-neutral-300"
+			<div className="mt-loose">
+				<SectionLabel>Layers</SectionLabel>
+				<div className="mt-tight">
+					<LayerDropZone
+						fieldId={fieldId}
+						slots={slots}
+						projectSlot={projectSlot}
+						unassigned={unassigned}
+						onFiles={ingestFiles}
+						onReplace={(name, file) => void assignLayer(name, file)}
+						onRemove={name => setSlots(current => ({ ...current, [name]: { kind: "empty" } }))}
+						onReplaceProject={file => setProjectSlot({ kind: "ready", file })}
+						onRemoveProject={() => setProjectSlot({ kind: "empty" })}
+						onAssignUnassigned={assignUnassigned}
+						onRemoveUnassigned={removeUnassigned}
 					/>
-				</label>
+				</div>
+				<Prose tone="faint" className="mt-snug text-micro">
+					Ground and zones are required. The <span className="text-neutral-400">.qgz</span> is optional, and
+					it is what makes the source and licence checks possible — without it they are recorded as skipped
+					rather than passed. For a real export to try this with:{" "}
+					<span className="text-neutral-400" translate="no">
+						mobile/src/maps/sites/fall-creek/surfaces.json
+					</span>{" "}
+					and{" "}
+					<span className="text-neutral-400" translate="no">
+						trees.json
+					</span>{" "}
+					are the Fall Creek Elementary playground package. They won’t sail straight through, though —
+					surfaces mixes several kinds in one file and the trees there are canopy polygons, not points, so
+					dropping them here is a good way to see the geometry checks below catch something real.
+				</Prose>
 			</div>
 
-			<Prose tone="faint" className="mt-snug text-micro">
-				Ground and zones are required. The <span className="text-neutral-400">.qgz</span> is optional, and it is
-				what makes the source and licence checks possible — without it they are recorded as skipped rather than
-				passed.
-			</Prose>
+			{hasAnyLayer && (
+				<div className="mt-loose">
+					<SectionLabel>Preview</SectionLabel>
+					<div className="mt-tight h-72 w-full overflow-hidden rounded-md border border-rule">
+						<LayerPreviewMap
+							ground={groundSlot.kind === "ready" ? groundSlot.collection : undefined}
+							zones={slots.zones.kind === "ready" ? slots.zones.collection : undefined}
+							paths={slots.paths.kind === "ready" ? slots.paths.collection : undefined}
+							trees={slots.trees.kind === "ready" ? slots.trees.collection : undefined}
+						/>
+					</div>
+					<div className="mt-tight flex flex-wrap gap-base text-micro text-neutral-500">
+						{SLOT_ORDER.map(name => {
+							const slot = slots[name];
+							return (
+								<span key={name}>
+									{SLOT_LABELS[name]}:{" "}
+									{slot.kind === "ready" ? plural(slot.analysis.featureCount, "feature") : "—"}
+								</span>
+							);
+						})}
+					</div>
+					{overallBbox !== null && (
+						<p className="tnum mt-hair text-micro text-neutral-600">Extent: {formatBbox(overallBbox)}</p>
+					)}
+					{groundAreaSqMeters !== null && (
+						<p className="tnum mt-hair text-micro text-neutral-600">
+							Ground area: about {formatArea(groundAreaSqMeters)}
+						</p>
+					)}
+				</div>
+			)}
+
+			<div className="mt-loose">
+				<SectionLabel>Checked in your browser</SectionLabel>
+				{clientChecks.length === 0 ? (
+					<Prose tone="faint" className="mt-tight">
+						Checks appear once a layer is chosen.
+					</Prose>
+				) : (
+					<ol className="m-0 mt-base list-none p-0">
+						{clientChecks.map(check => {
+							const badge = PREP_STATES[CHECK_STATE[check.state] ?? "waiting"];
+							return (
+								<li key={check.id} className="flex gap-snug border-b border-rule-faint py-snug">
+									<span
+										aria-hidden
+										className={`mt-[2px] w-4 shrink-0 text-center text-caption ${
+											check.state === "passed" ? "text-accent-400" : "text-attention"
+										}`}>
+										{badge.glyph}
+									</span>
+									<span className="min-w-0">
+										<span className="block text-detail text-neutral-200">{check.label}</span>
+										<span className="block text-micro text-neutral-500">{check.detail}</span>
+										<span className="sr-only">{badge.label}</span>
+									</span>
+								</li>
+							);
+						})}
+					</ol>
+				)}
+			</div>
 
 			{baseUrl !== null && (
 				<label className="mt-loose block">
@@ -185,7 +358,9 @@ export function PackageUpload() {
 					{busy ? "Preparing…" : "Prepare package"}
 				</PrimaryAction>
 				{missing.length > 0 && (
-					<span className="text-micro text-neutral-500">Still needs: {missing.join(" and ")}</span>
+					<span className="text-micro text-neutral-500">
+						Still needs: {missing.map(name => SLOT_LABELS[name]).join(" and ")}
+					</span>
 				)}
 			</div>
 
@@ -197,7 +372,8 @@ export function PackageUpload() {
 
 			{result !== null && (
 				<div className="mt-wide" aria-live="polite">
-					<div className="flex flex-wrap items-baseline gap-snug">
+					<SectionLabel>Checked by the server</SectionLabel>
+					<div className="mt-tight flex flex-wrap items-baseline gap-snug">
 						<h3 className="text-body font-medium text-text">
 							{result.site_code} · version {result.version}
 						</h3>
