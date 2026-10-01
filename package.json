@@ -39,6 +39,7 @@
     "check": "pnpm web:check && pnpm mobile:check && pnpm backend:check",
     "test": "pnpm mobile:test && pnpm backend:test && pnpm db:test",
     "help": "make help",
-    "plan:check": "node docs/plan/check-plan.mjs"
+    "plan:check": "node docs/plan/check-plan.mjs",
+    "forms:parity": "node scripts/check-form-engine-parity.mjs"
   }
 }

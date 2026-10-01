@@ -124,3 +124,9 @@ skills-lock.json
 .turbo/
 .cache/
 *.log
+
+# =============================================================================
+# Ported verbatim from mobile — kept byte-identical; see `pnpm forms:parity`
+# =============================================================================
+src/lib/forms/definition.ts
+src/lib/forms/engine.ts
