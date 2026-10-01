@@ -40,11 +40,14 @@ Stages 1, 2 and 5 cover the whole product at once: the sitemap has to be complet
 | Week | Dates | Design work | Feeds |
 |---|---|---|---|
 | 2 | Oct 1–2 | Stage 0; stage 1 drafted and signed off | — |
-| 3 | Oct 5–9 | Stage 2; slice A specs and wireframes; stage 5 begins | Phase 1 |
-| 4 | Oct 12–16 | Stage 5 decision; stage 6 tokens; slice A high fidelity | Phase 1 |
+| 3 | Oct 5–7 | Stage 2 for the identity journeys; slice A specs and wireframes; **slice A structural handoff** by Oct 7 | Phase 1: WEB-04, WEB-06, WEB-07, MOB-05, MOB-06, MOB-07 |
+| 3–4 | Oct 8–16 | Stage 2 for the rest; stage 5 runs and ends in a decision; stage 6 tokens | — |
+| 4–5 | Oct 15–21 | Slice A restyled in the chosen direction: a token and primitive change, no new layouts | Phase 1 screens already built |
 | 5–6 | Oct 19–30 | Slice B specs, wireframes and high fidelity | Phase 3 (from week 7) |
 | 7 | Nov 2–6 | Slice B prototype; walkthrough with Janet; slice B handoff | Phase 3 |
 | 8 | Nov 9–13 | Slice C wireframes and high fidelity; handoff | Phase 4 (from week 9) |
+
+**Slice A is handed off in two parts, because Phase 1 cannot wait for stage 5.** By Oct 7 its pages are fixed in structure: flows, fields, every state, copy and layout. They are built on today's Nocturne primitives (`chrome.tsx` in both apps). Once the direction is chosen, those screens are restyled through tokens and the shared primitives, with no new layouts. That restyle is planned rework, kept small because identity screens use nothing but shared primitives. Slices B and C get their high-fidelity design before they are built.
 
 **The cost.** The 13-week plan has no design time in it. If the one developer does this work alongside the build, the pilot slips by about 3–4 weeks. If I draft each stage and you only review at the gates, the work runs in parallel and the schedule above holds. **Recommendation:** run it in parallel. Even if the schedule tightens, keep stage 5 at full length, because every screen built afterwards takes on the direction chosen there.
 

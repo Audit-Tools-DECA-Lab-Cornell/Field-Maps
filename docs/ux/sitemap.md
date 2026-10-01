@@ -37,7 +37,7 @@ Part of the [design track](README.md), stages 0 and 1. Draft of 2026-10-01, writ
 
 | Screen | What it does | State |
 |---|---|---|
-| Assignments (`index`) | Lists studies (site packages); resumes an unfinished draft | 🟡 Four bundled studies, two of them fake |
+| Assignments (`index`) | Lists studies (site packages); resumes an unfinished draft | 🟡 Five studies: three packages bundled on the device (Fall Creek, Riverside and the practice garden), plus two rows with no package behind them (one "not downloaded", one archived) |
 | Brief | Choose the zone and the round | 🟡 Bundled sites |
 | Field | Map; place a point; one question per screen | 🟡 The form engine and saving to the phone are real. The maps are bundled; Fall Creek's is real QGIS data |
 | Review | Check the answers; blocks the save while required answers are missing | 🟡 Real logic |
@@ -143,7 +143,7 @@ ACCOUNT         /account
 - org settings;
 - project settings.
 
-The account menu links to all three.
+The account menu always links to `/account`. It adds the org settings link only for org owners and admins, and the project settings link only for the project's managers (and org owners and admins, who act as managers). Viewers and observers see only their account.
 
 **Where the QGIS upload goes.** A package belongs to one site, so the upload lives on the site page (WEB-08). The QGIS page lists every site's package state, links to each upload, and covers the outbound direction too. Everything QGIS-related is then reachable from one place, while the upload itself stays on the site.
 
