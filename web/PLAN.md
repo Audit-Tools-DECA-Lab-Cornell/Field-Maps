@@ -46,7 +46,8 @@ The rail is Overview, Observations, Sites, Instrument, Team, GIS. The header hol
 ## Tasks
 
 ### WEB-01: Quick fix so the package upload reaches a real project
-Status: todo · Phase 0 · Size S · Depends: DB-01 · Blocks: WEB-08
+Status: doing (code in place 2026-10-01; the staging upload is not verified) · Phase 0 · Size S · Depends: DB-01 · Blocks: WEB-08
+Progress 2026-10-01: `NEXT_PUBLIC_FIELDMAPS_PROJECT_ID` with a UUID check, a site-code input, a multi-file drop zone with an instant layer map and browser checks. `qgis/fall-creek/upload-sample/` passes the browser checks and the API's `prepare()` run directly; no upload against staging has been made.
 Superseded later by WEB-08, which takes the project and site from the route.
 Read first: `src/components/basemaps/PackageUpload.tsx`, `src/lib/packages.ts`, `src/data/project.ts`.
 Do:
@@ -258,3 +259,29 @@ Do:
 
 Done when: a server-side and a browser-side test error from the preview deployment both appear in Sentry, with no personal data in their breadcrumbs.
 
+
+### WEB-17: Form Studio: the canonical form, a live collector preview, and local drafts
+Status: done (2026-10-01) · Phase 1 · Size M · Depends: CON-02 · Blocks: none
+Added 2026-10-01 to show Janet her form as the collector asks it, before the instrument API exists. WEB-09 later swaps the source from `contracts/forms/` to the API and adds publishing; the studio's UI stays.
+Read first: `contracts/README.md`; `mobile/src/forms/{definition,engine}.ts`; `mobile/src/components/question-panel.tsx`.
+Do:
+1. Copy the form parser and engine to `web/src/lib/forms/`, byte-identical below a header, with `pnpm forms:parity` checking it. Add `loadDefinition()`, which returns every problem instead of throwing.
+2. `/instrument` reads `contracts/forms/*.json` at build time and renders each question in authored order: kind, required, display rule as a sentence, options, dynamic option sets, export column, open protocol questions.
+3. A phone preview (`src/components/studio/PhonePreview.tsx`) runs the same engine: one question per screen, auto-advance on single choice, review, saved, and the export columns an answer lands in.
+4. Customize a draft in place: wording, guidance, required, option labels (codes never follow a relabel), new options, order, simple display rules, new questions with no invented export column. A published version is read-only; changing it starts a new draft beside it.
+5. Drafts stay in this browser (`localStorage`, guarded) with a change list against the shipped file and a `.json` download. No publish control pretends to work.
+
+Done when: Janet's form renders from `contracts/forms/janet-test-v1.json`, branching on the phone matches the device, an edit appears on the phone at once, and the change list names it.
+
+Verify: `pnpm forms:parity`, `pnpm --dir web check`, and a browser pass recorded here.
+
+Verified 2026-10-01: the web copy matches mobile byte for byte and replays all 39 `janet-test-v1` contract cases; `pnpm --dir web check` passes. In the browser, Janet's form renders from the contract, choosing Imaginative reveals its own subtype list, an added option and a required toggle reach the phone at once and appear in the change list, review blocks a save on missing required answers, and the saved screen lists the export columns. No horizontal scroll at 1440, 1024 or 768 px.
+
+### WEB-18: Set-up flow preview (organization, project, site, form, invitation)
+Status: done (2026-10-01) · Phase 1 · Size S · Depends: none · Blocks: none
+Added 2026-10-01 for the J1 walkthrough with Janet. A clickable preview at `/onboarding` that saves nothing and says so; WEB-06 and WEB-07 replace its "Continue" steps with the real calls once BE-07 exists.
+Do: five steps (organization and slug, first project and timezone, site and the QGIS layers it needs, starting form, observer join code), a live "what this creates" panel, links into `/basemaps` and `/instrument`, and a phone mock of the collector's join screen. No control is labelled as creating anything.
+
+Done when: every step is keyboard reachable, the banner states that nothing is saved, and the page passes `pnpm --dir web check`.
+
+Verified 2026-10-01: all five steps walked in the browser (slug and project code derive from the names, a join code is generated, the join-screen mock names the project and org), the page is `noindex`, every control is at least 44 px tall, and `pnpm --dir web check` passes.

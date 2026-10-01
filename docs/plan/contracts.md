@@ -179,7 +179,7 @@ Done when:
 Verify: `node docs/plan/check-plan.mjs`.
 
 ### CON-02: Make the form definition canonical and share test cases
-Status: done (2026-09-29) · Phase 0 · Size M · Depends: CON-01 · Blocks: BE-10, DB-07, DB-09, GIS-01, MOB-13
+Status: done (2026-09-29) · Phase 0 · Size M · Depends: CON-01 · Blocks: BE-10, DB-07, DB-09, GIS-01, MOB-13, WEB-17
 Evidence: generated input JSON Schema, canonical JSON for both forms and 39 shared cases. Mobile runs every case file and checks schema drift; 137 tests, TypeScript/Biome and iOS/Android Metro exports pass. Numeric input, observation building and SQLite draft recovery preserve JSON numbers. Metro watches `contracts/`. Server parity remains BE-10; native-device and hosted acceptance were not run.
 Read first:
 - `mobile/src/forms/definition.ts`, `mobile/src/forms/engine.ts`, `mobile/src/forms/fixtures/*.ts`
