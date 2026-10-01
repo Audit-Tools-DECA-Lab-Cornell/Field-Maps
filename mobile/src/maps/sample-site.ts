@@ -1,6 +1,7 @@
 import type { LngLatBounds, StyleSpecification } from "@maplibre/maplibre-react-native";
 import type { FeatureCollection } from "geojson";
 import type { Coordinate } from "../domain/observation";
+import type { MapPalette } from "./palette";
 
 /**
  * Hand-authored training geometry, not a QGIS export or a survey. It stands in as the first
@@ -149,10 +150,8 @@ function base(
   name: string,
   paint: {
     readonly background: string;
-    readonly site: string;
-    readonly siteEdge: string;
-    readonly structure: string;
-    readonly structureEdge: string;
+    readonly site: { readonly fill: string; readonly edge: string };
+    readonly structure: { readonly fill: string; readonly edge: string };
   },
 ): StyleSpecification {
   return {
@@ -166,35 +165,35 @@ function base(
         type: "fill",
         source: "ground",
         filter: ["==", "kind", "site"],
-        paint: { "fill-color": paint.site, "fill-outline-color": paint.siteEdge },
+        paint: { "fill-color": paint.site.fill, "fill-outline-color": paint.site.edge },
       },
       {
         id: "structures",
         type: "fill",
         source: "ground",
         filter: ["==", "kind", "structure"],
-        paint: { "fill-color": paint.structure, "fill-outline-color": paint.structureEdge },
+        paint: { "fill-color": paint.structure.fill, "fill-outline-color": paint.structure.edge },
       },
     ],
   };
 }
 
 /**
- * Both bases stay subdued so the observations read first, and markers keep a dark halo and a
- * light ring so they hold their contrast on either one.
+ * The sample site's plan base, day or night, from the shared map palette (`contracts/map-palettes.json`).
+ * Both stay subdued relative to the observation markers (a dark halo and a light ring hold their
+ * contrast on either one); day instead stays light so the drawing reads in daylight.
  */
-export const planStyle = base("FieldMaps plan base", {
-  background: "#1b1d2b",
-  site: "#20233a",
-  siteEdge: "#2f3350",
-  structure: "#24273a",
-  structureEdge: "#4a4e5e",
-});
+export function sampleSiteBase(palette: MapPalette): StyleSpecification {
+  return base(`FieldMaps ${palette.label.toLowerCase()} base`, {
+    background: palette.background,
+    site: palette.site,
+    structure: palette.structure,
+  });
+}
 
+/** The aerial fixture is a synthetic matte, not imagery or a palette entry — kept as it was. */
 export const aerialStyle = base("FieldMaps aerial fixture", {
   background: "#20241d",
-  site: "#272d20",
-  siteEdge: "#333a29",
-  structure: "#3a352b",
-  structureEdge: "#4a4437",
+  site: { fill: "#272d20", edge: "#333a29" },
+  structure: { fill: "#3a352b", edge: "#4a4437" },
 });

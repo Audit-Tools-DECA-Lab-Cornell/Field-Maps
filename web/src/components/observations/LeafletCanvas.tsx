@@ -3,11 +3,14 @@
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
+import type { CSSProperties } from "react";
 import { useEffect } from "react";
 import { GeoJSON, MapContainer, Marker, Polygon, TileLayer, Tooltip, useMap } from "react-leaflet";
 
-import { GROUND, PATHS, PLAN_PAINT, TREES, ZONE_EXTENT, ZONES } from "@/data/site-geometry";
+import { PaletteGround } from "@/components/maps/PaletteGround";
+import { GROUND, PATHS, TREES, ZONE_EXTENT, ZONES } from "@/data/site-geometry";
 import { boxToLatLngs } from "@/lib/geometry";
+import { MAP_PALETTES, MAP_TILES, useMapPalette } from "@/lib/map-palette";
 import type { Observation } from "@/types/domain";
 
 import { MARKER, markerHtml } from "./markers";
@@ -16,18 +19,14 @@ import { MARKER, markerHtml } from "./markers";
  * The map, drawn on the collector's own plan base.
  *
  * The plan base is the bundled geometry from `data/site-geometry.ts` — the same polygons the
- * observer sees, in the same paint, fetched from nowhere. Street tiles are the alternative, and
- * they are the only thing on this screen that needs a network.
+ * observer sees, in the same layout, fetched from nowhere. Street tiles are the alternative, and
+ * they are the only thing on this screen that needs a network. Either base takes its colour from
+ * the active map palette (`@/lib/map-palette`), not from the Nocturne chrome around it — a research
+ * PI reading this against daylight needs a different canvas than the observer reads in the field,
+ * and `MapPaletteSwitch` is how they choose it.
  */
 
 export type BaseName = "plan" | "streets";
-
-const STREETS = {
-	url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-	subdomains: "abcd",
-	attribution:
-		'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-};
 
 /**
  * Leaflet measures its pane once, on mount, and this one is laid out by flexbox after that. Fit
@@ -73,6 +72,9 @@ export default function LeafletCanvas({
 	readonly base: BaseName;
 }) {
 	const selected = records.find(record => record.id === selectedId);
+	const [paletteName] = useMapPalette();
+	const palette = MAP_PALETTES[paletteName];
+	const tiles = MAP_TILES[palette.tiles];
 
 	return (
 		<MapContainer
@@ -83,12 +85,18 @@ export default function LeafletCanvas({
 			zoomSnap={0}
 			zoomDelta={0.5}
 			className="size-full"
-			style={{ background: "var(--color-map)" }}>
+			style={
+				{
+					background: palette.background,
+					"--zone-label-color": palette.zone.label
+				} as CSSProperties
+			}>
 			{base === "streets" ? (
 				<TileLayer
-					url={STREETS.url}
-					subdomains={STREETS.subdomains}
-					attribution={STREETS.attribution}
+					key={palette.tiles}
+					url={tiles.url}
+					subdomains={tiles.subdomains}
+					attribution={tiles.attribution}
 					maxZoom={20}
 				/>
 			) : (
@@ -100,16 +108,16 @@ export default function LeafletCanvas({
 						style={feature => ({
 							stroke: true,
 							weight: 1,
-							color:
-								feature?.properties?.kind === "site" ? PLAN_PAINT.siteEdge : PLAN_PAINT.structureEdge,
-							fillColor: feature?.properties?.kind === "site" ? PLAN_PAINT.site : PLAN_PAINT.structure,
+							color: feature?.properties?.kind === "site" ? palette.site.edge : palette.structure.edge,
+							fillColor:
+								feature?.properties?.kind === "site" ? palette.site.fill : palette.structure.fill,
 							fillOpacity: 1
 						})}
 					/>
 					<GeoJSON
 						key="paths"
 						data={PATHS as never}
-						style={{ color: PLAN_PAINT.path, weight: 7, opacity: 1, lineCap: "round" }}
+						style={{ color: palette.path.line, weight: 7, opacity: 1, lineCap: "round" }}
 					/>
 					{TREES.map(([longitude, latitude]) => (
 						<Marker
@@ -121,7 +129,7 @@ export default function LeafletCanvas({
 								className: "",
 								iconSize: [12, 12],
 								iconAnchor: [6, 6],
-								html: `<span style="display:block;width:12px;height:12px;border-radius:50%;background:${PLAN_PAINT.tree}"></span>`
+								html: `<span style="display:block;width:12px;height:12px;border-radius:50%;background:${palette.tree.fill};opacity:${palette.tree.opacity};border:1px solid ${palette.tree.edge}"></span>`
 							})}
 						/>
 					))}
@@ -134,11 +142,11 @@ export default function LeafletCanvas({
 					positions={boxToLatLngs(zone)}
 					interactive={false}
 					pathOptions={{
-						color: PLAN_PAINT.zoneEdge,
+						color: palette.zone.edge,
 						weight: 1,
 						dashArray: "4 4",
-						fillColor: PLAN_PAINT.zone,
-						fillOpacity: PLAN_PAINT.zoneFillOpacity
+						fillColor: palette.zone.fill,
+						fillOpacity: palette.zone.fillOpacity
 					}}>
 					<Tooltip direction="center" permanent className="zone-label">
 						{zone.id}
@@ -157,13 +165,14 @@ export default function LeafletCanvas({
 						className: "",
 						iconSize: [MARKER.box, MARKER.box],
 						iconAnchor: [MARKER.box / 2, MARKER.box / 2],
-						html: markerHtml(record.playType, record.state, record.id === selectedId)
+						html: markerHtml(record.playType, record.state, record.id === selectedId, palette.observation)
 					})}
 				/>
 			))}
 
 			<FitSite />
 			<Recentre selected={selected} />
+			<PaletteGround colour={palette.background} />
 		</MapContainer>
 	);
 }

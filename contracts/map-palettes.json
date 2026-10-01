@@ -1,0 +1,48 @@
+{
+  "$comment": "Cartography shared by every FieldMaps map, on the collector (MapLibre) and the web workspace (Leaflet). The app chrome stays Nocturne; only the map canvas changes palette. Both apps read this file, so a site looks the same to the observer and the manager. Keep the keys of every palette identical. Aerial imagery is a photo and has no palette.",
+  "version": 1,
+  "default": "day",
+  "order": ["day", "night"],
+  "palettes": {
+    "day": {
+      "label": "Day",
+      "description": "Light plan for daylight and for reading QGIS drawings.",
+      "tiles": "light",
+      "background": "#eceae4",
+      "site": { "fill": "#f8f7f3", "edge": "#9a9ca6" },
+      "structure": { "fill": "#d6d8df", "edge": "#6e7280" },
+      "surfaces": {
+        "dirt": { "fill": "#e6d9bd", "edge": "#b39e74" },
+        "path": { "fill": "#dedfe3", "edge": "#a3a6b0" },
+        "blacktop": { "fill": "#c4c7cf", "edge": "#868a96" },
+        "mulch": { "fill": "#dcc3a6", "edge": "#a88663" },
+        "grass": { "fill": "#cfe2c2", "edge": "#86ab74" }
+      },
+      "equipment": { "fill": "#cbc5ee", "edge": "#5d5294" },
+      "tree": { "fill": "#a9cc99", "edge": "#5c8a4b", "opacity": 0.85 },
+      "path": { "line": "#b3b6bf" },
+      "zone": { "fill": "#796cbf", "fillOpacity": 0.08, "edge": "#5d5294", "label": "#423a6a" },
+      "observation": { "fill": "#5d5294", "ring": "#ffffff", "selected": "#2b2741" }
+    },
+    "night": {
+      "label": "Night",
+      "description": "The Nocturne plan: subdued ground so observations read first.",
+      "tiles": "dark",
+      "background": "#1b1d2b",
+      "site": { "fill": "#20233a", "edge": "#2f3350" },
+      "structure": { "fill": "#24273a", "edge": "#4a4e5e" },
+      "surfaces": {
+        "dirt": { "fill": "#2c2a22", "edge": "#3d3a2f" },
+        "path": { "fill": "#2b2d3b", "edge": "#3c3f52" },
+        "blacktop": { "fill": "#22232b", "edge": "#35374a" },
+        "mulch": { "fill": "#2d2520", "edge": "#3f342c" },
+        "grass": { "fill": "#1e2a23", "edge": "#2b3b30" }
+      },
+      "equipment": { "fill": "#2d3042", "edge": "#6b6f82" },
+      "tree": { "fill": "#2b3527", "edge": "#41553a", "opacity": 0.85 },
+      "path": { "line": "#2f3243" },
+      "zone": { "fill": "#9184d9", "fillOpacity": 0.06, "edge": "#796cbf", "label": "#75798c" },
+      "observation": { "fill": "#5d5294", "ring": "#d2cefd", "selected": "#b5abfc" }
+    }
+  }
+}

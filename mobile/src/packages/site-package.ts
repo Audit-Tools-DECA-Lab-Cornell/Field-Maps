@@ -27,7 +27,8 @@ export type PackageLayer = {
   readonly id: string;
   readonly name: string;
   readonly data: FeatureCollection;
-  readonly plan: LayerPaint;
+  readonly day: LayerPaint;
+  readonly night: LayerPaint;
   readonly aerial: LayerPaint;
 };
 
@@ -49,7 +50,11 @@ export type SitePackage = PackageSummary & {
   readonly inheritedContext: string;
   readonly centre: Coordinate;
   readonly bounds: LngLatBounds;
-  readonly bases: { readonly plan: StyleSpecification; readonly aerial: StyleSpecification };
+  readonly bases: {
+    readonly day: StyleSpecification;
+    readonly night: StyleSpecification;
+    readonly aerial: StyleSpecification;
+  };
   readonly layers: readonly PackageLayer[];
 };
 

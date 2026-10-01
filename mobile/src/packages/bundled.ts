@@ -1,51 +1,79 @@
 import {
   fallCreekAerial,
+  fallCreekBase,
   fallCreekBounds,
   fallCreekCentre,
   fallCreekEquipment,
-  fallCreekPlan,
   fallCreekTrees,
   fallCreekZone,
   fallCreekZoneGeometry,
 } from "../maps/fall-creek";
+import { hexWithAlpha, type MapPalette, mapPalettes } from "../maps/palette";
 import {
   aerialStyle,
-  planStyle,
   sampleBounds,
   sampleCenter,
+  sampleSiteBase,
   sitePaths,
   siteTrees,
   siteZones,
   zoneGeometry,
 } from "../maps/sample-site";
-import type { PackageLayer, PackageProvider, PackageSummary, SitePackage } from "./site-package";
+import type {
+  LayerPaint,
+  PackageLayer,
+  PackageProvider,
+  PackageSummary,
+  SitePackage,
+} from "./site-package";
 
 /**
  * The bundled fixture provider. Two packages are on the device because their geometry ships
  * with the app; the other two exist only as rows, so download states can be designed against
  * something honest. Nothing here contacts a network.
+ *
+ * Plan (day/night) layer paints are derived from `contracts/map-palettes.json` below; the aerial
+ * values are kept exactly as they were — a fixture style, not imagery, with its own fixed colours.
  */
+
+/** A dashed, semi-transparent zone fill: the palette's `zone.fill` at `zone.fillOpacity`. */
+function zonePaint(palette: MapPalette): LayerPaint {
+  return {
+    type: "fill",
+    color: hexWithAlpha(palette.zone.fill, palette.zone.fillOpacity),
+    outline: palette.zone.edge,
+    dashed: true,
+  };
+}
+
+/** A solid tree marker for the hand-drawn sites, where trees are points, not canopy polygons. */
+function treeCirclePaint(palette: MapPalette): LayerPaint {
+  return { type: "circle", color: palette.tree.fill, radius: 11 };
+}
 
 const layers: readonly PackageLayer[] = [
   {
     id: "paths",
     name: "Paths",
     data: sitePaths,
-    plan: { type: "line", color: "#2f3243", width: 7 },
+    day: { type: "line", color: mapPalettes.day.path.line, width: 7 },
+    night: { type: "line", color: mapPalettes.night.path.line, width: 7 },
     aerial: { type: "line", color: "#4a4437", width: 7 },
   },
   {
     id: "zones",
     name: "Zone polygons",
     data: zoneGeometry,
-    plan: { type: "fill", color: "#9184d90f", outline: "#796cbf", dashed: true },
+    day: zonePaint(mapPalettes.day),
+    night: zonePaint(mapPalettes.night),
     aerial: { type: "fill", color: "#9184d914", outline: "#968ae0", dashed: true },
   },
   {
     id: "trees",
     name: "Trees",
     data: siteTrees,
-    plan: { type: "circle", color: "#2b3527", radius: 11 },
+    day: treeCirclePaint(mapPalettes.day),
+    night: treeCirclePaint(mapPalettes.night),
     aerial: { type: "circle", color: "#313d2b", radius: 11 },
   },
 ];
@@ -65,7 +93,11 @@ const riverside: SitePackage = {
     "Climate and zone inventory are not collected yet, so a round inherits only its zone and number.",
   centre: sampleCenter,
   bounds: sampleBounds,
-  bases: { plan: planStyle, aerial: aerialStyle },
+  bases: {
+    day: sampleSiteBase(mapPalettes.day),
+    night: sampleSiteBase(mapPalettes.night),
+    aerial: aerialStyle,
+  },
   layers,
 };
 
@@ -93,30 +125,57 @@ const practice: SitePackage = {
   inheritedContext: "The practice form stores no round context; only its three fields are saved.",
   centre: sampleCenter,
   bounds: sampleBounds,
-  bases: { plan: planStyle, aerial: aerialStyle },
+  bases: {
+    day: sampleSiteBase(mapPalettes.day),
+    night: sampleSiteBase(mapPalettes.night),
+    aerial: aerialStyle,
+  },
   layers,
 };
+
+/** Fall Creek's equipment is a filled footprint, not a point: the palette's `equipment` fill/edge. */
+function equipmentPaint(palette: MapPalette): LayerPaint {
+  return {
+    type: "fill",
+    color: palette.equipment.fill,
+    outline: palette.equipment.edge,
+    dashed: false,
+  };
+}
+
+/** Fall Creek's trees are canopy polygons: `tree.fill` at `tree.opacity`, with a `tree.edge` outline. */
+function treeCanopyPaint(palette: MapPalette): LayerPaint {
+  return {
+    type: "fill",
+    color: hexWithAlpha(palette.tree.fill, palette.tree.opacity),
+    outline: palette.tree.edge,
+    dashed: false,
+  };
+}
 
 const fallCreekLayers: readonly PackageLayer[] = [
   {
     id: "equipment",
     name: "Play equipment",
     data: fallCreekEquipment,
-    plan: { type: "fill", color: "#2d3042", outline: "#6b6f82", dashed: false },
+    day: equipmentPaint(mapPalettes.day),
+    night: equipmentPaint(mapPalettes.night),
     aerial: { type: "fill", color: "#ffffff0a", outline: "#e4e7f5b3", dashed: false },
   },
   {
     id: "trees",
     name: "Trees",
     data: fallCreekTrees,
-    plan: { type: "fill", color: "#2b3527d9", outline: "#41553a", dashed: false },
+    day: treeCanopyPaint(mapPalettes.day),
+    night: treeCanopyPaint(mapPalettes.night),
     aerial: { type: "fill", color: "#00000000", outline: "#c4dcb4b3", dashed: false },
   },
   {
     id: "zones",
     name: "Zone polygons",
     data: fallCreekZoneGeometry,
-    plan: { type: "fill", color: "#9184d90f", outline: "#796cbf", dashed: true },
+    day: zonePaint(mapPalettes.day),
+    night: zonePaint(mapPalettes.night),
     aerial: { type: "fill", color: "#9184d914", outline: "#968ae0", dashed: true },
   },
 ];
@@ -140,7 +199,11 @@ const fallCreek: SitePackage = {
     "Records upload as practice records (sample-garden) until the API accepts this site.",
   centre: fallCreekCentre,
   bounds: fallCreekBounds,
-  bases: { plan: fallCreekPlan, aerial: fallCreekAerial },
+  bases: {
+    day: fallCreekBase(mapPalettes.day),
+    night: fallCreekBase(mapPalettes.night),
+    aerial: fallCreekAerial,
+  },
   layers: fallCreekLayers,
 };
 

@@ -3,6 +3,7 @@ import type { FeatureCollection } from "geojson";
 import { Image } from "react-native";
 import { z } from "zod";
 import type { Coordinate } from "../domain/observation";
+import type { MapPalette } from "./palette";
 import type { SiteZone } from "./sample-site";
 import equipmentData from "./sites/fall-creek/equipment.json";
 import siteData from "./sites/fall-creek/site.json";
@@ -66,30 +67,34 @@ export const fallCreekZoneGeometry: FeatureCollection = {
   ],
 };
 
-/** Ground surfaces in QGIS drawing order, bottom first, kept dark so observations read first. */
-const surfaces = [
-  { kind: "dirt", fill: "#2c2a22", edge: "#3d3a2f" },
-  { kind: "path", fill: "#2b2d3b", edge: "#3c3f52" },
-  { kind: "blacktop", fill: "#22232b", edge: "#35374a" },
-  { kind: "mulch", fill: "#2d2520", edge: "#3f342c" },
-  { kind: "grass", fill: "#1e2a23", edge: "#2b3b30" },
-] as const;
+/** Ground surfaces in QGIS drawing order, bottom first. */
+const SURFACE_ORDER = ["dirt", "path", "blacktop", "mulch", "grass"] as const;
 
-export const fallCreekPlan: StyleSpecification = {
-  version: 8,
-  name: "Fall Creek plan base",
-  sources: { surfaces: { type: "geojson", data: surfacesData as FeatureCollection } },
-  layers: [
-    { id: "background", type: "background", paint: { "background-color": "#1b1d2b" } },
-    ...surfaces.map(({ kind, fill, edge }) => ({
-      id: `surface-${kind}`,
-      type: "fill" as const,
-      source: "surfaces",
-      filter: ["==", "kind", kind] as ["==", string, string],
-      paint: { "fill-color": fill, "fill-outline-color": edge },
-    })),
-  ],
-};
+/**
+ * Fall Creek's plan base, day or night, from the shared map palette
+ * (`contracts/map-palettes.json`). Night keeps every surface dark so observations read first;
+ * day is light, to match the QGIS drawings it was traced from.
+ */
+export function fallCreekBase(palette: MapPalette): StyleSpecification {
+  return {
+    version: 8,
+    name: `Fall Creek plan base (${palette.label.toLowerCase()})`,
+    sources: { surfaces: { type: "geojson", data: surfacesData as FeatureCollection } },
+    layers: [
+      { id: "background", type: "background", paint: { "background-color": palette.background } },
+      ...SURFACE_ORDER.map((kind) => ({
+        id: `surface-${kind}`,
+        type: "fill" as const,
+        source: "surfaces",
+        filter: ["==", "kind", kind] as ["==", string, string],
+        paint: {
+          "fill-color": palette.surfaces[kind].fill,
+          "fill-outline-color": palette.surfaces[kind].edge,
+        },
+      })),
+    ],
+  };
+}
 
 /**
  * The drone photo sits in the style rather than an ImageSource component: the style parser keeps

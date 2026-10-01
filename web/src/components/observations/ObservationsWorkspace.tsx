@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
+import { MapPaletteSwitch } from "@/components/maps/MapPaletteSwitch";
 import { Chip, EmptyState, LinkAction, PrimaryAction, SecondaryAction } from "@/components/nocturne/chrome";
 import { OBSERVATIONS } from "@/data/observations";
 import { applyFilters, describeFilters, EMPTY_FILTERS, type Filters, readFilters, writeFilters } from "@/lib/filters";
@@ -135,6 +136,9 @@ export function ObservationsWorkspace() {
 								/>
 								<div className="pointer-events-none absolute top-snug right-snug z-[600] max-w-[calc(100%-4rem)]">
 									<MapLegend />
+								</div>
+								<div className="absolute right-snug bottom-wide z-[600]">
+									<MapPaletteSwitch />
 								</div>
 								{base === "streets" && (
 									<div className="pointer-events-none absolute bottom-snug left-snug z-[600]">

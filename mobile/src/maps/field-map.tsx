@@ -11,9 +11,67 @@ import { Pressable, Text, View } from "react-native";
 import { Glass, MapPill, MapSquareButton } from "../components/chrome";
 import { type Coordinate, coordinateSchema } from "../domain/observation";
 import type { LayerPaint, PackageLayer, SitePackage } from "../packages/site-package";
-import { colors, fonts, radius, space, textStyles } from "../theme";
+import { colors, fonts, radius, space, textStyles, touchTarget } from "../theme";
 import { clusterPoints, type MapPoint, nudge, scaleLabel } from "./clustering";
+import { type MapBase, mapPalettes, setMapBase, useMapBase } from "./palette";
 import type { SiteZone } from "./sample-site";
+
+const BASE_OPTIONS: readonly { readonly value: MapBase; readonly label: string }[] = [
+  { value: "day", label: "Day" },
+  { value: "night", label: "Night" },
+  { value: "aerial", label: "Aerial" },
+];
+
+/**
+ * Day · Night · Aerial. The map canvas gets its own palette, separate from the Nocturne chrome
+ * around it — this is the only control that switches it. Each segment is a radio in a group
+ * labelled "Map style", and stays at least {@link touchTarget} tall even though it reads compact.
+ */
+function BaseSwitch({
+  base,
+  onChange,
+}: {
+  readonly base: MapBase;
+  readonly onChange: (base: MapBase) => void;
+}) {
+  return (
+    <View accessibilityRole="radiogroup" accessibilityLabel="Map style">
+      <Glass style={{ flexDirection: "row", padding: 2 }}>
+        {BASE_OPTIONS.map((option) => {
+          const selected = option.value === base;
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${option.label} map style`}
+              onPress={() => onChange(option.value)}
+              hitSlop={4}
+              style={{
+                minWidth: 52,
+                minHeight: touchTarget,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: space.tight,
+                borderRadius: radius.sm + 2,
+                backgroundColor: selected ? "#9184d91f" : "transparent",
+              }}
+            >
+              <Text
+                style={[
+                  textStyles.micro,
+                  { color: selected ? colors.accent200 : colors.neutral400 },
+                ]}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </Glass>
+    </View>
+  );
+}
 
 /** A prior observation as the map needs it: where it is and what the callout should say. */
 export type MapRecord = MapPoint & {
@@ -105,7 +163,7 @@ export function FieldMap({
 }: Props) {
   const camera = useRef<CameraRef>(null);
   const home = zone.zoom ?? DEFAULT_ZOOM;
-  const [base, setBase] = useState<"plan" | "aerial">("plan");
+  const base = useMapBase();
   const [layersOpen, setLayersOpen] = useState(false);
   const [hidden, setHidden] = useState<readonly string[]>([]);
   const [zoom, setZoom] = useState(home);
@@ -126,11 +184,12 @@ export function FieldMap({
         flex: 1,
         borderRadius: radius.lg - 2,
         overflow: "hidden",
-        backgroundColor: colors.mapGround,
+        // Aerial keeps its matte; Day and Night follow the active map palette's own background.
+        backgroundColor: base === "aerial" ? colors.mapGround : mapPalettes[base].background,
       }}
     >
       <NativeMap
-        mapStyle={base === "plan" ? sitePackage.bases.plan : sitePackage.bases.aerial}
+        mapStyle={sitePackage.bases[base]}
         style={{ flex: 1 }}
         dragPan={!armed}
         touchRotate={false}
@@ -154,7 +213,7 @@ export function FieldMap({
         />
         {sitePackage.layers.map((layer) => (
           <GeoJSONSource key={layer.id} id={`package-${layer.id}`} data={layer.data}>
-            {layerElements(base === "plan" ? layer.plan : layer.aerial, isVisible(layer), layer.id)}
+            {layerElements(layer[base], isVisible(layer), layer.id)}
           </GeoJSONSource>
         ))}
         {clusters.map((cluster) =>
@@ -286,13 +345,8 @@ export function FieldMap({
           gap: space.tight,
         }}
       >
-        <View style={{ flexDirection: "row", gap: space.tight }}>
-          <MapPill
-            label={base === "aerial" ? "Aerial" : "Plan"}
-            active={base === "aerial"}
-            onPress={() => setBase(base === "plan" ? "aerial" : "plan")}
-            accessibilityLabel="Switch base map"
-          />
+        <View style={{ flexDirection: "row", gap: space.tight, alignItems: "center" }}>
+          <BaseSwitch base={base} onChange={setMapBase} />
           <MapPill label="Layers" active={layersOpen} onPress={() => setLayersOpen(!layersOpen)} />
         </View>
         {layersOpen && (

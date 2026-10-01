@@ -7,6 +7,7 @@ Language-neutral JSON shared by the independently managed mobile, web and API ap
 | `form-definition.schema.json` | Generated from `mobile/src/forms/definition.ts` using Zod's `io: "input"` mode. Never edit by hand. | Definition tooling; backend structural validation in BE-10 |
 | `forms/shell-v1.json`, `forms/janet-test-v1.json` | Canonical, reviewed definitions. Initially exported from the mobile fixtures; edit the JSON, not the thin TypeScript imports. | Mobile registry/tests now; Training seeds (DB-07), publishing (DB-09), backend validation (BE-10) and GIS later |
 | `forms/cases/*.cases.json` | Hand-authored expected behavior. Never regenerate expectations from the engine. | Mobile Vitest now; the same cases in Python during BE-10 |
+| `map-palettes.json` | Hand-authored cartography for every map canvas: `day` (default) and `night`, with identical keys. The app chrome stays Nocturne; only the map changes palette. | Mobile field map (MapLibre) and web observation and package-preview maps (Leaflet) |
 | `openapi.json` | Not created yet. BE-04 generates it from FastAPI; never edit by hand. | CON-03 will generate separate web/mobile TypeScript clients |
 
 ## Generate and verify

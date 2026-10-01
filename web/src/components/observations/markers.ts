@@ -1,4 +1,5 @@
 import { shapeForPlayType } from "@/data/instrument";
+import type { ObservationPalette } from "@/lib/map-palette";
 import type { RecordState } from "@/types/domain";
 
 /**
@@ -34,10 +35,15 @@ export const MARKER = {
 	corner: 1.5
 } as const;
 
-export function markerHtml(playType: string, state: RecordState, selected: boolean): string {
+export function markerHtml(
+	playType: string,
+	state: RecordState,
+	selected: boolean,
+	observation: Pick<ObservationPalette, "ring" | "selected">
+): string {
 	const shape = shapeForPlayType(playType);
 	const fill = FILLS[state];
-	const halo = selected ? "var(--color-accent-100)" : "var(--color-bg)";
+	const halo = selected ? observation.selected : observation.ring;
 	const haloWidth = selected ? MARKER.haloSelected : MARKER.halo;
 	const size = MARKER.shape;
 
