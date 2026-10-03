@@ -226,6 +226,11 @@ const undownloaded: readonly PackageSummary[] = [
 
 const packages: readonly SitePackage[] = [fallCreek, riverside, practice];
 
+/** A package that ships inside the app, read without waiting: it is already on the device. */
+export function bundledPackage(id: string): SitePackage | undefined {
+  return packages.find((entry) => entry.id === id);
+}
+
 export const bundledPackages: PackageProvider = {
   async list() {
     return [...packages.map(summary), ...undownloaded];

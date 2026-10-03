@@ -1,19 +1,26 @@
 import "./globals.css";
 
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Geologica, Spline_Sans_Mono } from "next/font/google";
 
 import { PwaRegister } from "@/components/app-shell/PwaRegister";
+import { CONTOUR } from "@/lib/contour";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 
 /**
- * Inter is the Nocturne face. It is self-hosted by next/font rather than fetched from Google,
- * for the same reason the collector bundles it: chrome never waits on a network.
+ * Geologica carries every word; Spline Sans Mono carries what someone might read aloud (IDs, versions,
+ * codes, counts). Both are self-hosted by next/font, so the chrome never waits on a network.
  */
-const inter = Inter({
+const geologica = Geologica({
 	subsets: ["latin"],
-	weight: ["400", "500", "600"],
 	display: "swap",
-	variable: "--font-inter"
+	variable: "--font-geologica"
+});
+
+const splineMono = Spline_Sans_Mono({
+	subsets: ["latin"],
+	display: "swap",
+	variable: "--font-spline-mono"
 });
 
 export const metadata: Metadata = {
@@ -22,13 +29,13 @@ export const metadata: Metadata = {
 		template: "%s · FieldMaps"
 	},
 	description:
-		"The management side of FieldMaps: projects, places, instruments and the observations the field collector writes to the shared spatial database.",
+		"FieldMaps keeps every field observation with its place: an offline collector for observers and a workspace for the research team.",
 	manifest: "/manifest.webmanifest"
 };
 
 export const viewport: Viewport = {
-	themeColor: "#161826",
-	colorScheme: "dark"
+	themeColor: CONTOUR.themes.day.ground,
+	colorScheme: "light dark"
 };
 
 export default function RootLayout({
@@ -37,9 +44,14 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className={inter.variable}>
+		<html
+			lang="en"
+			data-theme="day"
+			className={`${geologica.variable} ${splineMono.variable}`}
+			suppressHydrationWarning>
 			<head>
 				<meta name="google-site-verification" content="kxlspCXgDMZBx65C7afIxXCO0kRB1aHuoBf02jy_rQ4" />
+				<script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
 			</head>
 			<body>
 				{children}

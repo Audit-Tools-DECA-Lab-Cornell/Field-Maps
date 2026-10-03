@@ -6,8 +6,8 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - **User journeys:** J1, J3 and J4 in [product.md](../docs/plan/product.md#journeys-the-pilot-must-support).
 - **Fixture list:** [architecture.md](../docs/plan/architecture.md#fixture-inventory).
 - **Local rules:** `web/AGENTS.md` still applies. In particular:
-  - the fixture notices come off a screen only when that screen reads real data;
-  - Nocturne tokens change together with `mobile/src/theme.ts`.
+  - one **Preview data** marker in the header and one footer line say that the screens read fixtures (D20). They come off only when no screen reads fixtures;
+  - Contour tokens change only in `contracts/contour.json`; `pnpm tokens` regenerates `src/styles/contour.css`, and the collector reads the same file (D19).
 
 **Skills to load** when working here: `vercel-plugin:nextjs`, `frontend-dashboard-polish`, `responsive-design`, `site-architecture`.
 
@@ -28,20 +28,33 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 
 ```
 src/app/
-  (marketing)/page.tsx                       /
-  (legal)/privacy/…                          /privacy, /privacy/delete-data
-  (auth)/sign-in, sign-up, verify, forgot-password, reset-password, invite   (token in the URL fragment)
-  (app)/onboarding/page.tsx                  create org + first project
-  (app)/o/[org]/…                            org home: projects, members, settings
-  (app)/o/[org]/p/[project]/{overview,observations,sites,sites/[site],instrument,team,gis,settings}
-  (app)/account/page.tsx                     profile, delete account
+  (public)/…                                 /, /privacy, /privacy/delete-data
+  (auth)/(signed-out)/…                      /sign-in, /sign-up, /verify, /forgot-password, /reset-password
+  (auth)/(signed-in)/…                       /invite (token in the URL fragment), /join (U3)
+  (onboarding)/onboarding/[step]             organization, project, site, form, team
+  (app)/account/page.tsx                     profile, password, sign out, delete account
+  (app)/o/[org]/…                            header, no tabs: collect (observer handoff, U3), not-found, error
+  (app)/o/[org]/(org)/…                      projects (org root), members, library (U4), settings
+  (app)/o/[org]/p/[project]/(project)/…      overview (project root), data, data/[observation],
+                                             sites, sites/[site], sites/[site]/zones/[zone],
+                                             sites/[site]/zones/edit (U2), sites/[site]/packages?step=,
+                                             forms, forms/versions, forms/versions/[version],
+                                             forms/versions/[version]/publish, team, qgis,
+                                             reports (U7), reports/views, reports/[report],
+                                             settings, settings/rounds (U6)
+  dev/contour/                               every primitive in Day and Dusk (dev and preview builds only)
 src/proxy.ts                                 session refresh + auth redirects
 src/lib/supabase/{server,client}.ts
 src/lib/api/{client.ts,schema.d.ts,errors.ts}   server-only
-src/features/<section>/…
+src/components/contour/…                     primitives, same names as mobile/src/ui/
+src/components/shell/…                       header, switchers, tabs, ⌘K, Preview data marker
+src/features/<area>/…
+src/fixtures/…                               preview data, until each screen is wired
 ```
 
-The rail is Overview, Observations, Sites, Instrument, Team, GIS. The header holds the org and project switcher and the account menu. The Team page, publishing, and uploading to Sites are for managers only. Every route under `(auth)` and `(app)` is `noindex`.
+A project has eight tabs: Overview, Data, Sites, Forms, Team, QGIS, Reports, Settings. An organization has four: Projects, Members, Form library, Settings. The header holds the org and project switchers, "Search or jump to" (⌘K), the Preview data marker and the account menu (with Day · Dusk). Viewers do not see Team or Settings. The Team page, publishing, and uploading to Sites are for managers only. The old paths (`/overview`, `/observations`, `/places`, `/basemaps`, `/instrument`, `/qgis`) redirect with a 307 and keep the query string (D21). Every route under `(auth)`, `(onboarding)` and `(app)`, and `/dev/contour`, is `noindex`.
+
+**Contour screens first.** WEB-20 to WEB-26 build every page above in Contour, on fixtures (D19–D22). The wiring tasks WEB-04 to WEB-13 then connect real data to those screens without changing their layout. Where a wiring task names something WEB-26 retires (`src/data/*`, `LeafletCanvas`, `ZonePlan`, the `(legal)` and `(marketing)` groups), read its successor (`src/fixtures/*`, `SitePlan` and `MapFrame`, `(public)`). The design pages named under `Read first` come from the four Contour design sets, which are not committed ([docs/ux/README.md](../docs/ux/README.md)); root `DESIGN.md` is the committed reference.
 
 ## Tasks
 
@@ -86,7 +99,7 @@ Done when: an unauthenticated visit to `/o` redirects to sign-in, and a signed-i
 
 ### WEB-04: Authentication pages
 Status: todo · Phase 1 · Size M · Depends: DB-02, WEB-03 · Blocks: WEB-06, WEB-15
-Do: build these pages with Nocturne chrome and 44 px targets:
+Do: wire these pages to Supabase Auth. WEB-21 builds them in Contour on fixtures; keep its layout, copy and 44 px targets:
 - `/sign-up`: email and password (8 characters or more), then `signUp`, then `/verify`.
   - The email travels in `sessionStorage` or an httpOnly cookie, never in the URL. URLs end up in request logs, history and Sentry breadcrumbs.
 - `/verify`: 6-digit code, `verifyOtp({type: 'email'})`, and resend with a cooldown.
@@ -122,7 +135,7 @@ Do:
    - Set `Referrer-Policy: no-referrer` on `/invite` and `/verify`.
    - Add a Sentry `beforeBreadcrumb` rule that drops URLs under `/invite` and any `email` parameter (WEB-16).
 3. `/o/[org]` lists the projects and org settings, including org members when the user is an admin.
-4. Move the existing workspace sections under `/o/[org]/p/[project]/…`, and rename `/places` to `sites`, `/basemaps` into `sites/[site]`, and `/qgis` to `gis`. Keep the fixture reads and **their notices** until WEB-08 to WEB-12 wire each screen. Add redirects from the old paths.
+4. The workspace sections live under `/o/[org]/p/[project]/…` with the D21 slugs (`data`, `sites`, `forms`, `team`, `qgis`, `reports`, `settings`), and the old paths redirect; WEB-22 builds both. Resolve the org and project from the route and `/v1/me` instead of the fixture slugs. Keep the fixture reads and the Preview data marker (D20) until WEB-08 to WEB-12 wire each screen.
 5. Header: the org and project switcher from `/v1/me`, and the account menu. Remove the `VIEWER` fixture, and the marketing page's `ORGANIZATION.name`; the landing page names the product, not a tenant.
 6. `/account`: profile (`PATCH /v1/me`) and delete account.
    - Deletion calls `DELETE /v1/me` behind a two-step confirm, with a `sole_owner` message.
@@ -156,7 +169,7 @@ Do:
    - `sites/[site]` shows the zones (real polygons) on the map, the package versions with their checks, and the current version.
 2. Move `PackageUpload` here and delete the pasted token. The site code comes from the route, the project UUID from the route, and the token from the session.
 3. Offer a package download through the `archive` route.
-4. Remove the notices from these screens.
+4. Stop these screens reading fixtures. The Preview data marker stays until no screen reads fixtures (D20).
    - Delete `src/data/basemaps.ts`.
    - Replace `src/data/site-geometry.ts` in `ZonePlan` and `project.ts` with zones and ground from the sites API.
    - Delete any part of `src/data/project.ts` that nothing uses.
@@ -171,7 +184,7 @@ Do:
 2. Manager actions:
    - import a draft (paste or upload JSON) and show every validation problem;
    - publish, then retire.
-3. Remove the notices here. This task owns deleting `src/data/instrument.ts`: after WEB-10 has moved `FilterRail` and the markers off it, remove every remaining import and the file.
+3. Stop this screen reading fixtures; the Preview data marker stays until no screen does (D20). This task owns deleting `src/data/instrument.ts`: after WEB-10 has moved `FilterRail` and the markers off it, remove every remaining import and the file.
 
 Done when: Janet's definition from `contracts/forms/` imports and publishes locally.
 
@@ -186,19 +199,19 @@ Do:
    - show zones from the site's current package.
 3. The table is virtualized, or paged at 100 rows. The detail pane reads from the API.
 4. Fix the mislabel: `Rel_Round` is not the collection round (`ObservationDetail.tsx:59`).
-5. Replace every remaining fixture read on this screen before removing its notice:
+5. Replace every remaining fixture read on this screen:
    - `FilterRail`'s zone, round and observer options come from the zones API and the summary (BE-14);
    - its play types and quality flags come from the form definition, not `src/data/instrument.ts`;
    - marker shapes (`markers.ts`, `shapeForPlayType`) come from the definition;
    - dates use the project's or site's timezone from the API, not `SITE_TIME_ZONE` (`src/lib/format.ts`, `ObservationDetail`).
-6. Delete `src/data/observations.ts`, and stop `LeafletCanvas` importing `src/data/site-geometry.ts`. Only then remove the notices.
+6. Delete `src/data/observations.ts`, and stop `LeafletCanvas` importing `src/data/site-geometry.ts`. Only then is this screen off fixtures.
 
 Done when: 10,000 synthetic observations on the local stack scroll and filter smoothly, and the filters survive a page reload.
 
 ### WEB-11: Overview on real data
 Status: todo · Phase 3 · Size M · Depends: BE-14, WEB-06 · Blocks: none
 Cut option: show counts only, without charts.
-Do: build the overview tiles and the coverage matrix from `GET …/summary`. Charts use only the accent ramp (`web/README.md` rules). Delete client-side aggregation over fixtures (`src/lib/analysis.ts`) that nothing uses anymore.
+Do: fill WEB-23's overview (counts, `TypeBars` and the coverage matrix) from `GET …/summary`, keeping its layout; `DESIGN.md` rules out KPI tiles. Delete client-side aggregation over fixtures (`src/lib/analysis.ts`) that nothing uses anymore.
 
 Done when: the overview matches SQL counts on the local stack.
 
@@ -290,3 +303,114 @@ Verified 2026-10-01: all five steps walked in the browser (slug and project code
 Status: done (2026-10-01) · Phase 1 · Size S · Depends: none · Blocks: none
 Added 2026-10-01 with MOB-22 (decision D18). The observations map and the package-upload preview read `contracts/map-palettes.json` through `src/lib/map-palette.ts`; a Day · Night switch on the observations map is shared by both maps and remembered in the browser. Light or dark CARTO tiles follow the palette.
 Verified 2026-10-01: `pnpm --dir web check` passes; in the browser the switch flips the site fill between the Day and Night colours and the choice survives a reload. The ground repaint around the site on a palette change was not seen in a browser (the pane was hidden).
+
+### WEB-20: Contour foundation (web)
+Status: todo · Phase 1 · Size L · Depends: none · Blocks: WEB-21, WEB-22
+Added 2026-10-03 (D19, D22). It builds no product screen. The screens built on it (WEB-21 to WEB-26) run on fixtures; the wiring tasks WEB-04 to WEB-13 later connect real data to them without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`, `web/AGENTS.md`, `contracts/contour.json`, `contracts/map-palettes.json`; designs: Contour system pp. 1–12.
+Do:
+1. Tokens. `scripts/contour-tokens.mjs` generates `src/styles/contour.css` (`--ct-*` on `:root` for Day and on `[data-theme="dusk"]`); `--check` fails on drift and on contrast below 4.5:1 for text or 3:1 for UI, in both themes. Root scripts `pnpm tokens` and `pnpm tokens:check`. `globals.css` maps the variables to Tailwind utilities with `@theme inline`. A temporary block of Nocturne-name aliases keeps untouched screens readable until WEB-26 deletes it.
+2. Fonts: Geologica and Spline Sans Mono through `next/font/google` as `--font-sans` and `--font-mono`, falling back to vendored woff2 through `next/font/local` if the fetch is blocked.
+3. Theme. An inline `<head>` script reads `localStorage["fm-theme"]` (Day by default) and sets `data-theme`, `colorScheme`, the theme-color meta and `data-platform` before first paint; `suppressHydrationWarning` on `<html>`; no cookies, so static pages stay static. `manifest.ts` and `viewport` take the Contour colours.
+4. Dependencies: `lucide-react`, `radix-ui` and `cmdk`; dev `@playwright/test` and `@axe-core/playwright`. Motion is CSS only, from the motion tokens, and every movement has a reduced-motion fallback.
+5. Primitives in `src/components/contour/*`, with the same names as `mobile/src/ui/*`: actions, containers, state, inputs, navigation, data and feedback, as listed in `DESIGN.md`. `Icon` maps the Lucide names in the state vocabulary of `contracts/contour.json` and adds the custom two-bar held glyph. State is always a glyph, a word and a colour from that vocabulary.
+6. Maps. `components/map/SitePlan` is a server-renderable SVG drawn from the palette and the site GeoJSON (`lib/plan.ts` projects any GeoJSON). The client `MapFrame` adds keyboard zoom and pan, round + / − buttons, the Layers popover (Day · Night), the label island, the scale chip, hatched focus zones and violet markers. The shared Riverside plan moves to `contracts/fixtures/sites/riverside.json`.
+7. The fixture scaffold in `src/fixtures/*` (`PREVIEW_NOW`, every time in an explicit timezone, U2–U7 concepts in tagged types), `lib/{theme,preview,plan,time}.ts`, and an ESLint `no-restricted-imports` rule that stops new imports of `@/data/*` and `nocturne/*`.
+8. `/dev/contour`: every primitive in Day and Dusk, `noindex`, dev and preview builds only. Add the Playwright harness in `web/e2e/` (against `next start`, service workers blocked) that screenshots a route at 1440, 1024, 768 and 390 in both themes.
+
+Done when: the gallery renders every primitive in Day and Dusk; `pnpm tokens:check` passes, contrast included; the existing routes still build.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of `/dev/contour` against the Contour system pages.
+
+### WEB-21: Identity screens on Contour (web)
+Status: todo · Phase 1 · Size L · Depends: WEB-20 · Blocks: none
+Added 2026-10-03. These screens run on fixtures and save nothing. WEB-04 (sign-up, sign-in, codes, passwords) and WEB-06 (onboarding, invitation) later connect them to Supabase and the API without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Contour system p. 12, Organization, auth and public pp. 6–13; `src/components/onboarding/*` (WEB-18).
+Do:
+1. Layouts: `(auth)/(signed-out)` (split layout with the SitePlan hero island and a Privacy link), `(auth)/(signed-in)` (split layout with the account chip and "Not you?") and the `(onboarding)` stepper frame, each with the Preview data footer line.
+2. `/sign-in`, `/sign-up`, `/verify`, `/forgot-password` and `/reset-password`. A code is one wide mono field with a counter ("4 of 6"): a paste is cleaned, the field submits by itself at the 6th digit, a wrong code reselects it, and "Resend in 0:24" counts down in mono. Password checks update live, "Does not match yet" appears only after blur, and a disabled button always carries its reason.
+3. `/invite` ("Join Play Study?", the token in the URL fragment) and `/join` (PROPOSAL U3, with its flag; join codes are uppercased as you type).
+4. `/onboarding/[step]` for organization, project, site, form and team, keeping WEB-18's `SetupFlow` logic and its rule that no control claims to create anything.
+5. Every error state in the designs, in Contour wording: what happened, what is safe, what to do.
+
+Done when: each screen matches its design page at 1440 and 390 in Day and Dusk; codes paste and submit by themselves; every error state can be shown in the preview.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of each route against its design page, with axe failing on serious or critical findings.
+
+### WEB-22: Workspace shell and navigation
+Status: todo · Phase 1 · Size L · Depends: WEB-20 · Blocks: WEB-23, WEB-24, WEB-25, WEB-26
+Added 2026-10-03 (D20, D21). The shell runs on fixtures. WEB-03 (the proxy) and WEB-06 (switchers and account menu from `/v1/me`) later connect it without changing its layout.
+Read first: `DESIGN.md`, `PRODUCT.md`, `web/AGENTS.md`; designs: Contour system pp. 5, 6 and 10, Organization, auth and public pp. 1, 18 and 19.
+Do:
+1. The `(app)` layouts: `/account` and `/o/[org]` with the header and no tabs; `(org)` with the org tabs (Projects, Members, Form library, Settings); `(project)` with the project tabs (Overview, Data, Sites, Forms, Team, QGIS, Reports, Settings).
+2. Header: the org and project switchers (menus with typeahead, role and state, Create project last); "Search or jump to" (⌘K) over tabs, projects, sites, zones, form versions, people and `OBS-` ids, with the actions Day · Dusk, map palette, Export current view and Invite member, and recent items; the account menu with Day · Dusk.
+3. InkTabs: the white current-tab pill slides inside the ink bar, with no slide on first paint; narrow screens scroll the tabs with edge fades. Shortcuts: `g` then `o/d/s/f/t/q/r`, `?` for the list, `/` for search. A skip link, and focus moves to the page heading on navigation.
+4. The Preview data marker, a mono pill in the header. Its popover reads "Everything here is sample data. Nothing is read from or written to the FieldMaps database." In dev and preview builds it also offers View as (`?as=viewer|observer`), Show state (`?preview-state=`) and Theme. One footer line says the same. Preview actions go into a `sessionStorage` store, take effect on screen, reset on reload and never claim a server round trip.
+5. Redirects in `next.config.ts` (307, query string kept) from `/overview`, `/observations`, `/places`, `/basemaps`, `/instrument` and `/qgis` to the new routes.
+6. The org-level 404 and error pages (the org header without tabs; the error page with "What we know" and a reference), and the org Projects page.
+7. Delete `(workspace)`, `RailNav` and `StatusFooter`. Bump the `sw.js` `CACHE_NAME` so cached Nocturne pages are dropped.
+
+Done when: the old paths redirect; the skip link, tabs, ⌘K and menus work by keyboard alone; `?as=viewer` hides Team and Settings; axe is clean in both themes.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of each route against its design page, plus a scripted keyboard run.
+
+### WEB-23: Project screens: field return (overview, data, observation)
+Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+Added 2026-10-03. These screens run on fixtures. WEB-10 (data), WEB-11 (overview) and WEB-12 (exports) later connect real data to them without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 1–3, Contour system p. 8; `src/lib/filters.ts`, `src/lib/analysis.ts`, `src/lib/exports.ts`.
+Do:
+1. Overview (project root), "What came back from the field": coverage and what is blocking. Every count comes from the fixture rows through `lib/analysis.ts` and `lib/filters.ts` (14 observations; play types 5/4/3/2; observers JL 6, PS 4, AK 4; coverage 5 of 9 zone-rounds).
+2. Data: filters in the URL that update at once, "14 of 14 shown" in a live region, and Clear filters returning focus to the first filter. `MapFrame` and `DataTable` share a two-way selection: the row scrolls into view, the map eases only when the marker is off-screen, and a selection that leaves the view clears with "OBS-0244 is not in this view".
+3. The selected-record panel. `j`/`k` or ↑/↓ move the selection, Enter opens, `a` approves and `x` excludes; the toast reads "OBS-0244 approved · Undo" (6 s), ⌘Z also undoes, and focus stays on the row. These are session-only preview actions.
+4. Save view (session only), and Export through a dialog that reuses `lib/exports.ts` and repeats the scope.
+5. `data/[observation]`: every answer, the context, the location and the history.
+6. Every data area has its loading, empty, filtered, error, offline and no-access states. At 768 Data shows the map and table with the selected record in a dialog; at 390 tables become row cards.
+
+Done when: the numbers match the designs; the selection rules hold; the `j/k`, `a/x` and undo keyboard run passes.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of each route × preview state against its design page.
+
+### WEB-24: Project screens: places (sites, site, zone, zone editor, map packages)
+Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+Added 2026-10-03. These screens run on fixtures. WEB-08 (sites and packages) and WEB-10 (zone data) later connect real data to them without changing their layout. The package upload stays real: it keeps `lib/packages.ts` and says "Sends this package to the FieldMaps API."
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 6–10; `src/components/basemaps/PackageUpload.tsx`, `src/lib/packages.ts`.
+Do:
+1. Sites, and Site: zones on the `SitePlan`, coverage, packages and its data. Device readiness always reads "as last reported".
+2. Zone (`sites/[site]/zones/[zone]`): the data and coverage inside one zone.
+3. Edit zone boundaries (`sites/[site]/zones/edit`, PROPOSAL U2, with its flag). Handles are focusable buttons: arrows nudge 1 map unit and Shift+arrow 10; Delete removes a vertex but keeps at least three. Edits sync both ways with the vertex table, ⌘Z undoes, and Discard confirms. Edits are session-only.
+4. Map packages (`sites/[site]/packages?step=`). The step lives in the URL, so back works. Inspection rows support a "Checking" state, and the fixtures show the final state. "Activate v4" turns v3 into Archived, session only. Step 1's dialog keeps the real upload and previews the layers with `SitePlan`.
+
+Done when: vertex editing works by keyboard; `?step` back navigation works; the upload still reaches the API.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of each route against its design page.
+
+### WEB-25: Project screens: forms, team, QGIS, reports, settings
+Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+Added 2026-10-03. These screens run on fixtures. WEB-09 (forms), WEB-07 (team) and WEB-12 (QGIS) later connect real data to them without changing their layout. Reports (U7) and rounds (U6) are proposals and always show their flags.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 4, 5 and 11–19; `src/components/studio/PhonePreview.tsx`, `src/lib/forms/*`.
+Do:
+1. Forms, Form versions (with the `janet-test-v1` draft and its 8 protocol notes), the draft editor (`forms/versions/[version]`, read-only once published) and Review publication (`…/publish`). The confirm checkbox enables "Publish demo-v2", and the reason shows until then; afterwards the version history updates, session only.
+2. A new `CollectorPreview` on a `usePreviewSession` hook taken out of `PhonePreview`'s engine wiring, with a Phone · Tablet toggle, scoped to Day. The engine files in `src/lib/forms/` stay untouched.
+3. Team: members, roles, invitations and the join code. Copy turns into "Copied ✓", Download saves a `.txt`, and Dismiss confirms; the island then collapses to "Code dismissed · Rotate code".
+4. QGIS: maps in (packages by site) and evidence out (publishing, access, exports).
+5. Reports, Saved views (`reports/views`) and the printable site summary (`reports/[report]`: `@page` A4, forced Day, no ledges).
+6. Project settings and Rounds (`settings/rounds`). Unsaved changes replace "Last saved yesterday by JL" with "Unsaved changes", and leaving the page asks first. The danger zone lists every affected resource before the type-to-confirm button.
+
+Done when: `pnpm forms:parity` passes with the engine files untouched; the print preview of the site summary fits one A4 page.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of each route against its design page, plus a print-to-PDF of the site summary.
+
+### WEB-26: Organization, account and public pages, and retiring Nocturne and Leaflet
+Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+Added 2026-10-03. These screens run on fixtures. WEB-06 (org pages, account), WEB-07 (members) and WEB-14 (privacy wording) later connect them without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`, `web/AGENTS.md`; designs: Organization, auth and public pp. 1–5 and 14–19.
+Do:
+1. Org Members, Form library (`/o/[org]/library`, PROPOSAL U4, with its flag) and Org settings.
+2. `/account` (the header, no tabs): profile, password, sign out, delete account. No control claims a deletion it does not perform.
+3. `/o/[org]/collect`, the observer handoff "You collect in the app" (PROPOSAL U3; the org header without tabs). `?as=observer` lands here.
+4. Landing, Privacy and Request data deletion in the `(public)` layout, and the global 404 ("This page is not on the map.") and error ("Something went wrong.") pages.
+5. Delete `src/data/*`, `src/components/nocturne/*`, `lib/states.ts`, the old studio and observation components, the Nocturne CSS aliases, and `leaflet` and `react-leaflet`.
+
+Done when: no import of `@/data` or `nocturne` remains; no hex outside the generated tokens and the map palette; the build passes.
+
+Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of every route × preview state × role against its design page.

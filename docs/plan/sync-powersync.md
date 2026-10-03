@@ -127,7 +127,7 @@ streams:
 | needs attention | an unresolved row exists in `my_rejections` for the id; the record is rendered from its `operation`, and "Send again" re-queues it |
 | held | a row in `held_observations`, kept on the device until it is queued, exported or discarded (MOB-13) |
 
-The Records list shows **one entry per observation id**, with this precedence: in the local queue, then an unresolved rejection, then held, then uploaded.
+The Observations list shows **one entry per observation id**, with this precedence: in the local queue, then an unresolved rejection, then held, then uploaded.
 
 - **Sign-out.**
   - Warn when the upload queue, `held_observations` or `drafts` are not empty.
