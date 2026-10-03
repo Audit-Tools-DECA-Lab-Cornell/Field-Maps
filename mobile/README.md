@@ -6,7 +6,15 @@ one-handed, often in sun. This app is independent of the Next.js prototype in `.
 [product workspace](../docs/Workspace.md) provides root command aliases while preserving this
 app's dependencies and lockfile.
 
-The interface follows `../designs/Riverside Collector v2.dc.html` and the Nocturne design
+The interface is moving to **Contour**, the design system it shares with the web workspace
+([`DESIGN.md`](../DESIGN.md)). Its tokens live in [`../contracts/contour.json`](../contracts/contour.json),
+which this app reads in `src/ui/tokens.ts`; the primitives live in `src/ui/`, and
+`app/(dev)/gallery` shows them in both themes. Day is the default; Dusk is a preference
+("Screen: Day · Dusk" in Preferences). The map keeps its own palette (Day, Night) from
+[`../contracts/map-palettes.json`](../contracts/map-palettes.json), and UI state colours never
+appear on it. Words are Geologica; IDs, versions, codes and counts are Spline Sans Mono. Icons are
+Lucide (`lucide-react-native`) plus a two-bar held glyph. MOB-23 to MOB-27 carry the move; until a
+screen moves, it follows `../designs/Riverside Collector v2.dc.html` and the previous design
 system in `../designs/_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/`. On the field map,
 tablet landscape (1024×768) is the primary target, then phone landscape (844×390); phone portrait
 stacks the map over the panel. Every other screen runs in portrait or landscape on both, and its
@@ -103,6 +111,10 @@ development build must be regenerated and rebuilt** before it can open this vers
 EXPO_NO_DOTENV=1 pnpm exec expo prebuild
 pnpm ios     # or pnpm android
 ```
+
+MOB-23 adds the Contour dependencies in one step: `react-native-svg` and `expo-haptics` (native),
+and the Geologica and Spline Sans Mono fonts and `lucide-react-native` (JavaScript only). Rebuild
+the development app once more after it. MOB-27 removes `expo-blur` and Inter.
 
 Orientation follows the device everywhere except the field map on a tablet, which is held in
 landscape while it is focused and released when another screen — review, records — takes over
@@ -226,8 +238,9 @@ encryption configuration. Use test data for this development slice.
 | `src/auth/` | Secure session persistence and offline account identity |
 | `src/sync/` | Upload protocol, scheduling, and verified receipts |
 | `src/layout/` | The per-screen orientation rule and the tablet/phone layout decisions |
-| `src/components/` | Nocturne chrome primitives, the question panel, and screen frames |
-| `src/theme.ts` | Nocturne tokens, copied from the design system's own stylesheet |
+| `src/ui/` | Contour, from MOB-23: tokens read from `../contracts/contour.json`, theme, preferences, and the primitives that share their names with `web/src/components/contour/` |
+| `src/components/` | The question panel, screen frames, and the previous chrome primitives, which MOB-27 removes once every screen uses `src/ui/` |
+| `src/theme.ts` | The previous chrome tokens, kept so unmoved screens compile; MOB-27 removes them |
 | `assets/` | App icon, Android adaptive and themed layers, Play Store icon; sources in `assets/icon-source/` |
 | `plugins/` | Local config plugins: the Android 16 large-screen orientation opt-out |
 

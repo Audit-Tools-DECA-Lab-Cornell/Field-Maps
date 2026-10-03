@@ -25,7 +25,7 @@
 	--ct-scrim: #13201952;
 	--ct-saved: #1B6E3C;
 	--ct-saved-soft: #E2F0E6;
-	--ct-waiting: #805A00;
+	--ct-waiting: #805400;
 	--ct-waiting-soft: #FAEFD6;
 	--ct-uploaded: #1E55A6;
 	--ct-uploaded-soft: #E3ECF8;
@@ -41,7 +41,7 @@
 	--ct-ground: #0F1A17;
 	--ct-island: #1A2925;
 	--ct-well: #24352F;
-	--ct-ledge: #2C3F38;
+	--ct-ledge: #08110E;
 	--ct-line: #3B4D46;
 	--ct-rule: #2A3A34;
 	--ct-edge: #7D9188;
@@ -50,8 +50,8 @@
 	--ct-on-ink: #0F1A17;
 	--ct-accent: #F58CC8;
 	--ct-accent-soft: #3B1E2F;
-	--ct-on-accent: #132019;
-	--ct-nav: #1A2925;
+	--ct-on-accent: #0F1A17;
+	--ct-nav: #24352F;
 	--ct-on-nav: #E9EFE9;
 	--ct-nav-current: #E9EFE9;
 	--ct-on-nav-current: #0F1A17;

@@ -1,5 +1,5 @@
 {
-  "$comment": "Cartography shared by every FieldMaps map, on the collector (MapLibre) and the web workspace (Leaflet). The app chrome stays Nocturne; only the map canvas changes palette. Both apps read this file, so a site looks the same to the observer and the manager. Keep the keys of every palette identical. Aerial imagery is a photo and has no palette.",
+  "$comment": "Cartography shared by every FieldMaps map, on the collector (MapLibre) and the web workspace (Leaflet). The app chrome follows Contour's own Day or Dusk theme; only the map canvas changes palette. Both apps read this file, so a site looks the same to the observer and the manager. Keep the keys of every palette identical. Aerial imagery is a photo and has no palette.",
   "version": 1,
   "default": "day",
   "order": ["day", "night"],

@@ -38,7 +38,7 @@ The project roles `manager`, `observer` and `viewer` already exist (`supabase/mi
 1. Sign up, then enter the 6-digit email code.
 2. Onboarding: create the organization "DECA Lab" and the first project "Riverside Play Study".
 3. Sites: upload the QGIS export (the ground and zones layers plus the `.qgz`). The checks pass, and version 1 becomes the site's current package.
-4. Instrument: import Janet's form definition as a draft, see the validation results, then publish.
+4. Forms: import Janet's form definition as a draft, see the validation results, then publish.
 5. Team: create an 8-character observer join code, or an invitation link (shown once, to copy).
 6. Overview: watch observations arrive, with coverage by zone and round.
 
@@ -50,7 +50,7 @@ The project roles `manager`, `observer` and `viewer` already exist (`supabase/mi
 4. Enter the join code, and the project appears.
 5. Download the site on Wi-Fi. The size is shown first, and on cellular the app asks.
 6. In the field, with no signal: brief, then place a point, then answer, then review, then save, repeated.
-7. Back online, records upload by themselves, and the Records tab shows "uploaded".
+7. Back online, records upload by themselves, and the Observations tab shows "Uploaded".
 8. A record the server rejects stays visible as "needs attention", with the reason.
 
 ### J3: The analyst reads (QGIS and exports)

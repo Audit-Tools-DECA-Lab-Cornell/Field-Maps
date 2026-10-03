@@ -60,7 +60,7 @@ Do:
 1. Create `supabase/templates/confirm-signup.html`, `recovery.html` and `email-change.html`.
    - Each shows `{{ .Token }}` prominently: "Your FieldMaps code is 123456".
    - They carry **codes only**, with no link (decision D3). A `{{ .TokenHash }}` link would need a confirm route the web does not have, and would put a one-time token in a URL.
-   - Use Nocturne-neutral HTML with inline styles and no tracking pixels.
+   - Use plain HTML in Contour's Day colours (`DESIGN.md`), with inline styles and no tracking pixels.
 2. Reference them from `supabase/config.toml` (`[auth.email.template.*]`), so the local stack (DB-02) uses the same files.
 
 Done when: local Mailpit and staging both show the 6-digit code.

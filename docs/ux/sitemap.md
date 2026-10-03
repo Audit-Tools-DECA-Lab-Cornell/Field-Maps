@@ -1,6 +1,6 @@
 # Sitemap: every page, what it does, and what works today
 
-Part of the [design track](README.md), stages 0 and 1. Draft of 2026-10-01, written from the code, the READMEs and the plan files. The stage 0 screenshots are still to come.
+Part of the [design track](README.md), stages 0 and 1. Draft of 2026-10-01, written from the code, the READMEs and the plan files. The stage 0 screenshots are still to come. On 2026-10-03 the target paths in §3 and §4 were renamed to the Contour designs and D21; the status marks were not changed.
 
 **Status legend**
 
@@ -86,57 +86,67 @@ An org admin acts as a manager on every project in the org (`docs/plan/product.m
 
 ## 3. Target web sitemap
 
-The URL scheme follows `web/PLAN.md` ("Target route tree"). New items carry their U-number.
+The URL scheme follows `web/PLAN.md` ("Target route tree"). Slugs follow the designed tab labels (D21). New items carry their U-number. WEB-20 to WEB-26 build every page below in Contour, on fixtures; the marks show today's state.
 
 ```
 PUBLIC
-  /                                Landing                                          🟡
-  /privacy · /privacy/delete-data  Policy; deletion without the app                 ✅  wording: WEB-14
-  404 · error                      Not found · something went wrong                 🔴  WEB-06
+  /                                  Landing                                          🟡
+  /privacy · /privacy/delete-data    Policy; deletion without the app                 ✅  wording: WEB-14
+  404 · error                        Not found · something went wrong                 🔴  WEB-06
+                                     (inside /o/[org]: the org header, no tabs)
 
 AUTH
-  /sign-in                         Email + password; a distinct message per error   🔴  WEB-04
-  /sign-up                         Email + password                                 🔴  WEB-04
-  /verify                          The 6-digit code, resend after a cooldown        🔴  WEB-04
-  /forgot-password → /reset-password   Email → code → new password                  🔴  WEB-04
-  /invite#t=…                      "Join {project} ({org}) as {role}?"              🔴  WEB-06
-  /join                            Type an 8-character join code                    🆕  U3
+  /sign-in                           Email + password; a distinct message per error   🔴  WEB-04
+  /sign-up                           Email + password                                 🔴  WEB-04
+  /verify                            The 6-digit code, resend after a cooldown        🔴  WEB-04
+  /forgot-password → /reset-password Email → code → new password                      🔴  WEB-04
+  /invite#t=…                        "Join {project} ({org}) as {role}?"              🔴  WEB-06
+  /join                              Type an 8-character join code                    🆕  U3
 
 FIRST RUN
-  /onboarding                      Create the org → first project → (site, form, invite)   🟡 preview → 🔴 WEB-06
-  observer on the web              "You collect in the app": store links, QR code   🆕  U3
+  /onboarding/[step]                 Create the org → first project → (site, form, team)   🟡 preview → 🔴 WEB-06
+  /o/[org]/collect                   Observer handoff: "You collect in the app", store links, QR code   🆕  U3
 
-ORGANIZATION    /o/[org]
-  Projects                         One row per project: health, last activity, sites   🔴  WEB-06
-  Members                          Org roles, invitations, transfer ownership       🔴  WEB-07
-  Form library                     Org-wide templates and variable library          🆕  U4
-  Settings                         Name, slug; deleting the org                     🔴  WEB-06 · deletion 🆕
+ORGANIZATION    /o/[org]             Tabs: Projects · Members · Form library · Settings
+  /o/[org]                           Projects: one row per project: health, last activity, sites   🔴  WEB-06
+  /o/[org]/members                   Members: org roles, invitations, transfer ownership   🔴  WEB-07
+  /o/[org]/library                   Form library: org-wide templates and variable library   🆕  U4
+  /o/[org]/settings                  Settings: name, slug; deleting the org           🔴  WEB-06 · deletion 🆕
 
-PROJECT         /o/[org]/p/[project]
-  Overview                         What came back, coverage, what is blocking       🟡 fixtures → WEB-11
-  Data                             Map + table + detail; filters; export            🟡 fixtures → WEB-10, WEB-12
-    └ Observation                  All answers, context, location, history          🟡 a panel today
-  Sites                            List; create a site                              🟡 fixtures → WEB-08
-    └ Site                         Zones on a map, coverage, packages, its data     🔴  WEB-08
-       ├ Zone                      Data and coverage inside one zone                🆕  partly a WEB-10 filter
-       ├ Edit zones                Draw or adjust boundaries                        🆕  U2
-       └ Map packages              Versions, checks, upload from QGIS               🟡 /basemaps → WEB-08
-  Forms                            The project's forms                              🟡 Form Studio → WEB-09
-    └ Form                         Versions; draft editor + phone preview; publish, retire   🟡 / 🔴 WEB-09
-  Rounds                           Plan rounds, assign observers (if anyone does)   🆕  U6
-  Team                             Members, roles, invitations, join code + QR      🔴  WEB-07
-  QGIS                             In: packages by site. Out: publishing, access, exports   🟡 fixtures → WEB-12 · gate 🆕 U5
-  Reports                          See U7                                           🆕  U7
-  Settings                         Name, code, timezone, QGIS publishing mode, archive   🔴 route planned, no task
+PROJECT         /o/[org]/p/[project] Tabs: Overview · Data · Sites · Forms · Team · QGIS · Reports · Settings
+  (project root)                     Overview: what came back, coverage, what is blocking   🟡 fixtures → WEB-11
+  data                               Data: map + table + detail; filters; export      🟡 fixtures → WEB-10, WEB-12
+  data/[observation]                 Observation: all answers, context, location, history   🟡 a panel today
+  sites                              Sites: list; create a site                       🟡 fixtures → WEB-08
+  sites/[site]                       Site: zones on a map, coverage, packages, its data   🔴  WEB-08
+  sites/[site]/zones/[zone]          Zone: data and coverage inside one zone          🆕  partly a WEB-10 filter
+  sites/[site]/zones/edit            Edit zone boundaries: draw or adjust them        🆕  U2
+  sites/[site]/packages?step=        Map packages: versions, checks, upload from QGIS   🟡 /basemaps → WEB-08
+  forms                              Forms: the project's forms                       🟡 Form Studio → WEB-09
+  forms/versions                     Form versions: history, start a draft, retire    🔴  WEB-09
+  forms/versions/[version]           Draft editor + phone preview; read-only once published   🟡 Form Studio → WEB-09
+  forms/versions/[version]/publish   Review publication: the differences, then publish   🔴  WEB-09
+  team                               Team: members, roles, invitations, join code + QR   🔴  WEB-07
+  qgis                               QGIS: in: packages by site. Out: publishing, access, exports   🟡 fixtures → WEB-12 · gate 🆕 U5
+  reports                            Reports: see U7                                  🆕  U7
+  reports/views                      Saved views: named filter sets from Data         🆕  U7
+  reports/[report]                   Report: a printable site summary (A4)            🆕  U7
+  settings                           Settings: name, code, timezone, QGIS publishing mode, archive   🔴 route planned, no task
+  settings/rounds                    Rounds: plan rounds, assign observers (if anyone does)   🆕  U6
 
 ACCOUNT         /account
-  Profile, password, sign out, delete account                                       🔴  WEB-06
+  /account                           Profile, password, sign out, delete account      🔴  WEB-06
 ```
 
+**Old paths.** `/overview`, `/observations`, `/places`, `/basemaps`, `/instrument` and `/qgis` redirect to the routes above (307, query string kept; WEB-22).
+
+**Development only.** `/dev/contour` shows every Contour primitive in Day and Dusk. It is `noindex` and exists only in dev and preview builds.
+
 **Navigation.**
-- Inside a project, the rail is Overview · Data · Sites · Forms · Team · QGIS · Reports · Settings.
-- The header holds the org and project switcher and the account menu.
+- Inside a project, the tabs are Overview · Data · Sites · Forms · Team · QGIS · Reports · Settings. Inside an organization they are Projects · Members · Form library · Settings.
+- The header holds the org and project switchers, "Search or jump to" (⌘K) and the account menu.
 - Viewers do not see Team or Settings.
+- The org-level 404 and error pages, and the observer handoff, show the org header without tabs.
 
 **Settings at three levels.** Your "Settings page" becomes three pages, each beside what it configures:
 - `/account` for you;
@@ -145,35 +155,45 @@ ACCOUNT         /account
 
 The account menu always links to `/account`. It adds the org settings link only for org owners and admins, and the project settings link only for the project's managers (and org owners and admins, who act as managers). Viewers and observers see only their account.
 
-**Where the QGIS upload goes.** A package belongs to one site, so the upload lives on the site page (WEB-08). The QGIS page lists every site's package state, links to each upload, and covers the outbound direction too. Everything QGIS-related is then reachable from one place, while the upload itself stays on the site.
+**Where the QGIS upload goes.** A package belongs to one site, so the upload lives under the site, at `sites/[site]/packages` (WEB-08). The QGIS page lists every site's package state, links to each upload, and covers the outbound direction too. Everything QGIS-related is then reachable from one place, while the upload itself stays on the site.
 
 ## 4. Target mobile sitemap
 
-The route groups follow `mobile/PLAN.md` ("Target structure").
+The routes follow the expo-router tree in `mobile/PLAN.md` ("Target structure"). MOB-23 to MOB-27 build every screen below in Contour; the marks show today's state.
 
 ```
 (auth)
-  Welcome            Create account · Sign in · "N records waiting for a@b.c"   🔴  MOB-05
-  Sign in                                                                        🟡 inside Account → MOB-05
-  Create account                                                                 🔴  MOB-05
-  Verify code        6 digits, autofill, resend                                  🔴  MOB-05
-  Forgot → Reset                                                                 🔴  MOB-05
+  welcome                     Create account · Sign in · "N records waiting for a@b.c"   🔴  MOB-05
+  sign-in                                                                         🟡 inside Account → MOB-05
+  create-account                                                                  🔴  MOB-05
+  verify                      Verify code: 6 digits, autofill, resend             🔴  MOB-05
+  forgot-password → reset-password                                                🔴  MOB-05
 
 (onboarding)
-  Profile            Name + initials (the initials become the observer code)    🔴  MOB-06
-  Join               8-character code, or the deep link; a confirm screen       🔴  MOB-06
+  profile                     Step 1 of 2: name + initials (the initials become the observer code)   🔴  MOB-06
+  join                        Step 2 of 2: 8-character code, Scan QR, or the deep link   🔴  MOB-06
+  invitation/[code]           Confirm "Join {project}?"; deep link fieldmaps://join/CODE   🔴  MOB-06
 
-(app) tabs: on a tablet, a side rail (MOB-16)
-  Projects (home)    Every project, Training included; sites with download state     🟡 bundled → MOB-14, MOB-16
-    └ Site           Download or update the package; offline checklist; start        🟡 part of Brief → MOB-14
-       ├ Brief       Zone + round context                                            🟡
-       └ Collect     Map → place → questions → review sheet → "saved" banner         🟡 → MOB-16
-  Records            States; a badge for records that need attention                ✅ legacy → MOB-10
-    └ Record         Answers, state, rejection reason, "Send again"                 🔴  MOB-10, MOB-16
-  Account            Profile, active project, sync status, sign out, delete         🟡 sign-in only → MOB-07
-    ├ Preferences    Default map palette (Day · Night · Aerial), text size           🆕  small
-    └ Field guide    What each question and option means, offline                   🆕  U8
-  not found                                                                          🔴  MOB-03
+(app)/(tabs)   Projects · Observations · Account, in the floating tab dock. Tablets use the same dock, centred; no side rail.
+  (projects)/index            Projects (home): every project, Training included; resume an unfinished observation   🟡 bundled → MOB-14, MOB-16
+  (projects)/[project]        Project: its sites with download state              🟡 part of the home list → MOB-14, MOB-16
+  (projects)/[project]/[site] Site: not downloaded, downloading or ready; offline checklist; start   🟡 part of Brief → MOB-14
+  …/[site]/brief              Before you begin: zone + round context, observer code   🟡
+  observations/index          Observations: states; a badge for records that need attention   ✅ legacy → MOB-10
+  observations/[id]           Record: answers, state, rejection reason, "Send again"   🔴  MOB-10, MOB-16
+  account/index               Account: profile, sync status, Upload now           🟡 sign-in only → MOB-07
+  account/preferences         Preferences: hand, map palette (Day · Night), Screen: Day · Dusk, haptics, larger question text   🆕  small
+  account/field-guide         Field guide: what each question and option means, offline   🆕  U8
+  account/sign-out            Sign out?: records not uploaded yet stay on this device   🔴  MOB-07
+  account/delete-account      Delete account                                      🔴  MOB-07
+
+(app), outside the tabs: the dock hides
+  collect                     One route: place → answer → review panel → saved card   🟡 → MOB-16
+                              (tablet: map and panel side by side, the panel on the preferred hand's side)
+  explain/[question]          "Explain this question" sheet                       🟡 an inline hint today
++not-found                    Not found; "Nothing was lost"                       🔴  MOB-03
+
+Development only: (dev)/gallery (every primitive in Day and Dusk) and (dev)/states.
 
 Across every screen: an offline indicator, "Sign in to resume uploads" (MOB-08), the resume-draft prompt, and the loading, empty, error and offline states (MOB-17).
 ```
@@ -287,6 +307,8 @@ Questions already carry a `hint` in the form definition (`contracts/forms/`). A 
 ### U9: Light, dark, or both
 
 This is Q8 in [decisions.md](../plan/decisions.md#open-questions). It is decided in stage 5 with outdoor tests, not here.
+
+**Answered 2026-10-03:** Day + Dusk. Contour is Day by default everywhere, and Dusk is a preference ([D19](../plan/decisions.md#decision-log)). Maps keep their own Day and Night palettes (D18).
 
 ### U10: Where the design time comes from
 
