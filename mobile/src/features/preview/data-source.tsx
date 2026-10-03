@@ -28,12 +28,13 @@ import {
  * Where the collector's screens read from. `device` uses what really exists on this phone (the SQLite
  * queue, sync, the bundled packages) and says plainly when something needs the server. `preview` shows
  * the designed fixtures, including the states the device cannot produce yet ("Uploading", a download in
- * progress). Preview is a development tool: release builds always read the device.
+ * progress). Preview is a review tool: release builds always read the device.
  */
 export type DataMode = "device" | "preview";
 
 const MODE_KEY = "fm.dev.dataSource";
-const PREVIEW_ALLOWED = __DEV__;
+/** Development builds, and builds made for review with EXPO_PUBLIC_PREVIEW_TOOLS=1, may show preview data. */
+export const PREVIEW_ALLOWED = __DEV__ || process.env.EXPO_PUBLIC_PREVIEW_TOOLS === "1";
 
 function readMode(): DataMode {
   if (!PREVIEW_ALLOWED) return "device";
