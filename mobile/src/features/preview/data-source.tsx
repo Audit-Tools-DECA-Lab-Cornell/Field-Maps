@@ -10,6 +10,8 @@ import {
   useState,
 } from "react";
 import type { Observation } from "../../domain/observation";
+import { bundledPackage } from "../../packages/bundled";
+import type { SitePackage } from "../../packages/site-package";
 import { shortLabel } from "../../session/provider";
 import { useObservations } from "../../storage/use-observations";
 import { useSync } from "../../sync/provider";
@@ -61,6 +63,12 @@ type DataSourceValue = {
   setMode: (mode: DataMode) => void;
   previewAllowed: boolean;
   downloads: Record<string, SiteDownload>;
+  /**
+   * Whether this mode can fetch a package. Package delivery is not built yet, so only preview simulates
+   * one; on the device a site is ready only when its package ships with the app, and screens say that a
+   * download needs the server instead of pretending to run one.
+   */
+  canDownload: boolean;
   startDownload: (siteId: string) => void;
   cancelDownload: (siteId: string) => void;
   removeDownload: (siteId: string) => void;
@@ -68,13 +76,11 @@ type DataSourceValue = {
 
 const DataSourceContext = createContext<DataSourceValue | null>(null);
 
-function initialDownloads(): Record<string, SiteDownload> {
+function previewDownloads(): Record<string, SiteDownload> {
   return Object.fromEntries(
     PREVIEW_SITES.map((site) => [
       site.id,
-      site.initialDownload === "ready"
-        ? readyDownload(site)
-        : { state: "notDownloaded", receivedMb: 0, totalMb: site.sizeMb, assets: waitingAssets() },
+      site.initialDownload === "ready" ? readyDownload(site) : notDownloaded(site),
     ]),
   );
 }
@@ -86,6 +92,31 @@ function readyDownload(site: PreviewSite): SiteDownload {
     totalMb: site.sizeMb,
     assets: PACKAGE_ASSETS.map((label) => ({ label, state: "verified" })),
   };
+}
+
+function notDownloaded(site: PreviewSite): SiteDownload {
+  return { state: "notDownloaded", receivedMb: 0, totalMb: site.sizeMb, assets: waitingAssets() };
+}
+
+/** The package that really exists on this phone for a site, if any. */
+function devicePackage(site: PreviewSite): SitePackage | undefined {
+  const found = bundledPackage(site.packageId);
+  return found?.availability === "on-device" ? found : undefined;
+}
+
+/** A site as the device knows it: the real package version, and ready only if that package is here. */
+function deviceSite(site: PreviewSite): PreviewSite & { download: SiteDownload } {
+  const found = devicePackage(site);
+  const onDevice: PreviewSite = found
+    ? {
+        ...site,
+        packageVersion: found.version,
+        sizeMb: 0,
+        verifiedLabel: "ships with the app",
+        bundled: true,
+      }
+    : { ...site, verifiedLabel: "" };
+  return { ...onDevice, download: found ? readyDownload(onDevice) : notDownloaded(onDevice) };
 }
 
 function waitingAssets(): SiteDownload["assets"] {
@@ -109,7 +140,7 @@ const PROGRESS_STEP_MS = 250;
 
 export function DataSourceProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<DataMode>(readMode);
-  const [downloads, setDownloads] = useState<Record<string, SiteDownload>>(initialDownloads);
+  const [simulated, setDownloads] = useState<Record<string, SiteDownload>>(previewDownloads);
   const timers = useRef(new Map<string, ReturnType<typeof setInterval>>());
 
   useEffect(() => {
@@ -135,10 +166,19 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
     timers.current.delete(siteId);
   }, []);
 
+  const canDownload = mode === "preview";
+  const downloads = useMemo<Record<string, SiteDownload>>(
+    () =>
+      canDownload
+        ? simulated
+        : Object.fromEntries(PREVIEW_SITES.map((site) => [site.id, deviceSite(site).download])),
+    [canDownload, simulated],
+  );
+
   const startDownload = useCallback(
     (siteId: string) => {
       const site = PREVIEW_SITES.find((entry) => entry.id === siteId);
-      if (!site) return;
+      if (!site || !canDownload) return;
       stopTimer(siteId);
       const started = Date.now();
       const tick = () => {
@@ -160,12 +200,13 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
       tick();
       timers.current.set(siteId, setInterval(tick, PROGRESS_STEP_MS));
     },
-    [stopTimer],
+    [canDownload, stopTimer],
   );
 
   const cancelDownload = useCallback(
     (siteId: string) => {
       stopTimer(siteId);
+      if (!canDownload) return;
       setDownloads((current) => {
         const site = current[siteId];
         if (!site) return current;
@@ -180,7 +221,7 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
         };
       });
     },
-    [stopTimer],
+    [canDownload, stopTimer],
   );
 
   const value = useMemo<DataSourceValue>(
@@ -189,11 +230,12 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
       setMode,
       previewAllowed: PREVIEW_ALLOWED,
       downloads,
+      canDownload,
       startDownload,
       cancelDownload,
       removeDownload: cancelDownload,
     }),
-    [mode, setMode, downloads, startDownload, cancelDownload],
+    [mode, setMode, downloads, canDownload, startDownload, cancelDownload],
   );
 
   return <DataSourceContext.Provider value={value}>{children}</DataSourceContext.Provider>;
@@ -213,18 +255,28 @@ export function useProject(projectId: string): PreviewProject | undefined {
   return PREVIEW_PROJECTS.find((project) => project.id === projectId);
 }
 
-export function useSites(projectId: string): (PreviewSite & { download: SiteDownload })[] {
-  const { downloads } = useDataSource();
-  return PREVIEW_SITES.filter((site) => site.projectId === projectId).map((site) => ({
-    ...site,
-    download: downloads[site.id] ?? readyDownload(site),
-  }));
+type SiteWithDownload = PreviewSite & { download: SiteDownload };
+
+function withDownload(
+  site: PreviewSite,
+  mode: DataMode,
+  downloads: Record<string, SiteDownload>,
+): SiteWithDownload {
+  if (mode === "device") return deviceSite(site);
+  return { ...site, download: downloads[site.id] ?? notDownloaded(site) };
 }
 
-export function useSite(siteId: string): (PreviewSite & { download: SiteDownload }) | undefined {
-  const { downloads } = useDataSource();
+export function useSites(projectId: string): SiteWithDownload[] {
+  const { mode, downloads } = useDataSource();
+  return PREVIEW_SITES.filter((site) => site.projectId === projectId).map((site) =>
+    withDownload(site, mode, downloads),
+  );
+}
+
+export function useSite(siteId: string): SiteWithDownload | undefined {
+  const { mode, downloads } = useDataSource();
   const site = PREVIEW_SITES.find((entry) => entry.id === siteId);
-  return site ? { ...site, download: downloads[site.id] ?? readyDownload(site) } : undefined;
+  return site ? withDownload(site, mode, downloads) : undefined;
 }
 
 const STATUS_TO_STATE: Record<Observation["storageStatus"], QueueState> = {
