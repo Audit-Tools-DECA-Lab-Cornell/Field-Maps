@@ -152,6 +152,15 @@
 	--shadow-lg: 0 0 0 1px var(--ct-line), 0 6px 0 0 var(--ct-ledge);
 }
 
+/* The Nocturne fade rule, kept as a plain Contour hairline for the screens not yet rebuilt (FadeRule renders
+   <hr class="rule">). Phase 5 (WEB-26) removes it with the last caller. */
+.rule {
+	height: 1px;
+	border: 0;
+	margin: 0;
+	background: var(--ct-rule);
+}
+
 /* ── Base ─────────────────────────────────────────────────────────────────── */
 
 html,

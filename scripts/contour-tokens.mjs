@@ -163,13 +163,14 @@ const stylesheet = build();
 const problems = contrastProblems();
 
 if (check) {
-	let current = "";
+	let current = null;
 	try {
 		current = readFileSync(outputPath, "utf8");
 	} catch {
 		problems.push(`${outputPath} is missing; run pnpm tokens`);
 	}
-	if (current && current !== stylesheet)
+	// An empty or truncated file is drift too, so compare whenever the file could be read.
+	if (current !== null && current !== stylesheet)
 		problems.push("web/src/styles/contour.css has drifted from contracts/contour.json; run pnpm tokens");
 	if (problems.length) {
 		for (const problem of problems) console.error(`tokens:check: ${problem}`);

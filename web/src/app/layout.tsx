@@ -5,7 +5,7 @@ import { Geologica, Spline_Sans_Mono } from "next/font/google";
 
 import { PwaRegister } from "@/components/app-shell/PwaRegister";
 import { CONTOUR } from "@/lib/contour";
-import { THEME_SCRIPT } from "@/lib/theme";
+import { THEME_SCRIPT } from "@/lib/theme-script";
 
 /**
  * Geologica carries every word; Spline Sans Mono carries what someone might read aloud (IDs, versions,
