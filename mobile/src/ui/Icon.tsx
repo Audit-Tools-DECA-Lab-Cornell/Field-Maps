@@ -178,7 +178,7 @@ export function isIconName(name: string): name is IconName {
   return name === "held" || name in LUCIDE;
 }
 
-type IconProps = {
+export type IconProps = {
   name: IconName;
   size?: number | undefined;
   color: string;

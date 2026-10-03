@@ -1,10 +1,11 @@
 import { Children, type ReactNode } from "react";
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import { PRESSED_OPACITY } from "./Button";
 import { Icon } from "./Icon";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type AnswerTileProps = {
+export type AnswerTileProps = {
   label: string;
   selected: boolean;
   onPress: () => void;
@@ -12,6 +13,7 @@ type AnswerTileProps = {
   multiple?: boolean | undefined;
   disabled?: boolean | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /**
@@ -26,6 +28,7 @@ export function AnswerTile({
   multiple,
   disabled,
   style,
+  testID,
 }: AnswerTileProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
@@ -33,6 +36,7 @@ export function AnswerTile({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      testID={testID}
       accessibilityRole={multiple ? "checkbox" : "radio"}
       accessibilityLabel={label}
       accessibilityState={{ checked: selected, disabled: disabled === true }}
@@ -57,18 +61,19 @@ export function AnswerTile({
   );
 }
 
-type AnswerGridProps = {
+export type AnswerGridProps = {
   children: ReactNode;
   /** Two on a phone in portrait; three in landscape and on a tablet. */
   columns?: number | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /**
  * Lays answer tiles in equal columns. Tiles in a row share the height of the tallest, so a label
  * that wraps never leaves its neighbours short.
  */
-export function AnswerGrid({ children, columns = 2, style }: AnswerGridProps) {
+export function AnswerGrid({ children, columns = 2, style, testID }: AnswerGridProps) {
   const styles = useStyles(makeStyles);
   const tiles = Children.toArray(children);
   const perRow = Math.max(1, Math.floor(columns));
@@ -77,7 +82,7 @@ export function AnswerGrid({ children, columns = 2, style }: AnswerGridProps) {
     rows.push(tiles.slice(start, start + perRow));
   }
   return (
-    <View style={[styles.grid, style]}>
+    <View testID={testID} style={[styles.grid, style]}>
       {rows.map((row, rowIndex) => {
         const rowKey = `row-${rowIndex * perRow}`;
         const gaps = Array.from(
@@ -126,7 +131,7 @@ function makeStyles(t: Theme) {
     },
     tileChosen: { borderColor: t.c.accent, backgroundColor: t.c.accent },
     tileDisabled: { borderColor: t.c.edge },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
     label: { flexShrink: 1 },
     grid: { gap: t.space.s2 },
     row: { flexDirection: "row", gap: t.space.s2 },

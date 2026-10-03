@@ -5,7 +5,7 @@ import { Text, type TextTone } from "./Text";
 import { useTheme } from "./theme";
 import type { TypeRole } from "./tokens";
 
-type MonoVariant = "data" | "label" | "code" | "title";
+export type MonoVariant = "data" | "label" | "code" | "title";
 type SansRole = Exclude<TypeRole, `mono${string}`>;
 
 export type MonoProps = {

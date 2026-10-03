@@ -7,8 +7,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { AccessibilityInfo, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import { type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { Icon } from "./Icon";
+import { announce } from "./StatusLine";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
@@ -23,7 +24,7 @@ import { type Theme, useStyles, useTheme } from "./theme";
 
 export type FieldCounter = { text: string; complete: boolean };
 
-type FieldContextValue = {
+export type FieldContextValue = {
   label: string;
   /** What the control announces as its hint: the error, or the live check and the hint. */
   hint: string | undefined;
@@ -53,7 +54,7 @@ export function useFieldCounter(text: string | undefined, complete: boolean): bo
   return field !== null;
 }
 
-type FieldProps = {
+export type FieldProps = {
   label: string;
   children: ReactNode;
   /** How to fill it in: "Up to 10 uppercase characters." */
@@ -67,6 +68,7 @@ type FieldProps = {
   /** The counter has reached its target: it turns saved and gains a check ("8 of 8"). */
   counterComplete?: boolean | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 export function Field({
@@ -78,6 +80,7 @@ export function Field({
   counter,
   counterComplete,
   style,
+  testID,
 }: FieldProps) {
   const styles = useStyles(makeStyles);
   const [registered, setCounter] = useState<FieldCounter | undefined>(undefined);
@@ -90,14 +93,14 @@ export function Field({
 
   // An error that appears while typing is read out once; live checks stay quiet.
   useEffect(() => {
-    if (invalid && error) AccessibilityInfo.announceForAccessibility(error);
+    if (invalid && error) announce(error);
   }, [invalid, error]);
 
   const shownCounter =
     counter !== undefined ? { text: counter, complete: counterComplete === true } : registered;
 
   return (
-    <View style={[styles.field, style]}>
+    <View testID={testID} style={[styles.field, style]}>
       <Text variant="bodyStrong">{label}</Text>
       <FieldContext.Provider value={context}>{children}</FieldContext.Provider>
       <FieldFooter hint={hint} error={error} success={success} counter={shownCounter} />
@@ -105,7 +108,7 @@ export function Field({
   );
 }
 
-type FieldFooterProps = {
+export type FieldFooterProps = {
   hint?: string | undefined;
   error?: string | undefined;
   success?: string | undefined;

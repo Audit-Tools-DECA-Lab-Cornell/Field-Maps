@@ -9,16 +9,20 @@ import Animated, {
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type ProgressBarProps = {
-  /** Done so far, from 0 to 1. */
+/** Named as on the web: `value` of `max`, a `label` that names the bar, a mono `detail` under it. */
+export type ProgressBarProps = {
+  /** Done so far, in the same unit as max. */
   value: number;
-  /** What is moving, under the bar on the left: "60 of 126 MB". */
-  label?: string | undefined;
+  /** The whole amount. 1 by default, so a fraction can be passed as the value. */
+  max?: number | undefined;
+  /** What the bar measures, for screen readers: "Map package v3 download". Not drawn. */
+  label: string;
+  /** The amount in words, under the bar on the left, in mono: "60 of 126 MB". */
+  detail?: string | undefined;
   /** The whole percentage on the right ("48%"). On by default. */
   showPercent?: boolean | undefined;
-  /** What the bar measures, for screen readers: "Map package v1 download". */
-  accessibilityLabel: string;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /** Height of the bar, drawn to the design. */
@@ -31,15 +35,18 @@ const BAR_HEIGHT = 10;
  */
 export function ProgressBar({
   value,
+  max = 1,
   label,
+  detail,
   showPercent = true,
-  accessibilityLabel,
   style,
+  testID,
 }: ProgressBarProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
   const reduceMotion = useReducedMotion();
-  const fraction = Number.isFinite(value) ? Math.min(Math.max(value, 0), 1) : 0;
+  const ratio = max > 0 ? value / max : 0;
+  const fraction = Number.isFinite(ratio) ? Math.min(Math.max(ratio, 0), 1) : 0;
   // Rounded as people read it (60 of 126 MB is 48%), but 100% only once it is all there.
   const percent = fraction >= 1 ? 100 : Math.min(99, Math.round(fraction * 100));
 
@@ -64,22 +71,23 @@ export function ProgressBar({
     <View
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={label}
       accessibilityValue={{
         min: 0,
         max: 100,
         now: percent,
-        ...(label ? { text: `${label}, ${percent}%` } : {}),
+        ...(detail ? { text: `${detail}, ${percent}%` } : {}),
       }}
+      testID={testID}
       style={[styles.wrap, style]}
     >
       <View style={styles.track}>
         <Animated.View style={[styles.fill, fillMotion]} />
       </View>
-      {label || showPercent ? (
+      {detail || showPercent ? (
         <View style={styles.legend}>
-          <Text variant="monoData" tone="ink2" style={styles.label}>
-            {label ?? ""}
+          <Text variant="monoData" tone="ink2" style={styles.detail}>
+            {detail ?? ""}
           </Text>
           {showPercent ? (
             <Text variant="monoData" tone="ink2">
@@ -103,6 +111,6 @@ function makeStyles(t: Theme) {
     },
     fill: { height: "100%", borderRadius: t.radius.pill, backgroundColor: t.c.uploaded },
     legend: { flexDirection: "row", justifyContent: "space-between", gap: t.space.s3 },
-    label: { flexShrink: 1 },
+    detail: { flexShrink: 1 },
   });
 }

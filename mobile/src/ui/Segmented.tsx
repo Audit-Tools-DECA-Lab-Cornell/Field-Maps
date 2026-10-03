@@ -13,19 +13,21 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { PRESSED_OPACITY } from "./Button";
 import { Icon } from "./Icon";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
 export type SegmentedOption<T extends string> = { value: T; label: string };
 
-type SegmentedProps<T extends string> = {
+export type SegmentedProps<T extends string> = {
   options: readonly SegmentedOption<T>[];
   value: T;
-  onChange: (value: T) => void;
-  /** What the choice is about, for screen readers: "Preferred hand". */
-  accessibilityLabel: string;
+  onValueChange: (value: T) => void;
+  /** Names the group for screen readers, as on the web: "Preferred hand". Not drawn. */
+  label: string;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /**
@@ -35,9 +37,10 @@ type SegmentedProps<T extends string> = {
 export function Segmented<T extends string>({
   options,
   value,
-  onChange,
-  accessibilityLabel,
+  onValueChange,
+  label,
   style,
+  testID,
 }: SegmentedProps<T>) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
@@ -66,7 +69,7 @@ export function Segmented<T extends string>({
     }
     x.set(
       withTiming(target, {
-        duration: theme.motion.duration.slide,
+        duration: theme.motion.duration.base,
         easing: theme.motion.easing.standard,
       }),
     );
@@ -76,7 +79,8 @@ export function Segmented<T extends string>({
   return (
     <View
       accessibilityRole="radiogroup"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={label}
+      testID={testID}
       onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
       style={[styles.track, style]}
     >
@@ -92,7 +96,7 @@ export function Segmented<T extends string>({
           <Pressable
             key={option.value}
             onPress={() => {
-              if (!chosen) onChange(option.value);
+              if (!chosen) onValueChange(option.value);
             }}
             hitSlop={hitSlop}
             accessibilityRole="radio"
@@ -146,6 +150,6 @@ function makeStyles(t: Theme) {
       borderRadius: t.radius.pill,
     },
     optionChosen: { backgroundColor: t.c.ink },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
   });
 }

@@ -4,7 +4,7 @@ import { FieldFooter, useFieldCounter } from "./Field";
 import { TextInput, type TextInputProps } from "./TextInput";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type TextareaProps = Omit<TextInputProps, "multiline" | "trailing" | "mono"> & {
+export type TextareaProps = Omit<TextInputProps, "multiline" | "trailing" | "mono"> & {
   /** Visible lines before the field grows. */
   rows?: number | undefined;
   /** Shows "69 / 1000" under the field (in the Field's line when there is one). */

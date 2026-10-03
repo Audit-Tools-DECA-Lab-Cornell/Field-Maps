@@ -10,15 +10,16 @@ import { Icon } from "./Icon";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type NumberStepperProps = {
+export type NumberStepperProps = {
   value: number;
   onChange: (value: number) => void;
-  /** What the number is, for screen readers: "Round number". */
-  accessibilityLabel: string;
+  /** Names the value for screen readers and the buttons, as on the web: "Round number". */
+  label: string;
   min?: number | undefined;
   max?: number | undefined;
   step?: number | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /**
@@ -28,11 +29,12 @@ type NumberStepperProps = {
 export function NumberStepper({
   value,
   onChange,
-  accessibilityLabel,
+  label,
   min = Number.NEGATIVE_INFINITY,
   max = Number.POSITIVE_INFINITY,
   step = 1,
   style,
+  testID,
 }: NumberStepperProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
@@ -49,7 +51,8 @@ export function NumberStepper({
     <View
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={label}
+      testID={testID}
       accessibilityValue={{
         now: value,
         ...(Number.isFinite(min) ? { min } : {}),
@@ -66,7 +69,7 @@ export function NumberStepper({
         onPress={decrease}
         disabled={!canDecrease}
         accessibilityRole="button"
-        accessibilityLabel={`Decrease ${accessibilityLabel}`}
+        accessibilityLabel={`Decrease ${label}`}
         accessibilityState={{ disabled: !canDecrease }}
         style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}
       >
@@ -81,7 +84,7 @@ export function NumberStepper({
         onPress={increase}
         disabled={!canIncrease}
         accessibilityRole="button"
-        accessibilityLabel={`Increase ${accessibilityLabel}`}
+        accessibilityLabel={`Increase ${label}`}
         accessibilityState={{ disabled: !canIncrease }}
         style={({ pressed }) => [styles.button, pressed ? styles.pressed : null]}
       >

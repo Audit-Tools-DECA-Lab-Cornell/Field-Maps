@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { Icon, type IconName } from "./Icon";
+import { Note } from "./Note";
 import { Skeleton } from "./Skeleton";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
 export type ScreenStateKind = "loading" | "empty" | "error" | "offline" | "no-access";
 
-type ScreenStateProps = {
+export type ScreenStateProps = {
   kind: ScreenStateKind;
   /** Replaces the collector wording for the kind. */
   title?: string | undefined;
@@ -16,6 +17,7 @@ type ScreenStateProps = {
   action?: ReactNode | undefined;
   icon?: IconName | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 type Wording = { title: string; body: string; icon: IconName };
@@ -52,7 +54,7 @@ const WORDING: Record<ScreenStateKind, Wording> = {
  * What a list or screen shows when it is not full of data: plain words, one action, no
  * illustration. Loading is still placeholders; offline is a banner above content that stays usable.
  */
-export function ScreenState({ kind, title, body, action, icon, style }: ScreenStateProps) {
+export function ScreenState({ kind, title, body, action, icon, style, testID }: ScreenStateProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
   const words = WORDING[kind];
@@ -60,20 +62,15 @@ export function ScreenState({ kind, title, body, action, icon, style }: ScreenSt
   const shownBody = body ?? words.body;
   const glyph = icon ?? words.icon;
 
-  if (kind === "loading") return <Skeleton caption={shownBody} style={style} />;
+  if (kind === "loading") return <Skeleton caption={shownBody} style={style} testID={testID} />;
 
+  // Offline is not a centred state: a waiting note above content that stays usable.
   if (kind === "offline")
     return (
-      <View style={[styles.offlineWrap, style]}>
-        <View style={styles.banner} accessible accessibilityLiveRegion="polite">
-          <View style={styles.bannerGlyph}>
-            <Icon name={glyph} color={theme.c.waiting} />
-          </View>
-          <Text variant="body" style={styles.bannerText}>
-            <Text variant="bodyStrong">{shownTitle}</Text>
-            {shownBody ? ` ${shownBody}` : null}
-          </Text>
-        </View>
+      <View testID={testID} style={[styles.offlineWrap, style]}>
+        <Note tone="waiting" icon={glyph} title={shownTitle} live="polite">
+          {shownBody || undefined}
+        </Note>
         {action ?? null}
       </View>
     );
@@ -82,6 +79,7 @@ export function ScreenState({ kind, title, body, action, icon, style }: ScreenSt
   const glyphColor = kind === "error" ? theme.c.saved : theme.c.ink;
   return (
     <View
+      testID={testID}
       style={[styles.centre, style]}
       accessibilityLiveRegion={kind === "error" ? "polite" : "none"}
     >
@@ -130,16 +128,5 @@ function makeStyles(t: Theme) {
     words: { gap: t.space.s2, alignSelf: "stretch" },
     action: { marginTop: t.space.s1, alignSelf: "stretch" },
     offlineWrap: { gap: t.space.s3 },
-    banner: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: t.space.s3,
-      paddingHorizontal: t.space.s4,
-      paddingVertical: t.space.s3,
-      borderRadius: t.radius.note,
-      backgroundColor: t.c.waitingSoft,
-    },
-    bannerGlyph: { minHeight: t.type.body.lineHeight, justifyContent: "center" },
-    bannerText: { flex: 1 },
   });
 }

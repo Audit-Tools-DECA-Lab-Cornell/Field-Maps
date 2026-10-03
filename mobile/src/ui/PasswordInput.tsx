@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
+import { PRESSED_OPACITY } from "./Button";
 import { Text } from "./Text";
 import { TextInput, type TextInputProps } from "./TextInput";
 import { type Theme, useStyles } from "./theme";
 
-type PasswordInputProps = Omit<TextInputProps, "secureTextEntry" | "trailing" | "multiline"> & {
+export type PasswordInputProps = Omit<
+  TextInputProps,
+  "secureTextEntry" | "trailing" | "multiline"
+> & {
   /** A password being chosen: the system offers a strong one and saves it. */
   newPassword?: boolean | undefined;
 };
@@ -48,6 +52,6 @@ function makeStyles(t: Theme) {
       justifyContent: "center",
       paddingHorizontal: t.space.s4,
     },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
   });
 }

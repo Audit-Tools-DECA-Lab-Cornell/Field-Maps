@@ -14,6 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { PRESSED_OPACITY } from "./Button";
 import { Icon, type IconName } from "./Icon";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
@@ -31,6 +32,19 @@ const TABS: Readonly<Record<string, TabSpec>> = {
 export function tabKey(routeName: string): string {
   const first = routeName.split("/")[0] ?? routeName;
   return first.replace(/^\(|\)$/g, "");
+}
+
+/**
+ * How far from the bottom edge the dock's top sits: the safe area (at least 12) plus the dock. Screen
+ * uses it to keep the last content and a pinned footer clear of the floating dock.
+ */
+export function dockClearance(t: Theme, bottomInset: number): number {
+  return dockGap(t, bottomInset) + t.layout.dockHeight;
+}
+
+/** The space under the dock: the bottom safe area, and never less than 12 on a phone without one. */
+function dockGap(t: Theme, bottomInset: number): number {
+  return Math.max(bottomInset, t.space.s3);
 }
 
 /** The icon glyph above the label. */
@@ -90,7 +104,7 @@ export function TabDock({ state, descriptors, navigation, insets }: BottomTabBar
       style={[
         styles.anchor,
         {
-          paddingBottom: Math.max(insets.bottom, theme.space.s3),
+          paddingBottom: dockGap(theme, insets.bottom),
           paddingLeft: theme.layout.gutter + insets.left,
           paddingRight: theme.layout.gutter + insets.right,
         },
@@ -120,7 +134,7 @@ export function TabDock({ state, descriptors, navigation, insets }: BottomTabBar
           const color = focused ? theme.c.onNavCurrent : theme.c.onNav;
           const spokenBadge = badge
             ? tabKey(route.name) === "observations"
-              ? `, ${badge} need attention`
+              ? `, ${badge} ${badge === "1" ? "needs" : "need"} attention`
               : `, ${badge}`
             : "";
           return (
@@ -236,7 +250,7 @@ function makeStyles(t: Theme) {
       borderRadius: t.radius.pill,
     },
     tabCurrent: { backgroundColor: t.c.navCurrent },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
     glyph: { position: "relative" },
     badge: {
       position: "absolute",

@@ -6,13 +6,15 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { PRESSED_OPACITY } from "./Button";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type SwitchProps = {
+export type SwitchProps = {
   label: string;
-  value: boolean;
-  onValueChange: (value: boolean) => void;
+  /** Named as on the web (`checked` / `onCheckedChange`), like Checkbox. */
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
   /** What the setting does, in ink2 under the label. */
   description?: string | undefined;
   disabled?: boolean | undefined;
@@ -21,6 +23,7 @@ type SwitchProps = {
    * between them (Preferences). Override here when it stands elsewhere.
    */
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /** Track and knob, drawn to the design: wide enough to read at arm's length, never a hairline. */
@@ -32,7 +35,15 @@ const KNOB = 20;
  * A setting that is on or off. The label and description sit on the left; on the right, the word
  * "On" or "Off" beside the track, so the state never rests on colour or knob position alone.
  */
-export function Switch({ label, value, onValueChange, description, disabled, style }: SwitchProps) {
+export function Switch({
+  label,
+  checked,
+  onCheckedChange,
+  description,
+  disabled,
+  style,
+  testID,
+}: SwitchProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
   const reduceMotion = useReducedMotion();
@@ -40,10 +51,10 @@ export function Switch({ label, value, onValueChange, description, disabled, sty
   const inset = (TRACK_HEIGHT - border * 2 - KNOB) / 2;
   const travel = TRACK_WIDTH - border * 2 - inset * 2 - KNOB;
 
-  const offset = useSharedValue(value ? travel : 0);
+  const offset = useSharedValue(checked ? travel : 0);
   const mounted = useRef(false);
   useEffect(() => {
-    const target = value ? travel : 0;
+    const target = checked ? travel : 0;
     if (!mounted.current || reduceMotion) {
       mounted.current = true;
       offset.set(target);
@@ -55,17 +66,18 @@ export function Switch({ label, value, onValueChange, description, disabled, sty
         easing: theme.motion.easing.standard,
       }),
     );
-  }, [value, travel, reduceMotion, offset, theme.motion]);
+  }, [checked, travel, reduceMotion, offset, theme.motion]);
   const knobMotion = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
 
   return (
     <Pressable
-      onPress={() => onValueChange(!value)}
+      onPress={() => onCheckedChange(!checked)}
       disabled={disabled}
+      testID={testID}
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityHint={description}
-      accessibilityState={{ checked: value, disabled: disabled === true }}
+      accessibilityState={{ checked, disabled: disabled === true }}
       style={({ pressed }) => [styles.row, pressed ? styles.pressed : null, style]}
     >
       <View style={styles.text}>
@@ -80,12 +92,12 @@ export function Switch({ label, value, onValueChange, description, disabled, sty
       </View>
       <View style={styles.control}>
         <Text variant="bodyStrong" tone={disabled ? "ink2" : "ink"}>
-          {value ? "On" : "Off"}
+          {checked ? "On" : "Off"}
         </Text>
         <View
           style={[
             styles.track,
-            value ? styles.trackOn : null,
+            checked ? styles.trackOn : null,
             disabled ? styles.trackDisabled : null,
           ]}
         >
@@ -93,7 +105,7 @@ export function Switch({ label, value, onValueChange, description, disabled, sty
             style={[
               styles.knob,
               { margin: inset },
-              value ? styles.knobOn : null,
+              checked ? styles.knobOn : null,
               disabled ? styles.knobDisabled : null,
               knobMotion,
             ]}
@@ -114,7 +126,7 @@ function makeStyles(t: Theme) {
       paddingVertical: t.space.s4,
       paddingHorizontal: t.layout.islandPadding,
     },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
     text: { flex: 1, gap: t.space.s1 },
     control: { flexDirection: "row", alignItems: "center", gap: t.space.s3 },
     track: {

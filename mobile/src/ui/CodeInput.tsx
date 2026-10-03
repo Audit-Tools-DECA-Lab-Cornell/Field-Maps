@@ -17,7 +17,7 @@ export function cleanCode(kind: CodeKind, raw: string, length = LENGTH[kind]): s
   return kept.slice(0, length);
 }
 
-type CodeInputProps = Omit<
+export type CodeInputProps = Omit<
   TextInputProps,
   | "value"
   | "defaultValue"

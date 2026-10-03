@@ -15,12 +15,13 @@ import Animated, {
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type SkeletonProps = {
+export type SkeletonProps = {
   /** Placeholder rows, each a title bar over a shorter detail bar. */
   rows?: number | undefined;
   /** Said under the placeholders, plainly: "Reading records from this device…". */
   caption?: string | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /** Bar heights and widths, drawn to the design: a title line over a detail line. */
@@ -34,11 +35,15 @@ const DETAIL_WIDTHS: readonly DimensionValue[] = ["64%", "52%", "58%", "48%"];
  * reads finish sooner and a flash of grey is worse than a pause — then the bars fade in. They never
  * shimmer.
  */
-export function Skeleton({ rows = 4, caption, style }: SkeletonProps) {
+export function Skeleton({ rows = 4, caption, style, testID }: SkeletonProps) {
   const styles = useStyles(makeStyles);
   const lines = Array.from({ length: Math.max(1, Math.floor(rows)) }, (_, index) => index);
   return (
-    <DelayedReveal accessibilityLabel={caption ?? "Loading"} style={[styles.wrap, style]}>
+    <DelayedReveal
+      accessibilityLabel={caption ?? "Loading"}
+      testID={testID}
+      style={[styles.wrap, style]}
+    >
       <View style={styles.island}>
         {lines.map((line) => (
           <View key={line} style={[styles.row, line > 0 ? styles.ruled : null]}>
@@ -62,7 +67,7 @@ export function Skeleton({ rows = 4, caption, style }: SkeletonProps) {
   );
 }
 
-type SkeletonBarProps = { width: DimensionValue; height?: number | undefined };
+export type SkeletonBarProps = { width: DimensionValue; height?: number | undefined };
 
 /** One still, well-coloured bar, for placeholders shaped like a particular screen. */
 export function SkeletonBar({ width, height = TITLE_BAR }: SkeletonBarProps) {
@@ -73,11 +78,12 @@ export function SkeletonBar({ width, height = TITLE_BAR }: SkeletonBarProps) {
 type DelayedRevealProps = {
   children: ReactNode;
   accessibilityLabel: string;
+  testID?: string | undefined;
   style?: StyleProp<ViewStyle> | undefined;
 };
 
 /** Holds its children back for the skeleton delay, then fades them in (100 ms with reduced motion). */
-function DelayedReveal({ children, accessibilityLabel, style }: DelayedRevealProps) {
+function DelayedReveal({ children, accessibilityLabel, testID, style }: DelayedRevealProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
   const [shown, setShown] = useState(false);
@@ -104,6 +110,7 @@ function DelayedReveal({ children, accessibilityLabel, style }: DelayedRevealPro
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ busy: true }}
+      testID={testID}
       accessibilityElementsHidden={!shown}
       importantForAccessibility={shown ? "yes" : "no-hide-descendants"}
       style={[style, fade]}

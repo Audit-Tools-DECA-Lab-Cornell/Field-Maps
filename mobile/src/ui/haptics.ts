@@ -22,3 +22,6 @@ export function useHaptics() {
     };
   }, [haptics]);
 }
+
+/** The taps `useHaptics()` offers. */
+export type HapticTaps = ReturnType<typeof useHaptics>;

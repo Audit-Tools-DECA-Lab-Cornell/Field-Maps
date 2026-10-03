@@ -65,7 +65,7 @@ function readAll(): Preferences {
   };
 }
 
-type PreferencesValue = Preferences & {
+export type PreferencesValue = Preferences & {
   set: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
 };
 

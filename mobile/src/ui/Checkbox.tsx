@@ -1,16 +1,19 @@
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import { PRESSED_OPACITY } from "./Button";
 import { Icon } from "./Icon";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
-type CheckboxProps = {
+export type CheckboxProps = {
   label: string;
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  /** Named as on the web: the box reports the state it turns to. */
+  onCheckedChange: (checked: boolean) => void;
   /** A second line in ink2 under the label. */
   description?: string | undefined;
   disabled?: boolean | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /** The square sits a little rounder than a hard corner, as drawn in the design. */
@@ -20,17 +23,19 @@ const BOX_RADIUS = 6;
 export function Checkbox({
   label,
   checked,
-  onChange,
+  onCheckedChange,
   description,
   disabled,
   style,
+  testID,
 }: CheckboxProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
   return (
     <Pressable
-      onPress={() => onChange(!checked)}
+      onPress={() => onCheckedChange(!checked)}
       disabled={disabled}
+      testID={testID}
       accessibilityRole="checkbox"
       accessibilityLabel={label}
       accessibilityHint={description}
@@ -71,7 +76,7 @@ function makeStyles(t: Theme) {
       minHeight: t.size.touch,
       paddingVertical: t.space.s1,
     },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
     box: {
       width: t.space.s6,
       height: t.space.s6,

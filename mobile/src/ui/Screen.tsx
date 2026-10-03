@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { dockClearance } from "./TabDock";
 import { type Theme, useStyles, useTheme } from "./theme";
 
 export type ScreenProps = {
@@ -55,8 +56,9 @@ export function Screen({
   const s = useStyles(screenStyles);
   const insets = useSafeAreaInsets();
   const gutter = padded ? t.layout.gutter : 0;
-  // The dock floats over the bottom of the screen; the last content or the footer ends above it.
-  const bottom = insets.bottom + (dock ? t.layout.dockHeight + t.space.s4 : 0);
+  // The dock floats over the bottom of the screen; the last content or the footer ends above it,
+  // measured with the dock's own formula so the two never drift apart.
+  const bottom = dock ? dockClearance(t, insets.bottom) : insets.bottom;
 
   const sides: ViewStyle = {
     paddingLeft: insets.left + gutter,
@@ -92,6 +94,8 @@ export function Screen({
 
   return (
     <View testID={testID} style={s.screen}>
+      {/* Dark glyphs on the Day ground, light on Dusk. The root layout keeps "light" for the legacy
+          Nocturne screens; this one wins while a Contour screen is mounted. */}
       <StatusBar style={t.scheme === "dusk" ? "light" : "dark"} />
       {keyboard ? (
         // Edge-to-edge on both platforms: the window does not resize, so padding lifts the content.

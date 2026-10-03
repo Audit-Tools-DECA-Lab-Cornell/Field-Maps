@@ -80,6 +80,14 @@ type StateGroups = typeof contour.states;
 export type StateKind = Exclude<keyof StateGroups, "$comment">;
 export type StateKey<K extends StateKind> = keyof StateGroups[K] & string;
 
+/** The whole state vocabulary by kind (without the contract's comment), for galleries and pickers. */
+export const STATES = Object.fromEntries(
+  Object.entries(contour.states).filter(([kind]) => !kind.startsWith("$")),
+) as { [K in StateKind]: Record<StateKey<K>, StateDefinition> };
+
+/** The state kinds in contract order: queue, review, form, package, check, coverage, … */
+export const STATE_KINDS = Object.keys(STATES) as StateKind[];
+
 /** Every state is a glyph, a word and a colour (Rule 02). The same lookup the web uses. */
 export function stateOf<K extends StateKind>(kind: K, key: StateKey<K>): StateDefinition {
   const group = contour.states[kind] as Record<string, StateDefinition>;

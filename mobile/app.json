@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "scheme": "fieldmaps",
     "orientation": "default",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
@@ -48,7 +48,7 @@
     "experiments": {
       "typedRoutes": true
     },
-    "backgroundColor": "#161826",
+    "backgroundColor": "#F0F3EC",
     "extra": {
       "router": {},
       "eas": {

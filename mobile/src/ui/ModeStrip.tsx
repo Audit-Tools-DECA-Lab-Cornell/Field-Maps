@@ -13,18 +13,20 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { PRESSED_OPACITY } from "./Button";
 import { Text } from "./Text";
 import { type Theme, useStyles, useTheme } from "./theme";
 
 export type ModeStep = 0 | 1 | 2;
 
-type ModeStripProps = {
+export type ModeStripProps = {
   /** The three acts of collecting, in order: ["Place", "Answer", "Review"]. */
   steps: readonly [string, string, string];
   current: ModeStep;
   /** Called for a finished step. Steps not reached yet cannot be chosen. */
   onSelect?: ((step: ModeStep) => void) | undefined;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 const STEPS: readonly ModeStep[] = [0, 1, 2];
@@ -33,7 +35,7 @@ const STEPS: readonly ModeStep[] = [0, 1, 2];
  * "1 · Place  2 · Answer  3 · Review": where the observer is in a record. The current step is an ink
  * pill that slides as they move on; a finished step can be tapped to go back to it.
  */
-export function ModeStrip({ steps, current, onSelect, style }: ModeStripProps) {
+export function ModeStrip({ steps, current, onSelect, style, testID }: ModeStripProps) {
   const theme = useTheme();
   const styles = useStyles(makeStyles);
   const reduceMotion = useReducedMotion();
@@ -56,7 +58,7 @@ export function ModeStrip({ steps, current, onSelect, style }: ModeStripProps) {
     }
     x.set(
       withTiming(target, {
-        duration: theme.motion.duration.slide,
+        duration: theme.motion.duration.base,
         easing: theme.motion.easing.standard,
       }),
     );
@@ -66,6 +68,7 @@ export function ModeStrip({ steps, current, onSelect, style }: ModeStripProps) {
   return (
     <View
       onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
+      testID={testID}
       style={[styles.track, style]}
     >
       {segment > 0 ? (
@@ -88,7 +91,8 @@ export function ModeStrip({ steps, current, onSelect, style }: ModeStripProps) {
             disabled={!selectable}
             hitSlop={hitSlop}
             accessibilityRole="button"
-            accessibilityLabel={`${steps[step]}, step ${step + 1} of ${STEPS.length}${
+            // Announced as Contour words it: "Step 2 of 3, Answer".
+            accessibilityLabel={`Step ${step + 1} of ${STEPS.length}, ${steps[step]}${
               isCurrent ? ", current" : finished ? ", done" : ""
             }`}
             accessibilityState={{ selected: isCurrent, disabled: !selectable }}
@@ -143,6 +147,6 @@ function makeStyles(t: Theme) {
     stepCurrent: { backgroundColor: t.c.ink },
     // Every step is set in the semibold face of the answer role, as drawn.
     label: { fontFamily: t.type.bodyStrong.fontFamily },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
   });
 }

@@ -19,7 +19,7 @@ const MAX_SCALE: Partial<Record<TypeRole, number>> = {
   answer: 1.8,
 };
 
-type TextProps = Omit<NativeTextProps, "style" | "numberOfLines"> & {
+export type TextProps = Omit<NativeTextProps, "style" | "numberOfLines"> & {
   variant?: TypeRole | undefined;
   tone?: TextTone | undefined;
   align?: TextStyle["textAlign"] | undefined;

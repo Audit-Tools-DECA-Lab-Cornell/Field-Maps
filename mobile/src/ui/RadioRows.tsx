@@ -1,4 +1,5 @@
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import { PRESSED_OPACITY } from "./Button";
 import { Text } from "./Text";
 import { type Theme, useStyles } from "./theme";
 
@@ -10,14 +11,15 @@ export type RadioOption<T extends string> = {
   disabled?: boolean | undefined;
 };
 
-type RadioRowsProps<T extends string> = {
+export type RadioRowsProps<T extends string> = {
   options: readonly RadioOption<T>[];
   /** Nothing chosen yet when null or undefined. */
   value: T | null | undefined;
-  onChange: (value: T) => void;
-  /** What the choice is about, for screen readers: "Zone". */
-  accessibilityLabel: string;
+  onValueChange: (value: T) => void;
+  /** Names the group for screen readers, as on the web: "Zone". Not drawn. */
+  label: string;
   style?: StyleProp<ViewStyle> | undefined;
+  testID?: string | undefined;
 };
 
 /** The radio dot, drawn to the design. */
@@ -31,15 +33,17 @@ const DOT_FILL = 10;
 export function RadioRows<T extends string>({
   options,
   value,
-  onChange,
-  accessibilityLabel,
+  onValueChange,
+  label,
   style,
+  testID,
 }: RadioRowsProps<T>) {
   const styles = useStyles(makeStyles);
   return (
     <View
       accessibilityRole="radiogroup"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={label}
+      testID={testID}
       style={[styles.list, style]}
     >
       {options.map((option) => {
@@ -48,7 +52,7 @@ export function RadioRows<T extends string>({
         return (
           <Pressable
             key={option.value}
-            onPress={() => onChange(option.value)}
+            onPress={() => onValueChange(option.value)}
             disabled={disabled}
             accessibilityRole="radio"
             accessibilityLabel={option.label}
@@ -98,7 +102,7 @@ function makeStyles(t: Theme) {
     },
     rowChosen: { borderColor: t.c.accent, backgroundColor: t.c.accentSoft },
     rowDisabled: { borderColor: t.c.edge },
-    pressed: { opacity: 0.88 },
+    pressed: { opacity: PRESSED_OPACITY },
     dot: {
       width: DOT,
       height: DOT,
