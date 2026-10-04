@@ -89,16 +89,23 @@ it.each([
   expect((await upload()).kind).toBe("rejected");
 });
 it.each([
-  [401, "sign-in"],
-  [403, "rejected"],
-  [409, "rejected"],
-  [422, "rejected"],
-  [429, "retry"],
-  [503, "retry"],
-])("classifies HTTP %s as %s", async (code, kind) => {
-  status = Number(code);
-  response = { detail: "Failure" };
+  [401, "token_invalid", "sign-in"],
+  [403, "role_required", "rejected"],
+  [409, "conflict", "rejected"],
+  [422, "validation_failed", "rejected"],
+  [429, "rate_limited", "retry"],
+  [503, "storage_unavailable", "retry"],
+])("classifies HTTP %s with %s as %s", async (statusCode, code, kind) => {
+  status = Number(statusCode);
+  response = { error: { code, message: "Failure", details: {} } };
   expect((await upload()).kind).toBe(kind);
+});
+it.each([
+  408, 429, 403, 409, 422,
+])("preserves records for legacy HTTP %s failures", async (code) => {
+  status = code;
+  response = { detail: "Failure" };
+  expect((await upload()).kind).toBe("retry");
 });
 it("keeps a malformed successful response retryable", async () => {
   response = { success: true };

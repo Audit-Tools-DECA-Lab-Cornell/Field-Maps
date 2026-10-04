@@ -4,7 +4,7 @@ from uuid import UUID
 
 import anyio
 import jwt
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, StrictBool, ValidationError
 
 from fieldmaps_api.errors import StorageUnavailableError, TokenInvalidError
 
@@ -15,6 +15,7 @@ class TokenClaims(BaseModel):
     exp: int
     iss: str
     aud: str
+    is_anonymous: StrictBool = False
 
 
 class TokenVerifier(Protocol):
@@ -40,16 +41,20 @@ class JwksVerifier:
                 token,
                 signing_key,
                 algorithms=["ES256", "RS256"],
+                leeway=30,
                 audience=self.audience,
                 issuer=self.issuer,
                 options={"require": ["exp", "sub", "iss", "aud"]},
             )
-            return TokenClaims.model_validate(claims).sub
+            parsed = TokenClaims.model_validate(claims)
         except jwt.PyJWKClientConnectionError as error:
             message = "Sign-in verification is temporarily unavailable"
             raise StorageUnavailableError(message) from error
         except (jwt.InvalidTokenError, jwt.PyJWKClientError, ValidationError) as error:
             raise TokenInvalidError from error
+        if parsed.is_anonymous:
+            raise TokenInvalidError
+        return parsed.sub
 
 
 @dataclass(frozen=True, slots=True)

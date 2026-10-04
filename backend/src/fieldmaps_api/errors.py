@@ -68,6 +68,11 @@ class TokenInvalidError(DomainError):
         super().__init__("token_invalid", message, 401)
 
 
+class AccountDeletedError(DomainError):
+    def __init__(self) -> None:
+        super().__init__("account_deleted", "This account is no longer available", 403)
+
+
 class RoleRequiredError(DomainError):
     def __init__(self, message: str) -> None:
         super().__init__("role_required", message, 403)

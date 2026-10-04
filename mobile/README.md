@@ -34,7 +34,8 @@ column.
   option identifiers, a restricted declarative condition format, dynamic option sets, and
   validation of duplicate export columns, dangling references and dependency cycles. Workbook
   rule text is carried as provenance and never executed.
-- **Shared JSON contracts** in [`../contracts/`](../contracts/README.md). The fixture modules import the canonical definitions; `pnpm contracts:forms` generates their input JSON Schema. The shared cases cover conditional visibility, hidden-answer pruning, types, duplicate selections, options, numeric ranges and text limits. Numeric answers remain numbers in session state, drafts, exports and stored observations. Server parity remains BE-10.
+- **Shared JSON contracts** in [`../contracts/`](../contracts/README.md). The fixture modules import the canonical definitions; `pnpm contracts:forms` generates their input JSON Schema. Python and mobile tests share cases for visibility, hidden-answer pruning, types, duplicate selections, options, numeric ranges, text limits and Unicode whitespace. Numeric answers remain numbers in session state, drafts, exports and stored observations. BE-10's local database upload/readback acceptance passed on 2026-10-03.
+- **Generated API types and typed errors.** `pnpm api:types` reads the backend OpenAPI contract. The uploader validates receipts at runtime and maps coded failures through `src/data/api/errors.ts`. Unknown or malformed errors remain retryable with the local record preserved.
 - **Two form versions side by side.** The original practice form is now the `shell-v1`
   definition, unchanged in record shape and upload payload. `janet-test-v1` implements the
   candidate subset in [the Janet scope](../docs/Janet-Test-Form-Scope.md) — timestamp and

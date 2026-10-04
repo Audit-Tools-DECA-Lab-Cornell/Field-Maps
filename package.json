@@ -8,6 +8,7 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "contracts:generate": "make -C backend openapi && pnpm --dir web api:types && pnpm --dir mobile api:types",
     "dev": "pnpm web:dev",
     "build": "pnpm web:build",
     "start": "pnpm --dir web start",

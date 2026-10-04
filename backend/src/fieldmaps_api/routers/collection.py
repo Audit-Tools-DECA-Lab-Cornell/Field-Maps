@@ -15,7 +15,10 @@ def create_router(
 ) -> APIRouter:
     router = APIRouter(responses=ERROR_RESPONSES)
 
-    @router.put("/v1/projects/{project_id}/observations/{observation_id}")
+    @router.put(
+        "/v1/projects/{project_id}/observations/{observation_id}",
+        operation_id="uploadObservation",
+    )
     async def upload(
         project_id: UUID,
         observation_id: UUID,
@@ -28,7 +31,10 @@ def create_router(
             )
         return receipt
 
-    @router.get("/v1/projects/{project_id}/observations/{observation_id}")
+    @router.get(
+        "/v1/projects/{project_id}/observations/{observation_id}",
+        operation_id="getObservation",
+    )
     async def observation(
         project_id: UUID,
         observation_id: UUID,

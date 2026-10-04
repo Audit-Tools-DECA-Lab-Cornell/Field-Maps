@@ -14,6 +14,8 @@
 		"node": ">=24.0.0"
 	},
 	"scripts": {
+		"test:api-errors": "node --experimental-strip-types --test tests/api-errors.test.mjs",
+		"api:types": "openapi-typescript ../contracts/openapi.json -o src/lib/api/schema.d.ts",
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
@@ -50,6 +52,7 @@
 		"eslint": "^9",
 		"eslint-config-next": "16.2.7",
 		"eslint-plugin-simple-import-sort": "^13.0.0",
+		"openapi-typescript": "7.13.0",
 		"prettier": "^3.8.4",
 		"tailwindcss": "^4",
 		"typescript": "^5"

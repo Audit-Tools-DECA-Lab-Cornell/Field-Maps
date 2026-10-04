@@ -13,12 +13,12 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - `errors.py` provides the error envelope, OpenAPI models and exception handler.
 - Pure domain modules live under `domain/`: `forms.py`, `packages.py`, `geojson.py` and `qgis_project.py`.
 
-**Routes** (8 today): `/health`, `GET /v1/projects`, `PUT`/`GET` observation, and 4 package routes.
+**Routes** (10 today): `/health`, `GET`/`PATCH /v1/me`, `GET /v1/projects`, `PUT`/`GET` observation, and 4 package routes. Stable operation IDs and response schemas are exported without database access.
 
 **Authentication** (`auth.py`)
 - Verifies ES256/RS256 against JWKS (`PyJWKClient`, cached 300 s).
-- Requires `exp`, `sub`, `iss` and `aud`, with **no leeway**.
-- Ignores `is_anonymous`.
+- Requires `exp`, `sub`, `iss` and `aud`, with 30 seconds of clock leeway.
+- Rejects anonymous tokens and malformed anonymous claims.
 
 **Per-request identity.**
 - Every request runs in `user_transaction`, which sets `fieldmaps.user_id` (`deps.py`).
@@ -30,7 +30,7 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - Every `SQLAlchemyError` is turned into a 503. That includes programming errors, and it hid the package-list bug fixed in BE-16.
 - The Dockerfile runs as root, installs dev dependencies and copies `tests/` into the image.
 
-**Forms.** `domain/forms.py` validates the **server** format (`code`, `type`, no conditions). The mobile format is different; CON-02 and BE-10 fix that.
+**Forms.** `domain/forms.py` validates the canonical mobile contract with conditions and dynamic choices. `legacy_forms.py` preserves immutable stored field definitions. Shared-case parity and local legacy upload/readback tests pass.
 
 **Tests.** The suite covers real local Supabase plus pure domain and HTTP boundary behavior. BE-03 preserves the existing upload/package scenarios and adds error-envelope coverage.
 
@@ -99,7 +99,7 @@ Verify: `pnpm backend:test`; `pnpm backend:check`.
 
 ### BE-03: Restructure into routers, services and repositories, with the error envelope
 Status: done (2026-10-01) · Phase 0 · Size M · Depends: none · Blocks: BE-04, BE-06, BE-07, BE-09, CON-04, GIS-06
-Evidence: routers, services, repositories and query modules preserve all eight routes and twelve SQL statements; pure modules moved to `domain/`. Domain and framework exceptions use the documented envelope and OpenAPI model. The local backend suite passed 74 tests before the final malformed-body case; all 12 final error-boundary tests passed separately. Ruff and BasedPyright pass. The combined 75-test rerun on 2026-10-01 could not complete because Docker was unavailable; database-dependent acceptance must be repeated when local Supabase is running. CORS preflight responses retain their existing middleware behavior.
+Evidence: routers, services, repositories and query modules preserve all eight routes and twelve SQL statements; pure modules moved to `domain/`. Domain and framework exceptions use the documented envelope and OpenAPI model. The local backend suite passed 74 tests before the final malformed-body case; all 12 final error-boundary tests passed separately. Ruff and BasedPyright pass. The subsequent complete suite passed all 131 tests against local Supabase on 2026-10-03, resolving the earlier Docker verification blocker. CORS preflight responses retain their existing middleware behavior.
 Read first: every file in `src/fieldmaps_api/`; [contracts.md](../docs/plan/contracts.md#error-envelope).
 Do:
 1. Move the code into the target layout above. **This is a behaviour-preserving refactor:** the same routes, status codes and bodies, except that errors adopt the envelope.
@@ -112,7 +112,8 @@ Done when:
 - no `HTTPException` remains outside `deps.py`.
 
 ### BE-04: OpenAPI export without a database
-Status: todo · Phase 0 · Size S · Depends: BE-03 · Blocks: CON-03
+Status: done (2026-10-01) · Phase 0 · Size S · Depends: BE-03 · Blocks: CON-03
+Verified: deterministic offline OpenAPI export, unique operation IDs, typed responses and binary archive metadata pass the contract tests.
 Do:
 1. Add `fieldmaps_api/openapi.py`, which builds the app with a dummy config and no connection, then prints `app.openapi()` as sorted JSON.
 2. Add a `make -C backend openapi` target, or a root `Makefile` target, that writes `contracts/openapi.json`.
@@ -121,7 +122,8 @@ Do:
 Done when: running the target twice produces identical output, with no database or network.
 
 ### BE-05: Token checks
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: none
+Status: done (2026-10-01) · Phase 0 · Size S · Depends: none · Blocks: none
+Verified: 18 token-policy tests cover expiry boundaries, anonymous claims, and required identity claims.
 Read first: `auth.py`; `tests/test_authentication.py`.
 Do:
 1. Add `leeway=30` to `jwt.decode`.
@@ -131,7 +133,8 @@ Do:
 Done when: new tests cover leeway on both sides of 30 s and the anonymous-token rejection.
 
 ### BE-06: Identity: `GET /v1/me` and `PATCH /v1/me`
-Status: todo · Phase 1 · Size M · Depends: BE-03, DB-05, DB-06, DB-07 · Blocks: BE-07, BE-08, MOB-04, MOB-06, QA-01, WEB-05, WEB-06
+Status: done (2026-10-03) · Phase 1 · Size M · Depends: BE-03, DB-05, DB-06, DB-07 · Blocks: BE-07, BE-08, MOB-04, MOB-06, QA-01, WEB-05, WEB-06
+Verified: all 18 identity tests pass, including seven real local Supabase scenarios for bootstrap, idempotence, caller isolation and forgotten/missing Auth accounts. The complete backend suite passes 131 tests. Docker launched successfully outside the restricted shell; no installation repair or database reset was needed.
 Read first: the identity rows in [contracts.md](../docs/plan/contracts.md#api-endpoint-catalog-v1); DB-06 (`ensure_profile`).
 Do:
 1. `GET /v1/me` calls `fieldmaps_private.ensure_profile(null)` and returns:
@@ -222,7 +225,8 @@ Do:
 Done when: the tests cover 413 and 429, including 429 on preview.
 
 ### BE-10: Canonical form validator
-Status: todo · Phase 2 · Size L · Depends: CON-02 · Blocks: BE-11, BE-12, BE-14
+Status: done (2026-10-03) · Phase 2 · Size L · Depends: CON-02 · Blocks: BE-11, BE-12, BE-14
+Verified: shared cases pass in Python and mobile, including Unicode whitespace parity. All 131 backend tests pass against local Supabase, including legacy uploads, retries and restricted GIS readback. No hosted data or immutable form definition was changed.
 Read first: `contracts/form-definition.schema.json`, `contracts/forms/*.json`, `contracts/forms/cases/*.json`; `mobile/src/forms/engine.ts` (the reference behaviour); `src/fieldmaps_api/domain/forms.py`.
 Do:
 1. Rewrite `domain/forms.py` to parse the canonical definition with Pydantic models that mirror the JSON Schema. That schema is generated in `io: "input"` mode (CON-02).

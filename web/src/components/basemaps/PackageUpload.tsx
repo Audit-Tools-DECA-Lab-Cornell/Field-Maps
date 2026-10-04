@@ -6,6 +6,7 @@ import { useId, useMemo, useState } from "react";
 import { AttentionNote, Chip, Input, PrimaryAction, Prose, SectionLabel } from "@/components/nocturne/chrome";
 import { PUBLISHED_VERSION } from "@/data/instrument";
 import { PROJECT } from "@/data/project";
+import { ApiError } from "@/lib/api/errors";
 import { formatCount, plural } from "@/lib/format";
 import {
 	analyzeLayer,
@@ -198,7 +199,11 @@ export function PackageUpload() {
 			}
 			setResult(await submitPackage(baseUrl, projectId.id, token, submission));
 		} catch (raised) {
-			setError(raised instanceof LayerReadError ? raised.message : "The upload could not be completed.");
+			setError(
+				raised instanceof ApiError || raised instanceof LayerReadError
+					? raised.message
+					: "The upload could not be completed."
+			);
 		} finally {
 			setBusy(false);
 		}

@@ -1,9 +1,11 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import ClassVar, Literal
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from jwt import PyJWKClient
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from fieldmaps_api.auth import JwksVerifier, TokenVerifier, UnconfiguredVerifier
@@ -11,7 +13,12 @@ from fieldmaps_api.config import Settings, read_local_settings
 from fieldmaps_api.database import database_connection
 from fieldmaps_api.deps import Authentication
 from fieldmaps_api.errors import ERROR_RESPONSES, register_error_handlers
-from fieldmaps_api.routers import collection, sites, tenancy
+from fieldmaps_api.routers import collection, identity, sites, tenancy
+
+
+class HealthResponse(BaseModel):
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+    status: Literal["running"] = "running"
 
 
 def create_app(
@@ -53,7 +60,7 @@ def create_app(
             CORSMiddleware,
             allow_origins=configuration.allowed_origins,
             allow_origin_regex=configuration.browser_origin_pattern,
-            allow_methods=["GET", "POST", "PUT"],
+            allow_methods=["GET", "POST", "PUT", "PATCH"],
             allow_headers=["authorization", "content-type"],
             expose_headers=["etag"],
             max_age=600,
@@ -61,11 +68,16 @@ def create_app(
 
     register_error_handlers(app)
 
-    @app.get("/health", responses=ERROR_RESPONSES)
-    async def health() -> dict[str, str]:
-        return {"status": "running"}
+    @app.get(
+        "/health",
+        operation_id="health",
+        responses=ERROR_RESPONSES,
+    )
+    async def health() -> HealthResponse:
+        return HealthResponse()
 
     app.include_router(tenancy.create_router(sessions, authenticate))
+    app.include_router(identity.create_router(sessions, authenticate))
     app.include_router(collection.create_router(sessions, authenticate))
     app.include_router(sites.create_router(sessions, authenticate))
     return app

@@ -19,6 +19,7 @@ Never report a device, hosted or production check as passed unless it was actual
 ### QA-01: API tenant-isolation suite
 Status: todo · Phase 1 · Size M · Depends: BE-06, BE-07, DB-04, DB-05 · Blocks: OPS-09
 It grows every phase: each new endpoint task adds its rows.
+Identity coverage is in `backend/tests/test_identity.py`: first-call Training enrollment, repeat-call idempotence, caller-scoped memberships (including inherited admin access), self-only profile edits, and rejection after profile forgetting or Auth deletion. These database scenarios passed locally on 2026-10-03; they do not complete the full tenant matrix below.
 Read first: `backend/tests/test_project_access.py`; `backend/tests/conftest.py`; the endpoint catalog in [contracts.md](contracts.md#api-endpoint-catalog-v1).
 Do:
 1. Create `backend/tests/test_tenant_isolation.py`. Fixtures:

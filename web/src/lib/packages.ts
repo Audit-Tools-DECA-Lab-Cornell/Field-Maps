@@ -1,3 +1,5 @@
+import { readApiError } from "@/lib/api/errors";
+import type { components } from "@/lib/api/schema";
 import type { FeatureCollection, Geometry } from "@/types/geojson";
 
 /**
@@ -46,11 +48,7 @@ export interface PackageSubmission {
 	readonly project_file?: { readonly file_name: string; readonly content: string };
 }
 
-export interface PreparationCheck {
-	readonly step: "source-project" | "layer-sources" | "coordinate-reference" | "imagery-licence" | "archive";
-	readonly state: "passed" | "warning" | "blocked" | "skipped";
-	readonly detail: string;
-}
+export type PreparationCheck = Readonly<components["schemas"]["PreparationCheck"]>;
 
 export interface PackageDetail {
 	readonly package_id: string;
@@ -397,13 +395,6 @@ export async function submitPackage(
 		headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
 		body: JSON.stringify(submission)
 	});
-	if (response.status === 201) return (await response.json()) as PackageDetail;
-	const detail = await response.text();
-	if (response.status === 401 || response.status === 403)
-		throw new LayerReadError("That token does not have manager access to this project.");
-	throw new LayerReadError(
-		response.status === 422
-			? `The server refused the submission: ${detail}`
-			: `The server answered ${response.status}. ${detail}`
-	);
+	if (response.ok) return (await response.json()) as PackageDetail;
+	throw await readApiError(response);
 }

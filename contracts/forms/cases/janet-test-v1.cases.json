@@ -1554,6 +1554,75 @@
           }
         }
       ]
+    },
+    {
+      "id": "bom-text-is-unanswered",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "gate": "yes",
+            "detail": "﻿",
+            "nested": "stale"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "detail",
+              "tags",
+              "count",
+              "note",
+              "either",
+              "unless_no"
+            ],
+            "problems": [
+              {
+                "id": "detail",
+                "reason": "required"
+              }
+            ],
+            "answers": {
+              "gate": "yes"
+            },
+            "dropped": [
+              "detail",
+              "nested"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "nel-text-is-answered",
+      "definition": "rules",
+      "steps": [
+        {
+          "answers": {
+            "gate": "yes",
+            "detail": "",
+            "nested": "present"
+          },
+          "expected": {
+            "visible": [
+              "gate",
+              "detail",
+              "tags",
+              "count",
+              "note",
+              "nested",
+              "either",
+              "unless_no"
+            ],
+            "problems": [],
+            "answers": {
+              "gate": "yes",
+              "detail": "",
+              "nested": "present"
+            },
+            "dropped": []
+          }
+        }
+      ]
     }
   ]
 }

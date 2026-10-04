@@ -9,7 +9,7 @@ Language-neutral JSON shared by the independently managed mobile, web and API ap
 | `forms/cases/*.cases.json` | Hand-authored expected behavior. Never regenerate expectations from the engine. | Mobile Vitest now; the same cases in Python during BE-10 |
 | `contour.json` | Hand-authored Contour design tokens: the Day (default) and Dusk colours, with the Dusk values the design left out derived and listed under `derived`; the contrast pairs; fonts; the type, spacing, layout, radius, size and motion scales; and the state vocabulary (kind × state → label, Lucide icon and tone). Edit the JSON, then run `pnpm tokens`. Map colours do not belong here. | `scripts/contour-tokens.mjs` generates `web/src/styles/contour.css` (checked in, never edited by hand); web code reads the state vocabulary and motion through `web/src/lib/contour.ts`; the collector reads the file in `mobile/src/ui/tokens.ts` |
 | `map-palettes.json` | Hand-authored cartography for every map canvas: `day` (default) and `night`, with identical keys. The app chrome follows Contour's own Day or Dusk theme; only the map changes palette, and UI state colours never appear on it. | Mobile field map (MapLibre) and web observation and package-preview maps (Leaflet) |
-| `openapi.json` | Not created yet. BE-04 generates it from FastAPI; never edit by hand. | CON-03 will generate separate web/mobile TypeScript clients |
+| `openapi.json` | Generated from FastAPI with `make -C backend openapi`; never edit by hand. | Separate generated TypeScript declarations in web and mobile |
 
 ## Generate and verify
 
@@ -21,11 +21,16 @@ pnpm --dir mobile test
 pnpm mobile:check
 pnpm plan:check
 pnpm tokens:check
+pnpm contracts:generate
 ```
 
 `pnpm tokens:check` fails if `web/src/styles/contour.css` has drifted from `contour.json`, or if any declared colour pair misses its WCAG minimum in Day or Dusk: 4.5:1 for text, 3:1 for UI.
 
-The form generator only writes the JSON Schema. It does not overwrite authored forms or cases. The mobile suite compares the committed schema to fresh generation and discovers every `*.cases.json` file. Run the generator twice and confirm the second run makes no change. CI already runs these tests through its mobile job; CON-03 adds OpenAPI generation later.
+The form generator only writes the JSON Schema. It does not overwrite authored forms or cases. The mobile suite compares the committed schema to fresh generation and discovers every `*.cases.json` file. Run the generator twice and confirm the second run makes no change. CI runs these tests through its mobile job and separately regenerates OpenAPI and both app declarations to reject contract drift.
+
+OpenAPI generation needs the installed backend dependencies and each app's own `openapi-typescript` dependency. It needs no running API, database or credentials. Generated declarations live in `web/src/lib/api/schema.d.ts` and `mobile/src/data/api/schema.d.ts`; runtime input validation remains necessary.
+
+Each app's adjacent `errors.ts` parses error envelopes into typed errors and local user copy. Error codes determine retry, sign-in and rejection, with transport fallbacks for 401 and 5xx. Unknown or malformed responses remain retryable; on mobile this preserves the local record, including when an older API returns an unstructured 403/409/422. Known validation/access/conflict codes remain rejected. Run `pnpm --dir web test:api-errors` and `pnpm mobile:test` to verify these decisions.
 
 ## Definition rules
 

@@ -117,7 +117,7 @@ This is the full target surface. **Exists** means it is already served by `backe
 |---|---|---|---|
 | — | `GET /health` · `GET /ready` | anyone | exists · BE-02 |
 | identity | `GET /v1/me`: profile, org and project memberships; creates the profile and Training membership on first call (403 `account_deleted` for a forgotten account) | any verified user | BE-06 |
-| identity | `PATCH /v1/me` (display name, initials, locale) | self | BE-06 |
+| identity | `PATCH /v1/me` (`display_name`, `observer_initials`, `locale`); returns the profile; omitted fields stay unchanged, null clears nullable fields | self | BE-06 |
 | identity | `DELETE /v1/me`: 204 when done, 202 `{"status":"pending"}` when the Auth deletion must be retried; safe to repeat | self | BE-08 |
 | tenancy | `POST /v1/orgs` (org + owner membership + first project) · `GET /v1/orgs` | verified user (limit 3 orgs) | BE-07 |
 | tenancy | `GET/PATCH /v1/orgs/{org}` · `GET /v1/orgs/{org}/members` · `PATCH/DELETE /v1/orgs/{org}/members/{user}` · `POST /v1/orgs/{org}/transfer-ownership`. There is no POST for members: people join through invitations | org owner/admin (owners only for `owner`/`admin` rows) | BE-07 |
@@ -212,7 +212,8 @@ Server parity is BE-10's job, against the same case files. This task is finished
 Verify: `pnpm --dir mobile test`, then `git status contracts/` shows no drift after re-running the script.
 
 ### CON-03: Generate OpenAPI types for web and mobile
-Status: todo · Phase 0 · Size S · Depends: BE-04, CON-01 · Blocks: CON-04, MOB-04, WEB-05
+Status: done (2026-10-03) · Phase 0 · Size S · Depends: BE-04, CON-01 · Blocks: CON-04, MOB-04, WEB-05
+Verified: both apps typecheck with generated types; two complete generation runs produced identical SHA-256 values for all three artifacts. A CI job regenerates them and rejects drift. Files are ready for the next authorized commit.
 Read first: `web/src/lib/packages.ts`, `mobile/src/sync/contracts.ts`, `backend/Makefile` (or the root `Makefile`).
 Do:
 1. Add `openapi-typescript` as a dev dependency in `web/` and in `mobile/` (each app's own lockfile).
@@ -230,7 +231,8 @@ Done when:
 Verify: `pnpm contracts:generate && git diff --exit-code -- contracts web/src/lib/api mobile/src/data/api`.
 
 ### CON-04: Document the error envelope and implement one client helper per app
-Status: todo · Phase 1 · Size S · Depends: BE-03, CON-03 · Blocks: MOB-04, WEB-05
+Status: done (2026-10-03) · Phase 1 · Size S · Depends: BE-03, CON-03 · Blocks: MOB-04, WEB-05
+Verified: web and mobile helpers cover every generated error code with local user copy, code-based retry/rejection decisions and safe unknown-response handling. Existing package upload and mobile upload consumers use them; dedicated web/mobile tests cover the codes, transport failures and malformed envelopes.
 Read first: the Error envelope section above; `mobile/src/sync/upload.ts` (status-code branching today).
 Do:
 1. Add the envelope as a component schema in the OpenAPI output (BE-03 implements it).

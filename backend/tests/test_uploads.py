@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -77,10 +77,14 @@ def test_simultaneous_retries_create_one_record(api_client: TestClient) -> None:
 
 
 def test_projects_come_from_membership_not_user_input(api_client: TestClient) -> None:
+    assert api_client.get("/v1/me").status_code == 200
     response = api_client.get("/v1/projects")
     assert response.status_code == 200
     projects = TypeAdapter(list[ProjectAccess]).validate_json(response.content)
-    assert [project.project_id for project in projects] == [PROJECT]
+    assert {project.project_id: project.role for project in projects} == {
+        PROJECT: "observer",
+        UUID("10000000-0000-4000-8000-000000000102"): "observer",
+    }
 
 
 @pytest.mark.parametrize("people", [-1, 1000, 1.5, True, "3"])

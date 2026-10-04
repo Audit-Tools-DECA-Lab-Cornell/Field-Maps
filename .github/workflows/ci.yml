@@ -6,6 +6,23 @@ on:
 permissions:
   contents: read
 jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13'
+      - run: pnpm backend:setup
+      - run: pnpm setup:apps
+      - run: pnpm contracts:generate
+      - run: git diff --exit-code -- contracts/openapi.json web/src/lib/api/schema.d.ts mobile/src/data/api/schema.d.ts
   web:
     runs-on: ubuntu-latest
     steps:
@@ -20,6 +37,7 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm --dir web install --frozen-lockfile
       - run: pnpm web:check
+      - run: pnpm --dir web test:api-errors
       - run: pnpm build
   mobile:
     runs-on: ubuntu-latest
