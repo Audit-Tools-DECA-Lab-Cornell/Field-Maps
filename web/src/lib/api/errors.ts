@@ -92,3 +92,11 @@ export async function readApiError(response: Response): Promise<ApiError> {
 	}
 	return parseApiError(response.status, body);
 }
+
+export function apiRequestError(error: unknown): ApiError {
+	if (error instanceof ApiError) return error;
+	if (error instanceof SyntaxError) return new ApiError("unknown", "retry");
+	if (error instanceof TypeError || error instanceof DOMException)
+		return new ApiError("storage_unavailable", "retry");
+	throw error;
+}

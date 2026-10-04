@@ -1,0 +1,41 @@
+import type { CachedAccount } from "./cached-account";
+
+export function restoreAccount(cached: CachedAccount | null, deleted: CachedAccount | null) {
+  return { account: cached ?? deleted, deletedUserId: deleted?.id ?? null };
+}
+
+export function allowedSession<T extends { readonly user: { readonly id: string } }>(
+  session: T | null,
+  deletedUserId: string | null,
+): T | null {
+  return session?.user.id === deletedUserId ? null : session;
+}
+
+export async function persistDeletedSignOut(
+  account: CachedAccount,
+  pause: () => void,
+  retain: (account: CachedAccount) => void,
+  signOut: () => Promise<{ readonly error: Error | null }>,
+): Promise<string | null> {
+  pause();
+  let message: string | null = null;
+  try {
+    retain(account);
+  } catch (error) {
+    message =
+      error instanceof Error
+        ? "The deleted account could not be retained for offline recovery. Keep the app open and retry."
+        : "Unexpected device storage failure. Keep the app open and retry account cleanup.";
+  }
+  try {
+    const result = await signOut();
+    if (result.error)
+      message = "Local sign-out could not finish. Uploads remain paused; retry when connected.";
+  } catch (error) {
+    message =
+      error instanceof Error
+        ? "Local sign-out could not finish. Uploads remain paused; retry when connected."
+        : "Unexpected sign-out failure. Uploads remain paused; retry account cleanup.";
+  }
+  return message;
+}

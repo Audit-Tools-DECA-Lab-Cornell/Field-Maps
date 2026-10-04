@@ -191,7 +191,8 @@ Do:
 Done when: every endpoint passes its tests, including the cross-org negatives in QA-01.
 
 ### BE-08: Account deletion: `DELETE /v1/me`
-Status: todo · Phase 1 · Size M · Depends: BE-06, DB-06 · Blocks: MOB-07, OPS-11, WEB-06
+Status: done (2026-10-04) · Phase 1 · Size M · Depends: BE-06, DB-06 · Blocks: MOB-07, OPS-11, WEB-06
+Verified locally on 2026-10-04: account deletion commits the durable forgotten state before mocked Admin HTTP; sole-owner rollback, pending retries, missing Auth users, credential privacy and bounded HTTP attempts pass against local Supabase. All 22 account-deletion tests pass, including six invalid-key cases proving rejection before database changes or Admin HTTP. The final Docker API suite passes all 242 tests, including the regenerated OpenAPI contract checks. Ruff, BasedPyright and plan checks pass. Hosted Auth deletion and runtime secret provisioning remain unverified.
 Needs user: create the Supabase secret key (`sb_secret_…`) and put it in a runtime Secret File (`supabase-secret-key`) for staging and production. It is never committed.
 Do:
 1. Add a config field `auth_admin_key_file` (optional). When it is missing, the endpoint returns 503 `storage_unavailable` with an explanatory message.

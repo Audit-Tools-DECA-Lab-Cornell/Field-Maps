@@ -50,3 +50,15 @@ test("retains recognized codes on auth and server responses", () => {
 	);
 	assert.equal(parseApiError(500, { error: { code: "internal", message: "ignored", details: {} } }).code, "internal");
 });
+
+test("maps an HTML 200 body to a retry error instead of leaking a JSON parse exception", async () => {
+	const { apiRequestError } = await import("../src/lib/api/errors.ts");
+	const response = new Response("<html>upstream unavailable</html>", {
+		status: 200,
+		headers: { "content-type": "text/html" }
+	});
+	const error = await response.json().catch(apiRequestError);
+	assert.equal(error.code, "unknown");
+	assert.equal(error.kind, "retry");
+	assert.doesNotMatch(error.message, /upstream unavailable|Unexpected token/);
+});

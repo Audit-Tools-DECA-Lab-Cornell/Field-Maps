@@ -1,0 +1,8 @@
+{
+  "database_url": "postgresql+asyncpg://fieldmaps_api@127.0.0.1:54322/postgres",
+  "database_password_file": "../database/.local/fieldmaps-api-password",
+  "issuer": "http://127.0.0.1:54321/auth/v1",
+  "jwks_url": "http://127.0.0.1:54321/auth/v1/.well-known/jwks.json",
+  "audience": "authenticated",
+  "browser_origins": ["http://localhost:3000", "http://127.0.0.1:3000"]
+}

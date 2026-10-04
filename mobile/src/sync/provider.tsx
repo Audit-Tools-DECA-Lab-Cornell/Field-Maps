@@ -10,6 +10,8 @@ import {
 } from "react";
 import { AppState } from "react-native";
 import { useAccount } from "../auth/provider";
+import { legacyProjectId } from "../data/legacy/scope";
+import { connection } from "../platform/config";
 import { retryAttention } from "../storage/sync-store";
 import { createSyncCoordinator } from "./coordinator";
 import { uploadObservation } from "./upload";
@@ -23,7 +25,7 @@ const SyncContext = createContext({
 
 export function SyncProvider({ children }: PropsWithChildren) {
   const database = useSQLiteContext();
-  const { client, scope, key, current } = useAccount();
+  const { client, scope, key, current, session } = useAccount();
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState("");
   const trigger = useRef(() => {});
@@ -35,7 +37,7 @@ export function SyncProvider({ children }: PropsWithChildren) {
   }, []);
   useEffect(() => {
     const activeScope = scopeRef.current;
-    if (!client || !activeScope) return;
+    if (!client || !activeScope || !session) return;
     const controller = new AbortController();
     let online = false;
     let busy = false;
@@ -51,7 +53,14 @@ export function SyncProvider({ children }: PropsWithChildren) {
           ? data.session.access_token
           : null;
       },
-      upload: (record, token, signal) => uploadObservation(activeScope, record, token, signal),
+      upload: (record, token, signal) =>
+        uploadObservation(
+          activeScope,
+          { apiUrl: connection.apiUrl, projectId: legacyProjectId },
+          record,
+          token,
+          signal,
+        ),
     });
     const run = async () => {
       if (busy || !online || !isCurrent() || AppState.currentState !== "active") return;
@@ -95,7 +104,7 @@ export function SyncProvider({ children }: PropsWithChildren) {
       clearInterval(timer);
       trigger.current = () => {};
     };
-  }, [client, current, database, key]);
+  }, [client, current, database, key, session]);
   const retry = useCallback(async () => {
     if (key === "local") return;
     await retryAttention(database, key);

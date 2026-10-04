@@ -13,7 +13,7 @@ COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY src ./src
 COPY tests ./tests
 COPY certs ./certs
-COPY config.local.json config.hosted.json config.render.json ./
+COPY config.local.json config.auth-local.json config.hosted.json config.render.json ./
 COPY Dockerfile .dockerignore ./
 CMD ["pytest"]
 
@@ -24,7 +24,7 @@ RUN groupadd --gid 10001 fieldmaps && useradd --uid 10001 --gid fieldmaps --no-c
 COPY --from=production-dependencies /app/.venv ./.venv
 COPY src ./src
 COPY certs ./certs
-COPY config.local.json config.hosted.json config.render.json ./
+COPY config.local.json config.auth-local.json config.hosted.json config.render.json ./
 USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('PORT', '8000') + '/health', timeout=3).close()"

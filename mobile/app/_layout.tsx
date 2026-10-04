@@ -10,6 +10,7 @@ import { PrimaryAction } from "../src/components/chrome";
 import { ScreenMessage } from "../src/components/screen-message";
 import { useGate } from "../src/features/auth/gate";
 import { DataSourceProvider, PREVIEW_ALLOWED } from "../src/features/preview/data-source";
+import { MeProvider } from "../src/data/api/me-provider";
 import { useOrientationPreference } from "../src/layout/orientation";
 import { FieldSessionProvider } from "../src/session/provider";
 import { initializeDatabase } from "../src/storage/observation-store";
@@ -62,12 +63,14 @@ export default function RootLayout() {
                         which its queue reads, and above the field session, so a session may
                         read it too. */}
                     <DataSourceProvider>
+                      <MeProvider>
                       <FieldSessionProvider>
                         {/* Legacy screens are dark Nocturne. Contour screens set their own status
                             bar through the Screen primitive. */}
                         <StatusBar style="light" />
-                        <GatedStack />
-                      </FieldSessionProvider>
+                          <GatedStack />
+                        </FieldSessionProvider>
+                      </MeProvider>
                     </DataSourceProvider>
                   </SyncProvider>
                 </AuthProvider>

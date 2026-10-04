@@ -1,0 +1,7 @@
+{
+  "apiUrl": "https://api.example.invalid",
+  "supabaseUrl": "https://project.example.invalid",
+  "publishableKey": "sb_publishable_PRODUCTION_SETUP_REQUIRED",
+  "powersyncUrl": null,
+  "bundleIdSuffix": ".productionplaceholder"
+}

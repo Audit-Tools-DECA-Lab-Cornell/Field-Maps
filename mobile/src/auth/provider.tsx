@@ -2,6 +2,7 @@ import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import {
   createContext,
   type PropsWithChildren,
+  useCallback,
   useContext,
   useEffect,
   useRef,
@@ -9,10 +10,13 @@ import {
 } from "react";
 import { AppState } from "react-native";
 import { ScreenMessage } from "../components/screen-message";
+import { legacyScope } from "../data/legacy/scope";
 import { connection } from "../sync/config";
-import { scopeKey, syncScopeSchema } from "../sync/contracts";
+import { scopeKey } from "../sync/contracts";
 import type { CachedAccount } from "./cached-account";
 import { createAuthClient } from "./client";
+import { deletedAccountStore } from "./deleted-account";
+import { allowedSession, persistDeletedSignOut } from "./deleted-session";
 
 type AuthState = {
   readonly client: SupabaseClient | null;
@@ -28,17 +32,40 @@ const initial: AuthState = {
   ready: !connection,
   error: null,
 };
-const AuthContext = createContext(initial);
+const AuthContext = createContext({ ...initial, markAccountDeleted: () => {} });
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState(initial);
+  const deleted = useRef<string | null>(null);
+  const markAccountDeleted = useCallback(() => {
+    const account = state.account;
+    const client = state.client;
+    if (!account || !client) return;
+    void persistDeletedSignOut(
+      account,
+      () => {
+        deleted.current = account.id;
+        client.auth.stopAutoRefresh();
+        setState((previous) => ({
+          ...previous,
+          session: null,
+          error: "This account has been deleted. Local records remain available.",
+        }));
+      },
+      (retained) => deletedAccountStore(connection.supabaseUrl).write(retained),
+      () => client.auth.signOut({ scope: "local" }),
+    ).then((error) => {
+      if (error && deleted.current === account.id) setState((previous) => ({ ...previous, error }));
+    });
+  }, [state.account, state.client]);
   useEffect(() => {
     let active = true;
     let release = () => {};
     void createAuthClient()
       .then((result) => {
         if (!result) return;
-        const { client, account } = result;
+        const { client, account, deletedUserId } = result;
+        deleted.current = deletedUserId;
         if (!active) {
           client.auth.stopAutoRefresh();
           return;
@@ -46,6 +73,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setState({ client, account, session: null, ready: true, error: null });
         let authChanged = false;
         const { data } = client.auth.onAuthStateChange((event, session) => {
+          if (event === "SIGNED_IN" && session && session.user.id !== deleted.current) {
+            deleted.current = null;
+            deletedAccountStore(connection.supabaseUrl).clear();
+          }
+          if (event === "SIGNED_OUT" && !deleted.current)
+            deletedAccountStore(connection.supabaseUrl).clear();
+          if (deleted.current && (!session || !allowedSession(session, deleted.current))) return;
           authChanged = true;
           if (active)
             setState((previous) => ({
@@ -57,10 +91,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
             }));
         });
         const appState = AppState.addEventListener("change", (value) => {
-          if (value === "active") client.auth.startAutoRefresh();
+          if (value === "active" && !deleted.current) client.auth.startAutoRefresh();
           else client.auth.stopAutoRefresh();
         });
-        if (AppState.currentState === "active") client.auth.startAutoRefresh();
+        if (AppState.currentState === "active" && !deleted.current) client.auth.startAutoRefresh();
         release = () => {
           data.subscription.unsubscribe();
           appState.remove();
@@ -72,8 +106,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
             if (active && !authChanged)
               setState((previous) => ({
                 client,
-                session: sessionData.session,
-                account: sessionData.session?.user ?? previous.account,
+                session: allowedSession(sessionData.session, deleted.current),
+                account:
+                  allowedSession(sessionData.session, deleted.current)?.user ?? previous.account,
                 ready: true,
                 error: error ? "Could not restore sign-in. Try signing in again." : null,
               }));
@@ -106,7 +141,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
   return (
-    <AuthContext value={state}>
+    <AuthContext value={{ ...state, markAccountDeleted }}>
       {state.ready ? (
         children
       ) : (
@@ -121,15 +156,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 export function useAccount() {
   const auth = useContext(AuthContext);
-  const parsed =
-    connection && auth.ready && auth.account
-      ? syncScopeSchema.safeParse({
-          apiUrl: connection.apiUrl.replace(/\/$/, ""),
-          issuer: `${connection.supabaseUrl.replace(/\/$/, "")}/auth/v1`,
-          projectId: connection.projectId,
-          userId: auth.account.id,
-        })
-      : null;
+  const parsed = connection && auth.ready && auth.account ? legacyScope(auth.account.id) : null;
   const scope = parsed?.success ? parsed.data : null;
   const key = scope ? scopeKey(scope) : "local";
   const current = useRef(key);

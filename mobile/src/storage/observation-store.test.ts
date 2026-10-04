@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
+import { legacyScope } from "../data/legacy/scope";
 import { instrumentObservationSchema, shellObservationSchema } from "../domain/observation";
+import { scopeKey } from "../sync/contracts";
 import {
   initializeDatabase,
   type LocalDatabase,
@@ -56,6 +58,29 @@ describe("Local observation persistence", () => {
     } finally {
       database.close();
       rmSync(directory, { recursive: true });
+    }
+  });
+
+  it("lists records stored with the pre-config-change owner scope", async () => {
+    const database = new DatabaseSync(":memory:");
+    try {
+      await initializeDatabase(adapter(database));
+      const userId = "50000000-0000-4000-8000-000000000001";
+      const previousKey = JSON.stringify([
+        "http://127.0.0.1:8000",
+        "https://lezmqhuucfwqknspgcdy.supabase.co/auth/v1",
+        userId,
+        "10000000-0000-4000-8000-000000000002",
+      ]);
+      await saveObservation(adapter(database), record, previousKey);
+      const scope = legacyScope(userId);
+      if (!scope.success) throw new Error("Invalid fixture scope");
+      expect(scopeKey(scope.data)).toBe(previousKey);
+      expect(await listObservations(adapter(database), scopeKey(scope.data))).toEqual([
+        { ...record, storageStatus: "pending" },
+      ]);
+    } finally {
+      database.close();
     }
   });
 

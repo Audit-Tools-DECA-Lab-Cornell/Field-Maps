@@ -1,17 +1,26 @@
-from typing import Annotated
+from typing import Annotated, ClassVar, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from fieldmaps_api.config import Settings
 from fieldmaps_api.deps import Authentication, user_transaction
 from fieldmaps_api.errors import ERROR_RESPONSES
 from fieldmaps_api.identity_schemas import Identity, Profile, ProfilePatch
+from fieldmaps_api.repositories.identity import forget_user
+from fieldmaps_api.services.account_deletion import admin_key, delete_auth_user
 from fieldmaps_api.services.identity import get_identity, patch_profile
 
 
+class DeletionPending(BaseModel):
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+    status: Literal["pending"] = "pending"
+
+
 def create_router(
-    sessions: async_sessionmaker[AsyncSession], authenticate: Authentication
+    sessions: async_sessionmaker[AsyncSession], authenticate: Authentication, settings: Settings
 ) -> APIRouter:
     router = APIRouter(responses=ERROR_RESPONSES)
 
@@ -26,5 +35,24 @@ def create_router(
     ) -> Profile:
         async with user_transaction(sessions, user_id) as session:
             return await patch_profile(session, patch)
+
+    @router.delete(
+        "/v1/me",
+        operation_id="delete_account",
+        status_code=204,
+        response_model=None,
+        responses={202: {"model": DeletionPending}},
+    )
+    async def delete_me(user_id: Annotated[UUID, Depends(authenticate)]) -> Response:
+        key = await admin_key(settings)
+        async with user_transaction(sessions, user_id) as session:
+            await forget_user(session)
+        if await delete_auth_user(settings, key, user_id):
+            return Response(status_code=204)
+        return Response(
+            status_code=202,
+            content=DeletionPending().model_dump_json(),
+            media_type="application/json",
+        )
 
     return router

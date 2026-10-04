@@ -38,6 +38,7 @@ jobs:
       - run: pnpm --dir web install --frozen-lockfile
       - run: pnpm web:check
       - run: pnpm --dir web test:api-errors
+      - run: pnpm --dir web test:auth
       - run: pnpm build
   mobile:
     runs-on: ubuntu-latest

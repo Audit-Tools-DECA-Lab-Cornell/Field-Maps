@@ -55,3 +55,7 @@ async def update_profile(session: AsyncSession, patch: ProfilePatch) -> Profile:
         },
     )
     return Profile.model_validate_json(result.scalar_one())
+
+
+async def forget_user(session: AsyncSession) -> None:
+    await session.execute(queries.FORGET_USER)

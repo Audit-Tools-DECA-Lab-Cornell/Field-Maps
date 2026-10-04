@@ -1,7 +1,6 @@
 /**
  * The set-up flow's own state. It lives in this browser tab only (sessionStorage, see
- * features/onboarding/store.ts) and is never sent anywhere: the tenancy API (BE-07) that would create
- * the organization and its first project does not exist yet.
+ * features/onboarding/store.ts) and is never sent anywhere.
  */
 
 /** The five steps, in order. Each one is also its URL segment: /onboarding/organization, …/team. */

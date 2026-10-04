@@ -34,3 +34,5 @@ UPDATE fieldmaps.profiles SET
 WHERE user_id = fieldmaps.request_user_id() AND deleted_at IS NULL
 RETURNING row_to_json(profiles)::text
 """)
+
+FORGET_USER: Final = text("SELECT fieldmaps_private.forget_user()")
