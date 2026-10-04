@@ -15,7 +15,7 @@ def create_router(
 ) -> APIRouter:
     router = APIRouter(responses=ERROR_RESPONSES)
 
-    @router.get("/v1/projects")
+    @router.get("/v1/projects", operation_id="listProjects")
     async def projects(user_id: Annotated[UUID, Depends(authenticate)]) -> list[ProjectAccess]:
         async with user_transaction(sessions, user_id) as session:
             return await list_projects(session)

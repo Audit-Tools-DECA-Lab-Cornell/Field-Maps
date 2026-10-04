@@ -43,7 +43,12 @@ VALUES ('50000000-0000-4000-8000-000000000001',
 SET LOCAL ROLE fieldmaps_api;
 SELECT pg_temp.assert_true((SELECT count(*) = 0 FROM fieldmaps.projects), 'no identity sees no projects');
 SELECT set_config('fieldmaps.user_id', '50000000-0000-4000-8000-000000000001', true);
-SELECT pg_temp.assert_true((SELECT count(*) = 1 FROM fieldmaps.projects), 'member sees assigned project');
+DO $$ BEGIN PERFORM fieldmaps_private.ensure_profile(NULL); END $$;
+SELECT pg_temp.assert_true(
+  (SELECT array_agg(id ORDER BY id) = ARRAY[
+    '10000000-0000-4000-8000-000000000002'::uuid,
+    '10000000-0000-4000-8000-000000000102'::uuid
+  ] FROM fieldmaps.projects), 'member sees only assigned study and Training projects');
 INSERT INTO fieldmaps.observations
   (id, organization_id, project_id, site_id, form_version_id, observer_code,
    observed_at, geom, answers, created_by, upload_hash)

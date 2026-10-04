@@ -48,7 +48,7 @@ per request.
 
 These issuer/JWKS values are public. No Supabase service-role key is needed by this API. It validates the JWT signature, expiry, audience, and issuer and derives the user UUID from the signed subject. Legacy HS256 projects must switch to a supported asymmetric signing key before using this verifier. See [Supabase JWT documentation](https://supabase.com/docs/guides/auth/jwts).
 
-Tenancy functions now create organizations, projects and memberships; the HTTP identity/tenancy endpoints are still BE-06/07. For manual local provisioning, create the matching Auth and profile rows before inserting a membership. Signing in alone grants no project access. From an authorized local administrator SQL session, replace `AUTH_USER_UUID` in this statement:
+Tenancy functions create organizations, projects and memberships. `GET /v1/me` now creates an active caller's profile and Training membership; organization/project management endpoints remain BE-07. For manual local provisioning, create the matching Auth and profile rows before inserting a membership. Signing in alone grants no study-project access. From an authorized local administrator SQL session, replace `AUTH_USER_UUID` in this statement:
 
 ```sql
 INSERT INTO fieldmaps.project_memberships (user_id, organization_id, project_id, role)
@@ -90,7 +90,11 @@ base map upload fails in the browser rather than at the API.
 
 ## Contract and guarantees
 
-The app factory in `main.py` includes `routers/tenancy.py`, `routers/collection.py` and `routers/sites.py`. Routers keep authenticated transactions open around services; they complete the transaction before returning an upload receipt or package response. `deps.py` sets the caller's database identity for each transaction. Services own validation, preparation and conflict decisions; repositories perform typed SQL access through matching `queries/` modules. Pure form and map-package logic lives under `domain/`.
+The app factory in `main.py` includes identity, tenancy, collection and site routers. Routers keep authenticated transactions open around services; they complete the transaction before returning a response. `deps.py` sets the caller's database identity for each transaction. Services own validation, preparation and conflict decisions; repositories perform typed SQL access through matching `queries/` modules. Pure form and map-package logic lives under `domain/`.
+
+`make -C backend openapi` exports sorted `contracts/openapi.json` using dummy configuration, without reading secrets or opening database/network connections. `pnpm contracts:generate` also regenerates each app's TypeScript declarations. CI checks these artifacts for drift. JWT verification permits 30 seconds of clock skew and rejects anonymous tokens.
+
+`GET /v1/me` returns `profile`, `organization_memberships` and `project_memberships`. Organization owners/admins see their inherited projects with the manager role. `PATCH /v1/me` returns the profile; omitted fields are unchanged and explicit null clears nullable fields. Display names are trimmed to 1–100 characters, observer initials use 1–10 uppercase letters/digits, and locales are trimmed to 1–100 characters. Forgotten profiles and missing Auth users return `403 account_deleted`. All identity database scenarios passed against local Supabase on 2026-10-03.
 
 API exceptions use one response envelope, also declared in OpenAPI:
 
@@ -100,10 +104,12 @@ API exceptions use one response envelope, also declared in OpenAPI:
 
 Missing credentials use `unauthenticated`; rejected tokens use `token_invalid`. Both remain HTTP 401 with a Bearer challenge. Validation responses contain field identifiers and messages without the submitted input or validation context. Unexpected failures return a generic HTTP 500 response. Rejected CORS preflights retain the middleware's existing plain-text HTTP 400 response.
 
-Success bodies, URLs, status codes, archive headers and retry behavior are unchanged by BE-03. The mobile uploader decides retry/sign-in/rejection from status codes; the web package client also branches on status and displays error text. Neither depends on the former `detail` property. SQLAlchemy exceptions still produce HTTP 503; finer database error classification, readiness and observability remain BE-02.
+Success bodies, URLs, status codes and archive headers are unchanged by BE-03. Web and mobile now parse the error envelope through their typed API helpers, using local user copy and error codes for retry/sign-in/rejection. Unrecognized responses remain retryable on mobile to preserve collected records. SQLAlchemy exceptions still produce HTTP 503 outside the identity-specific deleted-account mapping; finer database error classification, readiness and observability remain BE-02.
 
 | Endpoint                                         | Behavior                                                          |
 | ------------------------------------------------ | ----------------------------------------------------------------- |
+| `GET /v1/me`                                    | Bootstrap/read the caller's profile and memberships                |
+| `PATCH /v1/me`                                  | Update only the caller's display name, observer initials or locale |
 | `GET /v1/projects`                               | Projects visible to the verified account                          |
 | `PUT /v1/projects/{project}/observations/{uuid}` | Validate and commit a new point or acknowledge an identical retry |
 | `GET /v1/projects/{project}/observations/{uuid}` | Read a permitted observation                                      |
@@ -113,6 +119,8 @@ Success bodies, URLs, status codes, archive headers and retry behavior are uncha
 | `GET /v1/projects/{project}/packages/{package}/archive` | Download the zip; the ETag is its `sha256`                  |
 
 The PUT body contains `site_id`, `form_version`, `[longitude, latitude]` coordinates, `observer`, timezone-aware `observed_at`, and the answers as further top-level keys. The site and form version are resolved against the project's own rows rather than two string literals, and each answer is validated against that form version's stored definition, so a new instrument is a seeded form version and not a code change. Unknown sites and forms are still rejected, and an answer that fails its field's type or bounds returns 422.
+
+Canonical definitions use the same defaults, conditions, dynamic options and reference checks as the mobile engine. Validation checks visible answers before pruning hidden ones; the normalization result carries the removed question IDs for the future sync endpoint. Existing stored `fields` definitions, including `shell-v1`, pass through the unchanged legacy validator. No published definition or hosted record is rewritten. Shared cases pass in Python and mobile, and local legacy upload/readback tests pass. Publishing Janet's draft remains separate work.
 
 A package submission carries the site and form version, the GeoJSON layers (`ground` and `zones` required, `paths` and `trees` optional) and optionally the `.qgz`/`.qgs` project file, base64 encoded so no multipart dependency is needed. Preparation runs five checks — layers present, layer sources, coordinate reference, imagery licence, derived geometry — and stores the result either way: a blocked package keeps its reasons but does not download. Network tile sources block unless their host is allow-listed, because imagery permission is granted rather than assumed. The archive carries no clock, so its `sha256` is a content identity: the same submission prepared again next month is byte-identical, and the ETag is stable. When it was prepared lives on the row and in the API response, not inside the zip. Rows are immutable and preparing one needs the manager role.
 

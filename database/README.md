@@ -36,6 +36,8 @@ The Before User Created hook blocks disposable email domains at signup. Only Sup
 
 ## Verification
 
+Verified locally on 2026-10-03: all 131 backend tests, the application SQL suite, Auth-hook suite and hosted verification script run against local Supabase pass. The project-list checks now initialize the profile and assert both the study and automatic Training membership, so prior identity test runs cannot invalidate the expected project list. Ruff and BasedPyright pass. Docker Desktop started normally when launched outside the restricted shell; no reinstall, database reset or hosted operation was required.
+
 Verified locally on 2026-09-26: a fresh migration reset, 94 mobile tests, 63 API tests, 88 SQL assertions and 18 hosted-script assertions on the local database. Python lint and type checks pass.
 
 DB-07 verified locally on 2026-09-30: incremental migration, 109 SQL assertions, 23 hosted-script assertions on the local database and 63 API tests. The SQL suite compares the full Training definition with the canonical JSON, tests trainee isolation and executes the scheduled purge command with cutoff and unrelated-project fixtures. All SQL fixtures roll back; no hosted deployment or device acceptance is implied.

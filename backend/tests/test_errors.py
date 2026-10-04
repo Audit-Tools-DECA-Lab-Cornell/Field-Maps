@@ -196,6 +196,7 @@ def test_openapi_preserves_routes_and_declares_error_envelope() -> None:
     assert isinstance(paths, dict)
     assert set(paths) == {
         "/health",
+        "/v1/me",
         "/v1/projects",
         "/v1/projects/{project_id}/observations/{observation_id}",
         "/v1/projects/{project_id}/packages",

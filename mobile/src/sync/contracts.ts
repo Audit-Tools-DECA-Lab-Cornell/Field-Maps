@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { components } from "../data/api/schema";
 import type { ShellObservation } from "../domain/observation";
 
 export const syncScopeSchema = z.object({
@@ -20,7 +21,7 @@ export const receiptSchema = z.object({
   accepted_revision: z.literal(1),
   received_at: z.iso.datetime({ offset: true }),
 });
-export type Receipt = Readonly<z.infer<typeof receiptSchema>>;
+export type Receipt = Readonly<components["schemas"]["UploadReceipt"]>;
 
 export function uploadPayload(record: ShellObservation) {
   return {

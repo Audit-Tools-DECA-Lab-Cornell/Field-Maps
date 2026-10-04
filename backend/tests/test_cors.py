@@ -23,6 +23,17 @@ def test_a_named_origin_may_preflight_a_package_upload() -> None:
     assert response.headers["access-control-allow-origin"] == WEB
 
 
+def test_a_named_origin_may_preflight_a_profile_update() -> None:
+    client = TestClient(create_app(Settings(browser_origins=(HttpUrl(WEB),))))
+
+    response = client.options(
+        "/v1/me", headers={**PREFLIGHT, "Access-Control-Request-Method": "PATCH"}
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == WEB
+
+
 def test_an_unnamed_origin_is_not_allowed() -> None:
     client = TestClient(create_app(Settings(browser_origins=(HttpUrl(WEB),))))
 

@@ -80,6 +80,8 @@ Uploading needs an access token for an account with the **manager** role on the 
 
 Quality checks:
 
+`pnpm api:types` regenerates declarations from `../contracts/openapi.json`. Package checks use those types; error responses use `src/lib/api/errors.ts` for validated codes and local user copy. Run `pnpm test:api-errors` for malformed-response and error-code coverage. Regenerate the backend and both apps together with root `pnpm contracts:generate`.
+
 ```bash
 pnpm check   # typecheck and lint
 pnpm build

@@ -8,6 +8,7 @@
   "main": "expo-router/entry",
   "packageManager": "pnpm@10.17.1",
   "scripts": {
+    "api:types": "openapi-typescript ../contracts/openapi.json -o src/data/api/schema.d.ts",
     "start": "EXPO_NO_DOTENV=1 expo start --dev-client",
     "ios": "EXPO_NO_DOTENV=1 expo run:ios",
     "android": "EXPO_NO_DOTENV=1 expo run:android",
@@ -54,6 +55,7 @@
     "@types/geojson": "^7946.0.16",
     "@types/node": "^25.9.7",
     "@types/react": "~19.2.2",
+    "openapi-typescript": "7.13.0",
     "typescript": "~6.0.3",
     "vitest": "^4.1.11"
   }

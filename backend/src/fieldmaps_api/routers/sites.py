@@ -21,7 +21,11 @@ def create_router(
 ) -> APIRouter:
     router = APIRouter(responses=ERROR_RESPONSES)
 
-    @router.post("/v1/projects/{project_id}/packages", status_code=201)
+    @router.post(
+        "/v1/projects/{project_id}/packages",
+        status_code=201,
+        operation_id="preparePackage",
+    )
     async def prepare(
         project_id: UUID,
         submission: PackageSubmission,
@@ -31,7 +35,10 @@ def create_router(
         async with user_transaction(sessions, user_id) as session:
             return await prepare_package(session, project_id, user_id, submission)
 
-    @router.get("/v1/projects/{project_id}/packages")
+    @router.get(
+        "/v1/projects/{project_id}/packages",
+        operation_id="listPackages",
+    )
     async def packages(
         project_id: UUID,
         user_id: Annotated[UUID, Depends(authenticate)],
@@ -40,7 +47,10 @@ def create_router(
         async with user_transaction(sessions, user_id) as session:
             return await list_packages(session, project_id, site)
 
-    @router.get("/v1/projects/{project_id}/packages/{package_id}")
+    @router.get(
+        "/v1/projects/{project_id}/packages/{package_id}",
+        operation_id="getPackage",
+    )
     async def package(
         project_id: UUID,
         package_id: UUID,
@@ -49,7 +59,22 @@ def create_router(
         async with user_transaction(sessions, user_id) as session:
             return await get_package(session, project_id, package_id)
 
-    @router.get("/v1/projects/{project_id}/packages/{package_id}/archive")
+    @router.get(
+        "/v1/projects/{project_id}/packages/{package_id}/archive",
+        operation_id="downloadPackageArchive",
+        response_class=Response,
+        response_model=None,
+        responses={
+            200: {
+                "description": "Prepared package archive",
+                "content": {"application/zip": {"schema": {"type": "string", "format": "binary"}}},
+                "headers": {
+                    "ETag": {"schema": {"type": "string"}, "description": "Quoted SHA-256 digest"},
+                    "Content-Disposition": {"schema": {"type": "string"}},
+                },
+            }
+        },
+    )
     async def archive(
         project_id: UUID,
         package_id: UUID,
