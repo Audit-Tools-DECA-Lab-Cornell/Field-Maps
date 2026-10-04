@@ -106,7 +106,8 @@ export function InkTabs({ items, label, className }: InkTabsProps) {
 		markOverflow(scroller);
 	}, [active, layout]);
 
-	// Only a change of page scrolls the bar, so a reader's own sideways scroll is left alone otherwise.
+	// A change of page, or of the bar's size below, scrolls the bar; a reader's own sideways scroll is left
+	// alone otherwise.
 	useLayoutEffect(() => {
 		const scroller = scrollerRef.current;
 		const track = trackRef.current;
@@ -114,7 +115,7 @@ export function InkTabs({ items, label, className }: InkTabsProps) {
 	}, [active]);
 
 	// Sliding starts after the first paint. A change of size (fonts loading, a narrower window) moves the
-	// pill without a slide.
+	// pill without a slide and brings the current tab back into view if the narrower bar hid it.
 	useEffect(() => {
 		const scroller = scrollerRef.current;
 		const track = trackRef.current;
@@ -125,6 +126,7 @@ export function InkTabs({ items, label, className }: InkTabsProps) {
 			track.removeAttribute("data-animate");
 			placePill(track);
 			markOverflow(scroller);
+			revealCurrent(scroller, track);
 			track.getBoundingClientRect(); // apply the new place before sliding is allowed again
 			track.setAttribute("data-animate", "");
 		});
