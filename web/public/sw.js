@@ -1,4 +1,4 @@
-const CACHE_NAME = "fieldmaps-shell-v1-contour-1";
+const CACHE_NAME = "fieldmaps-public-v2-contour-1";
 
 function cacheable(url) {
 	const parsed = new URL(url, self.location.origin);

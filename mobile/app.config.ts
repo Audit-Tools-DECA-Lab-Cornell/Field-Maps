@@ -14,7 +14,7 @@ const base = {
   version: "0.1.1",
   scheme: "fieldmaps",
   orientation: "default",
-  userInterfaceStyle: "dark",
+  userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
   ios: {
     supportsTablet: true,
@@ -57,7 +57,7 @@ const base = {
   experiments: {
     typedRoutes: true,
   },
-  backgroundColor: "#161826",
+  backgroundColor: "#F0F3EC",
   extra: {
     router: {},
     eas: {

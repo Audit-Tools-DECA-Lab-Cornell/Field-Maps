@@ -6,7 +6,7 @@ This application and the collector are one product, so they carry one design sys
 
 ## What is real
 
-The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **Only one screen is connected to the API.** Base map upload posts a real package to `POST /v1/projects/{project}/packages` and renders the checks the server returns. Every other record, count, chart and connection value comes from fixtures under [`src/data/`](src/data), generated in the browser from a fixed seed. As each screen moves to Contour, it reads hand-written fixtures in `src/fixtures/` instead, and every count is derived from those rows.
+The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **Sign-in, the account screen and base map upload are connected.** Sign-in, sign-up, verification and password recovery use Supabase through Server Actions (`src/lib/auth/actions.ts`). The account screen renders the signed-in profile and membership counts from `/v1/me` on the server. Base map upload posts a real package to `POST /v1/projects/{project}/packages` and renders the checks the server returns. Every other record, count, chart and connection value comes from fixtures: under [`src/data/`](src/data) for screens not yet rebuilt, and under `src/fixtures/` for Contour screens, where every count is derived from the rows. Contour screens move to the API as their endpoints exist (D24): a signed-in user's organization at `/o/<slug>` reads the API, and the sample workspace at `/o/deca` stays on fixtures.
 
 That is stated on the screens themselves. Today the top bar, the status footer and each section carry a notice. From WEB-22 it is stated once: a quiet **Preview data** marker in the header and one line in the footer, which replace the per-section notices (D20). The marker's popover reads: "Everything here is sample data. Nothing is read from or written to the FieldMaps database." Keep it that way while any screen reads fixtures. Preview actions, such as approving a record or publishing a form version, change only this browser session and reset on reload; none claims a server round trip. The real package upload says "Sends this package to the FieldMaps API." Proposal-only concepts (U2 to U7: zone editing, web join and observer handoff, form templates, review and publication scope, rounds, reports and saved views) carry their "PROPOSAL Ux" flag on every screen that shows them.
 
@@ -56,7 +56,7 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The fixture workspace needs no account. The account and onboarding routes require Supabase sign-in. The default map base is bundled vector geometry.
+Open [http://localhost:3000](http://localhost:3000). Without Supabase configuration, a development build opens the sample workspace (`/o/deca`) and the set-up flow preview without signing in (D23); with it, every workspace, onboarding and account route requires Supabase sign-in. The default map base is bundled vector geometry.
 
 ## Connect it to the API
 

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+import { isSampleRoute, previewBypassAllowed } from "@/lib/auth/preview";
 import { supabaseConfig } from "@/lib/supabase/config";
 
 export async function proxy(request: NextRequest) {
@@ -22,7 +23,8 @@ export async function proxy(request: NextRequest) {
 		const { data, error } = await supabase.auth.getClaims();
 		authenticated = !error && Boolean(data?.claims.sub);
 	}
-	if (protectedRoute && !authenticated) {
+	const preview = !authenticated && previewBypassAllowed() && isSampleRoute(request.nextUrl.pathname);
+	if (protectedRoute && !authenticated && !preview) {
 		const url = request.nextUrl.clone();
 		url.pathname = "/sign-in";
 		url.search = "";
