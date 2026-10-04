@@ -102,7 +102,7 @@ Done when:
 Evidence (2026-10-04): staging public Expo config, iOS Metro export, mobile TypeScript/Biome and 193 tests passed; old-scope SQLite visibility and configured upload destination/receipt checks covered. No native run claimed.
 
 ### MOB-02: Session storage that fits (LargeSecureStore)
-Status: todo · Phase 1 · Size M · Depends: MOB-01 · Blocks: MOB-05, MOB-08, MOB-09
+Status: done · Phase 1 · Size M · Depends: MOB-01 · Blocks: MOB-05, MOB-08, MOB-09
 Read first: `src/auth/client.ts`, `src/auth/cached-account.ts`; <https://supabase.com/docs/guides/getting-started/tutorials/with-expo-react-native>.
 Do:
 1. Add `src/platform/auth-storage.ts`, which implements supabase-js `storage` like this:
@@ -119,6 +119,8 @@ Do:
 4. Add unit tests with mocked SecureStore and file system: round trip, migration, a missing key, and a corrupt file (which counts as signed out, not a crash).
 
 Done when: the tests pass, and a real session larger than 2 KB persists across restarts on the simulator.
+
+Evidence (2026-10-04): AES-256-GCM adapter, exact staging migration and independent issuer-checked account identity implemented; 212 mobile tests, TypeScript and Biome pass. A fresh development build (`com.fieldmaps.collector.local`) on the iPad Pro 11-inch (M5), iOS 26.3 simulator persisted a real 24,404-byte local Supabase Auth session. After process termination and relaunch, plaintext SHA-256 comparison and retained account identity both matched. The temporary QA entry was removed and the Router entry restored. This verifies native session persistence; it does not claim hosted sign-in, full product flows or standalone Release acceptance.
 
 ### MOB-03: Route groups and auth gates
 Status: todo · Phase 1 · Size M · Depends: MOB-01, MOB-04 · Blocks: MOB-05, MOB-06, MOB-16
@@ -243,13 +245,17 @@ Done when:
 - a test with two accounts' records in the legacy file shows that deleting one account leaves the other's records intact.
 
 ### MOB-08: Never hide records on session loss
-Status: todo · Phase 1 · Size S · Depends: MOB-02, MOB-04 · Blocks: none
+Status: done · Phase 1 · Size S · Depends: MOB-02, MOB-04 · Blocks: none
 Read first: `src/auth/provider.tsx:48-58`; `src/storage/use-observations.ts:49`.
 Do:
 1. Distinguish a user-initiated sign-out from a failed refresh. On a failed refresh, keep the cached account and show the banner "Sign in to resume uploads", with a button that opens sign-in pre-filled with the email.
 2. Records stay visible under the cached account in every case except a deliberate sign-out.
 
 Done when: tests simulate `SIGNED_OUT` from a failed refresh, **followed by an app restart**, and confirm the records stay visible under the cached account.
+
+Evidence (2026-10-04): failed-refresh `SIGNED_OUT` preserves cached identity and account-scoped records through real SQLite and account-file close/reopen with account A/B isolation. Deliberate sign-out hides records until matching sign-in, including a token refresh during sign-out; a concurrent new account's cache is preserved. Failed identity-cache writes keep their warning across session loss until a durable retry. The shared banner opens Account with cached email prefilled and excludes deleted accounts. Mobile TypeScript, Biome and 217 tests pass; native recovery UI acceptance remains unverified.
+
+iOS UI check (2026-10-04): the normal iOS entry bundled, but the simulator UI check did not reach the Account screen; recovery-banner and email-prefill UI acceptance remains unverified.
 
 ### MOB-09: PowerSync foundation (database, schema, provider)
 Status: todo · Phase 2 · Size L · Depends: MOB-01, MOB-02, OPS-08, SYNC-01, SYNC-02 · Blocks: MOB-10, MOB-11, MOB-12, MOB-13, MOB-14

@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useAccount } from "../src/auth/provider";
 import {
@@ -26,12 +26,17 @@ const field = {
 } as const;
 
 export default function AccountScreen() {
-  const { client, session, account, ready, configured, error: setupError } = useAccount();
+  const { client, signOut, session, account, ready, configured, error: setupError } = useAccount();
   const { error: syncError, retry } = useSync();
-  const [email, setEmail] = useState("");
+  const cachedEmail = account?.email ?? "";
+  const signedIn = session !== null;
+  const [email, setEmail] = useState(cachedEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!signedIn) setEmail(cachedEmail);
+  }, [cachedEmail, signedIn]);
 
   async function submit() {
     if (!client || busy) return;
@@ -39,7 +44,7 @@ export default function AccountScreen() {
     setError("");
     try {
       const result = session
-        ? await client.auth.signOut({ scope: "local" })
+        ? await signOut()
         : await client.auth.signInWithPassword({ email: email.trim(), password });
       if (result.error)
         setError(

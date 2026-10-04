@@ -23,7 +23,7 @@ Current changes verified 2026-10-04: WEB-01 package uploads use a real selected 
   - `(marketing)` at `/`.
   - `(workspace)`: `/overview`, `/observations`, `/places`, `/basemaps`, `/instrument`, `/qgis`, with no project in the URL.
   - `(legal)`: `/privacy`, `/privacy/delete-data`. The privacy copy says administrators create accounts, which is wrong now that sign-up is public.
-- **Offline caching.** `public/sw.js` caches every same-origin GET, cache-first, under a fixed cache name. Once the data is live, that will serve stale data and stale builds. The manifest's `start_url` is `/`.
+- **Offline caching.** WEB-02 now generates `public/sw.js` from a source template with a token for each build. It caches only the public landing shell, icons and static build assets, validates responses, and keeps the shell network-first. The manifest opens `/o`.
 - **Tablet and touch.** The three-pane Observations view needs a width of at least 1280 px. Several tap targets are 32–40 px (`RailNav.tsx:31`, `chrome.tsx:171,423`, `PackageUpload.tsx:145`).
 
 ## Target route tree
@@ -63,7 +63,9 @@ Done when: against staging, where DB-01 is applied, a manager token uploads a pa
 Verify: `pnpm --dir web check`, plus a manual upload against staging recorded in the task notes.
 
 ### WEB-02: Service worker, manifest and indexing safety
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: WEB-10
+Status: done · Phase 0 · Size S · Depends: none · Blocks: WEB-10
+Verified 2026-10-04: 30 auth/worker tests, web typecheck/lint and production builds passed under Node 24.18.0. Consecutive rebuilds rotated worker tokens from `703ee8d0-f836-4791-b0c7-05a36e4fdb12` to `5080ce95-4057-4789-861a-c2b5170f14fc`. The second build used a temporary deployment ID, confirming rotation even when Next ignores `generateBuildId`. On the local production server at port 3014, curl returned `Allow: /$`, `Allow: /privacy*`, `Disallow: /`; the manifest opened `/o`, and `/sw.js` returned JavaScript with `no-cache, no-store, must-revalidate`. Production startup preserved the worker token. Activation removes the legacy `fieldmaps-shell-v1` cache and older FieldMaps public caches while preserving unrelated caches. No hosted deployment or browser/device installation was verified.
+
 Do:
 1. Changes to `public/sw.js`:
    - add the build id to the cache name;

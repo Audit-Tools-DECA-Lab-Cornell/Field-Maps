@@ -153,7 +153,8 @@ Standing build note, carried forward from the shell: a local Release build previ
 Finder metadata attached to a generated `ExpoModulesJSI.framework` in the Desktop workspace. No
 successful standalone Release build has been verified.
 
-**No part of this redesign has been run on a device or simulator.** The new native modules need a
+**The redesigned screens, maps and gestures have not been verified on a device or simulator.**
+Native authentication storage was verified separately on October 4, 2026, as described below. The new native modules need a
 prebuild and a rebuild first, so the checks above establish types, logic and bundling only — not
 rendering, gestures, orientation behaviour, MapLibre markers, native auth, or synchronization
 timing. The native acceptance scenario below has not been executed against this version.
@@ -208,8 +209,23 @@ field flow. Nothing on the field screen touches the network.
 
 The current `expo-sqlite` store implements an append-only upload queue, not a full bidirectional
 sync protocol. If PowerSync is selected later, migrate the queue rather than adding a second
-writer. Session tokens use SecureStore; observation data is not encrypted by an app-level SQLite
-encryption configuration. Use test data for this development slice.
+writer. Session JSON uses AES-256-GCM in `documentDirectory/auth/<storageKey>`; only its random
+256-bit encryption key is in SecureStore (`fieldmaps-auth-key`). The cipher dependency is pinned
+to `@noble/ciphers` 2.2.0 ([audit history](https://github.com/paulmillr/noble-ciphers#security)).
+Each write gets a fresh nonce and authenticates its storage key. Missing or corrupt session/key
+data counts as signed out; a fresh sign-in replaces an unusable key, while native keychain errors
+abort writes. The adapter serializes operations and never deletes `auth/last-account.json`.
+That file stores only `{userId, email, issuer}` and restores account identity for the matching
+issuer after session loss. Deliberate sign-out removes it; account deletion first retains the
+separate deleted-account marker so local records remain accessible. Staging upgrades alone
+migrate the exact old SecureStore entry, after encrypting it and retaining account identity.
+Observation data is not encrypted by an app-level SQLite encryption configuration. Use test data for this development slice.
+
+MOB-02 native verification, October 4, 2026: a real 24,404-byte session from the local Supabase
+Auth API persisted across app process termination and relaunch on the iPad Pro 11-inch (M5),
+iOS 26.3 simulator, using the fresh `com.fieldmaps.collector.local` development build. The
+restored plaintext digest and cached account both matched. The temporary verification entry
+was removed afterward; this does not establish the rest of the product acceptance flows.
 
 ## Structure
 
@@ -270,6 +286,20 @@ project selection live in an issuer/account-scoped file for offline starts. The 
 the first non-Training membership, falling back to Training. Removed memberships reset selection.
 A deleted-account response stops authenticated uploads, signs out locally, and retains account
 identity and SQLite records for later cleanup/export. Ordinary sign-out still hides account records.
+
+Failed refresh or unexpected session loss retains the cached account and its scoped SQLite
+records, including after restart. Uploads pause without a session. The shared screen banner says
+"Sign in to resume uploads" and opens the existing Account sign-in form with the cached email
+prefilled. Deleted accounts keep their deletion notice rather than offering sign-in recovery.
+Deliberate sign-out removes the cached identity and hides its records until that account signs in
+again. MOB-08's local tests exercise the provider's auth-event boundary and real SQLite/file
+close/reopen with two accounts, token refresh during deliberate sign-out, account switching, and
+an identity-cache filesystem failure. A cache-write warning remains visible after session loss
+until a successful durable identity write or deliberate sign-out. This recovery screen flow has
+not been verified natively.
+
+iOS UI check (2026-10-04): the normal iOS entry bundled, but the simulator UI check did not reach
+the Account screen; recovery-banner and email-prefill UI acceptance remains unverified.
 
 Local verification (2026-10-04): mobile TypeScript, Biome and 193 Vitest cases pass. Tests cover
 old owner-scope read visibility, a configured upload host distinct from the frozen key, receipt

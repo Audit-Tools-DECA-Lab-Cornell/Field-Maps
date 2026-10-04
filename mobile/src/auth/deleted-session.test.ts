@@ -1,5 +1,10 @@
 import { expect, it, vi } from "vitest";
-import { allowedSession, persistDeletedSignOut, restoreAccount } from "./deleted-session";
+import {
+  allowedSession,
+  persistDeletedSignOut,
+  persistDeliberateSignOut,
+  restoreAccount,
+} from "./deleted-session";
 
 const account = { id: "50000000-0000-4000-8000-000000000001" };
 it("restores a deletion guard even when SecureStore still contains the deleted session", () => {
@@ -46,4 +51,78 @@ it.each(["returns", "throws"])("handles sign-out failure when it %s", async (mod
   );
   expect(retain).toHaveBeenCalledWith(account);
   expect(error).toContain("Uploads remain paused");
+});
+
+it("restores identity on a rejected deliberate sign-out before local sign-out", async () => {
+  const restored = vi.fn();
+  const remove = vi.fn();
+  await expect(
+    persistDeliberateSignOut(
+      account,
+      remove,
+      restored,
+      () => true,
+      () => false,
+      async () => {
+        throw new Error("Network failure");
+      },
+    ),
+  ).rejects.toThrow("Network failure");
+  expect(remove).toHaveBeenCalledOnce();
+  expect(restored).toHaveBeenCalledWith(account);
+});
+it.each([
+  false,
+  true,
+])("does not resurrect an identity when local sign-out completed (rejection=%s)", async (reject) => {
+  const restored = vi.fn();
+  const promise = persistDeliberateSignOut(
+    account,
+    vi.fn(),
+    restored,
+    () => true,
+    () => true,
+    async () => {
+      if (reject) throw new Error("Network failure");
+      return { error: new Error("Network failure") };
+    },
+  );
+  if (reject) await expect(promise).rejects.toThrow("Network failure");
+  else expect((await promise).error).toBeInstanceOf(Error);
+  expect(restored).not.toHaveBeenCalled();
+});
+it("restores returned-error failures only while the original account remains current", async () => {
+  const restored = vi.fn();
+  const signOut = async () => ({ error: new Error("Network failure") });
+  await persistDeliberateSignOut(
+    account,
+    vi.fn(),
+    restored,
+    () => true,
+    () => false,
+    signOut,
+  );
+  expect(restored).toHaveBeenCalledWith(account);
+  restored.mockClear();
+  await persistDeliberateSignOut(
+    account,
+    vi.fn(),
+    restored,
+    () => false,
+    () => false,
+    signOut,
+  );
+  expect(restored).not.toHaveBeenCalled();
+});
+it("successful deliberate sign-out never restores the cached identity", async () => {
+  const restored = vi.fn();
+  await persistDeliberateSignOut(
+    account,
+    vi.fn(),
+    restored,
+    () => true,
+    () => true,
+    async () => ({ error: null }),
+  );
+  expect(restored).not.toHaveBeenCalled();
 });

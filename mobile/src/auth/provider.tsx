@@ -10,13 +10,12 @@ import {
 } from "react";
 import { AppState } from "react-native";
 import { ScreenMessage } from "../components/screen-message";
-import { legacyScope } from "../data/legacy/scope";
 import { connection } from "../sync/config";
-import { scopeKey } from "../sync/contracts";
-import type { CachedAccount } from "./cached-account";
+import { type CachedAccount, forgetAccount, rememberAccount } from "./cached-account";
 import { createAuthClient } from "./client";
 import { deletedAccountStore } from "./deleted-account";
-import { allowedSession, persistDeletedSignOut } from "./deleted-session";
+import { allowedSession, persistDeletedSignOut, persistDeliberateSignOut } from "./deleted-session";
+import { accountWorkspace, sessionChange, signInRecovery } from "./session-retention";
 
 type AuthState = {
   readonly client: SupabaseClient | null;
@@ -32,11 +31,50 @@ const initial: AuthState = {
   ready: !connection,
   error: null,
 };
-const AuthContext = createContext({ ...initial, markAccountDeleted: () => {} });
+type AuthContextValue = AuthState & {
+  readonly recovery: ReturnType<typeof signInRecovery>;
+  readonly markAccountDeleted: () => void;
+  readonly signOut: () => Promise<{ readonly error: Error | null }>;
+};
+const AuthContext = createContext<AuthContextValue>({
+  ...initial,
+  recovery: null,
+  markAccountDeleted: () => {},
+  signOut: async (): Promise<{ error: Error | null }> => ({ error: null }),
+});
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [state, setState] = useState(initial);
   const deleted = useRef<string | null>(null);
+  const retainedIdentity = useRef({ account: state.account, error: state.error });
+  retainedIdentity.current = { account: state.account, error: state.error };
+  const currentAccount = useRef<string | null>(state.account?.id ?? null);
+  currentAccount.current = state.account?.id ?? null;
+  const deliberate = useRef<{ readonly userId: string; completed: boolean } | null>(null);
+  const signOut = useCallback(async () => {
+    if (!state.client || !state.account) return { error: null };
+    const client = state.client;
+    const attempt = { userId: state.account.id, completed: false };
+    deliberate.current = attempt;
+    try {
+      const result = await persistDeliberateSignOut(
+        state.account,
+        forgetAccount,
+        (account) => rememberAccount(account, connection.supabaseUrl),
+        () => currentAccount.current === attempt.userId,
+        () => attempt.completed,
+        () => client.auth.signOut({ scope: "local" }),
+      );
+      if (!result.error && currentAccount.current === attempt.userId) {
+        currentAccount.current = null;
+        retainedIdentity.current = { account: null, error: null };
+        setState((previous) => ({ ...previous, account: null, session: null, error: null }));
+      }
+      return result;
+    } finally {
+      if (deliberate.current === attempt) deliberate.current = null;
+    }
+  }, [state.client, state.account]);
   const markAccountDeleted = useCallback(() => {
     const account = state.account;
     const client = state.client;
@@ -52,7 +90,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
           error: "This account has been deleted. Local records remain available.",
         }));
       },
-      (retained) => deletedAccountStore(connection.supabaseUrl).write(retained),
+      (retained) => {
+        deletedAccountStore(connection.supabaseUrl).write(retained);
+        forgetAccount();
+      },
       () => client.auth.signOut({ scope: "local" }),
     ).then((error) => {
       if (error && deleted.current === account.id) setState((previous) => ({ ...previous, error }));
@@ -66,6 +107,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (!result) return;
         const { client, account, deletedUserId } = result;
         deleted.current = deletedUserId;
+        retainedIdentity.current = { account, error: null };
         if (!active) {
           client.auth.stopAutoRefresh();
           return;
@@ -73,6 +115,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setState({ client, account, session: null, ready: true, error: null });
         let authChanged = false;
         const { data } = client.auth.onAuthStateChange((event, session) => {
+          if (
+            event === "SIGNED_OUT" &&
+            deliberate.current?.userId === retainedIdentity.current.account?.id &&
+            deliberate.current
+          )
+            deliberate.current.completed = true;
           if (event === "SIGNED_IN" && session && session.user.id !== deleted.current) {
             deleted.current = null;
             deletedAccountStore(connection.supabaseUrl).clear();
@@ -81,14 +129,22 @@ export function AuthProvider({ children }: PropsWithChildren) {
             deletedAccountStore(connection.supabaseUrl).clear();
           if (deleted.current && (!session || !allowedSession(session, deleted.current))) return;
           authChanged = true;
+          const identity = sessionChange(
+            retainedIdentity.current.account,
+            event,
+            session,
+            connection.supabaseUrl,
+            deliberate.current?.userId ?? null,
+            retainedIdentity.current.error,
+          );
+          retainedIdentity.current = identity;
+          currentAccount.current = identity.account?.id ?? null;
           if (active)
-            setState((previous) => ({
+            setState({
               client,
-              session,
               ready: true,
-              error: null,
-              account: session?.user ?? (event === "SIGNED_OUT" ? null : previous.account),
-            }));
+              ...identity,
+            });
         });
         const appState = AppState.addEventListener("change", (value) => {
           if (value === "active" && !deleted.current) client.auth.startAutoRefresh();
@@ -141,7 +197,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
   return (
-    <AuthContext value={{ ...state, markAccountDeleted }}>
+    <AuthContext
+      value={{
+        ...state,
+        recovery: signInRecovery(state.account, state.session, deleted.current),
+        markAccountDeleted,
+        signOut,
+      }}
+    >
       {state.ready ? (
         children
       ) : (
@@ -156,9 +219,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 export function useAccount() {
   const auth = useContext(AuthContext);
-  const parsed = connection && auth.ready && auth.account ? legacyScope(auth.account.id) : null;
-  const scope = parsed?.success ? parsed.data : null;
-  const key = scope ? scopeKey(scope) : "local";
+  const { scope, key } = accountWorkspace(connection && auth.ready ? auth.account : null);
   const current = useRef(key);
   current.current = key;
   return { ...auth, scope, key, current, configured: connection !== null };

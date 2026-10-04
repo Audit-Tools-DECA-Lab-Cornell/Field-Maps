@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SessionBanner } from "../auth/session-banner";
 import { useFieldSession } from "../session/provider";
 import { colors, space } from "../theme";
 import { ScreenFooter } from "./chrome";
@@ -22,6 +23,7 @@ export function Screen({ children }: PropsWithChildren) {
         paddingRight: insets.right,
       }}
     >
+      <SessionBanner />
       <View style={{ flex: 1, minHeight: 0 }}>{children}</View>
       <ScreenFooter>{status}</ScreenFooter>
       <View style={{ height: insets.bottom }} />

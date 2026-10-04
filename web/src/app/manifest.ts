@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
 		name: "FieldMaps",
 		short_name: "FieldMaps",
 		description: "Manage FieldMaps projects, places, instruments and collected observations.",
-		start_url: "/",
+		start_url: "/o",
 		display: "standalone",
 		// Nocturne's ground and surface, the same two values the collector opens on.
 		background_color: "#161826",
