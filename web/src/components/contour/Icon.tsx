@@ -207,7 +207,9 @@ function HeldGlyph({ size, strokeWidth, ...rest }: Omit<IconProps, "name" | "lab
 }
 
 export function Icon({ name, size = 18, strokeWidth = 2, label, className, ...rest }: IconProps) {
-	const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true as const, focusable: "false" as const };
+	const a11y = label
+		? { role: "img", "aria-label": label }
+		: { "aria-hidden": true as const, focusable: "false" as const };
 	if (name === "held")
 		return <HeldGlyph size={size} strokeWidth={strokeWidth} className={className} {...a11y} {...rest} />;
 	const Glyph = LUCIDE[name];
