@@ -1,4 +1,4 @@
-const CACHE_NAME = "fieldmaps-shell-v1";
+const CACHE_NAME = "fieldmaps-shell-v1-contour-1";
 
 self.addEventListener("install", event => {
 	event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.add("/")));
