@@ -8,6 +8,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "../src/auth/provider";
 import { PrimaryAction } from "../src/components/chrome";
 import { ScreenMessage } from "../src/components/screen-message";
+import { useGate } from "../src/features/auth/gate";
+import { DataSourceProvider, PREVIEW_ALLOWED } from "../src/features/preview/data-source";
 import { useOrientationPreference } from "../src/layout/orientation";
 import { FieldSessionProvider } from "../src/session/provider";
 import { initializeDatabase } from "../src/storage/observation-store";
@@ -56,18 +58,17 @@ export default function RootLayout() {
               >
                 <AuthProvider>
                   <SyncProvider>
-                    <FieldSessionProvider>
-                      {/* Legacy screens are dark Nocturne. Contour screens set their own status
-                          bar through the Screen primitive. */}
-                      <StatusBar style="light" />
-                      <Stack
-                        screenOptions={{
-                          headerShown: false,
-                          contentStyle: { backgroundColor: colors.bg },
-                          animation: "fade",
-                        }}
-                      />
-                    </FieldSessionProvider>
+                    {/* Preview or device data for every screen. It sits under Sync and SQLite,
+                        which its queue reads, and above the field session, so a session may
+                        read it too. */}
+                    <DataSourceProvider>
+                      <FieldSessionProvider>
+                        {/* Legacy screens are dark Nocturne. Contour screens set their own status
+                            bar through the Screen primitive. */}
+                        <StatusBar style="light" />
+                        <GatedStack />
+                      </FieldSessionProvider>
+                    </DataSourceProvider>
                   </SyncProvider>
                 </AuthProvider>
               </SQLiteProvider>
@@ -76,6 +77,47 @@ export default function RootLayout() {
         </ThemeProvider>
       </PreferencesProvider>
     </GestureHandlerRootView>
+  );
+}
+
+/**
+ * The routes each part of the app may open (useGate). Signed out: sign-in only. Signed in without a
+ * finished observer profile: onboarding only. Otherwise the app. When the gate changes, Stack.Protected
+ * drops the routes that closed and lands on the first one that opened, so a finished onboarding or a
+ * sign-out moves on without a screen navigating by itself. The review routes stay open in development
+ * and review builds whatever the gate says.
+ *
+ * Routes not listed here are not guarded; list new app routes in the app group.
+ */
+function GatedStack() {
+  const { signedIn, needsOnboarding } = useGate();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.bg },
+        animation: "fade",
+      }}
+    >
+      <Stack.Protected guard={signedIn && !needsOnboarding}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="brief" />
+        <Stack.Screen name="field" />
+        <Stack.Screen name="review" />
+        <Stack.Screen name="saved" />
+        <Stack.Screen name="records" />
+        <Stack.Screen name="account" />
+      </Stack.Protected>
+      <Stack.Protected guard={signedIn && needsOnboarding}>
+        <Stack.Screen name="(onboarding)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!signedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+      <Stack.Protected guard={PREVIEW_ALLOWED}>
+        <Stack.Screen name="(dev)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
 

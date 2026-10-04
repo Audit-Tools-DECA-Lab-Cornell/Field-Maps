@@ -9,9 +9,11 @@
  *   adb shell am start -W -a android.intent.action.VIEW -d fieldmaps://gallery
  *
  * The Day / Dusk switch at the top writes the observer's screen preference, so the choice stays
- * after the gallery closes. Screens compose these primitives and never restyle them; if something
+ * after the gallery closes. "Open the states screen" leads to (dev)/states, which switches the sign-in
+ * gate and the data source. Screens compose these primitives and never restyle them; if something
  * looks wrong here, fix the primitive, not the screen.
  */
+import { router } from "expo-router";
 import type { BottomTabBarProps } from "expo-router/tabs";
 import { type ReactNode, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -256,6 +258,13 @@ export default function GalleryScreen() {
             testID="gallery-scheme"
           />
         </Field>
+        <TextLink
+          label="Open the states screen"
+          arrow="right"
+          onPress={() => router.push("/states")}
+          accessibilityHint="Switches the sign-in gate, the data source and the screen theme."
+          testID="gallery-states"
+        />
       </View>
 
       <View style={s.content}>

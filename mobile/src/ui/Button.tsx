@@ -170,7 +170,10 @@ export function Button({
   const role = LABEL_ROLE[size];
   const iconSize = ICON_SIZE[size];
   const shown = busy && busyLabel ? busyLabel : label;
-  const other = busyLabel && busyLabel !== label ? (busy ? label : busyLabel) : undefined;
+  // A full-width button cannot change width, so it needs no ghost; one would push the label and its
+  // glyphs off centre ("Verify email" sizing itself for "Verifying email…").
+  const other =
+    !fullWidth && busyLabel && busyLabel !== label ? (busy ? label : busyLabel) : undefined;
   const slop = variant !== "link" && size === "sm" ? (t.size.touch - SMALL_CONTROL) / 2 : 0;
   const showReason = disabled && Boolean(disabledReason);
   const sizeStyle = variant === "link" ? s.link : s[size];
