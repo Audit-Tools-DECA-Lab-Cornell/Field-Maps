@@ -76,7 +76,9 @@ export function CodeInput({
         onChangeText={(raw) => {
           const code = cleanCode(kind, raw, target);
           onChangeText(code);
-          if (code.length === target && value.length < target) onComplete?.(code);
+          // A full code that differs from the last one submits, so pasting a corrected code over a
+          // rejected one does not need the field cleared first.
+          if (code.length === target && code !== value) onComplete?.(code);
         }}
         style={[styles.code, style]}
       />
