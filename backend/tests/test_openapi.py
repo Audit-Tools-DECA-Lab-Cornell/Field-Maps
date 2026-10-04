@@ -46,6 +46,9 @@ def test_operations_have_stable_ids_and_typed_responses() -> None:
             assert "503" in operation.responses
             for status, raw_response in operation.responses.items():
                 response = Response.model_validate(raw_response)
+                if status == "204":
+                    assert not response.content
+                    continue
                 assert response.content
                 if status.startswith("2"):
                     assert all(media.schema_ is not None for media in response.content.values())

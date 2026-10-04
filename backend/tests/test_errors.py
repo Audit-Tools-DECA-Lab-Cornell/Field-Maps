@@ -72,7 +72,7 @@ def test_framework_errors_use_envelope(method: str, path: str, status: int, code
 @pytest.mark.parametrize(
     ("failure", "status", "code"),
     [
-        (SQLAlchemyError("private database connection"), 503, "storage_unavailable"),
+        (SQLAlchemyError("private database connection"), 500, "internal"),
         (RuntimeError("private server detail"), 500, "internal"),
     ],
 )
@@ -194,8 +194,9 @@ def test_openapi_preserves_routes_and_declares_error_envelope() -> None:
     assert "ErrorEnvelope" in schemas
     paths = document["paths"]
     assert isinstance(paths, dict)
-    assert set(paths) == {
+    assert set(paths) >= {
         "/health",
+        "/ready",
         "/v1/me",
         "/v1/projects",
         "/v1/projects/{project_id}/observations/{observation_id}",

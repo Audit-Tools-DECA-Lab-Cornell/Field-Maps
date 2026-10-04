@@ -1,14 +1,31 @@
-FROM python:3.13-slim
+FROM python:3.13-slim AS base
 COPY --from=ghcr.io/astral-sh/uv:0.10.9 /uv /bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
+ENV PATH="/app/.venv/bin:$PATH"
+
+FROM base AS production-dependencies
+RUN uv sync --frozen --no-dev --no-install-project
+
+FROM base AS test
 RUN uv sync --frozen --no-install-project
+COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
 COPY src ./src
 COPY tests ./tests
 COPY certs ./certs
 COPY config.local.json config.hosted.json config.render.json ./
-# The build metadata travels with the image so the check that these two agree runs
-# wherever the tests run, including inside the container.
 COPY Dockerfile .dockerignore ./
-# Shell form so PORT is expanded: hosts that assign a port set it, and 8000 is the local default.
-CMD /app/.venv/bin/uvicorn --app-dir src fieldmaps_api.main:create_app_from_config --factory --host 0.0.0.0 --port ${PORT:-8000}
+CMD ["pytest"]
+
+FROM python:3.13-slim AS runtime
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1
+RUN groupadd --gid 10001 fieldmaps && useradd --uid 10001 --gid fieldmaps --no-create-home fieldmaps
+COPY --from=production-dependencies /app/.venv ./.venv
+COPY src ./src
+COPY certs ./certs
+COPY config.local.json config.hosted.json config.render.json ./
+USER 10001:10001
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('PORT', '8000') + '/health', timeout=3).close()"
+CMD ["sh", "-c", "exec uvicorn --app-dir src fieldmaps_api.main:create_app_from_config --factory --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

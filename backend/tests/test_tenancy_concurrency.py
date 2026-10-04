@@ -12,7 +12,7 @@ from sqlalchemy.pool import NullPool
 
 from fieldmaps_api.config import Settings
 from fieldmaps_api.database import database_connection
-from tests.local_database import admin_sql
+from tests.local_database import admin_sql, database_url
 
 pytestmark = pytest.mark.integration
 PASSWORD_FILE = Path(__file__).resolve().parents[2] / "database/.local/fieldmaps-api-password"
@@ -66,7 +66,7 @@ def tenancy() -> Iterator[tuple[UUID, UUID, UUID, UUID, str]]:
 async def act_together(first: UUID, second: UUID, statement: str, target: str) -> list[str]:
     connection = database_connection(
         Settings(
-            database_url="postgresql+asyncpg://fieldmaps_api@127.0.0.1:54322/postgres",
+            database_url=database_url(),
             database_password_file=PASSWORD_FILE,
         )
     )

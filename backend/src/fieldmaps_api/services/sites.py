@@ -12,6 +12,7 @@ from fieldmaps_api.errors import (
 )
 from fieldmaps_api.repositories import sites
 from fieldmaps_api.schemas import PackageDetail, PackageSummary
+from fieldmaps_api.services.tenancy import project
 
 
 async def prepare_package(
@@ -54,6 +55,7 @@ async def prepare_package(
 async def list_packages(
     session: AsyncSession, project_id: UUID, site_code: str | None
 ) -> list[PackageSummary]:
+    await project(session, project_id)
     return await sites.list_packages(session, project_id, site_code)
 
 
