@@ -6,12 +6,8 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
 
 import { cx } from "@/lib/cx";
 
+import { MENU_SURFACE, OVERLAY_MOTION } from "./classes";
 import { Icon, type IconName } from "./Icon";
-
-/** The floating island surface that menus and popovers share: island fill, fine edge, the ledge. */
-export const MENU_SURFACE = "rounded-panel border border-line bg-island text-ink shadow-ledge";
-
-const MOTION = "data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in";
 
 /* 44 px rows. The focus ring is drawn just inside the row, so it never overlaps its neighbours. */
 const ITEM = cx(
@@ -48,7 +44,7 @@ export function MenuContent({
 				{...rest}
 				className={cx(
 					MENU_SURFACE,
-					MOTION,
+					OVERLAY_MOTION,
 					"z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-56 overflow-y-auto p-1.5",
 					"origin-(--radix-dropdown-menu-content-transform-origin)",
 					className

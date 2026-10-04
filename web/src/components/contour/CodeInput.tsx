@@ -4,7 +4,6 @@ import {
 	type ChangeEvent,
 	type ClipboardEvent,
 	type ComponentPropsWithRef,
-	type Ref,
 	useCallback,
 	useLayoutEffect,
 	useRef
@@ -12,10 +11,13 @@ import {
 
 import { cx } from "@/lib/cx";
 
-import { controlFrame, useFieldControl } from "./Field";
+import { controlFrame } from "./classes";
+import { cleanCode, type CodeKind } from "./code";
+import { useFieldControl } from "./Field";
+import { assignRef } from "./refs";
 
-/** `otp` is the six-digit email code; `join` is a project join code of capital letters and digits. */
-export type CodeKind = "otp" | "join";
+/* The code rules live in ./code so server components can use them; they stay importable from here too. */
+export { cleanCode, codeCounter, type CodeKind } from "./code";
 
 export type CodeInputProps = Omit<
 	ComponentPropsWithRef<"input">,
@@ -32,25 +34,6 @@ export type CodeInputProps = Omit<
 	invalid?: boolean;
 	autoFocus?: boolean;
 };
-
-/** How much of a code is in: "4 of 6". Pass it to the Field's counter. */
-export function codeCounter(value: string, length: number): string {
-	return `${Math.min(value.length, length)} of ${length}`;
-}
-
-/**
- * Keeps only what a code can hold: digits for `otp`; capital letters and digits for `join`. Spaces,
- * hyphens and anything else go, and full-width characters fold to ASCII, so "482 913" and "deca-2026" work.
- */
-export function cleanCode(raw: string, kind: CodeKind): string {
-	const text = raw.normalize("NFKC");
-	return kind === "otp" ? text.replace(/[^0-9]/g, "") : text.toUpperCase().replace(/[^A-Z0-9]/g, "");
-}
-
-function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
-	if (typeof ref === "function") ref(value);
-	else if (ref) ref.current = value;
-}
 
 /**
  * One wide field for a whole code, never a row of boxes: it takes a paste, a password manager or the

@@ -12,7 +12,10 @@ export type IslandProps = {
 	meta?: ReactNode;
 	/** Controls on the right of the header, usually one TextLink. */
 	actions?: ReactNode;
-	/** danger: an attention edge, no ledge, and an attention title with the warning glyph. */
+	/**
+	 * danger: no fill (the ground shows through), a 2 px attention edge, no ledge, and an attention title
+	 * with the warning glyph (org-04, "Delete organization").
+	 */
 	tone?: "default" | "danger";
 	/** No body padding, for a table, a list of ruled rows or a map that runs to the edges. */
 	flush?: boolean;
@@ -59,8 +62,8 @@ export function Island({
 			aria-labelledby={labelledBy}
 			{...rest}
 			className={cx(
-				"min-w-0 rounded-island border bg-island text-ink",
-				danger ? "border-attention" : "border-line shadow-ledge",
+				"min-w-0 rounded-island text-ink",
+				danger ? "border-2 border-attention" : "border border-line bg-island shadow-ledge",
 				flush && "overflow-hidden",
 				className
 			)}>

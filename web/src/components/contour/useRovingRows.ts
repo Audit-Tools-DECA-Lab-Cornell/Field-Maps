@@ -1,3 +1,5 @@
+"use client";
+
 import { type KeyboardEvent, useRef } from "react";
 
 export type RovingRowsOptions = {

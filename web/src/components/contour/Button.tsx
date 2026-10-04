@@ -3,6 +3,7 @@ import { type ComponentPropsWithRef, type MouseEvent, type ReactNode, useId } fr
 
 import { cx } from "@/lib/cx";
 
+import { CONTROL_TRANSITION } from "./classes";
 import { Icon, type IconName } from "./Icon";
 
 export type ButtonVariant = "primary" | "ink" | "outline" | "soft" | "danger" | "danger-solid" | "ghost";
@@ -24,9 +25,6 @@ export type ButtonLook = {
 	/** Stretch to the width of the container. */
 	fullWidth?: boolean;
 };
-
-const MOTION =
-	"transition-[color,background-color,border-color,opacity,transform] duration-(--ct-duration-quick) ease-standard";
 
 /* sm draws at 36 px but keeps a 44 px target: the ::before box extends 4 px above and below. */
 const SIZE: Record<ButtonSize, string> = {
@@ -71,7 +69,7 @@ export function buttonClasses({
 	return cx(
 		"inline-flex items-center justify-center gap-2 rounded-pill text-center font-semibold",
 		"not-disabled:active:opacity-90 disabled:cursor-not-allowed",
-		MOTION,
+		CONTROL_TRANSITION,
 		SIZE[size],
 		VARIANT[variant],
 		DISABLED[variant],

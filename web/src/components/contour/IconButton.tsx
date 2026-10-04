@@ -2,6 +2,7 @@ import type { ComponentPropsWithRef } from "react";
 
 import { cx } from "@/lib/cx";
 
+import { CONTROL_TRANSITION } from "./classes";
 import { Icon, type IconName } from "./Icon";
 
 export type IconButtonVariant = "map" | "plain" | "ink" | "outline";
@@ -20,9 +21,6 @@ export type IconButtonProps = {
 	 */
 	active?: boolean;
 } & Omit<ComponentPropsWithRef<"button">, "children">;
-
-const MOTION =
-	"transition-[color,background-color,border-color,opacity,transform] duration-(--ct-duration-quick) ease-standard";
 
 const SIZE = {
 	md: "size-11",
@@ -71,7 +69,7 @@ export function IconButton({
 			className={cx(
 				"inline-flex shrink-0 items-center justify-center rounded-pill",
 				"not-disabled:active:opacity-90 disabled:cursor-not-allowed disabled:opacity-50",
-				MOTION,
+				CONTROL_TRANSITION,
 				SIZE[size],
 				active ? look.active : look.rest,
 				className

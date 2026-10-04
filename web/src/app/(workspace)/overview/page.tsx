@@ -44,7 +44,7 @@ export default function OverviewPage() {
 				lead={PROJECT.summary}
 			/>
 
-			<div className="px-gutter pb-page">
+			<div className="px-gutter pb-10">
 				<AttentionNote
 					title="These screens read local fixtures, not the database"
 					body="The collector’s uploads are real and QGIS reads them, but this application has not been connected to the API. Every record, count and chart below is generated in the browser from a fixed seed, previewing how this workspace will read once janet-test-v1 is published — the database itself holds two shell-v1 practice records today. Nothing here has been written anywhere.">

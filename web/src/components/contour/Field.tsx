@@ -71,21 +71,6 @@ export function useFieldCounter(count: string | null): boolean {
 	return Boolean(setCounter);
 }
 
-/**
- * The frame every Contour text control shares: a 2 px ink edge, the input radius and the island fill.
- * Invalid takes the attention edge; read-only sits in the well with a quiet edge and secondary ink.
- * Size and padding are the control's own. Focus uses the global ring.
- */
-export function controlFrame({ invalid = false, readOnly = false }: { invalid?: boolean; readOnly?: boolean }) {
-	return cx(
-		"w-full rounded-input border-2 placeholder:text-ink-2",
-		"transition-[color,background-color,border-color] duration-(--ct-duration-quick) ease-standard",
-		"disabled:cursor-not-allowed disabled:opacity-50",
-		readOnly ? "bg-well text-ink-2" : "bg-island text-ink",
-		invalid ? "border-attention" : readOnly ? "border-line" : "border-ink"
-	);
-}
-
 export type FieldProps = {
 	label: ReactNode;
 	/** The control's id. The hint, error, success and counter ids derive from it (see useFieldIds). */

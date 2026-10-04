@@ -22,7 +22,7 @@ export default function BasemapsPage() {
 				lead="A .qgz file is not a package. It references its sources, so preparation resolves them, checks the CRS, renders only the imagery the licence permits, and only then produces something downloadable. Below, dropping the exported layers previews them on a map and checks them in the browser before anything is sent — the server's own checks still have the last word."
 			/>
 
-			<div className="px-gutter pb-page">
+			<div className="px-gutter pb-10">
 				<div className="grid grid-cols-1 gap-wide lg:grid-cols-3">
 					{BASEMAP_PACKAGES.map(pkg => {
 						const site = SITES.find(entry => entry.id === pkg.siteId);

@@ -7,10 +7,11 @@ import { MOTION } from "@/lib/contour";
 import { cx } from "@/lib/cx";
 
 import { Icon } from "./Icon";
-import { NOTE_ICON } from "./Note";
-import { type Tone, TONE_SOFT, TONE_TEXT } from "./tone";
+import { NOTE_ICON, type NoteTone } from "./Note";
+import { TONE_SOFT, TONE_TEXT } from "./tone";
 
-export type ToastTone = Tone | "neutral";
+/** A toast takes the same tones as a Note: a state, or neutral for no glyph. */
+export type ToastTone = NoteTone;
 
 export type ToastActionOptions = {
 	/** One or two words: "Undo". */
@@ -116,7 +117,7 @@ function ToastCard({ entry, onOpenChange }: { entry: ToastEntry; onOpenChange: (
 			{tone !== "neutral" && (
 				<span
 					className={cx(
-						"grid size-6 shrink-0 place-items-center rounded-full",
+						"grid size-6 shrink-0 place-items-center rounded-pill",
 						TONE_SOFT[tone],
 						TONE_TEXT[tone]
 					)}>

@@ -1,16 +1,18 @@
-import { useSyncExternalStore } from "react";
 import { z } from "zod";
+
+import type { ThemeName } from "@/lib/contour";
 
 import mapPalettesContract from "../../../contracts/map-palettes.json";
 
 /**
- * The map canvas's own palette, separate from the Nocturne chrome around it. `contracts/map-palettes.json`
+ * The map canvas's own palette, separate from the Contour chrome around it. `contracts/map-palettes.json`
  * is the single source for this: the mobile collector reads the same file, so a site looks the same to
  * the observer and the manager regardless of which app drew it.
  *
- * Leaflet hands path options to canvas/SVG attributes in JavaScript, which cannot read a CSS custom
- * property — the reason `data/site-geometry.ts` already states for `PLAN_PAINT` — so map colour has to
- * stay literal hex from here on down, never a Nocturne token.
+ * The site plan (`components/map/SitePlan`) and the remaining Leaflet screens hand these colours to SVG
+ * attributes and path options in JavaScript, so map colour stays literal hex from here on down, never a
+ * Contour token. This module holds no React state, so server components can read the palettes too; the
+ * reader's choice lives in `map-palette-store.ts`.
  */
 
 const swatchSchema = z.object({ fill: z.string(), edge: z.string() });
@@ -32,6 +34,9 @@ const zoneSchema = z.object({
 	label: z.string()
 });
 
+/** The pill behind a zone's name on the plan: a light pill in Day, a dark one in Night. */
+const zoneLabelSchema = z.object({ fill: z.string(), text: z.string() });
+
 const observationSchema = z.object({ fill: z.string(), ring: z.string(), selected: z.string() });
 
 const paletteSchema = z.object({
@@ -46,6 +51,7 @@ const paletteSchema = z.object({
 	tree: treeSchema,
 	path: z.object({ line: z.string() }),
 	zone: zoneSchema,
+	zoneLabel: zoneLabelSchema,
 	observation: observationSchema
 });
 
@@ -70,6 +76,15 @@ export const MAP_PALETTE_ORDER: readonly MapPaletteName[] = CONTRACT.order;
 
 export const DEFAULT_PALETTE: MapPaletteName = CONTRACT.default;
 
+/**
+ * The Contour theme for chrome drawn over a map: the overlay label, the zoom and Layers buttons, the scale
+ * chip and a marker's focus ring. It follows the palette, not the screen: Day chrome over a light palette,
+ * Dusk chrome over a dark one (System 3 draws the Night plan's label dark on a Day page).
+ */
+export function mapChromeTheme(name: MapPaletteName): ThemeName {
+	return MAP_PALETTES[name].tiles === "dark" ? "dusk" : "day";
+}
+
 export type TileConfig = {
 	readonly url: string;
 	readonly subdomains: string;
@@ -93,75 +108,4 @@ export const MAP_TILES: Record<MapPalette["tiles"], TileConfig> = {
 	}
 };
 
-/* ── A tiny external store over localStorage ─────────────────────────────────
-   Both maps on a page read this through `useMapPalette`, so switching the
-   palette on one switches it on the other. `useSyncExternalStore` is what lets
-   that happen without setting state inside an effect: the store itself is the
-   source of truth, and React is told to re-render when it changes.
-   ─────────────────────────────────────────────────────────────────────────── */
-
-const STORAGE_KEY = "fieldmaps.map.palette";
-
-type Listener = () => void;
-
-const listeners = new Set<Listener>();
-let current: MapPaletteName = DEFAULT_PALETTE;
-let hydrated = false;
-
-function isPaletteName(value: string | null): value is MapPaletteName {
-	return value === "day" || value === "night";
-}
-
-function readStored(): MapPaletteName {
-	try {
-		const stored = window.localStorage.getItem(STORAGE_KEY);
-		return isPaletteName(stored) ? stored : DEFAULT_PALETTE;
-	} catch {
-		return DEFAULT_PALETTE;
-	}
-}
-
-function emit() {
-	for (const listener of listeners) listener();
-}
-
-function subscribe(listener: Listener): () => void {
-	listeners.add(listener);
-	return () => {
-		listeners.delete(listener);
-	};
-}
-
-/**
- * The client snapshot. Hydrating from `localStorage` here, on first read, rather than in an effect
- * keeps this a plain `useSyncExternalStore` read — React calls it again right after mount to check
- * for a change from the server snapshot, which is exactly where the stored choice first appears.
- */
-function getSnapshot(): MapPaletteName {
-	if (!hydrated) {
-		hydrated = true;
-		current = readStored();
-	}
-	return current;
-}
-
-/** The server — and the client's first paint, before hydration — always sees the contract default. */
-function getServerSnapshot(): MapPaletteName {
-	return DEFAULT_PALETTE;
-}
-
-export function setMapPalette(name: MapPaletteName): void {
-	hydrated = true;
-	current = name;
-	try {
-		window.localStorage.setItem(STORAGE_KEY, name);
-	} catch {
-		// Best-effort persistence: the choice still applies for every map on this page.
-	}
-	emit();
-}
-
-export function useMapPalette(): readonly [MapPaletteName, (name: MapPaletteName) => void] {
-	const name = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-	return [name, setMapPalette];
-}
+export { setMapPalette, useMapPalette } from "./map-palette-store";

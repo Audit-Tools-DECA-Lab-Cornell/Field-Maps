@@ -4,13 +4,13 @@ import { cx } from "@/lib/cx";
 
 export type KbdProps = ComponentPropsWithRef<"kbd">;
 
-/** A key or key combination, as in the header search ("⌘K"). */
+/** A key or key combination, as in the header search ("⌘K"): mono in a small chip with 6 px corners. */
 export function Kbd({ className, children, ...rest }: KbdProps) {
 	return (
 		<kbd
 			{...rest}
 			className={cx(
-				"inline-flex items-center rounded border border-line px-1.5 font-mono text-xs leading-5 whitespace-nowrap text-ink-2",
+				"inline-flex items-center rounded-[6px] border border-line px-1.5 font-mono text-xs leading-5 whitespace-nowrap text-ink-2",
 				className
 			)}>
 			{children}

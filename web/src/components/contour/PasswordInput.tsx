@@ -1,16 +1,12 @@
 "use client";
 
-import { type Ref, useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { useFieldControl } from "./Field";
+import { assignRef } from "./refs";
 import { TextInput, type TextInputProps } from "./TextInput";
 
 export type PasswordInputProps = Omit<TextInputProps, "type" | "trailing">;
-
-function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
-	if (typeof ref === "function") ref(value);
-	else if (ref) ref.current = value;
-}
 
 /**
  * A TextInput with a Show / Hide button inside its end. The button is a toggle (aria-pressed) whose name

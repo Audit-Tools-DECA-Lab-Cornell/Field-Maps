@@ -47,7 +47,7 @@ export default function InstrumentPage() {
 				}
 			/>
 
-			<div className="px-gutter pb-page">
+			<div className="px-gutter pb-10">
 				<FormStudio sources={SOURCES} initialVersion="janet-test-v1" />
 
 				<FadeRule className="my-wide" />

@@ -22,6 +22,7 @@
       "tree": { "fill": "#a9cc99", "edge": "#5c8a4b", "opacity": 0.85 },
       "path": { "line": "#b3b6bf" },
       "zone": { "fill": "#796cbf", "fillOpacity": 0.08, "edge": "#5d5294", "label": "#423a6a" },
+      "zoneLabel": { "fill": "#f8f7f3", "text": "#423a6a" },
       "observation": { "fill": "#5d5294", "ring": "#ffffff", "selected": "#2b2741" }
     },
     "night": {
@@ -42,6 +43,7 @@
       "tree": { "fill": "#2b3527", "edge": "#41553a", "opacity": 0.85 },
       "path": { "line": "#2f3243" },
       "zone": { "fill": "#9184d9", "fillOpacity": 0.06, "edge": "#796cbf", "label": "#75798c" },
+      "zoneLabel": { "fill": "#212338", "text": "#cfcdf0" },
       "observation": { "fill": "#5d5294", "ring": "#d2cefd", "selected": "#b5abfc" }
     }
   }

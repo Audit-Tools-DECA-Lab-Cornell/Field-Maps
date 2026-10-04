@@ -145,7 +145,7 @@ export function ScreenState({
 			className={cx("flex flex-col items-start px-island-pad py-14", className)}>
 			<span
 				className={cx(
-					"grid size-14 shrink-0 place-items-center rounded-full",
+					"grid size-14 shrink-0 place-items-center rounded-pill",
 					error ? "bg-attention-soft text-attention" : "bg-well text-ink"
 				)}>
 				<Icon name={icon ?? message.icon} size={24} />

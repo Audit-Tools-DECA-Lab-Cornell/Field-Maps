@@ -4,7 +4,8 @@ import { type ChangeEvent, type ComponentPropsWithRef, useState } from "react";
 
 import { cx } from "@/lib/cx";
 
-import { controlFrame, useFieldControl, useFieldCounter } from "./Field";
+import { controlFrame } from "./classes";
+import { useFieldControl, useFieldCounter } from "./Field";
 
 export type TextareaProps = ComponentPropsWithRef<"textarea"> & {
 	/** Draws the attention edge and sets aria-invalid. Inside a Field, an error does this already. */

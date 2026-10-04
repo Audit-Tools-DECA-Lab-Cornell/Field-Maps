@@ -80,7 +80,7 @@ export function Switch({
 					)}>
 					<SwitchPrimitive.Thumb
 						className={cx(
-							"block size-6 translate-x-0.5 rounded-full bg-ink",
+							"block size-6 translate-x-0.5 rounded-pill bg-ink",
 							"transition-[translate,background-color] duration-(--ct-duration-base) ease-standard",
 							"data-[state=checked]:translate-x-5.5 data-[state=checked]:bg-on-ink"
 						)}

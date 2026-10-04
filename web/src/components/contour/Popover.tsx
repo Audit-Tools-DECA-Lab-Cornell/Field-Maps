@@ -5,7 +5,7 @@ import type { ComponentPropsWithRef } from "react";
 
 import { cx } from "@/lib/cx";
 
-import { MENU_SURFACE } from "./Menu";
+import { MENU_SURFACE, OVERLAY_MOTION } from "./classes";
 
 /** The popover root. Esc and a press outside close it; focus returns to the trigger. */
 export const Popover = PopoverPrimitive.Root;
@@ -38,7 +38,7 @@ export function PopoverContent({
 					MENU_SURFACE,
 					"z-50 max-w-80 p-4 type-body",
 					"origin-(--radix-popover-content-transform-origin)",
-					"data-[state=closed]:animate-pop-out data-[state=open]:animate-pop-in",
+					OVERLAY_MOTION,
 					className
 				)}
 			/>

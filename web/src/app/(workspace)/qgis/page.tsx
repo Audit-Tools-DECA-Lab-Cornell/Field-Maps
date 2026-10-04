@@ -22,7 +22,7 @@ export default function QgisPage() {
 				lead="Add the PostGIS connection once and refresh the layer. There is no export step on this path, no file to send, and nothing to keep in sync — a committed observation is in the layer the next time QGIS reads it."
 			/>
 
-			<div className="px-gutter pb-page">
+			<div className="px-gutter pb-10">
 				<div className="grid grid-cols-1 gap-wide lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
 					<section className="min-w-0 max-w-[60ch]">
 						<div className="flex items-baseline justify-between gap-snug">

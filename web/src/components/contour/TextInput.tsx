@@ -4,7 +4,8 @@ import type { ComponentPropsWithRef, ReactNode } from "react";
 
 import { cx } from "@/lib/cx";
 
-import { controlFrame, useFieldControl } from "./Field";
+import { controlFrame } from "./classes";
+import { useFieldControl } from "./Field";
 import { Icon, type IconName } from "./Icon";
 
 export type TextInputProps = ComponentPropsWithRef<"input"> & {

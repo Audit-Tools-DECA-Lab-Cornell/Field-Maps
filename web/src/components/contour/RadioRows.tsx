@@ -72,11 +72,11 @@ export function RadioRows({
 						<span
 							aria-hidden="true"
 							className={cx(
-								"flex size-5.5 shrink-0 items-center justify-center rounded-full border-2 border-ink",
+								"flex size-5.5 shrink-0 items-center justify-center rounded-pill border-2 border-ink",
 								"transition-[background-color,border-color] duration-(--ct-duration-quick) ease-standard",
 								"group-data-[state=checked]:border-accent group-data-[state=checked]:bg-accent"
 							)}>
-							<RadioGroup.Indicator className="size-2 rounded-full bg-on-accent" />
+							<RadioGroup.Indicator className="size-2 rounded-pill bg-on-accent" />
 						</span>
 						<span className="min-w-0">
 							<span id={labelId} className="block type-answer">

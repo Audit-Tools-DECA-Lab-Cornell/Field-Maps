@@ -31,6 +31,43 @@ const eslintConfig = defineConfig([
 		rules: {
 			"react-hooks/incompatible-library": "off"
 		}
+	},
+	// Contour code stands apart from the Nocturne screens it replaces: no prototype data module, Nocturne
+	// chrome or old app shell. Phase 5 deletes those modules; until then this keeps new code off them.
+	{
+		files: [
+			"src/components/contour/**/*.{ts,tsx}",
+			"src/components/map/**/*.{ts,tsx}",
+			"src/app/dev/**/*.{ts,tsx}",
+			"src/features/**/*.{ts,tsx}",
+			"src/fixtures/**/*.{ts,tsx}",
+			"src/components/shell/**/*.{ts,tsx}"
+		],
+		rules: {
+			"no-restricted-imports": [
+				"error",
+				{
+					patterns: [
+						{
+							group: [
+								"@/data",
+								"@/data/*",
+								"@/components/nocturne",
+								"@/components/nocturne/*",
+								"@/components/app-shell",
+								"@/components/app-shell/*"
+							],
+							message: "Contour code must not import Nocturne-era modules."
+						},
+						{
+							// The same modules reached by a relative path.
+							regex: "^(\\.\\./)+(data|components/(nocturne|app-shell))(/|$)",
+							message: "Contour code must not import Nocturne-era modules."
+						}
+					]
+				}
+			]
+		}
 	}
 ]);
 

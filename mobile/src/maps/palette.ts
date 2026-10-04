@@ -39,6 +39,8 @@ const paletteSchema = z.strictObject({
     edge: hexColor,
     label: hexColor,
   }),
+  /** The pill behind a zone's name on the plan: a light pill in Day, a dark one in Night. */
+  zoneLabel: z.strictObject({ fill: hexColor, text: hexColor }),
   observation: z.strictObject({ fill: hexColor, ring: hexColor, selected: hexColor }),
 });
 

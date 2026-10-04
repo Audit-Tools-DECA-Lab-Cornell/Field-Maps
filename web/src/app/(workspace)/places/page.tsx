@@ -23,7 +23,7 @@ export default function PlacesPage() {
 				lead="A place is a site and the zones inside it. A zone is what an observation records and what a round covers, so its boundary decides what a count means."
 			/>
 
-			<div className="px-gutter pb-page">
+			<div className="px-gutter pb-10">
 				<div className="grid grid-cols-1 gap-wide lg:grid-cols-2 xl:grid-cols-3">
 					{SITES.map(site => {
 						const badge = SITE_STATES[site.state];

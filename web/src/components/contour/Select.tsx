@@ -4,7 +4,8 @@ import type { ComponentPropsWithRef } from "react";
 
 import { cx } from "@/lib/cx";
 
-import { controlFrame, useFieldControl } from "./Field";
+import { controlFrame } from "./classes";
+import { useFieldControl } from "./Field";
 import { Icon } from "./Icon";
 
 export type SelectProps = ComponentPropsWithRef<"select"> & {

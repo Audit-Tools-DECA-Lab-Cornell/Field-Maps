@@ -78,7 +78,7 @@ export function NumberStepper({
 				onMouseDown={keepFocus}
 				onClick={() => set(value + direction * step)}
 				className={cx(
-					"flex size-11 shrink-0 items-center justify-center rounded-full text-ink",
+					"flex size-11 shrink-0 items-center justify-center rounded-pill text-ink",
 					"transition-[background-color,opacity] duration-(--ct-duration-quick) ease-standard",
 					"not-disabled:hover:bg-well not-disabled:active:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
 				)}>

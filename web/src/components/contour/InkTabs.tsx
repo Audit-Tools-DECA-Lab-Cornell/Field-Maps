@@ -19,6 +19,11 @@ export type InkTabsProps = {
 	items: InkTab[];
 	/** Names the navigation landmark: "Project", "Organization". */
 	label: string;
+	/**
+	 * The href of the tab on screen, for a tab set whose page the URL path cannot name (the gallery, a
+	 * preview). Without it the current tab follows the path.
+	 */
+	current?: string;
 	className?: string;
 };
 
@@ -89,11 +94,11 @@ function revealCurrent(scroller: HTMLElement, track: HTMLElement) {
  * slide on first paint. When the tabs do not fit they scroll sideways with edge fades and snap, and the
  * current tab is kept in view. Labels never wrap or truncate.
  */
-export function InkTabs({ items, label, className }: InkTabsProps) {
+export function InkTabs({ items, label, current, className }: InkTabsProps) {
 	const pathname = usePathname();
 	const scrollerRef = useRef<HTMLDivElement>(null);
 	const trackRef = useRef<HTMLDivElement>(null);
-	const active = currentTab(items, pathname);
+	const active = current === undefined ? currentTab(items, pathname) : items.findIndex(item => item.href === current);
 	// Changes whenever a tab's width can: a renamed tab, an added tab, a badge appearing.
 	const layout = items.map(item => `${item.href} ${item.label} ${item.badge ?? 0}`).join("\n");
 
@@ -156,17 +161,17 @@ export function InkTabs({ items, label, className }: InkTabsProps) {
 					/>
 					<ul className="flex">
 						{items.map((item, index) => {
-							const current = index === active;
+							const isCurrent = index === active;
 							const badge = item.badge && item.badge > 0 ? item.badge : 0;
 							return (
 								<li key={item.href} className="shrink-0 snap-start">
 									<Link
 										href={item.href}
-										aria-current={current ? "page" : undefined}
+										aria-current={isCurrent ? "page" : undefined}
 										className={cx(
 											"relative flex min-h-touch items-center gap-2 whitespace-nowrap rounded-pill px-5 type-body font-semibold",
 											"transition-[color,background-color] duration-(--ct-duration-slide) ease-standard",
-											current
+											isCurrent
 												? "bg-nav-current text-on-nav-current group-data-[placed]/tabs:bg-transparent"
 												: "text-on-nav hover:bg-on-nav/12 active:bg-on-nav/20"
 										)}>
