@@ -61,3 +61,18 @@ def test_every_copied_path_exists_and_survives_the_ignore_rules() -> None:
 def test_the_configuration_the_deployment_names_is_in_the_image() -> None:
     # backend/README.md tells a Render deployment to set FIELDMAPS_CONFIG to this file.
     assert "config.render.json" in copied_sources()
+
+
+def test_runtime_stage_does_not_inherit_test_tools() -> None:
+    dockerfile = DOCKERFILE.read_text()
+    assert "FROM base AS test" in dockerfile
+    assert "uv sync --frozen --no-dev --no-install-project" in dockerfile
+    runtime = dockerfile.split(" AS runtime\n", 1)[1]
+    assert "COPY tests" not in runtime
+    assert "--from=test" not in runtime
+    assert "USER 10001:10001" in runtime
+    assert "HEALTHCHECK " in runtime
+    assert "os.environ.get('PORT', '8000')" in runtime
+    assert "exec uvicorn" in runtime
+    assert "--port ${PORT:-8000}" in runtime
+    assert "--proxy-headers --forwarded-allow-ips='*'" in runtime

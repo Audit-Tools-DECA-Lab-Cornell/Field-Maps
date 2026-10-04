@@ -8,11 +8,14 @@ from jwt import PyJWKClient
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from fieldmaps_api import readiness
 from fieldmaps_api.auth import JwksVerifier, TokenVerifier, UnconfiguredVerifier
+from fieldmaps_api.body_limits import BodySizeMiddleware
 from fieldmaps_api.config import Settings, read_local_settings
 from fieldmaps_api.database import database_connection
 from fieldmaps_api.deps import Authentication
 from fieldmaps_api.errors import ERROR_RESPONSES, register_error_handlers
+from fieldmaps_api.observability import RequestIdMiddleware, configure_observability
 from fieldmaps_api.routers import collection, identity, sites, tenancy
 
 
@@ -35,12 +38,17 @@ def create_app(
         connect_args={"ssl": connection.ssl} if connection.ssl is not None else {},
     )
     sessions = async_sessionmaker(engine, expire_on_commit=False)
+    jwks = (
+        PyJWKClient(str(configuration.jwks_url), timeout=5, lifespan=300)
+        if configuration.jwks_url
+        else None
+    )
     if verifier is None:
-        if configuration.issuer is not None and configuration.jwks_url is not None:
+        if configuration.issuer is not None and jwks is not None:
             verifier = JwksVerifier(
                 str(configuration.issuer).rstrip("/"),
                 configuration.audience,
-                PyJWKClient(str(configuration.jwks_url), timeout=5, lifespan=300),
+                jwks,
             )
         else:
             verifier = UnconfiguredVerifier()
@@ -48,10 +56,15 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
-        yield
-        await engine.dispose()
+        configure_observability()
+        try:
+            await readiness.assert_safe_role(engine)
+            yield
+        finally:
+            await engine.dispose()
 
     app = FastAPI(title="FieldMaps API", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(BodySizeMiddleware)
     # The management application runs on its own origin and sends an Authorization header, so
     # every call it makes is preflighted. Named origins only: a wildcard here would let any page
     # a manager has open spend their token.
@@ -60,12 +73,13 @@ def create_app(
             CORSMiddleware,
             allow_origins=configuration.allowed_origins,
             allow_origin_regex=configuration.browser_origin_pattern,
-            allow_methods=["GET", "POST", "PUT", "PATCH"],
-            allow_headers=["authorization", "content-type"],
-            expose_headers=["etag"],
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+            allow_headers=["authorization", "content-type", "x-request-id"],
+            expose_headers=["etag", "Retry-After", "X-Request-Id"],
             max_age=600,
         )
 
+    app.add_middleware(RequestIdMiddleware)
     register_error_handlers(app)
 
     @app.get(
@@ -75,6 +89,10 @@ def create_app(
     )
     async def health() -> HealthResponse:
         return HealthResponse()
+
+    @app.get("/ready", operation_id="ready", responses=ERROR_RESPONSES)
+    async def ready() -> readiness.ReadyResponse:
+        return await readiness.check_ready(engine, jwks)
 
     app.include_router(tenancy.create_router(sessions, authenticate))
     app.include_router(identity.create_router(sessions, authenticate))

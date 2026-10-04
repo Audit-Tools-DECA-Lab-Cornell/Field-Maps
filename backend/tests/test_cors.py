@@ -19,6 +19,7 @@ def test_a_named_origin_may_preflight_a_package_upload() -> None:
 
     response = client.options(PACKAGES, headers=PREFLIGHT)
 
+    assert len(response.headers["x-request-id"]) == 32
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == WEB
 

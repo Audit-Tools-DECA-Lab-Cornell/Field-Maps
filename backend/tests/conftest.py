@@ -3,10 +3,12 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from fieldmaps_api.auth import JwksVerifier
 from fieldmaps_api.config import Settings
 from fieldmaps_api.main import create_app
+from tests.local_database import database_url
 from tests.signing import ISSUER, Signer, make_signer
 
 
@@ -18,10 +20,21 @@ def signer() -> Signer:
 @pytest.fixture
 def api_client(signer: Signer) -> Iterator[TestClient]:
     settings = Settings(
-        database_url="postgresql+asyncpg://fieldmaps_api@127.0.0.1:54322/postgres",
+        database_url=database_url(),
         database_password_file=Path(__file__).resolve().parents[2]
         / "database/.local/fieldmaps-api-password",
     )
     with TestClient(create_app(settings, JwksVerifier(ISSUER, "authenticated", signer))) as client:
         client.headers["Authorization"] = f"Bearer {signer.issue()}"
         yield client
+
+
+@pytest.fixture(autouse=True)
+def isolated_startup(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pure HTTP tests replace only the database startup probe; integration tests do not."""
+    if "integration" not in request.keywords and "api_client" not in request.fixturenames:
+
+        async def safe_role(_engine: AsyncEngine) -> None:
+            return
+
+        monkeypatch.setattr("fieldmaps_api.readiness.assert_safe_role", safe_role)

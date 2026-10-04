@@ -13,7 +13,7 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - `errors.py` provides the error envelope, OpenAPI models and exception handler.
 - Pure domain modules live under `domain/`: `forms.py`, `packages.py`, `geojson.py` and `qgis_project.py`.
 
-**Routes** (10 today): `/health`, `GET`/`PATCH /v1/me`, `GET /v1/projects`, `PUT`/`GET` observation, and 4 package routes. Stable operation IDs and response schemas are exported without database access.
+**Routes:** health/readiness, identity, organizations, projects, memberships, invitations, observations and packages. Stable operation IDs and response schemas are exported without database access.
 
 **Authentication** (`auth.py`)
 - Verifies ES256/RS256 against JWKS (`PyJWKClient`, cached 300 s).
@@ -25,10 +25,11 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - Since BE-16 (2026-09-26), every role-check query names the caller: `m.user_id = fieldmaps.request_user_id()`.
 - Correctness no longer depends on the memberships SELECT policy hiding other members' rows. DB-05 widens that policy for managers.
 
-**Operations gaps**
-- No logging, request IDs, Sentry, readiness endpoint, rate limits or body-size limit.
-- Every `SQLAlchemyError` is turned into a 503. That includes programming errors, and it hid the package-list bug fixed in BE-16.
-- The Dockerfile runs as root, installs dev dependencies and copies `tests/` into the image.
+**Operations**
+- Readiness checks the database and signing keys; startup rejects privileged database roles.
+- Request IDs, sanitized JSON logging, optional Sentry, request-size limits and per-process user rate limits are implemented.
+- SQLSTATE determines database error responses; unknown failures are sanitized 500s.
+- Separate runtime/test container stages keep test tooling out of the non-root runtime image.
 
 **Forms.** `domain/forms.py` validates the canonical mobile contract with conditions and dynamic choices. `legacy_forms.py` preserves immutable stored field definitions. Shared-case parity and local legacy upload/readback tests pass.
 
@@ -51,7 +52,8 @@ backend/src/fieldmaps_api/
 ## Tasks
 
 ### BE-01: Harden the container image
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: OPS-04
+Status: done (2026-10-04) · Phase 0 · Size S · Depends: none · Blocks: OPS-04
+Verified locally on 2026-10-04: runtime/test images build and all 214 API tests pass inside the test image. Runtime defaults to UID 10001 and contains neither pytest nor tests. The health check passed on PORT 8181 using a non-root host UID for the local password mount; deployment mounts must be readable by UID 10001.
 Read first: `backend/Dockerfile`; `database/Makefile` (targets `api-build` and `api-test`); recent commits "Carry the build metadata into the image the tests run in".
 Do:
 1. Split the Dockerfile into a multi-stage build:
@@ -67,7 +69,8 @@ Done when:
 Verify: `docker run --rm <runtime-image> id -u` prints something other than 0; `docker run --rm <runtime-image> python -c "import pytest"` fails.
 
 ### BE-02: Readiness, observability, and a safe database-error mapping
-Status: todo · Phase 0 · Size M · Depends: none · Blocks: OPS-04
+Status: done (2026-10-04) · Phase 0 · Size M · Depends: none · Blocks: OPS-04
+Verified locally on 2026-10-04: readiness/startup guards, sanitized logging/request IDs and SQLSTATE responses pass, including real deadlock and terminated-connection scenarios. Full API suite: 214 passed.
 Do:
 1. Add `GET /ready`. It runs `SELECT 1` through the pool and fetches the JWKS (cached), and returns 503 with the error envelope if either fails.
 2. At startup, query `SELECT rolbypassrls, rolsuper FROM pg_roles WHERE rolname = current_user` and refuse to start if either is true (architecture rule 4). Add a test.
@@ -152,7 +155,8 @@ Done when:
 - the tests pass.
 
 ### BE-07: Tenancy: organizations, projects, members, invitations
-Status: todo · Phase 1 · Size L · Depends: BE-03, BE-06, DB-05, DB-06 · Blocks: MOB-06, QA-01, WEB-06, WEB-07
+Status: done (2026-10-04) · Phase 1 · Size L · Depends: BE-03, BE-06, DB-05, DB-06 · Blocks: MOB-06, QA-01, WEB-06, WEB-07
+Verified locally on 2026-10-04: organization/project lifecycle, membership changes, ownership transfer and invitation lifecycle pass. The two-organization, every-role isolation matrix passes; full API suite: 214 passed.
 Read first: the tenancy rows in the contracts catalog; DB-05 and DB-06. Every write goes through a DB-06 function. The API holds no INSERT, UPDATE or DELETE on membership or invitation tables.
 Do:
 1. **Organizations:**
@@ -208,7 +212,8 @@ Done when the tests (with the Admin API mocked) cover:
 - `DELETE /v1/me` for a token whose Auth user is already gone returns 204: `forget_user` is a no-op and the Admin API answers 404, which counts as already deleted.
 
 ### BE-09: Rate limits and body-size limits
-Status: todo · Phase 1 · Size S · Depends: BE-03 · Blocks: none
+Status: done (2026-10-04) · Phase 1 · Size S · Depends: BE-03 · Blocks: none
+Verified locally on 2026-10-04: ten request-limit tests pass, including chunked oversized bodies, shared preview/redemption throttling, Retry-After, refill and user isolation. Limits remain per-process for the pilot.
 Do:
 1. Add a body-size middleware:
    - 24 MB for `POST …/packages`, which carries JSON plus a base64 project file (limits in `domain/packages.py`);

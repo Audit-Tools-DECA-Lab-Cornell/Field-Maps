@@ -17,9 +17,10 @@ Never report a device, hosted or production check as passed unless it was actual
 ## Tasks
 
 ### QA-01: API tenant-isolation suite
-Status: todo · Phase 1 · Size M · Depends: BE-06, BE-07, DB-04, DB-05 · Blocks: OPS-09
+Status: done (2026-10-04) · Phase 1 · Size M · Depends: BE-06, BE-07, DB-04, DB-05 · Blocks: OPS-09
+Verified locally on 2026-10-04: all 214 backend tests and the SQL/RLS suite pass. No hosted or production isolation run is claimed.
 It grows every phase: each new endpoint task adds its rows.
-Identity coverage is in `backend/tests/test_identity.py`: first-call Training enrollment, repeat-call idempotence, caller-scoped memberships (including inherited admin access), self-only profile edits, and rejection after profile forgetting or Auth deletion. These database scenarios passed locally on 2026-10-03; they do not complete the full tenant matrix below.
+Identity coverage is in `backend/tests/test_identity.py`: first-call Training enrollment, repeat-call idempotence, caller-scoped memberships (including inherited admin access), self-only profile edits, and rejection after profile forgetting or Auth deletion. The full matrix is now implemented in `backend/tests/test_tenant_isolation.py`, using generated two-organization fixtures and every role. It covers existing tenancy, membership, invitation, observation and package routes, plus Training observation/profile/membership privacy. A live unbound invitation deliberately permits joining another organization; email-bound redemption by the wrong account is rejected without consuming a use. Future form, export and sync endpoints must extend this matrix when implemented. The existing CI backend job includes these tests.
 Read first: `backend/tests/test_project_access.py`; `backend/tests/conftest.py`; the endpoint catalog in [contracts.md](contracts.md#api-endpoint-catalog-v1).
 Do:
 1. Create `backend/tests/test_tenant_isolation.py`. Fixtures:
