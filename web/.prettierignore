@@ -131,3 +131,12 @@ skills-lock.json
 src/lib/forms/definition.ts
 src/lib/forms/engine.ts
 src/lib/api/schema.d.ts
+
+# =============================================================================
+# Generated — written by their tools, never edited by hand
+# =============================================================================
+pnpm-lock.yaml
+src/styles/contour.css
+# The plan's task blocks are line-oriented (docs/plan/check-plan.mjs reads the line after each heading);
+# Prettier would join the Status line into the paragraph below it.
+PLAN.md
