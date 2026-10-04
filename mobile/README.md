@@ -70,7 +70,7 @@ column.
 - GPS accuracy has a place in the record and is stored as `null`: this build asks for no location
   permission, so there is no accuracy to record beside the hand-placed coordinates. Hand
   placement is authoritative and is never overwritten. MapLibre declares the Android location
-  permissions in its own manifest; `app.json` blocks both, so the published app declares none.
+  permissions in its own manifest; `app.config.ts` blocks both, so the published app declares none.
 
 ## Run
 
@@ -236,30 +236,46 @@ The SQLite schema is at version 3: version 1 created the observation table, vers
 account-scoped queue columns, and version 3 adds `observation_drafts`. Migrations run forward
 only and refuse to open a newer database.
 
-Native `ios/` and `android/` directories are generated and ignored. Use `app.json` and config plugins for repeatable native configuration. The mobile package has its own dependency lockfile, TypeScript checks, and Biome checks; Next.js tooling is scoped to the separate `web/` directory.
+Native `ios/` and `android/` directories are generated and ignored. Use `app.config.ts` and config plugins for repeatable native configuration. The mobile package has its own dependency lockfile, TypeScript checks, and Biome checks; Next.js tooling is scoped to the separate `web/` directory.
 
 References: [MapLibre Expo setup](https://maplibre.org/maplibre-react-native/docs/setup/expo/), [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/).
 
 ## Enable the connected development slice
 
-`connection.config.json` is now configured for the FieldMaps Supabase development project. See [current setup status](../docs/Supabase-Setup.md). Setting it to `{ "connection": null }` restores standalone practice mode without accounts or a server. The new native modules load only for a configured connection. Regenerate the native configuration with `EXPO_NO_DOTENV=1 pnpm exec expo prebuild`, then rebuild with `pnpm ios` or `pnpm android` before enabling sign-in. The SecureStore plugin configures its native storage settings.
+`app.config.ts` selects public `config/development.json`, `config/staging.json` or
+`config/production.json` through `APP_ENV` (development by default). EAS profiles set it explicitly
+and disable dotenv loading. Local development uses the local Supabase stack and
+`com.fieldmaps.collector.local`; staging keeps the lezmq Auth issuer and
+`com.fieldmaps.collector.dev` so existing test installs retain SQLite and their session.
+Production values are placeholders, not a deployable configuration. `powersyncUrl` stays null.
 
-Set these public values when the development auth project is ready:
-
-```json
-{
-  "connection": {
-    "apiUrl": "http://127.0.0.1:8000",
-    "supabaseUrl": "https://YOUR_PROJECT.supabase.co",
-    "publishableKey": "sb_publishable_REPLACE_WITH_PUBLIC_KEY",
-    "projectId": "10000000-0000-4000-8000-000000000002"
-  }
-}
+```bash
+EXPO_NO_DOTENV=1 APP_ENV=staging pnpm exec expo config --type public
+APP_ENV=staging pnpm ios
 ```
 
-The loopback URL is for the iOS simulator. Physical devices need a reachable HTTPS API; the current Docker port is intentionally bound to the development computer only. Android can use an emulator port reverse or a reachable HTTPS development endpoint. Never put a database password or Supabase secret/service-role key in this file. Configure the matching issuer/JWKS and test membership in the [backend setup](../backend/README.md).
+The loopback API URL is for the iOS simulator. Physical devices need a reachable HTTPS API set
+in the appropriate public JSON config. Never include database passwords or service-role keys.
+The validator accepts publishable keys and public anon JWTs, including the local stack's anon key.
+Expo exposes these values through `extra.connection`.
 
-The queue is scoped by API URL, auth issuer, account UUID, and project UUID. Signing in does not claim previous practice records. Signing out hides the account's records; signing back into the same connection restores them. Cached account identity supports offline collection even after a token expires; only a fresh, server-verified token authorizes an upload. The API remains the authority for access.
+Legacy SQLite `owner_scope` keys remain frozen at their original localhost URL, lezmq issuer,
+account UUID and seeded project UUID until MOB-11. Uploads use the configured API URL separately,
+and receipts must match the destination project, account and record. Changing the active project
+never changes this legacy key or claims prior local practice records.
+
+`MeProvider` fetches the typed `/v1/me` response on sign-in and foreground resume. `useMe()` exposes
+profile, project memberships, active project and refresh errors. The last verified response and
+project selection live in an issuer/account-scoped file for offline starts. The default project is
+the first non-Training membership, falling back to Training. Removed memberships reset selection.
+A deleted-account response stops authenticated uploads, signs out locally, and retains account
+identity and SQLite records for later cleanup/export. Ordinary sign-out still hides account records.
+
+Local verification (2026-10-04): mobile TypeScript, Biome and 193 Vitest cases pass. Tests cover
+old owner-scope read visibility, a configured upload host distinct from the frozen key, receipt
+identity mismatches, typed API errors, cached/missing/stale project selections, deleted-account restart with lingering
+credentials, and failed marker writes/sign-out attempts. Staging public
+Expo config and an iOS Metro export both pass. No simulator, device, hosted write or release build was tested.
 
 Records move from pending to uploaded only after a matching observation/account/project receipt. Connection/server failures retry with persisted backoff. Rejections preserve the record and show “needs attention”; the Account screen provides an explicit retry. Uploads run while the app is foregrounded; closing the app pauses work until it opens again. Uninstalling removes pending local records.
 

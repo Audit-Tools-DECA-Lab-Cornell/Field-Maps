@@ -59,9 +59,7 @@ export function PreviewPanel({
 					meta={`${state.inviteRole} · ${state.inviteUses} uses · ${EXPIRES_LABEL[state.inviteExpiresDays]}`}
 				/>
 			</div>
-			<p className="mt-loose text-micro text-neutral-500">
-				A live preview only. Nothing here exists until the tenancy API (BE-07) is built.
-			</p>
+			<p className="mt-loose text-micro text-neutral-500">Preview only. Nothing here is saved yet.</p>
 		</div>
 	);
 }

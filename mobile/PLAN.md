@@ -9,7 +9,9 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 
 **Skills to load** when working here: `mobile-design`, `react-native-architecture`, `expo-best-practices`, `offline-sync-designer`, and `mobile-version-bump` at the end of a task that changes the app.
 
-## Context (verified 2026-09-22)
+## Original baseline (verified 2026-09-22)
+
+Current changes verified 2026-10-04: MOB-01 selects public per-build configuration and freezes legacy SQLite scope identifiers. MOB-04 adds authenticated `/me` reads, an account/issuer-scoped cache and active-project selection. Deleted accounts retain their local identity and records while uploads pause, including after restart; broader session-loss behavior remains MOB-08. The suite now passes 193 tests. Device acceptance for this batch remains unverified. The baseline below records the starting point, not current behavior.
 
 **Stack**
 - Expo SDK 57.0.23, expo-router 57, RN 0.86.3, React 19.2.3, supabase-js 2.116, MapLibre RN 11.3.10, expo-sqlite, zod 4.
@@ -25,9 +27,9 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - On `SIGNED_OUT`, records disappear from view (`src/auth/provider.tsx:56` plus `src/storage/use-observations.ts:49`).
 - Sign-up, verification, password reset, deep links and account deletion do not exist.
 
-**Configuration** (`connection.config.json`)
-- `apiUrl` is `http://127.0.0.1:8000`, and the fixed `projectId` is the seeded practice project.
-- The scope key includes `apiUrl` (`src/sync/contracts.ts:12-14`), so changing hosts orphans records.
+**Configuration** (`app.config.ts`, `config/*.json`)
+- Public per-build config selects the API/Auth endpoints; production remains a placeholder.
+- Legacy SQLite scope values are frozen in `src/data/legacy/scope.ts`; uploads use the configured destination independently.
 
 **Fixtures**
 - `src/packages/bundled.ts` holds 4 studies, 2 of them fake.
@@ -67,8 +69,8 @@ mobile/
 ## Tasks
 
 ### MOB-01: Environment configuration per build profile
-Status: todo · Phase 0 · Size S · Depends: none · Blocks: MOB-02, MOB-03, MOB-04, MOB-09, MOB-20
-Read first: `connection.config.json`, `src/sync/config.ts`, `app.json`, `eas.json`, `package.json` scripts (`EXPO_NO_DOTENV=1`).
+Status: done · Phase 0 · Size S · Depends: none · Blocks: MOB-02, MOB-03, MOB-04, MOB-09, MOB-20
+Read first: `config/staging.json`, `src/platform/config.ts`, `app.config.ts`, `eas.json`, `package.json` scripts (`EXPO_NO_DOTENV=1`).
 Do:
 1. Convert `app.json` to `app.config.ts`, with the same values. It reads `APP_ENV` (`development`, `staging` or `production`; default `development`) and loads `config/<APP_ENV>.json`.
 2. Each config file holds public values only:
@@ -96,6 +98,8 @@ Done when:
 - `APP_ENV=staging pnpm exec expo config --type public` shows the staging values;
 - a record saved before this change still lists after it, and uploads **to the configured `apiUrl`** (test with a fake HTTP client that asserts the request host);
 - typecheck and tests pass.
+
+Evidence (2026-10-04): staging public Expo config, iOS Metro export, mobile TypeScript/Biome and 193 tests passed; old-scope SQLite visibility and configured upload destination/receipt checks covered. No native run claimed.
 
 ### MOB-02: Session storage that fits (LargeSecureStore)
 Status: todo · Phase 1 · Size M · Depends: MOB-01 · Blocks: MOB-05, MOB-08, MOB-09
@@ -139,7 +143,7 @@ Done when:
   - session, no profile → `(onboarding)`.
 
 ### MOB-04: API client and the current user (`/v1/me`)
-Status: todo · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, MOB-01 · Blocks: MOB-03, MOB-06, MOB-07, MOB-08
+Status: done · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, MOB-01 · Blocks: MOB-03, MOB-06, MOB-07, MOB-08
 Do:
 1. Create `src/data/api/client.ts`: ky with the base URL from config, a Bearer token from the current session, typed with the generated `schema.d.ts`, and errors mapped by `errors.ts` (CON-04).
 2. Create a `useMe()` hook:
@@ -152,6 +156,8 @@ Do:
 4. Map `403 account_deleted` (CON-04) to a signed-out state that keeps local records visible for the MOB-07 and MOB-11 paths.
 
 Done when: an offline start shows the last known projects; the tests cover cache hit, cache miss and a stale-cache refresh.
+
+Evidence (2026-10-04): generated Identity type and runtime parser, account-scoped file cache/provider, active project persistence, deleted-account local sign-out with retained identity. Cache hit/miss/stale selection and typed API errors covered by Vitest; mobile type/lint pass. No native run claimed.
 
 ### MOB-05: Authentication screens
 Status: todo · Phase 1 · Size L · Depends: DB-02, MOB-02, MOB-03 · Blocks: MOB-06, MOB-21

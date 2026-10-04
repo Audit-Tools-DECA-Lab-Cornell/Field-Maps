@@ -13,7 +13,7 @@ pnpm backend:test
 
 From `backend/`, start the API with `uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8000`. Stop any existing API on that port first. `config.local.json` points to local Supabase port 54322 and its generated ignored password file. `pnpm db:stop` preserves local database volumes; `pnpm db:reset` explicitly recreates the local schema and fictional fixtures.
 
-Tests use ephemeral signing keys and fictional accounts on local Supabase, with real RLS through `fieldmaps_api`. The public identity-provider configuration for the running development API is still the configured hosted Auth provider; local Auth onboarding is handled by the later identity tasks. There is no test-user bypass in the running API. `/health` is liveness. `/ready` checks the database and the cached signing-key set; it returns 503 when either is unavailable. Startup refuses database roles that are superusers or can bypass row security.
+Tests use ephemeral signing keys and fictional accounts on local Supabase, with real RLS through `fieldmaps_api`. `config.local.json` retains the hosted identity provider for existing development installs. To use local Auth as well as local Postgres, start from `backend/` with `FIELDMAPS_CONFIG=config.auth-local.json uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8001`. Set the web server's `FIELDMAPS_API_URL` to `http://127.0.0.1:8001`. HTTP identity URLs are allowed only on literal loopback hosts. There is no test-user bypass in the running API. `/health` is liveness. `/ready` checks the database and the cached signing-key set; it returns 503 when either is unavailable. Startup refuses database roles that are superusers or can bypass row security.
 
 `make -C database api-build api-test` builds separate runtime and test images and runs the API suite against the existing local database. The test image includes pytest and Docker tooling for SQL fixtures; the runtime image contains neither and runs as UID 10001. Runtime-mounted password files must be readable by that user. The runtime health check uses the configured `PORT` and calls `/health`.
 
@@ -48,7 +48,7 @@ safe: a host ending in someone else's team, or in a suffix like `.vercel.app.evi
 not match. Escape the dots. A pattern the regex engine cannot compile is refused at startup, not
 per request.
 
-These issuer/JWKS values are public. No Supabase service-role key is needed by this API. It validates the JWT signature, expiry, audience, and issuer and derives the user UUID from the signed subject. Legacy HS256 projects must switch to a supported asymmetric signing key before using this verifier. See [Supabase JWT documentation](https://supabase.com/docs/guides/auth/jwts).
+These issuer/JWKS values are public. JWT verification needs no Supabase secret key. Account deletion separately requires the optional Auth Admin key described below. It validates the JWT signature, expiry, audience, and issuer and derives the user UUID from the signed subject. Legacy HS256 projects must switch to a supported asymmetric signing key before using this verifier. See [Supabase JWT documentation](https://supabase.com/docs/guides/auth/jwts).
 
 Tenancy functions create organizations, projects and memberships. `GET /v1/me` now creates an active caller's profile and Training membership; organization and project management endpoints are available through the API. For manual local provisioning, create the matching Auth and profile rows before inserting a membership. Signing in alone grants no study-project access. From an authorized local administrator SQL session, replace `AUTH_USER_UUID` in this statement:
 
@@ -98,11 +98,21 @@ Owners/admins can edit organization details and create projects. Managers can ed
 
 Organization and project invitation endpoints create, list and revoke invitations. Creation returns the token and short code once; stored hashes and credentials never appear in lists. `POST /v1/invitations/preview` and `/redeem` accept either `{"token":"…"}` or `{"code":"…"}`. Preview reveals the destination and role without consuming a use or exposing a bound email. Redemption checks email binding, expiry and remaining uses atomically. Invitations default to one use and seven days. Revocation and member mutations return 204.
 
+## Account deletion
+
+`DELETE /v1/me` requires a runtime-mounted Supabase secret key (`sb_secret_…`). Set the optional `auth_admin_key_file` configuration field to that file's path, for example `/etc/secrets/supabase-secret-key` on Render. It is used only for the Auth Admin deletion call and never committed. Only `sb_secret_` keys with a nonempty, header-safe ASCII suffix are accepted; publishable keys and legacy JWT keys are rejected. Missing, unreadable or malformed configuration returns `503 storage_unavailable` before account data changes.
+
+The API commits `forget_user()` first, removing memberships and clearing personal profile fields. A sole owner with other organization members, or the last project manager, receives `409 sole_owner` with no account change. It then calls the configured issuer's `/admin/users/{user_id}` endpoint with the key in `apikey`. Each request has a five-second I/O timeout and ten-second overall deadline, with one retry. Redirects are refused. Success or an already-absent Auth user (404) returns an empty 204.
+
+If both attempts fail, the API returns `202 {"status":"pending"}`. The profile's `deleted_at` persists, prevents rejoining or restoring the account, and remains until Auth deletion cascades the profile away. Clients can repeat DELETE before signing out; GET/PATCH remain forbidden. ERROR logs and Sentry contain only the pending event and user UUID, without the key, upstream response body or exception detail. Pending profiles require operator follow-up if clients stop retrying; automated reconciliation is not implemented. Staging and production still require the runtime Secret File and deployed acceptance verification.
+
+Local Supabase Auth may use HTTP only on literal `localhost`, `127.0.0.1` or `[::1]`. Other identity-provider hosts require HTTPS.
+
 ## Contract and guarantees
 
 Requests have an `X-Request-Id`, echoed in responses. Access logs contain that identifier, response status and elapsed time, never request bodies, tokens or answers. `SENTRY_DSN` optionally enables sanitized API error events; no DSN is needed locally. Database errors are mapped by SQLSTATE: permission and validation failures retain their proper status, transient failures return 503, and unexpected errors return a sanitized 500.
 
-Bodies are limited before JSON parsing: package submissions have 24 MiB, sync uploads 4 MiB, and other requests 256 KiB. Oversized streams return 413 even if the Content-Length header is absent or incorrect. Per-user token buckets allow five organization creations/hour, 60 invitation creations/hour, ten combined invitation previews/redemptions per ten minutes, and three account-deletion requests/hour. Exhaustion returns `429 rate_limited` with `Retry-After`. These limits are in memory per API process, suitable for the single-instance pilot; multiple workers or replicas require shared limit storage. Restarting the process resets its buckets. The deletion policy is ready for the later account-deletion endpoint.
+Bodies are limited before JSON parsing: package submissions have 24 MiB, sync uploads 4 MiB, and other requests 256 KiB. Oversized streams return 413 even if the Content-Length header is absent or incorrect. Per-user token buckets allow five organization creations/hour, 60 invitation creations/hour, ten combined invitation previews/redemptions per ten minutes, and three account-deletion requests/hour. Exhaustion returns `429 rate_limited` with `Retry-After`. These limits are in memory per API process, suitable for the single-instance pilot; multiple workers or replicas require shared limit storage. Restarting the process resets its buckets. The deletion policy applies to `DELETE /v1/me`.
 
 The app factory in `main.py` includes identity, tenancy, collection and site routers. Routers keep authenticated transactions open around services; they complete the transaction before returning a response. `deps.py` sets the caller's database identity for each transaction. Services own validation, preparation and conflict decisions; repositories perform typed SQL access through matching `queries/` modules. Pure form and map-package logic lives under `domain/`.
 
@@ -124,6 +134,7 @@ Success bodies, URLs, status codes and archive headers are unchanged by BE-03. W
 | ------------------------------------------------ | ----------------------------------------------------------------- |
 | `GET /v1/me`                                    | Bootstrap/read the caller's profile and memberships                |
 | `PATCH /v1/me`                                  | Update only the caller's display name, observer initials or locale |
+| `DELETE /v1/me`                                 | Forget the account, then delete its Auth identity; 202 if pending |
 | `GET /v1/projects`                               | Projects visible to the verified account                          |
 | `PUT /v1/projects/{project}/observations/{uuid}` | Validate and commit a new point or acknowledge an identical retry |
 | `GET /v1/projects/{project}/observations/{uuid}` | Read a permitted observation                                      |

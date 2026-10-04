@@ -14,6 +14,8 @@ pnpm db:stop
 
 The starter runs pinned Supabase CLI 2.118.0 and generates an ignored API password at `database/.local/fieldmaps-api-password` with mode 0600. It does not display credentials. The API connects as restricted `fieldmaps_api` on localhost port 54322. Studio is on port 54323 and Mailpit on 54324.
 
+Local confirmation and recovery templates in `supabase/templates/` display six-digit codes. Read synthetic test emails in Mailpit when exercising the web verification and recovery screens. Template changes take effect after stopping and starting the local stack; volumes are preserved. Hosted email templates and SMTP settings require separate configuration.
+
 `pnpm db:reset` explicitly replaces the local database with the canonical migrations and `supabase/seed.sql`. Start and test commands never reset a database. Stop preserves local volumes. None of these commands targets hosted services.
 
 `pnpm db:test` runs the SQL suite and `hosted/verify.sql` on the local database. Fixtures and temporary role grants roll back. API tests use generated UUIDs and the restricted runtime login; their committed observations/packages remain until an explicit local reset. No integration test silently skips when the stack is unavailable.

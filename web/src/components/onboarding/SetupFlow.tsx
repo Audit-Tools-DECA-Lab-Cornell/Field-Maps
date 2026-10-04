@@ -16,8 +16,7 @@ import { generateJoinCode, isValidSlug } from "./utils";
 
 /**
  * The manager's set-up journey (J1), as a clickable preview. Everything here lives in component
- * state: there is no tenancy API yet (BE-07), so finishing the flow can only describe what it
- * would create, not create it.
+ * state until WEB-06 connects this screen to the tenancy API.
  */
 export function SetupFlow() {
 	const [state, setState] = useState<SetupState>(INITIAL_STATE);

@@ -3,23 +3,15 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { SetupFlow } from "@/components/onboarding/SetupFlow";
+import { requireUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
 	title: "Set up a study",
 	robots: { index: false }
 };
 
-/**
- * The manager's set-up journey (J1), as a clickable preview: sign up → create organization → first
- * project → upload the QGIS site package → import and publish the form → invite observers. The
- * tenancy API (BE-07) and web auth (WEB-03/04) do not exist yet, so nothing on this page is saved —
- * the banner below says so, and no control claims to do more than show what the flow would look like.
- *
- * This route sits in `(app)`, a group with no layout of its own: the root layout applies, and the
- * workspace chrome (the rail, the project switcher) is deliberately not used here, since there is no
- * project yet.
- */
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+	await requireUser();
 	return (
 		<div className="flex min-h-dvh flex-col bg-bg">
 			<header className="flex shrink-0 flex-wrap items-center justify-between gap-loose border-b border-edge px-gutter py-snug">
@@ -30,9 +22,9 @@ export default function OnboardingPage() {
 					</span>
 				</Link>
 				<Link
-					href="/"
+					href="/account"
 					className="inline-flex min-h-11 items-center rounded-sm px-snug text-detail text-neutral-400 hover:text-accent-300">
-					Exit preview
+					Account
 				</Link>
 			</header>
 
@@ -42,8 +34,8 @@ export default function OnboardingPage() {
 						◷
 					</span>
 					<span>
-						Preview of the set-up flow · nothing is saved. Creating organizations needs the tenancy API
-						(BE-07); sign-in arrives with WEB-04.
+						Preview only. Nothing here is saved yet. Organization setup will be connected in a later update.
+						Your account is signed in.
 					</span>
 				</p>
 			</div>

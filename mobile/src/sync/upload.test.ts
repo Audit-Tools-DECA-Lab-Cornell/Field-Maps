@@ -57,11 +57,12 @@ afterEach(async () => {
 function upload() {
   return uploadObservation(
     syncScopeSchema.parse({
-      apiUrl: baseUrl,
+      apiUrl: "http://127.0.0.1:8000",
       issuer: "https://auth.example.test",
-      projectId: receipt.project_id,
+      projectId: "90000000-0000-4000-8000-000000000009",
       userId: receipt.user_id,
     }),
+    { apiUrl: baseUrl, projectId: receipt.project_id },
     record,
     "session-token",
     new AbortController().signal,

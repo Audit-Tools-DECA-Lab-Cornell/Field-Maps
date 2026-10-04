@@ -5,13 +5,14 @@ import { receiptSchema, type SyncScope, type UploadResult, uploadPayload } from 
 
 export async function uploadObservation(
   scope: SyncScope,
+  destination: { readonly apiUrl: string; readonly projectId: string },
   record: ShellObservation,
   token: string,
   signal: AbortSignal,
 ): Promise<UploadResult> {
   try {
     const response = await ky.put(
-      `${scope.apiUrl}/v1/projects/${scope.projectId}/observations/${record.id}`,
+      `${destination.apiUrl}/v1/projects/${destination.projectId}/observations/${record.id}`,
       {
         json: uploadPayload(record),
         headers: { Authorization: `Bearer ${token}` },
@@ -30,7 +31,7 @@ export async function uploadObservation(
       return { kind: "retry", message: "The server receipt could not be verified." };
     if (
       receipt.data.observation_id !== record.id ||
-      receipt.data.project_id !== scope.projectId ||
+      receipt.data.project_id !== destination.projectId ||
       receipt.data.user_id !== scope.userId
     )
       return {

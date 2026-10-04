@@ -29,8 +29,8 @@ export function FinishSummary({ onStartAgain }: { readonly onStartAgain: () => v
 			</ul>
 
 			<p className="text-micro text-neutral-500">
-				None of that exists yet — this page only previews the flow. The tenancy API (BE-07) and sign-in (WEB-04)
-				ship first.
+				Nothing above has been created. This page previews the flow; saving organizations and projects will be
+				available in a later update.
 			</p>
 
 			<div className="flex flex-wrap gap-loose border-t border-rule-faint pt-loose">

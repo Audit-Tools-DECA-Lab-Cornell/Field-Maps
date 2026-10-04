@@ -11,7 +11,9 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 
 **Skills to load** when working here: `vercel-plugin:nextjs`, `frontend-dashboard-polish`, `responsive-design`, `site-architecture`.
 
-## Context (verified 2026-09-22)
+## Original baseline (verified 2026-09-22)
+
+Current changes verified 2026-10-04: WEB-01 package uploads use a real selected project and an authenticated session. WEB-03 through WEB-05 add Supabase SSR authentication, protected account/onboarding routes and a server-only API client. `/account` reads live `/v1/me` data; workspace and onboarding content remains a fixture preview. The service worker now allows only public landing/static assets and excludes private, query-bearing and RSC requests. The baseline below records the starting point, not current behavior.
 
 - **Stack and auth.** Next.js 16.2.7, React 19.2.4, Tailwind v4, react-leaflet 5. There is no Supabase package, no `proxy.ts`, no route handlers, no auth, and no error or not-found pages.
 - **Data.**
@@ -73,7 +75,9 @@ Do:
 Done when: after a rebuild the cache name changes, and `curl localhost:3000/robots.txt` shows the rules.
 
 ### WEB-03: Supabase SSR foundation and proxy
-Status: todo · Phase 1 · Size M · Depends: DB-02 · Blocks: OPS-05, WEB-04, WEB-05, WEB-16
+Status: done · Phase 1 · Size M · Depends: DB-02 · Blocks: OPS-05, WEB-04, WEB-05, WEB-16
+Verified 2026-10-04: unauthenticated `/o` returns 307 to `/sign-in?next=%2Fo`; real local sign-up/code verification reaches the protected onboarding page and `/account`. Claims are checked again in server components and the API client. Production build lists these routes as dynamic. Public Supabase dependencies were already exactly pinned.
+
 Read first: <https://supabase.com/docs/guides/auth/server-side/nextjs>; <https://nextjs.org/docs/app/api-reference/file-conventions/proxy>.
 Do:
 1. Add `@supabase/ssr` and `@supabase/supabase-js`, with exact versions pinned in `web/package.json`.
@@ -85,7 +89,9 @@ Do:
 Done when: an unauthenticated visit to `/o` redirects to sign-in, and a signed-in visit passes.
 
 ### WEB-04: Authentication pages
-Status: todo · Phase 1 · Size M · Depends: DB-02, WEB-03 · Blocks: WEB-06, WEB-15
+Status: done · Phase 1 · Size M · Depends: DB-02, WEB-03 · Blocks: WEB-06, WEB-15
+Verified 2026-10-04 against local Supabase and Mailpit: browser sign-up, resend, six-digit verification, live account and account-menu sign-out. The automated real Server Action flow additionally verifies unconfirmed-account errors, invalid codes, resend cooldown, recovery code plus password update, same-password rejection followed by successful retry without a new code, rejection of mismatched recovery user/session/email, rejection of the old password, acceptance of the new password, and safe fallback for an external `next`. Emails stay in httpOnly cookies. `FIELDMAPS_AUTH_LOCAL_TEST=1 pnpm --dir web test:auth:local` passed. No hosted auth verification or deployment is claimed.
+
 Do: build these pages with Nocturne chrome and 44 px targets:
 - `/sign-up`: email and password (8 characters or more), then `signUp`, then `/verify`.
   - The email travels in `sessionStorage` or an httpOnly cookie, never in the URL. URLs end up in request logs, history and Sentry breadcrumbs.
@@ -99,7 +105,9 @@ After sign-in, go to `next`, the last project, or `/onboarding`.
 Done when: every flow works against the local stack, with codes read from Mailpit.
 
 ### WEB-05: Server-side API client
-Status: todo · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, WEB-03 · Blocks: WEB-06, WEB-12
+Status: done · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, WEB-03 · Blocks: WEB-06, WEB-12
+Verified 2026-10-04: authenticated `/account` renders real `/v1/me` profile and membership counts from the local API, in both browser and automated HTTP acceptance. Generated endpoint types, runtime identity parsing, no-store requests and a 15-second timeout are in place. Large package uploads remain direct browser-to-API, retaining CORS and the public API origin to avoid introducing a web proxy body-size limit. `pnpm --dir web check`, `build`, `test:auth` (11 tests) and `test:api-errors` (31 tests including HTML 200 response handling) passed.
+
 Do:
 1. Create `src/lib/api/client.ts` and mark it `server-only`. It fetches `FIELDMAPS_API_URL` (a server environment variable, not `NEXT_PUBLIC_`) with the session's access token and `cache: 'no-store'`, typed by the generated `schema.d.ts`. It maps the error envelope to typed errors (`errors.ts`).
 2. Mutations go through Server Actions that call this client. Each action checks auth itself.

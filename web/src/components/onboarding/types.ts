@@ -1,6 +1,6 @@
 /**
  * The wizard's own state. It lives in React state only — nothing here is written to storage or
- * sent anywhere, because this page previews a flow the tenancy API (BE-07) does not support yet.
+ * sent anywhere until WEB-06 connects this preview to the tenancy API.
  */
 
 export type FormChoice = "janet-test-v1" | "shell-v1";

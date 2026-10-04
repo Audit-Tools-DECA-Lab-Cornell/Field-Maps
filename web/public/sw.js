@@ -1,4 +1,15 @@
-const CACHE_NAME = "fieldmaps-shell-v1";
+const CACHE_NAME = "fieldmaps-public-v2";
+
+function cacheable(url) {
+	const parsed = new URL(url, self.location.origin);
+	return (
+		parsed.origin === self.location.origin &&
+		!parsed.search &&
+		(parsed.pathname === "/" ||
+			parsed.pathname.startsWith("/icons/") ||
+			parsed.pathname.startsWith("/_next/static/"))
+	);
+}
 
 self.addEventListener("install", event => {
 	event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.add("/")));
@@ -14,9 +25,7 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("message", event => {
 	if (event.data?.type !== "CACHE_URLS" || !Array.isArray(event.data.urls)) return;
-	const sameOriginUrls = event.data.urls.filter(
-		url => new URL(url, self.location.origin).origin === self.location.origin
-	);
+	const sameOriginUrls = event.data.urls.filter(url => cacheable(url));
 	event.waitUntil(
 		caches
 			.open(CACHE_NAME)
@@ -26,7 +35,7 @@ self.addEventListener("message", event => {
 
 self.addEventListener("fetch", event => {
 	const requestUrl = new URL(event.request.url);
-	if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin) return;
+	if (event.request.method !== "GET" || !cacheable(requestUrl.href) || event.request.headers.has("RSC")) return;
 
 	if (event.request.mode === "navigate") {
 		event.respondWith(

@@ -15,7 +15,7 @@ Next.js App Router management application for FieldMaps. Parent `AGENTS.md` cont
 
 ## Honesty
 
-- This application is not connected to the API. Everything it shows comes from fixtures in `src/data/`, and the screens say so — in the top bar, the status footer, and a note in each section that could be read as live state.
+- Authentication uses Supabase and `/account` reads the caller's real API profile and memberships. Package upload calls the API. Other workspace screens read fixtures in `src/data/` and say so in their chrome and section notices; onboarding previews a flow without saving it.
 - Do not remove or soften those notices for a section that is still reading fixtures, and do not add a control that does not do what its label says. If a feature is not built, the screen states what is missing and why rather than pretending.
 - Fixtures mirror `supabase/migrations/`. Do not introduce a domain concept the schema does not have.
 - The observation fixtures preview the workspace _after_ `janet-test-v1` is published; the database itself holds two `shell-v1` records. Keep the two numbers distinguishable wherever both appear, and never let a fixture assert a state the real system could not be in without saying it is a preview.

@@ -95,7 +95,7 @@ def create_app(
         return await readiness.check_ready(engine, jwks)
 
     app.include_router(tenancy.create_router(sessions, authenticate))
-    app.include_router(identity.create_router(sessions, authenticate))
+    app.include_router(identity.create_router(sessions, authenticate, configuration))
     app.include_router(collection.create_router(sessions, authenticate))
     app.include_router(sites.create_router(sessions, authenticate))
     return app

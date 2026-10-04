@@ -4,7 +4,7 @@ import re
 from contextvars import ContextVar
 from time import monotonic
 from typing import Final, override
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import orjson
 import sentry_sdk
@@ -26,8 +26,19 @@ class ExceptionTypes(BaseModel):
     values: list[ExceptionType] = Field(default_factory=list[ExceptionType])
 
 
+class DeletionUser(BaseModel):
+    id: UUID
+
+
 def scrub_event(event: Event, _hint: Hint) -> Event:
     """Allow only diagnostic metadata; discard SQL, locals, requests and breadcrumbs."""
+    if event.get("message") == "Account deletion pending":
+        user = DeletionUser.model_validate(event.get("user", {}))
+        return {
+            "message": "Account deletion pending",
+            "level": "error",
+            "user": {"id": str(user.id)},
+        }
     kinds = ExceptionTypes.model_validate(event.get("exception", {}))
     return {
         "exception": {"values": [{"type": kind.type} for kind in kinds.values]},

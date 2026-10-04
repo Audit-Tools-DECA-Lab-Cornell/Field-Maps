@@ -7,6 +7,7 @@ import { View } from "react-native";
 import { AuthProvider } from "../src/auth/provider";
 import { PrimaryAction } from "../src/components/chrome";
 import { ScreenMessage } from "../src/components/screen-message";
+import { MeProvider } from "../src/data/api/me-provider";
 import { useOrientationPreference } from "../src/layout/orientation";
 import { FieldSessionProvider } from "../src/session/provider";
 import { initializeDatabase } from "../src/storage/observation-store";
@@ -39,18 +40,20 @@ export default function RootLayout() {
     >
       <SQLiteProvider databaseName="fieldmaps-shell.db" onInit={initializeDatabase} useSuspense>
         <AuthProvider>
-          <SyncProvider>
-            <FieldSessionProvider>
-              <StatusBar style="light" />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: colors.bg },
-                  animation: "fade",
-                }}
-              />
-            </FieldSessionProvider>
-          </SyncProvider>
+          <MeProvider>
+            <SyncProvider>
+              <FieldSessionProvider>
+                <StatusBar style="light" />
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.bg },
+                    animation: "fade",
+                  }}
+                />
+              </FieldSessionProvider>
+            </SyncProvider>
+          </MeProvider>
         </AuthProvider>
       </SQLiteProvider>
     </Suspense>

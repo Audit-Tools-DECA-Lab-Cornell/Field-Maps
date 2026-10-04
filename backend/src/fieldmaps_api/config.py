@@ -12,6 +12,7 @@ class Settings(BaseModel):
     issuer: HttpUrl | None = None
     jwks_url: HttpUrl | None = None
     audience: str = "authenticated"
+    auth_admin_key_file: Path | None = None
     database_password_file: Path | None = None
     database_tls: bool = False
     database_ca_file: Path | None = None
@@ -41,8 +42,12 @@ class Settings(BaseModel):
             msg = "Configure both issuer and jwks_url, or neither"
             raise ValueError(msg)
         for url in (self.issuer, self.jwks_url):
-            if url is not None and url.scheme != "https":
-                msg = "Identity provider URLs must use HTTPS"
+            if (
+                url is not None
+                and url.scheme != "https"
+                and url.host not in {"localhost", "127.0.0.1", "[::1]"}
+            ):
+                msg = "Identity provider URLs must use HTTPS outside loopback development"
                 raise ValueError(msg)
         return self
 

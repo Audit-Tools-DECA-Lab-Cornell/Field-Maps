@@ -6,7 +6,7 @@ This application and the collector are one product, so they carry one design sys
 
 ## What is real
 
-The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **Only one screen is connected to the API.** Base map upload posts a real package to `POST /v1/projects/{project}/packages` and renders the checks the server returns. Every other record, count, chart and connection value comes from fixtures under [`src/data/`](src/data), generated in the browser from a fixed seed.
+The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **The account screen and base map upload are connected to the API.** The account screen renders the signed-in profile and membership counts from `/v1/me` on the server. Base map upload posts a real package to `POST /v1/projects/{project}/packages` and renders the checks the server returns. Every other record, count, chart and connection value comes from fixtures under [`src/data/`](src/data), generated in the browser from a fixed seed.
 
 That is stated on the screens themselves — in the top bar, along the status footer, and in a note on each section that could otherwise be mistaken for live state. Keep it that way. When a section is wired to the API, the note comes off that section and not before.
 
@@ -53,11 +53,11 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). No API key, account or network is needed: the default map base is bundled vector geometry, and the street tile base is the only thing on any screen that fetches.
+Open [http://localhost:3000](http://localhost:3000). The fixture workspace needs no account. The account and onboarding routes require Supabase sign-in. The default map base is bundled vector geometry.
 
 ## Connect it to the API
 
-One screen talks to the API: base map upload. It reads a single public variable.
+Base map upload calls the API directly from the browser. Account data calls the API only from the server.
 
 ```bash
 cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
@@ -76,7 +76,7 @@ The API must also name this origin. Browsers preflight a cross-origin request th
 
 Two things this cannot fix on its own. A page served over HTTPS may not call an API on `http://127.0.0.1`, so the deployed site needs a deployed API over HTTPS — pointing it at a laptop will not work. And uploading still needs a manager's token, below.
 
-Uploading needs an access token for an account with the **manager** role on the project. There is no web sign-in yet, so the screen has a field to paste one; that is a stopgap and is marked as one.
+Uploading needs an access token for an account with the **manager** role on the project. The fixture upload screen still has a pasted-token stopgap, marked as such; WEB-06 will connect its account menu and remove that field.
 
 Quality checks:
 
@@ -86,6 +86,26 @@ Quality checks:
 pnpm check   # typecheck and lint
 pnpm build
 ```
+
+## Authentication and server API
+
+Set these process or deployment settings before starting the app:
+
+| Setting | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Auth origin, local `http://127.0.0.1:54321` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key (local legacy anon key also supported), never a service-role key |
+| `FIELDMAPS_API_URL` | Server-only API origin, normally local `http://127.0.0.1:8000` |
+
+`/sign-up`, `/verify`, `/sign-in`, `/forgot-password`, and `/reset-password` use Server Actions and six-digit email codes. The local confirmation/recovery email templates must contain `{{ .Token }}`; read the codes in Mailpit at `http://127.0.0.1:54324`. Pending email addresses live in short-lived httpOnly cookies, never URLs. Resends enforce a 60-second cooldown in the action as well as the UI. Supabase remains the rate-limit authority. If a recovery code succeeds but the new password is rejected, retries reuse that verified recovery session. A short-lived httpOnly workflow marker must match the current Supabase-verified user, session ID and pending email; it is cleared when a new recovery starts, the password changes, or the user signs out.
+
+The proxy refreshes cookies and protects `/o`, `/onboarding`, and `/account`; server components and the API client independently verify claims. `/o` currently opens `/account`, which shows a live profile and membership counts and an account menu with sign-out. Onboarding remains an explicitly labelled preview until WEB-06. Sign-in uses a validated same-origin `next` path or `/onboarding`; last-project selection arrives with the organization/project routes.
+
+`src/lib/api/client.ts` is server-only, uses generated endpoint types, validates identity data, attaches the verified session's access token, disables caching, and imposes a 15-second timeout. Future tenant mutations must call it from authenticated Server Actions. Large package uploads intentionally remain browser-to-API to avoid proxy body-size limits, so the existing public API origin and CORS settings are retained until that consumer changes.
+
+The service worker only caches the public landing page, icons, and static build assets. It never stores auth pages, account/tenant pages, API results, query strings, or RSC requests. This is the auth safety subset of WEB-02, not completion of its build-id/manifest/indexing work.
+
+Run `pnpm test:auth` for redirect, response-validation and private-cache regressions, then `pnpm check` and `pnpm build`. With a dev server on port 3002 connected to the local Auth/API stack, run `FIELDMAPS_AUTH_LOCAL_TEST=1 pnpm test:auth:local` for real signup, verification, recovery and changed-password sign-in through Server Actions. This opt-in test creates a synthetic local account and reads its codes from local Mailpit; it never targets hosted services.
 
 ## Technical shape
 
