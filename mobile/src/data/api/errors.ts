@@ -40,8 +40,10 @@ export class ApiError extends Error {
   readonly name = "ApiError";
   readonly code: ApiErrorCode | "unknown";
   readonly kind: ErrorKind;
+  /** Seconds the server asked to wait (`Retry-After` on 429 rate_limited), when it said. */
+  readonly retryAfter: number | null;
 
-  constructor(code: ApiErrorCode | "unknown", kind: ErrorKind) {
+  constructor(code: ApiErrorCode | "unknown", kind: ErrorKind, retryAfter: number | null = null) {
     super(
       code === "unknown"
         ? "The server response could not be verified. Your record is saved and will retry."
@@ -49,7 +51,17 @@ export class ApiError extends Error {
     );
     this.code = code;
     this.kind = kind;
+    this.retryAfter = retryAfter;
   }
+}
+
+/** `Retry-After` in seconds: a delay, or an HTTP date measured from `now`. Null when absent or unreadable. */
+export function retryAfterSeconds(value: string | null, now = Date.now()): number | null {
+  if (value === null || value.trim() === "") return null;
+  const trimmed = value.trim();
+  if (/^\d+$/.test(trimmed)) return Number(trimmed);
+  const date = Date.parse(trimmed);
+  return Number.isNaN(date) ? null : Math.max(0, Math.ceil((date - now) / 1000));
 }
 
 export function parseApiError(status: number, body: unknown): ApiError {
@@ -97,5 +109,7 @@ export async function readApiError(response: Response): Promise<ApiError> {
   } catch (error) {
     if (!(error instanceof SyntaxError)) throw error;
   }
-  return parseApiError(response.status, body);
+  const error = parseApiError(response.status, body);
+  const wait = retryAfterSeconds(response.headers.get("Retry-After"));
+  return wait === null ? error : new ApiError(error.code, error.kind, wait);
 }

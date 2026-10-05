@@ -3,8 +3,8 @@ import { StyleSheet, View } from "react-native";
 import { Button, Logo, Note, Screen, Text, TextLink, type Theme, useStyles } from "../../ui";
 import { AuthPlan } from "./AuthPlan";
 import { openPrivacy } from "./links";
-import { waitingTitle } from "./rules";
-import { useWaitingRecords } from "./use-waiting-records";
+import { DELETED_ACCOUNT_TITLE, deletedAccountBody, waitingTitle } from "./rules";
+import { useDeletedAccount, useWaitingRecords } from "./use-waiting-records";
 
 function welcomeStyles(t: Theme) {
   return StyleSheet.create({
@@ -20,12 +20,15 @@ function welcomeStyles(t: Theme) {
 /**
  * Welcome (Mobile 23): the FieldMaps lockup, the Riverside plan, the promise, and the way in. When
  * records are waiting on this device for a signed-out account, a note names them and their owner before
- * anything else can be chosen.
+ * anything else can be chosen. When the server reported the account on this device deleted, the gate
+ * opens here instead of the app, and the note says its records stay on this device and cannot upload;
+ * another account can still sign in.
  */
 export function WelcomeScreen() {
   const s = useStyles(welcomeStyles);
   const router = useRouter();
   const waiting = useWaitingRecords();
+  const deleted = useDeletedAccount();
 
   return (
     <Screen scroll testID="auth-welcome">
@@ -42,7 +45,16 @@ export function WelcomeScreen() {
           Capture observations in place. Your records stay with you, even when the network does not.
         </Text>
       </View>
-      {waiting ? (
+      {deleted ? (
+        <Note
+          tone="attention"
+          title={DELETED_ACCOUNT_TITLE}
+          style={s.note}
+          testID="auth-welcome-deleted"
+        >
+          {deletedAccountBody(deleted.count)}
+        </Note>
+      ) : waiting ? (
         <Note tone="waiting" icon="smartphone" title={waitingTitle(waiting.count)} style={s.note}>
           {`They belong to ${waiting.owner}. Sign in to that account to resume uploads.`}
         </Note>

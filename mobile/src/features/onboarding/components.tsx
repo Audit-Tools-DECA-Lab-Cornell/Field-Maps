@@ -1,6 +1,18 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { Avatar, Icon, InnerPanel, Text, type Theme, useStyles, useTheme } from "../../ui";
+import {
+  Avatar,
+  Icon,
+  InnerPanel,
+  StatusLine,
+  Text,
+  type Theme,
+  useStyles,
+  useTheme,
+} from "../../ui";
+import { useProfile } from "../auth/profile-store";
+import { PROFILE_QUEUED } from "../auth/profile-sync";
+import { useDataSource } from "../preview/data-source";
 
 /**
  * Pieces the onboarding screens share (mobile-29 to 31). They compose Contour primitives and read every
@@ -153,6 +165,25 @@ export function ScopeList({ title, items }: { title: string; items: readonly Sco
         ))}
       </View>
     </View>
+  );
+}
+
+/**
+ * "Saved on this phone. It reaches your account when you are online." while the name and initials wait
+ * on this device for the account to take them (device data only; preview sends nothing).
+ */
+export function ProfileQueuedLine() {
+  const { pending } = useProfile();
+  const { mode } = useDataSource();
+  if (!pending || mode !== "device") return null;
+  return (
+    <StatusLine
+      tone="waiting"
+      icon="smartphone"
+      text={PROFILE_QUEUED}
+      live
+      testID="onboarding-profile-queued"
+    />
   );
 }
 

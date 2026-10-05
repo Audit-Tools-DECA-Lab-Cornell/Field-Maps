@@ -7,8 +7,8 @@ import { AuthScreen, FieldStack, Footnote, firstParam, PasswordFields, PreviewLi
 import {
   AUTH_WIRED,
   CODE_LENGTH,
-  MIN_PASSWORD_LENGTH,
   PASSWORD_CHANGED,
+  passwordLengthOk,
   resetDisabledReason,
   WRONG_CODE_DEMO,
 } from "./rules";
@@ -36,7 +36,7 @@ export function ResetPasswordScreen() {
     if (reason) {
       // From the keyboard's return key: go to what is still missing, and say why nothing happened.
       if (code.length < CODE_LENGTH) codeRef.current?.focus();
-      else if (password.length < MIN_PASSWORD_LENGTH) passwordRef.current?.focus();
+      else if (!passwordLengthOk(password.length)) passwordRef.current?.focus();
       else confirmRef.current?.focus();
       announce(reason);
       return;
@@ -105,7 +105,7 @@ export function ResetPasswordScreen() {
         <PasswordFields
           passwordLabel="New password"
           confirmLabel="Confirm new password"
-          rule="At least 12."
+          rule="At least 8."
           password={password}
           confirm={confirm}
           onPasswordChange={setPassword}

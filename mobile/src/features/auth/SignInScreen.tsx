@@ -21,13 +21,15 @@ import { openPrivacy } from "./links";
 import { type AuthNotice, takeAuthNotice } from "./notice";
 import { AuthScreen, EMAIL_INPUT, FieldStack, firstParam } from "./parts";
 import {
+  DELETED_ACCOUNT_TITLE,
+  deletedAccountBody,
   isEmail,
   SIGN_IN_MESSAGES,
   type SignInFailure,
   signInFailure,
   waitingTitle,
 } from "./rules";
-import { useWaitingRecords } from "./use-waiting-records";
+import { useDeletedAccount, useWaitingRecords } from "./use-waiting-records";
 
 type Errors = { email?: string | undefined; password?: string | undefined };
 
@@ -47,16 +49,18 @@ function signInStyles(t: Theme) {
 /**
  * Sign in (Mobile 24). The one auth call that reaches the server today: Supabase's
  * `signInWithPassword`, through the client the AuthProvider already holds. Each way it can fail has its
- * own words, and every one of them leaves the records waiting here in place.
+ * own words, and every one of them leaves the records waiting here in place. An account the server
+ * reported deleted is not let back in on this device: signing in to it says so.
  */
 export function SignInScreen() {
   const s = useStyles(signInStyles);
   const router = useRouter();
   const haptics = useHaptics();
   const params = useLocalSearchParams<{ email?: string | string[] }>();
-  const { client, configured } = useAccount();
+  const { client, deletedUserId } = useAccount();
   const gate = useGate();
   const waiting = useWaitingRecords();
+  const deleted = useDeletedAccount();
 
   const [email, setEmail] = useState(() => firstParam(params.email) ?? waiting?.email ?? "");
   const emailTouched = useRef(email !== "");
@@ -101,19 +105,21 @@ export function SignInScreen() {
     setNotice(null);
     if (found.email) return emailRef.current?.focus();
     if (found.password) return passwordRef.current?.focus();
-    if (!configured || !client) {
-      const words = SIGN_IN_MESSAGES.notConfigured;
-      setFailure("notConfigured");
-      announce(`${words.title} ${words.body}`);
-      Keyboard.dismiss();
-      return;
-    }
     setFailure(null);
     setBusy(true);
     let outcome: SignInFailure | null;
     try {
-      const { error } = await client.auth.signInWithPassword({ email: email.trim(), password });
-      outcome = error ? signInFailure(error) : null;
+      // Without a client the auth module did not start (a build missing its native modules).
+      if (!client) throw new Error("Sign-in could not start");
+      const { data, error } = await client.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      // The provider ignores a session for the account the server deleted: say why nothing opens, and
+      // drop the session it would otherwise keep in secure storage.
+      const deletedAgain = !error && data.user?.id !== undefined && data.user.id === deletedUserId;
+      if (deletedAgain) await client.auth.signOut({ scope: "local" });
+      outcome = error ? signInFailure(error) : deletedAgain ? "deleted" : null;
     } catch (cause) {
       outcome = signInFailure(cause);
     }
@@ -210,7 +216,11 @@ export function SignInScreen() {
           text={notice.message}
         />
       ) : null}
-      {waiting ? (
+      {deleted && failure !== "deleted" ? (
+        <Note tone="attention" title={DELETED_ACCOUNT_TITLE}>
+          {deletedAccountBody(deleted.count)}
+        </Note>
+      ) : waiting ? (
         <Note tone="waiting" icon="smartphone" title={waitingTitle(waiting.count)}>
           {`They belong to ${waiting.owner} and upload only from that account.`}
         </Note>

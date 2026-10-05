@@ -4,6 +4,17 @@ export function restoreAccount(cached: CachedAccount | null, deleted: CachedAcco
   return { account: cached ?? deleted, deletedUserId: deleted?.id ?? null };
 }
 
+/**
+ * The account on this device is the one the server reported deleted (markAccountDeleted, or the marker
+ * restored on restart): its records stay here, and it can neither upload nor start new work.
+ */
+export function isAccountDeleted(
+  deletedUserId: string | null,
+  account: { readonly id: string } | null,
+): boolean {
+  return deletedUserId !== null && account?.id === deletedUserId;
+}
+
 export function allowedSession<T extends { readonly user: { readonly id: string } }>(
   session: T | null,
   deletedUserId: string | null,

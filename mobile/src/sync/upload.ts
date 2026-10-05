@@ -1,4 +1,4 @@
-import ky, { TimeoutError } from "ky";
+import ky, { NetworkError, TimeoutError } from "ky";
 import { readApiError } from "../data/api/errors";
 import type { ShellObservation } from "../domain/observation";
 import { receiptSchema, type SyncScope, type UploadResult, uploadPayload } from "./contracts";
@@ -40,7 +40,14 @@ export async function uploadObservation(
       };
     return { kind: "accepted", receipt: receipt.data };
   } catch (error) {
-    if (error instanceof TimeoutError || error instanceof TypeError || error instanceof SyntaxError)
+    // ky wraps a dropped connection in NetworkError where it recognises the runtime's fetch failure
+    // (React Native's "Network request failed" among them), and leaves the bare TypeError elsewhere.
+    if (
+      error instanceof NetworkError ||
+      error instanceof TimeoutError ||
+      error instanceof TypeError ||
+      error instanceof SyntaxError
+    )
       return {
         kind: "retry",
         message: "Connection interrupted. Your record is saved and will retry.",

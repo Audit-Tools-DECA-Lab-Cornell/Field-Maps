@@ -3,7 +3,9 @@
  * designs without rendering a screen.
  */
 
-export const MIN_PASSWORD_LENGTH = 12;
+/** Passwords are 8 to 128 characters everywhere, as the server and Supabase Auth hold them (D25). */
+export const MIN_PASSWORD_LENGTH = 8;
+export const MAX_PASSWORD_LENGTH = 128;
 /** Verification and recovery codes are six digits. */
 export const CODE_LENGTH = 6;
 /** A new code can be asked for this often. */
@@ -38,16 +40,35 @@ function characters(count: number): string {
   return count === 1 ? "1 character" : `${count} characters`;
 }
 
+/** A password the server accepts: 8 to 128 characters. */
+export function passwordLengthOk(length: number): boolean {
+  return length >= MIN_PASSWORD_LENGTH && length <= MAX_PASSWORD_LENGTH;
+}
+
+/** What a new password still needs, in the field's words, or undefined when its length is fine. */
+export function passwordProblem(password: string): string | undefined {
+  if (password.length < MIN_PASSWORD_LENGTH)
+    return `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+  if (password.length > MAX_PASSWORD_LENGTH)
+    return `Use at most ${MAX_PASSWORD_LENGTH} characters.`;
+  return undefined;
+}
+
 /**
- * The live length check under a new password: "✓ 16 characters  Use at least 12." once it is long
+ * The live length check under a new password: "✓ 16 characters  Use at least 8." once it is long
  * enough, the count and the rule in secondary ink while it is short, and the rule alone when empty.
  */
 export function lengthCheck(
   length: number,
   rule: string,
 ): { success: string | undefined; hint: string } {
-  if (length >= MIN_PASSWORD_LENGTH) return { success: characters(length), hint: rule };
+  if (passwordLengthOk(length)) return { success: characters(length), hint: rule };
   if (length === 0) return { success: undefined, hint: rule };
+  if (length > MAX_PASSWORD_LENGTH)
+    return {
+      success: undefined,
+      hint: `${characters(length)}  Use at most ${MAX_PASSWORD_LENGTH}.`,
+    };
   return { success: undefined, hint: `${characters(length)}  ${rule}` };
 }
 
@@ -78,7 +99,9 @@ export function resetDisabledReason(
   if (code.length < CODE_LENGTH)
     return "The button turns on when all six digits of the code are in.";
   if (password.length < MIN_PASSWORD_LENGTH)
-    return "The button turns on when the new password has at least 12 characters.";
+    return `The button turns on when the new password has at least ${MIN_PASSWORD_LENGTH} characters.`;
+  if (password.length > MAX_PASSWORD_LENGTH)
+    return `The button turns on when the new password has at most ${MAX_PASSWORD_LENGTH} characters.`;
   if (confirm !== password) return "The button turns on when both passwords match.";
   return undefined;
 }
@@ -95,6 +118,21 @@ export function stayingTitle(count: number): string {
   return count === 1 ? "1 record stays on this device" : `${count} records stay on this device`;
 }
 
+/** The note welcome and sign-in show for an account the server reported deleted. */
+export const DELETED_ACCOUNT_TITLE = "This account was deleted.";
+
+/**
+ * What became of the deleted account's records: "5 records stay on this device; they cannot upload."
+ * Null while the queue is still being read.
+ */
+export function deletedAccountBody(count: number | null): string {
+  if (count === null) return "Its records stay on this device; they cannot upload.";
+  if (count === 0) return "None of its records are waiting on this device.";
+  return count === 1
+    ? "1 record stays on this device; it cannot upload."
+    : `${count} records stay on this device; they cannot upload.`;
+}
+
 /* ── Sign-in failures ─────────────────────────────────────────────────────── */
 
 export type SignInFailure =
@@ -103,7 +141,7 @@ export type SignInFailure =
   | "rateLimited"
   | "network"
   | "server"
-  | "notConfigured";
+  | "deleted";
 
 /**
  * What a failed `signInWithPassword` means for the person holding the phone. Reads the fields supabase-js
@@ -153,9 +191,9 @@ export const SIGN_IN_MESSAGES: Record<SignInFailure, { title: string; body: stri
     title: "The server could not sign you in.",
     body: "Your records are safe on this device. Try again in a few minutes. If it keeps happening, ask your project coordinator.",
   },
-  notConfigured: {
-    title: "This build is not connected to a server.",
-    body: "Use Training to practise.",
+  deleted: {
+    title: "This account was deleted.",
+    body: "Its records stay on this device; they cannot upload. Sign in with an active account.",
   },
 };
 

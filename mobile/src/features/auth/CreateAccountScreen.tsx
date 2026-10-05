@@ -22,7 +22,7 @@ import {
   PasswordFields,
   PreviewLine,
 } from "./parts";
-import { AUTH_WIRED, DOES_NOT_MATCH, isEmail, MIN_PASSWORD_LENGTH } from "./rules";
+import { AUTH_WIRED, DOES_NOT_MATCH, isEmail, passwordProblem } from "./rules";
 
 type Errors = {
   email?: string | undefined;
@@ -68,7 +68,7 @@ export function CreateAccountScreen() {
   function submit() {
     const found: Errors = {
       email: isEmail(email) ? undefined : "Enter an email address, such as name@example.org.",
-      password: password.length >= MIN_PASSWORD_LENGTH ? undefined : "Use at least 12 characters.",
+      password: passwordProblem(password),
       confirm:
         confirm.length === 0
           ? "Enter the same password again."
@@ -142,7 +142,7 @@ export function CreateAccountScreen() {
         <PasswordFields
           passwordLabel="Password"
           confirmLabel="Confirm password"
-          rule="Use at least 12."
+          rule="Use at least 8."
           password={password}
           confirm={confirm}
           onPasswordChange={(value) => {

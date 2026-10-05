@@ -2,14 +2,15 @@ import { useFonts } from "expo-font";
 import { type ErrorBoundaryProps, Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { StatusBar } from "expo-status-bar";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "../src/auth/provider";
 import { PrimaryAction } from "../src/components/chrome";
 import { ScreenMessage } from "../src/components/screen-message";
 import { MeProvider } from "../src/data/api/me-provider";
-import { useGate } from "../src/features/auth/gate";
+import { type Gate, useGate } from "../src/features/auth/gate";
+import { ProfileQueue } from "../src/features/auth/profile-sync";
 import { DataSourceProvider, PREVIEW_ALLOWED } from "../src/features/preview/data-source";
 import { useOrientationPreference } from "../src/layout/orientation";
 import { FieldSessionProvider } from "../src/session/provider";
@@ -70,6 +71,8 @@ export default function RootLayout() {
                           {/* Legacy screens are dark Nocturne. Contour screens set their own status
                               bar through the Screen primitive. */}
                           <StatusBar style="light" />
+                          {/* Sends an observer profile saved offline once the account can take it. */}
+                          <ProfileQueue />
                           <GatedStack />
                         </FieldSessionProvider>
                       </DataSourceProvider>
@@ -85,17 +88,56 @@ export default function RootLayout() {
   );
 }
 
+const HOLD_TITLE = "Opening your workspace";
+const HOLD_DETAIL = "Reading your observer profile…";
+
 /**
- * The routes each part of the app may open (useGate). Signed out: sign-in only. Signed in without a
- * finished observer profile: onboarding only. Otherwise the app. When the gate changes, Stack.Protected
- * drops the routes that closed and lands on the first one that opened, so a finished onboarding or a
- * sign-out moves on without a screen navigating by itself. The review routes stay open in development
- * and review builds whatever the gate says.
+ * The routes each part of the app may open (useGate). Signed out, or an account the server deleted:
+ * sign-in only. Signed in without an observer profile on the server or this device: onboarding only.
+ * Otherwise the app. When the gate changes, Stack.Protected drops the routes that closed and lands on the
+ * first one that opened, so a finished onboarding or a sign-out moves on without a screen navigating by
+ * itself. The review routes stay open in development and review builds whatever the gate says.
+ *
+ * While the gate holds (an account's `/v1/me` is not known yet), the splash stays up instead of a guess:
+ * before the first route opens, in place of the stack, so a cold-start link still lands where it points;
+ * after that, over the routes last opened, which stay mounted underneath.
  *
  * Routes not listed here are not guarded; list new app routes in the app group.
  */
 function GatedStack() {
-  const { signedIn, needsOnboarding } = useGate();
+  const gate = useGate();
+  const decided = useRef<Gate | null>(null);
+  if (gate.route !== "hold") decided.current = gate;
+  const shown = decided.current;
+  if (!shown) return <ScreenMessage title={HOLD_TITLE} detail={HOLD_DETAIL} />;
+  const { signedIn, needsOnboarding } = shown;
+  const holding = gate.route === "hold";
+  return (
+    <View style={styles.root}>
+      {/* Covered by the splash while holding: screen readers skip it as touch does. */}
+      <View
+        style={styles.root}
+        accessibilityElementsHidden={holding}
+        importantForAccessibility={holding ? "no-hide-descendants" : "auto"}
+      >
+        <GuardedRoutes signedIn={signedIn} needsOnboarding={needsOnboarding} />
+      </View>
+      {holding ? (
+        <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
+          <ScreenMessage title={HOLD_TITLE} detail={HOLD_DETAIL} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function GuardedRoutes({
+  signedIn,
+  needsOnboarding,
+}: {
+  signedIn: boolean;
+  needsOnboarding: boolean;
+}) {
   return (
     <Stack
       screenOptions={{

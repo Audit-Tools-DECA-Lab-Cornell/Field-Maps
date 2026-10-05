@@ -9,12 +9,14 @@ import {
   useRef,
   useState,
 } from "react";
+import { useMe } from "../../data/api/me-provider";
 import type { Observation } from "../../domain/observation";
 import { bundledPackage } from "../../packages/bundled";
 import type { SitePackage } from "../../packages/site-package";
 import { shortLabel } from "../../session/provider";
 import { useObservations } from "../../storage/use-observations";
 import { useSync } from "../../sync/provider";
+import { deviceProjects } from "./device-projects";
 import {
   PACKAGE_ASSETS,
   PREVIEW_PROJECTS,
@@ -27,10 +29,11 @@ import {
 } from "./fixtures";
 
 /**
- * Where the collector's screens read from. `device` uses what really exists on this phone (the SQLite
- * queue, sync, the bundled packages) and says plainly when something needs the server. `preview` shows
- * the designed fixtures, including the states the device cannot produce yet ("Uploading", a download in
- * progress). Preview is a review tool: release builds always read the device.
+ * Where the collector's screens read from. `device` uses the account and this phone: projects and the
+ * profile from `/v1/me` (D24), join codes through the FieldMaps API, and the SQLite queue, sync and
+ * bundled packages; it says plainly when something needs the server. `preview` shows the designed
+ * fixtures, including the states the device cannot produce yet ("Uploading", a download in progress),
+ * and sends nothing. Preview is a review tool: release builds always read the device.
  */
 export type DataMode = "device" | "preview";
 
@@ -247,12 +250,34 @@ export function useDataSource(): DataSourceValue {
   return value;
 }
 
+/**
+ * The projects the observer has joined. Device data reads them from `/v1/me` (memberships, cached for
+ * offline starts); preview shows the designed Play Study and Training.
+ */
 export function useProjects(): PreviewProject[] {
-  return PREVIEW_PROJECTS;
+  const { mode } = useDataSource();
+  const { projects, organizations } = useMe();
+  return useMemo(
+    () => (mode === "preview" ? PREVIEW_PROJECTS : deviceProjects(projects, organizations)),
+    [mode, projects, organizations],
+  );
 }
 
 export function useProject(projectId: string): PreviewProject | undefined {
-  return PREVIEW_PROJECTS.find((project) => project.id === projectId);
+  return useProjects().find((project) => project.id === projectId);
+}
+
+/**
+ * The project collection is for now: on device data the active project `/v1/me` keeps (the first
+ * joined project that is not Training, otherwise Training); in preview, Play Study.
+ */
+export function useActiveProject(): PreviewProject | undefined {
+  const { mode } = useDataSource();
+  const { activeProjectId } = useMe();
+  const projects = useProjects();
+  const id =
+    mode === "preview" ? projects.find((project) => !project.training)?.id : activeProjectId;
+  return projects.find((project) => project.id === id) ?? projects[0];
 }
 
 type SiteWithDownload = PreviewSite & { download: SiteDownload };
@@ -266,9 +291,11 @@ function withDownload(
   return { ...site, download: downloads[site.id] ?? notDownloaded(site) };
 }
 
+/** A project's sites, which still ship with the app on device data (MOB-14 brings hosted ones). */
 export function useSites(projectId: string): SiteWithDownload[] {
   const { mode, downloads } = useDataSource();
-  return PREVIEW_SITES.filter((site) => site.projectId === projectId).map((site) =>
+  const siteIds = useProject(projectId)?.siteIds ?? [];
+  return PREVIEW_SITES.filter((site) => siteIds.includes(site.id)).map((site) =>
     withDownload(site, mode, downloads),
   );
 }

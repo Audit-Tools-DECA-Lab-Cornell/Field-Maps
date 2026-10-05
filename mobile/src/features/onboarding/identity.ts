@@ -7,8 +7,8 @@
 /** The longest observer code. */
 export const INITIALS_MAX = 10;
 
-/** The longest full name the profile keeps. Names wrap on screen; this only bounds storage. */
-export const NAME_MAX = 80;
+/** The longest full name, as the server's profile takes it (`display_name`, at most 100). */
+export const NAME_MAX = 100;
 
 const INITIALS_PATTERN = /^[A-Z0-9]{1,10}$/;
 
@@ -67,4 +67,39 @@ export function initialsProblem(value: string): string | undefined {
   if (value === "" || value.length > INITIALS_MAX) return "Enter up to 10 uppercase characters";
   if (!isValidInitials(value)) return "Use the letters A to Z and numbers only";
   return undefined;
+}
+
+/** A profile as one source holds it: this device's copy, or the server's. */
+type ProfileSource = { name: string | null; initials: string | null };
+
+/**
+ * Where the identity step starts. An edit still waiting on this device wins, since the server has not
+ * seen it; otherwise the account's server profile (set on another device or the web), then what this
+ * device saved, then the name the account was created with. The initials are suggested from the name
+ * when no source has any.
+ */
+export function profileDefaults({
+  local,
+  server,
+  accountName,
+}: {
+  local: (ProfileSource & { pending: boolean }) | null;
+  server: { display_name: string | null; observer_initials: string | null } | null;
+  accountName: string;
+}): { name: string; initials: string; initialsChosen: boolean } {
+  const fromServer: ProfileSource | null = server
+    ? { name: server.display_name, initials: server.observer_initials }
+    : null;
+  const sources = local?.pending ? [local, fromServer] : [fromServer, local];
+  const pick = (field: keyof ProfileSource) => {
+    for (const source of sources) {
+      const value = source?.[field];
+      if (value) return value;
+    }
+    return null;
+  };
+  const name = pick("name") ?? accountName;
+  const chosen = pick("initials");
+  const initials = chosen && isValidInitials(chosen) ? chosen : suggestInitials(name);
+  return { name, initials, initialsChosen: initials === chosen };
 }

@@ -1,6 +1,8 @@
 import Storage from "expo-sqlite/kv-store";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { useAccount } from "../../auth/provider";
+import { useMe } from "../../data/api/me-provider";
+import { isValidInitials } from "../onboarding/identity";
 import { PREVIEW_ALLOWED } from "../preview/data-source";
 import { useProfile } from "./profile-store";
 
@@ -9,28 +11,42 @@ import { useProfile } from "./profile-store";
  * groups with this (Stack.Protected), so a screen never has to check by itself.
  *
  * The rule:
- * - A practice build (no FieldMaps server configured) has no accounts and goes straight in.
- * - Otherwise a live session or an account cached on this device counts as signed in, so an observer whose
- *   token expired in the field keeps collecting offline. Only a deliberate sign-out clears the cache.
- * - A signed-in account without a finished observer profile goes through onboarding first.
+ * - A live session or an account cached on this device counts as signed in, so an observer whose token
+ *   expired in the field keeps collecting offline. Only a deliberate sign-out clears the cache.
+ * - An account the server reported deleted (403 account_deleted, remembered across restarts) is not
+ *   signed in: welcome opens and names its records, which stay on this device and cannot upload. Nothing
+ *   new is collected for it.
+ * - A signed-in account goes through onboarding when neither its server profile (`/v1/me`) has observer
+ *   initials nor this device has a profile for it. A profile started here but not finished (the join
+ *   step is still ahead) keeps onboarding open whatever the server says; one finished here opens the app
+ *   offline even before the server has it.
+ * - Until `/v1/me` is known for an account with no profile here, the gate holds the splash, so
+ *   onboarding never flashes for an observer the server already knows.
  *
- * Review builds can force one of the three with a dev override (the (dev)/states screen).
+ * Review builds can force a route with a dev override (the (dev)/states screen).
  */
 
-export const GATE_OVERRIDES = ["real", "signed-out", "onboarding", "signed-in"] as const;
+export const GATE_OVERRIDES = ["real", "signed-out", "deleted", "onboarding", "signed-in"] as const;
 export type GateOverride = (typeof GATE_OVERRIDES)[number];
 
-export type GateRoute = "auth" | "onboarding" | "app";
+/** `hold`: not decided yet; the splash stays up. */
+export type GateRoute = "auth" | "onboarding" | "app" | "hold";
+
+/** The observer profile on this device: none, saved but onboarding not finished, or finished. */
+export type LocalProfile = "none" | "started" | "complete";
 
 export type GateInput = {
-  /** A FieldMaps server is configured, so the build has accounts (`useAccount().configured`). */
-  configured: boolean;
   /** A live session. */
   session: boolean;
   /** An account remembered on this device, even with an expired token. */
   cachedAccount: boolean;
-  /** The account's observer profile is saved and onboarding finished. */
-  profileComplete: boolean;
+  /** The account on this device was reported deleted by the server. */
+  accountDeleted: boolean;
+  /** `/v1/me` has settled for the account: read, cached, or not readable right now. */
+  meReady: boolean;
+  /** The server profile carries observer initials. */
+  serverInitials: boolean;
+  localProfile: LocalProfile;
   override?: GateOverride | undefined;
   /** Overrides apply only in development and review builds. */
   overrideAllowed?: boolean | undefined;
@@ -39,15 +55,18 @@ export type GateInput = {
 export type GateDecision = {
   signedIn: boolean;
   needsOnboarding: boolean;
+  /** Welcome names the deleted account's records, and nothing new is collected for it. */
+  accountDeleted: boolean;
   route: GateRoute;
   /** The dev override decided, not the account. */
   overridden: boolean;
 };
 
 const FORCED: Record<Exclude<GateOverride, "real">, Omit<GateDecision, "overridden">> = {
-  "signed-out": { signedIn: false, needsOnboarding: false, route: "auth" },
-  onboarding: { signedIn: true, needsOnboarding: true, route: "onboarding" },
-  "signed-in": { signedIn: true, needsOnboarding: false, route: "app" },
+  "signed-out": { signedIn: false, needsOnboarding: false, accountDeleted: false, route: "auth" },
+  deleted: { signedIn: false, needsOnboarding: false, accountDeleted: true, route: "auth" },
+  onboarding: { signedIn: true, needsOnboarding: true, accountDeleted: false, route: "onboarding" },
+  "signed-in": { signedIn: true, needsOnboarding: false, accountDeleted: false, route: "app" },
 };
 
 /** The gate as a pure function of what the device knows. */
@@ -55,10 +74,21 @@ export function decideGate(input: GateInput): GateDecision {
   const override = input.override ?? "real";
   if (input.overrideAllowed === true && override !== "real")
     return { ...FORCED[override], overridden: true };
-  const signedIn = !input.configured || input.session || input.cachedAccount;
-  const needsOnboarding = signedIn && input.configured && !input.profileComplete;
-  const route: GateRoute = !signedIn ? "auth" : needsOnboarding ? "onboarding" : "app";
-  return { signedIn, needsOnboarding, route, overridden: false };
+  const accountDeleted = input.accountDeleted;
+  const signedIn = !accountDeleted && (input.session || input.cachedAccount);
+  const holding = signedIn && input.localProfile === "none" && !input.meReady;
+  const needsOnboarding =
+    signedIn &&
+    !holding &&
+    (input.localProfile === "started" || (input.localProfile === "none" && !input.serverInitials));
+  const route: GateRoute = !signedIn
+    ? "auth"
+    : holding
+      ? "hold"
+      : needsOnboarding
+        ? "onboarding"
+        : "app";
+  return { signedIn, needsOnboarding, accountDeleted, route, overridden: false };
 }
 
 const OVERRIDE_KEY = "fm.dev.gate";
@@ -101,8 +131,6 @@ function subscribeOverride(listener: () => void): () => void {
 }
 
 export type Gate = GateDecision & {
-  /** A FieldMaps server is configured. False in practice builds, which have no sign-in. */
-  configured: boolean;
   /** What the account and profile alone decide, whatever the override says. */
   real: GateDecision;
   devOverride: GateOverride;
@@ -112,27 +140,38 @@ export type Gate = GateDecision & {
 };
 
 export function useGate(): Gate {
-  const { configured, session, account } = useAccount();
+  const { session, account, accountDeleted } = useAccount();
+  const me = useMe();
   const profile = useProfile();
   const devOverride = useSyncExternalStore(subscribeOverride, readOverride, readOverride);
   const setDevOverride = useCallback((next: GateOverride) => writeOverride(next), []);
+  const serverInitials = isValidInitials(me.profile?.observer_initials ?? "");
+  const localProfile: LocalProfile = profile.complete
+    ? "complete"
+    : profile.saved
+      ? "started"
+      : "none";
 
   return useMemo(() => {
     const input: GateInput = {
-      configured,
       session: session !== null,
       cachedAccount: account !== null,
-      profileComplete: profile.complete,
+      accountDeleted,
+      meReady: me.ready,
+      serverInitials,
+      localProfile,
     };
     const real = decideGate(input);
     const shown = decideGate({ ...input, override: devOverride, overrideAllowed: PREVIEW_ALLOWED });
-    return {
-      ...shown,
-      configured,
-      real,
-      devOverride,
-      setDevOverride,
-      overrideAllowed: PREVIEW_ALLOWED,
-    };
-  }, [configured, session, account, profile.complete, devOverride, setDevOverride]);
+    return { ...shown, real, devOverride, setDevOverride, overrideAllowed: PREVIEW_ALLOWED };
+  }, [
+    session,
+    account,
+    accountDeleted,
+    me.ready,
+    serverInitials,
+    localProfile,
+    devOverride,
+    setDevOverride,
+  ]);
 }

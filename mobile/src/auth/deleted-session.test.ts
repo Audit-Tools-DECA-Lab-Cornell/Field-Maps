@@ -1,5 +1,10 @@
 import { expect, it, vi } from "vitest";
-import { allowedSession, persistDeletedSignOut, restoreAccount } from "./deleted-session";
+import {
+  allowedSession,
+  isAccountDeleted,
+  persistDeletedSignOut,
+  restoreAccount,
+} from "./deleted-session";
 
 const account = { id: "50000000-0000-4000-8000-000000000001" };
 it("restores a deletion guard even when SecureStore still contains the deleted session", () => {
@@ -46,4 +51,14 @@ it.each(["returns", "throws"])("handles sign-out failure when it %s", async (mod
   );
   expect(retain).toHaveBeenCalledWith(account);
   expect(error).toContain("Uploads remain paused");
+});
+it("reads the account as deleted after a restart, from the retained marker alone", () => {
+  // The deleted session was signed out, so only the marker remembers the account.
+  const restored = restoreAccount(null, account);
+  expect(restored.account).toEqual(account);
+  expect(isAccountDeleted(restored.deletedUserId, restored.account)).toBe(true);
+  // Another account signed in on this device is not the deleted one.
+  expect(isAccountDeleted(restored.deletedUserId, { id: "other-account" })).toBe(false);
+  expect(isAccountDeleted(null, account)).toBe(false);
+  expect(isAccountDeleted(account.id, null)).toBe(false);
 });

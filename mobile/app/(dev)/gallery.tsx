@@ -17,6 +17,7 @@ import { router } from "expo-router";
 import type { BottomTabBarProps } from "expo-router/tabs";
 import { type ReactNode, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { MIN_PASSWORD_LENGTH } from "../../src/features/auth/rules";
 import {
   AnswerGrid,
   AnswerTile,
@@ -757,7 +758,7 @@ function TextFieldSection() {
     initials.length > 0 && !/^[A-Z]{1,10}$/.test(initials)
       ? "Enter up to 10 uppercase characters"
       : undefined;
-  const longEnough = password.length >= 12;
+  const longEnough = password.length >= MIN_PASSWORD_LENGTH;
   const matches = confirm === password;
 
   return (
@@ -783,7 +784,7 @@ function TextFieldSection() {
       <Field
         label="New password"
         success={longEnough ? `${password.length} characters` : undefined}
-        hint="At least 12."
+        hint="At least 8."
       >
         <PasswordInput value={password} onChangeText={setPassword} newPassword />
       </Field>

@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 import { pointInPolygon, RIVERSIDE_PLAN, WELCOME_MARKERS, WELCOME_VIEW } from "./plan";
 import {
   confirmCheck,
+  deletedAccountBody,
   formatCountdown,
   isEmail,
   lengthCheck,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  passwordLengthOk,
+  passwordProblem,
   resetDisabledReason,
   SIGN_IN_MESSAGES,
   signInFailure,
@@ -13,16 +18,33 @@ import {
 } from "./rules";
 
 describe("password checks", () => {
-  it("counts characters live and passes at twelve, as Mobile 25 and 28 draw it", () => {
-    expect(lengthCheck(0, "Use at least 12.")).toEqual({
+  it("holds passwords to 8 to 128 characters, as the server does (D25)", () => {
+    expect(MIN_PASSWORD_LENGTH).toBe(8);
+    expect(MAX_PASSWORD_LENGTH).toBe(128);
+    expect(passwordLengthOk(7)).toBe(false);
+    expect(passwordLengthOk(8)).toBe(true);
+    expect(passwordLengthOk(128)).toBe(true);
+    expect(passwordLengthOk(129)).toBe(false);
+    expect(passwordProblem("seven!!")).toBe("Use at least 8 characters.");
+    expect(passwordProblem("eight!!!")).toBeUndefined();
+    expect(passwordProblem("x".repeat(129))).toBe("Use at most 128 characters.");
+  });
+
+  it("counts characters live and passes at eight, as Mobile 25 and 28 draw it", () => {
+    expect(lengthCheck(0, "Use at least 8.")).toEqual({
       success: undefined,
-      hint: "Use at least 12.",
+      hint: "Use at least 8.",
     });
-    expect(lengthCheck(1, "Use at least 12.").hint).toBe("1 character  Use at least 12.");
-    expect(lengthCheck(7, "At least 12.").hint).toBe("7 characters  At least 12.");
-    expect(lengthCheck(16, "Use at least 12.")).toEqual({
+    expect(lengthCheck(1, "Use at least 8.").hint).toBe("1 character  Use at least 8.");
+    expect(lengthCheck(7, "At least 8.").hint).toBe("7 characters  At least 8.");
+    expect(lengthCheck(8, "At least 8.").success).toBe("8 characters");
+    expect(lengthCheck(16, "Use at least 8.")).toEqual({
       success: "16 characters",
-      hint: "Use at least 12.",
+      hint: "Use at least 8.",
+    });
+    expect(lengthCheck(129, "Use at least 8.")).toEqual({
+      success: undefined,
+      hint: "129 characters  Use at most 128.",
     });
   });
 
@@ -48,8 +70,9 @@ describe("password checks", () => {
       "The button turns on when all six digits of the code are in.",
     );
     expect(resetDisabledReason("730518", "short", "short")).toBe(
-      "The button turns on when the new password has at least 12 characters.",
+      "The button turns on when the new password has at least 8 characters.",
     );
+    expect(resetDisabledReason("730518", "eight!!!", "eight!!!")).toBeUndefined();
     expect(resetDisabledReason("730518", long, "seventeen-chars")).toBe(
       "The button turns on when both passwords match.",
     );
@@ -63,6 +86,13 @@ describe("words", () => {
     expect(waitingTitle(1)).toBe("1 record is waiting on this device.");
     expect(stayingTitle(5)).toBe("5 records stay on this device");
     expect(stayingTitle(1)).toBe("1 record stays on this device");
+  });
+
+  it("says a deleted account's records stay here and cannot upload", () => {
+    expect(deletedAccountBody(5)).toBe("5 records stay on this device; they cannot upload.");
+    expect(deletedAccountBody(1)).toBe("1 record stays on this device; it cannot upload.");
+    expect(deletedAccountBody(0)).toBe("None of its records are waiting on this device.");
+    expect(deletedAccountBody(null)).toBe("Its records stay on this device; they cannot upload.");
   });
 
   it("reads a countdown in minutes and seconds", () => {
@@ -109,17 +139,15 @@ describe("sign-in failures", () => {
       title: "We could not reach the server.",
       body: "Your records are safe on this device. Try again when you have signal.",
     });
-    expect(SIGN_IN_MESSAGES.notConfigured).toEqual({
-      title: "This build is not connected to a server.",
-      body: "Use Training to practise.",
-    });
+    expect(SIGN_IN_MESSAGES.deleted.title).toBe("This account was deleted.");
   });
 
-  it("says the records are safe in every failure that is not about the typed details", () => {
+  it("says the records are safe in every failure that is not about the account itself", () => {
     for (const [failure, { body }] of Object.entries(SIGN_IN_MESSAGES)) {
-      if (failure === "credentials" || failure === "notConfigured") continue;
+      if (failure === "credentials" || failure === "deleted") continue;
       expect(body).toContain("Your records are safe on this device.");
     }
+    expect(SIGN_IN_MESSAGES.deleted.body).toContain("stay on this device; they cannot upload.");
   });
 });
 

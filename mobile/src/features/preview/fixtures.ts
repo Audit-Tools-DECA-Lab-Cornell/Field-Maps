@@ -222,12 +222,24 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
   },
 ];
 
-/** What a join code resolves to before the observer accepts (MOB-06). */
+/** Two weeks from when the app opened, at 17:00 local time, so the preview code never reads as expired. */
+function previewExpiry(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 14);
+  date.setHours(17, 0, 0, 0);
+  return date.toISOString();
+}
+
+/**
+ * What a join code resolves to before the observer accepts (MOB-06): the fields
+ * `POST /v1/invitations/preview` returns, plus who invited and the sites, which only the preview shows.
+ */
 export const PREVIEW_INVITATION = {
   code: "DECA2026",
   organization: "DECA Lab, Cornell University",
   project: "Play Study",
-  role: "Observer",
+  role: "observer",
+  expiresAt: previewExpiry(),
   invitedBy: "Janet Loebach",
   sites: "Riverside, Fall Creek",
 } as const;

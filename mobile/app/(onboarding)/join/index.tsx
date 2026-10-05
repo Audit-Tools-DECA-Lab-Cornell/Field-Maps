@@ -1,34 +1,46 @@
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
-import { Alert, Keyboard, type TextInput as NativeTextInput, StyleSheet, View } from "react-native";
+import { Alert, type TextInput as NativeTextInput, StyleSheet, View } from "react-native";
 import { useProfile } from "../../../src/features/auth/profile-store";
-import { OrDivider, StepFoot, StepIntro } from "../../../src/features/onboarding/components";
+import {
+  OrDivider,
+  ProfileQueuedLine,
+  StepFoot,
+  StepIntro,
+} from "../../../src/features/onboarding/components";
 import { useFinishOnboarding } from "../../../src/features/onboarding/finish";
 import {
+  isCodeProblem,
   JOIN_CODE_LENGTH,
+  type JoinFailure,
   joinCodeOf,
-  lookupInvitation,
-  NEEDS_SERVER_REASON,
-  UNKNOWN_CODE,
 } from "../../../src/features/onboarding/invitation";
+import { useInvitations } from "../../../src/features/onboarding/use-invitations";
 import { useKeyboardVisible } from "../../../src/features/onboarding/use-keyboard-visible";
-import { useDataSource } from "../../../src/features/preview/data-source";
 import {
+  announce,
   Button,
   CodeInput,
   Field,
+  Note,
   Screen,
   ScreenHeader,
   StepBars,
   Text,
   TextLink,
   type Theme,
+  useHaptics,
   useStyles,
 } from "../../../src/ui";
 
 /**
  * Onboarding step 2 of 2 (mobile-30): enter the eight-character join code, see the project before
  * joining, or skip and practise in Training. `fieldmaps://join?code=…` opens this step filled in.
+ *
+ * On device data "Preview project" asks the FieldMaps API what the code opens
+ * (`POST /v1/invitations/preview`); preview data resolves only DECA2026. A code that opens nothing, or
+ * has expired, is said under the field; a missing connection or a busy server is said beside it, and the
+ * code stays in the field for another try.
  *
  * While the keyboard is up, "Preview project" moves into the pinned footer above it, so typing the code
  * never hides the step's one action; the way out returns when the keyboard goes.
@@ -38,46 +50,57 @@ export default function JoinStep() {
   const params = useLocalSearchParams<{ code?: string }>();
   const [code, setCode] = useState(() => joinCodeOf(params.code));
   const [problem, setProblem] = useState<string | undefined>(undefined);
+  const [notice, setNotice] = useState<JoinFailure | null>(null);
   const [busy, setBusy] = useState(false);
   const codeRef = useRef<NativeTextInput>(null);
-  const { mode } = useDataSource();
+  const invitations = useInvitations();
   const profile = useProfile();
   const finish = useFinishOnboarding();
   const keyboard = useKeyboardVisible();
+  const haptics = useHaptics();
 
   // The identity comes first: a link that lands here before it is saved goes back to step 1.
   if (!profile.saved)
     return <Redirect href={{ pathname: "/profile", params: code ? { code } : {} }} />;
 
-  const canLookUp = mode === "preview";
   const complete = code.length === JOIN_CODE_LENGTH;
 
   function changeCode(next: string) {
     setCode(next);
     setProblem(undefined);
+    setNotice(null);
   }
 
   async function preview() {
     if (busy) return;
-    if (!canLookUp) {
-      // The reason sits under the button; put it in view.
-      Keyboard.dismiss();
-      return;
-    }
     if (!complete) {
       setProblem("Enter all eight characters");
       codeRef.current?.focus();
       return;
     }
     setBusy(true);
+    setNotice(null);
     try {
-      const result = await lookupInvitation(code, mode);
+      const result = await invitations.lookup(code);
       if (result.status === "found") {
         router.push({ pathname: "/invitation/[code]", params: { code } });
         return;
       }
-      setProblem(UNKNOWN_CODE);
-      codeRef.current?.focus();
+      if (result.status === "incomplete") {
+        setProblem("Enter all eight characters");
+        codeRef.current?.focus();
+        return;
+      }
+      // A deleted account: the gate opens welcome in place of onboarding.
+      if (result.failure.kind === "deleted") return;
+      haptics.warning();
+      announce(result.failure.message);
+      if (isCodeProblem(result.failure)) {
+        setProblem(result.failure.message);
+        codeRef.current?.focus();
+      } else {
+        setNotice(result.failure);
+      }
     } finally {
       setBusy(false);
     }
@@ -98,15 +121,13 @@ export default function JoinStep() {
   const previewButton = (
     <Button
       label="Preview project"
-      iconRight="arrow-right"
+      iconRight={busy ? undefined : "arrow-right"}
       fullWidth
       busy={busy}
       busyLabel="Looking up the code…"
-      disabled={!canLookUp || !complete}
-      disabledReason={
-        canLookUp ? "The button turns on when all eight characters are in." : NEEDS_SERVER_REASON
-      }
-      onPress={preview}
+      disabled={!complete}
+      disabledReason="The button turns on when all eight characters are in."
+      onPress={() => void preview()}
       testID="onboarding-preview-project"
     />
   );
@@ -137,6 +158,7 @@ export default function JoinStep() {
           title="Join a project"
           lead="Enter the eight-character code supplied by your coordinator. You will see the project before joining."
         />
+        <ProfileQueuedLine />
         <View style={s.join}>
           <Field label="Project join code" hint="Letters and numbers, no spaces." error={problem}>
             <CodeInput
@@ -145,10 +167,19 @@ export default function JoinStep() {
               value={code}
               onChangeText={changeCode}
               returnKeyType="go"
-              onSubmitEditing={preview}
+              onSubmitEditing={() => void preview()}
               testID="onboarding-join-code"
             />
           </Field>
+          {notice ? (
+            <Note
+              tone="waiting"
+              icon={notice.kind === "offline" ? "wifi-off" : "clock"}
+              testID="onboarding-join-notice"
+            >
+              {notice.message}
+            </Note>
+          ) : null}
           {keyboard ? null : previewButton}
         </View>
         <View style={s.scan}>

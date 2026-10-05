@@ -1,5 +1,5 @@
 import { createServer, type Server } from "node:http";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { shellObservationSchema } from "../domain/observation";
 import { receiptSchema, syncScopeSchema } from "./contracts";
 import { uploadObservation } from "./upload";
@@ -111,4 +111,13 @@ it.each([
 it("keeps a malformed successful response retryable", async () => {
   response = { success: true };
   expect((await upload()).kind).toBe("retry");
+});
+it("keeps a record retryable when the connection drops, as React Native's fetch reports it", async () => {
+  // ky wraps this TypeError in its own NetworkError, which is not a TypeError.
+  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Network request failed")));
+  try {
+    expect(await upload()).toMatchObject({ kind: "retry" });
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

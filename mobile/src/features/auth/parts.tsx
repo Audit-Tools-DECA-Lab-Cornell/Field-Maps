@@ -14,7 +14,7 @@ import {
   type Theme,
   useStyles,
 } from "../../ui";
-import { confirmCheck, lengthCheck } from "./rules";
+import { confirmCheck, lengthCheck, MAX_PASSWORD_LENGTH } from "./rules";
 import { useKeyboardVisible } from "./use-keyboard";
 
 /** What every email field on these screens asks the keyboard and the password manager for. */
@@ -173,7 +173,7 @@ export function PreviewLine({ children }: { children: string }) {
 export type PasswordFieldsProps = {
   passwordLabel: string;
   confirmLabel: string;
-  /** The rule beside the live count: "Use at least 12." on create (Mobile 25), "At least 12." on reset (28). */
+  /** The rule beside the live count: "Use at least 8." on create (Mobile 25), "At least 8." on reset (28). */
   rule: string;
   password: string;
   confirm: string;
@@ -228,6 +228,7 @@ export function PasswordFields({
           ref={passwordRef}
           newPassword
           value={password}
+          maxLength={MAX_PASSWORD_LENGTH}
           onChangeText={onPasswordChange}
           returnKeyType="next"
           submitBehavior="submit"
@@ -245,6 +246,7 @@ export function PasswordFields({
           value={confirm}
           onChangeText={onConfirmChange}
           onBlur={() => setConfirmLeft(true)}
+          maxLength={MAX_PASSWORD_LENGTH}
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
