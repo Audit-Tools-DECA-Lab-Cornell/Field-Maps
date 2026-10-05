@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-import { StubPage } from "@/features/shell/StubPage";
+import { TeamScreen } from "@/features/team/TeamScreen";
+import { getOrg, getProject } from "@/fixtures";
 
 export const metadata: Metadata = { title: "Team" };
 
-export default function Page() {
-	return (
-		<StubPage
-			title="Project team"
-			lead="Project roles govern collection, review and reader access."
-			screen="Project team"
-		/>
-	);
+/** Project team (project-04). */
+export default async function TeamPage({ params }: { params: Promise<{ org: string; project: string }> }) {
+	const { org, project: slug } = await params;
+	const project = getProject(org, slug);
+	if (!project) notFound();
+	return <TeamScreen project={slug} projectName={project.name} orgName={getOrg(org)?.name ?? org} />;
 }
