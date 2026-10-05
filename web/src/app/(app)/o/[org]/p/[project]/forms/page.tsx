@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 
-import { StubPage } from "@/features/shell/StubPage";
+import { ProjectFormsScreen } from "@/features/forms/ProjectFormsScreen";
 
-export const metadata: Metadata = { title: "Forms" };
+export const metadata: Metadata = { title: "Project forms" };
 
-export default function Page() {
-	return (
-		<StubPage
-			title="Project forms"
-			lead="A draft can change. Published versions keep their original meaning."
-			screen="Project forms"
-		/>
-	);
+/** Project forms (project-11). The old /instrument address redirects here (next.config.ts). */
+export default async function FormsPage({ params }: { params: Promise<{ org: string; project: string }> }) {
+	const { org, project } = await params;
+	return <ProjectFormsScreen org={org} project={project} />;
 }
