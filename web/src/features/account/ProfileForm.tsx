@@ -9,10 +9,18 @@ import { Island } from "@/components/contour/Island";
 import { Note } from "@/components/contour/Note";
 import { TextInput } from "@/components/contour/TextInput";
 
-import { type ProfileState, saveProfile } from "./actions";
-import { checkProfile, cleanInitials, DISPLAY_NAME_MAX, INITIALS_MAX, LOCALE_MAX, type ProfileErrors } from "./rules";
-
-const IDLE: ProfileState = { status: "idle" };
+import { saveProfile } from "./actions";
+import { IDLE, type ProfileAnswer, settleSave, shownAnswer } from "./answer";
+import {
+	checkProfile,
+	cleanInitials,
+	DISPLAY_NAME_MAX,
+	INITIALS_MAX,
+	LOCALE_MAX,
+	type ProfileErrors,
+	type ProfileValues,
+	profileValues
+} from "./rules";
 
 export type ProfileFormProps = {
 	displayName: string | null;
@@ -25,29 +33,41 @@ export type ProfileFormProps = {
 /**
  * Profile (org-05): the full name, the observer initials and the locale, saved to the FieldMaps account
  * with PATCH /v1/me through the `saveProfile` Server Action. The checks run here first and again on the
- * server. The confirmation is the saved state itself, announced; a refusal says what was not saved.
+ * server. The confirmation is the saved state itself, announced; a refusal says what was not saved. The
+ * fields stay editable while a save runs (disabling them would drop focus and hide the text from some
+ * screen readers): what is typed meanwhile is kept, and it retires the confirmation it overtook.
  */
 export function ProfileForm({ displayName, initials, locale, email }: ProfileFormProps) {
-	const [values, setValues] = useState({
+	const [values, setValues] = useState<ProfileValues>({
 		displayName: displayName ?? "",
 		initials: initials ?? "",
 		locale: locale ?? ""
 	});
+	// What the fields hold right now, for a save that answers after the person kept typing. Written only
+	// where the values are set (a change, a settled save), never during render.
+	const latest = useRef(values);
 	const [errors, setErrors] = useState<ProfileErrors>({});
-	const [state, action, pending] = useActionState<ProfileState, FormData>(async (previous, form) => {
+	const [state, action, pending] = useActionState<ProfileAnswer, FormData>(async (previous, form) => {
+		const submitted = profileValues(form);
 		const result = await saveProfile(previous, form);
-		// The fields show what the server kept (it trims the name and locale), not what was typed.
-		if (result.saved) setValues(result.saved);
-		return result;
+		// The fields show what the server kept (it trims the name and locale), unless they were edited while
+		// the save ran: then the newer edits stay, and the answer that no longer describes them is overtaken.
+		const settled = settleSave(result, submitted, latest.current);
+		if (settled.values !== latest.current) {
+			latest.current = settled.values;
+			setValues(settled.values);
+		}
+		return settled.answer;
 	}, IDLE);
 	const nameRef = useRef<HTMLInputElement>(null);
 	const initialsRef = useRef<HTMLInputElement>(null);
 	const localeRef = useRef<HTMLInputElement>(null);
 	const failureRef = useRef<HTMLDivElement>(null);
 	const handled = useRef(state);
-	// Edits after an answer retire it: "Profile saved" no longer describes what the fields hold.
-	const [editedAfter, setEditedAfter] = useState<ProfileState | null>(null);
-	const answer = editedAfter === state ? IDLE : state;
+	// Edits after an answer retire it: "Profile saved" no longer describes what the fields hold. Edits
+	// while a save runs mark the previous answer here; the save's own answer arrives overtaken.
+	const [editedAfter, setEditedAfter] = useState<ProfileAnswer | null>(null);
+	const answer = shownAnswer(state, editedAfter);
 	const shownErrors = { ...answer.errors, ...errors };
 
 	useEffect(() => {
@@ -60,8 +80,9 @@ export function ProfileForm({ displayName, initials, locale, email }: ProfileFor
 		else failureRef.current?.focus();
 	}, [state]);
 
-	function change(field: keyof typeof values, value: string) {
-		setValues(current => ({ ...current, [field]: value }));
+	function change(field: keyof ProfileValues, value: string) {
+		latest.current = { ...latest.current, [field]: value };
+		setValues(latest.current);
 		setErrors(current => ({ ...current, [field]: undefined }));
 		setEditedAfter(state);
 	}
