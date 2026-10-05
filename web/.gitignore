@@ -11,3 +11,5 @@ next-env.d.ts
 .vercel/
 *.log
 .DS_Store
+
+/public/sw.js

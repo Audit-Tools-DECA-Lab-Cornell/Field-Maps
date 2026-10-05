@@ -50,3 +50,22 @@ export async function persistDeletedSignOut(
   }
   return message;
 }
+
+export async function persistDeliberateSignOut(
+  account: CachedAccount,
+  remove: () => void,
+  restore: (account: CachedAccount) => void,
+  isCurrent: () => boolean,
+  completed: () => boolean,
+  signOut: () => Promise<{ readonly error: Error | null }>,
+): Promise<{ readonly error: Error | null }> {
+  remove();
+  try {
+    const result = await signOut();
+    if (result.error && !completed() && isCurrent()) restore(account);
+    return result;
+  } catch (error) {
+    if (!completed() && isCurrent()) restore(account);
+    throw error;
+  }
+}

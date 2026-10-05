@@ -1,26 +1,26 @@
 import "react-native-url-polyfill/auto";
 import { createClient, processLock } from "@supabase/supabase-js";
+import { authStorage, migrateLegacySession } from "../platform/auth-storage";
 import { connection } from "../sync/config";
-import { cachedAccount } from "./cached-account";
+import { cachedAccount, rememberAccount, sessionAccount } from "./cached-account";
 import { deletedAccountStore } from "./deleted-account";
 import { restoreAccount } from "./deleted-session";
 
 export async function createAuthClient() {
   if (!connection) return null;
-  const storage = await import("expo-secure-store");
   const storageKey = `fieldmaps-auth-${new URL(connection.supabaseUrl).hostname}`;
+  await migrateLegacySession(storageKey, connection.bundleIdSuffix === ".dev", (value) => {
+    const migrated = sessionAccount(value);
+    if (migrated) rememberAccount(migrated, connection.supabaseUrl);
+  });
   const { account, deletedUserId } = restoreAccount(
-    cachedAccount(await storage.getItemAsync(storageKey)),
+    cachedAccount(connection.supabaseUrl),
     deletedAccountStore(connection.supabaseUrl).read(),
   );
   const client = createClient(connection.supabaseUrl, connection.publishableKey, {
     auth: {
       storageKey,
-      storage: {
-        getItem: (key: string) => storage.getItemAsync(key),
-        setItem: (key: string, value: string) => storage.setItemAsync(key, value),
-        removeItem: (key: string) => storage.deleteItemAsync(key),
-      },
+      storage: authStorage,
       autoRefreshToken: account?.id !== deletedUserId,
       persistSession: true,
       detectSessionInUrl: false,
