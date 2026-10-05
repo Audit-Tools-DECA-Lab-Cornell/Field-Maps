@@ -428,7 +428,7 @@ A pill with a verb + object label (`body` at 600 on the web, `answer` at 600 in 
   - **Read-only.** A `well` fill and a 1 px `line` border. A read-only ID is mono (`age_range`), with its hint "Read-only. Stable across wording edits."
 - **`TextInput`.** 46 tall on the web (r 12) and 54 on mobile (r 14). `island` fill, `ink` border, `body` text. Placeholder in `ink2` ("e.g. PS"). The focus ring is drawn outside the border.
 - **`PasswordInput`.** A TextInput with an accent "Show" / "Hide" text button inside, on the right.
-  - Live checks sit under it: "✓ 16 characters · Use at least 12." (the count in `saved`, the rule in `ink2`) and "✓ Passwords match".
+  - Live checks sit under it: "✓ 16 characters · Use at least 8." (the count in `saved`, the rule in `ink2`) and "✓ Passwords match".
   - A mismatch shows only after the field loses focus: "Does not match yet".
 - **`Textarea`.** At least four lines, with a counter. The hint states where the text goes: "Saved to the draft as you type".
 - **`CodeInput`.** One wide mono field, not separate boxes. `monoCode` text, letter-spaced and centred, 2 px `ink` border, a counter ("4 of 6", then "✓ 6 of 6").
@@ -862,7 +862,7 @@ Each surface also has an `edge` colour in the file. The values above are copied 
 | **Errors say what happened, what is safe, then what to do.** | "We could not load this page. Nothing was removed. Check your connection and try again." | "Something went wrong. Please try again." |
 | **On the phone, an error's first line says where the work is.** | "Your draft is still on this device" | "Error loading screen" |
 | **Say what is needed. No blame, no "Oops", no exclamation marks, no "successfully".** | "Up to ten uppercase characters." | "Invalid initials!", "Oops", "Saved successfully" |
-| **Validate late, confirm early.** | "✓ 16 characters · Use at least 12." while typing; "Does not match yet" after the field loses focus | "Passwords don't match!" on every keystroke |
+| **Validate late, confirm early.** | "✓ 16 characters · Use at least 8." while typing; "Does not match yet" after the field loses focus | "Passwords don't match!" on every keystroke |
 | **A disabled control says why, right below it.** | "The button turns on when both passwords match." | A grey button with no reason |
 | **Consequences come before the irreversible step.** | "Deletion must respect research-retention rules. You see every affected project, form and record before anything is removed." then "Type DELETE to confirm" | "Are you sure?" |
 | **Never claim more than the system knows.** | "Device readiness, as last reported", "Yesterday · may be stale", "Records still on devices are not counted here." | "All devices ready" |

@@ -54,7 +54,7 @@ export function InputsDemo() {
 	const [rounds, setRounds] = useState(3);
 
 	const initialsValid = /^[A-Z]{1,10}$/.test(initials);
-	const passwordLong = password.length >= 12;
+	const passwordLong = password.length >= 8;
 
 	return (
 		<div className="grid gap-x-12 gap-y-10 lg:grid-cols-2">
@@ -81,7 +81,7 @@ export function InputsDemo() {
 						label="New password"
 						htmlFor="gallery-password"
 						success={passwordLong ? `${password.length} characters` : undefined}
-						hint="Use at least 12.">
+						hint="Use at least 8.">
 						<PasswordInput
 							value={password}
 							autoComplete="new-password"

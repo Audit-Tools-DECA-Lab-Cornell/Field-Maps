@@ -17,91 +17,130 @@ import { orgHref, projectHref } from "@/features/shell/navigation";
 import { usePreview } from "@/features/shell/PreviewProvider";
 import { useShell } from "@/features/shell/ShellProvider";
 import { getOrg, getProject, VIEWER } from "@/fixtures";
+import { signOut } from "@/lib/auth/actions";
 import { stateOf, type ThemeName } from "@/lib/contour";
+import { supabaseConfig } from "@/lib/supabase/config";
 import { useTheme } from "@/lib/theme";
 
 import { useNavigatingMenu } from "./Switchers";
 
+/** The signed-in account as the header names it, on a page that shows real data. */
+export type HeaderAccount = {
+	/** The display name, or the email address when there is none. */
+	name: string;
+	email?: string;
+	/** One to three letters for the avatar. */
+	initials: string;
+};
+
 /**
  * The account button (the header's last item) and its menu: who is signed in and in what role, the
- * settings the role reaches, the screen theme, the shortcuts and Sign out.
+ * settings the role reaches, the screen theme, the shortcuts and Sign out. On a page that shows real data
+ * the menu names the signed-in `account`; elsewhere it names the sample workspace's viewer.
+ *
+ * Sign out submits a form to the `signOut` Server Action, which ends the Supabase session and lands on
+ * sign in. A preview build without Supabase has no session to end, so there it simply leads to sign in.
  */
-export function AccountMenu() {
+export function AccountMenu({ account }: { account?: HeaderAccount }) {
 	const menu = useNavigatingMenu();
 	const shortcutsPending = useRef(false);
+	const signOutForm = useRef<HTMLFormElement>(null);
 	const { role, can, canOrg, scope } = usePreview();
 	const { setShortcutsOpen } = useShell();
 	const [theme, setTheme] = useTheme();
 	const place = scope.project ? getProject(scope.org, scope.project)?.name : (getOrg(scope.org)?.name ?? scope.org);
+	const person = account ?? { name: VIEWER.name, email: VIEWER.email, initials: VIEWER.initials };
+	const signedIn = supabaseConfig() !== null;
 
 	return (
-		<Menu>
-			<MenuTrigger
-				aria-label={`Account, ${VIEWER.name}`}
-				className="shrink-0 rounded-pill transition-opacity duration-(--ct-duration-quick) ease-standard hover:opacity-90">
-				<Avatar initials={VIEWER.initials} tone="ink" size="lg" />
-			</MenuTrigger>
-			<MenuContent
-				align="end"
-				className="w-72"
-				onCloseAutoFocus={event => {
-					menu.onCloseAutoFocus(event);
-					// Open the shortcuts once focus is back on the account button, so it returns there after.
-					if (!shortcutsPending.current) return;
-					shortcutsPending.current = false;
-					window.setTimeout(() => setShortcutsOpen(true), 0);
-				}}>
-				<div className="flex items-start gap-3 px-3 pt-2 pb-3">
-					<Avatar initials={VIEWER.initials} tone="ink" size="md" />
-					<div className="min-w-0">
-						<p className="type-body font-semibold">{VIEWER.name}</p>
-						<p className="type-small text-ink-2 wrap-anywhere">{VIEWER.email}</p>
-						<p className="mt-1 type-small text-ink-2">
-							<span className="type-mono-label">{stateOf("role", role).label}</span> · {place}
-						</p>
-					</div>
-				</div>
-				<MenuSeparator />
-				<MenuItem icon="user" href="/account" onSelect={menu.markNavigating}>
-					Account
-				</MenuItem>
-				{canOrg("viewOrgSettings") && (
-					<MenuItem icon="building-2" href={orgHref(scope.org, "settings")} onSelect={menu.markNavigating}>
-						Organization settings
-					</MenuItem>
-				)}
-				{scope.kind === "project" && scope.project && can("viewProjectSettings") && (
-					<MenuItem
-						icon="settings"
-						href={projectHref(scope.org, scope.project, "settings")}
-						onSelect={menu.markNavigating}>
-						Project settings
-					</MenuItem>
-				)}
-				<MenuSeparator />
-				<MenuLabel>Screen</MenuLabel>
-				<MenuRadioGroup value={theme} onValueChange={value => setTheme(value as ThemeName)}>
-					<MenuRadioItem value="day" icon="sun">
-						Day
-					</MenuRadioItem>
-					<MenuRadioItem value="dusk" icon="moon">
-						Dusk
-					</MenuRadioItem>
-				</MenuRadioGroup>
-				<MenuSeparator />
-				<MenuItem
-					icon="circle-help"
-					shortcut="?"
-					onSelect={() => {
-						shortcutsPending.current = true;
+		<>
+			{signedIn && <form ref={signOutForm} action={signOut} hidden />}
+			<Menu>
+				<MenuTrigger
+					aria-label={`Account, ${person.name}`}
+					className="shrink-0 rounded-pill transition-opacity duration-(--ct-duration-quick) ease-standard hover:opacity-90">
+					<Avatar initials={person.initials} tone="ink" size="lg" />
+				</MenuTrigger>
+				<MenuContent
+					align="end"
+					className="w-72"
+					onCloseAutoFocus={event => {
+						menu.onCloseAutoFocus(event);
+						// Open the shortcuts once focus is back on the account button, so it returns there after.
+						if (!shortcutsPending.current) return;
+						shortcutsPending.current = false;
+						window.setTimeout(() => setShortcutsOpen(true), 0);
 					}}>
-					Keyboard shortcuts
-				</MenuItem>
-				<MenuSeparator />
-				<MenuItem icon="log-out" href="/sign-in" onSelect={menu.markNavigating}>
-					Sign out
-				</MenuItem>
-			</MenuContent>
-		</Menu>
+					<div className="flex items-start gap-3 px-3 pt-2 pb-3">
+						<Avatar initials={person.initials} tone="ink" size="md" />
+						<div className="min-w-0">
+							<p className="type-body font-semibold wrap-anywhere">{person.name}</p>
+							{person.email && person.email !== person.name && (
+								<p className="type-small text-ink-2 wrap-anywhere">{person.email}</p>
+							)}
+							{!account && (
+								<p className="mt-1 type-small text-ink-2">
+									<span className="type-mono-label">{stateOf("role", role).label}</span> · {place}
+								</p>
+							)}
+						</div>
+					</div>
+					<MenuSeparator />
+					<MenuItem icon="user" href="/account" onSelect={menu.markNavigating}>
+						Account
+					</MenuItem>
+					{!account && canOrg("viewOrgSettings") && (
+						<MenuItem
+							icon="building-2"
+							href={orgHref(scope.org, "settings")}
+							onSelect={menu.markNavigating}>
+							Organization settings
+						</MenuItem>
+					)}
+					{!account && scope.kind === "project" && scope.project && can("viewProjectSettings") && (
+						<MenuItem
+							icon="settings"
+							href={projectHref(scope.org, scope.project, "settings")}
+							onSelect={menu.markNavigating}>
+							Project settings
+						</MenuItem>
+					)}
+					<MenuSeparator />
+					<MenuLabel>Screen</MenuLabel>
+					<MenuRadioGroup value={theme} onValueChange={value => setTheme(value as ThemeName)}>
+						<MenuRadioItem value="day" icon="sun">
+							Day
+						</MenuRadioItem>
+						<MenuRadioItem value="dusk" icon="moon">
+							Dusk
+						</MenuRadioItem>
+					</MenuRadioGroup>
+					<MenuSeparator />
+					<MenuItem
+						icon="circle-help"
+						shortcut="?"
+						onSelect={() => {
+							shortcutsPending.current = true;
+						}}>
+						Keyboard shortcuts
+					</MenuItem>
+					<MenuSeparator />
+					{signedIn ? (
+						<MenuItem
+							icon="log-out"
+							onSelect={() => {
+								menu.markNavigating();
+								signOutForm.current?.requestSubmit();
+							}}>
+							Sign out
+						</MenuItem>
+					) : (
+						<MenuItem icon="log-out" href="/sign-in" onSelect={menu.markNavigating}>
+							Sign out
+						</MenuItem>
+					)}
+				</MenuContent>
+			</Menu>
+		</>
 	);
 }

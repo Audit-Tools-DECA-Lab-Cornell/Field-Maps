@@ -87,6 +87,14 @@ export function scopeOf(pathname: string): Scope {
 	return { kind: "org", org, section: parts[2] ?? "" };
 }
 
+/**
+ * Whether the page reads sample data, and so carries the Preview data marker and footer line (D20). The
+ * account page shows the reader's real profile and memberships from the API, so it carries neither (D24).
+ */
+export function showsSampleData(scope: Scope): boolean {
+	return scope.kind !== "account";
+}
+
 /** The reader's own role on the page, before any "View as" preview: the fixture viewer's role. */
 export function defaultRoleFor(scope: Scope): PreviewRole {
 	if (scope.kind === "collect") return "observer";

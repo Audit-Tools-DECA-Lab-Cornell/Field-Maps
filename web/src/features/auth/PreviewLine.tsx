@@ -1,6 +1,7 @@
 /**
- * The footer line every auth page carries (D20): these pages run on sample data and send nothing. It
- * repeats the Preview data marker's sentence word for word.
+ * The footer line outside the workspace on pages that still run on sample data and send nothing (D20):
+ * the invitation and join pages, the set-up flow and the not-found page. It repeats the Preview data
+ * marker's sentence word for word. The real sign-in pages do not carry it (D24).
  */
 export function PreviewLine() {
 	return (

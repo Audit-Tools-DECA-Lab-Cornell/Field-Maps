@@ -1,69 +1,82 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState, useTransition } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { Field } from "@/components/contour/Field";
-import { Note } from "@/components/contour/Note";
 import { PasswordInput } from "@/components/contour/PasswordInput";
 import { TextInput } from "@/components/contour/TextInput";
 import { TextLink } from "@/components/contour/TextLink";
+import type { AuthState } from "@/lib/auth/actions";
 
 import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, isEmail, withQuery } from "./params";
+import { type AuthPreviewState, isEmail, MAX_PASSWORD_LENGTH, withQuery } from "./params";
+import { NO_MESSAGE, ServerMessage, useAuthAction } from "./useAuthAction";
+import { formatCountdown, useCooldown } from "./useCooldown";
 
 type Errors = { email?: string; password?: string };
 
 export type SignInFormProps = {
-	initialEmail?: string;
-	/** Where the preview goes once the form is valid. */
+	/** Where a signed-in reader continues, already made safe by `safeNext`. */
 	next: string;
+	/** True when the address carried `next`, so the links to the other auth pages keep it. */
+	carryNext: boolean;
 	state: AuthPreviewState;
 };
 
+/** The preview's sample answer for `?preview-state=error`, word for word what the server says. */
+const PREVIEW_ERROR: AuthState = { message: "The email or password is incorrect." };
+
 /**
- * Sign in (Org 6). In this preview any well-formed address and any password continue to the workspace;
- * nothing is checked against an account. `?preview-state=error` shows the wrong-credentials message,
- * `?preview-state=offline` the offline form.
+ * Sign in (Org 6). The checks run here first; the email and password then go to the `authenticate`
+ * Server Action, which signs in with Supabase Auth and continues to `next`. An unconfirmed account gets
+ * the server's message and a way to enter its code; a rate limit turns the button off until it passes.
  */
-export function SignInForm({ initialEmail = "", next, state }: SignInFormProps) {
-	const router = useRouter();
-	const [email, setEmail] = useState(initialEmail);
+export function SignInForm({ next, carryNext, state: preview }: SignInFormProps) {
+	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [errors, setErrors] = useState<Errors>({});
-	const [rejected, setRejected] = useState(false);
-	const [pending, startTransition] = useTransition();
 	const emailRef = useRef<HTMLInputElement>(null);
 	const passwordRef = useRef<HTMLInputElement>(null);
-	const offline = state === "offline";
+	const cooldown = useCooldown();
+	const auth = useAuthAction({
+		initial: preview === "error" ? PREVIEW_ERROR : NO_MESSAGE,
+		fields: { email: emailRef, password: passwordRef },
+		onRetryAfter: cooldown.start
+	});
+	const offline = preview === "offline";
+	const waiting = cooldown.remaining > 0;
+	const nextQuery = { next: carryNext ? next : undefined };
 
 	function submit(event: FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-		if (pending || offline) return;
 		const found: Errors = {
 			email: isEmail(email) ? undefined : "Enter the email address you signed up with.",
 			password: password.length > 0 ? undefined : "Enter your password."
 		};
 		setErrors(found);
-		if (found.email) return emailRef.current?.focus();
-		if (found.password) return passwordRef.current?.focus();
-		if (state === "error") {
-			setRejected(true);
-			setPassword("");
-			return passwordRef.current?.focus();
-		}
-		startTransition(() => router.push(next));
+		if (auth.pending || offline || waiting || found.email || found.password) event.preventDefault();
+		if (found.email) emailRef.current?.focus();
+		else if (found.password) passwordRef.current?.focus();
 	}
 
 	return (
-		<form noValidate onSubmit={submit} className="flex flex-col gap-5" aria-busy={pending || undefined}>
+		<form
+			action={auth.action}
+			noValidate
+			onSubmit={submit}
+			className="flex flex-col gap-5"
+			aria-busy={auth.pending || undefined}>
+			<input type="hidden" name="intent" value="sign-in" />
+			<input type="hidden" name="next" value={next} />
 			{offline && <OfflineNote />}
-			{rejected && (
-				<Note tone="attention" title="That email and password do not match an account." live="assertive">
-					Nothing was changed. Check both and try again, or reset your password.
-				</Note>
-			)}
+			<ServerMessage {...auth.note}>
+				{auth.state.verify && (
+					<>
+						{" "}
+						<TextLink href={withQuery("/verify", { next })}>Enter verification code</TextLink>
+					</>
+				)}
+			</ServerMessage>
 			<Field label="Email address" htmlFor="sign-in-email" error={errors.email}>
 				<TextInput
 					ref={emailRef}
@@ -73,11 +86,15 @@ export function SignInForm({ initialEmail = "", next, state }: SignInFormProps) 
 					autoCapitalize="none"
 					autoCorrect="off"
 					spellCheck={false}
+					maxLength={254}
 					autoFocus
 					value={email}
+					invalid={auth.invalid("email") || undefined}
+					aria-describedby={auth.describedBy("email")}
 					onChange={event => {
 						setEmail(event.currentTarget.value);
 						setErrors(current => ({ ...current, email: undefined }));
+						auth.edited();
 					}}
 				/>
 			</Field>
@@ -86,10 +103,14 @@ export function SignInForm({ initialEmail = "", next, state }: SignInFormProps) 
 					ref={passwordRef}
 					name="password"
 					autoComplete="current-password"
+					maxLength={MAX_PASSWORD_LENGTH}
 					value={password}
+					invalid={auth.invalid("password") || undefined}
+					aria-describedby={auth.describedBy("password")}
 					onChange={event => {
 						setPassword(event.currentTarget.value);
 						setErrors(current => ({ ...current, password: undefined }));
+						auth.edited();
 					}}
 				/>
 			</Field>
@@ -98,22 +119,26 @@ export function SignInForm({ initialEmail = "", next, state }: SignInFormProps) 
 				size="lg"
 				fullWidth
 				iconRight="arrow-right"
-				busy={pending}
-				disabled={offline}
-				disabledReason="Signing in needs a connection.">
+				busy={auth.pending}
+				disabled={offline || waiting}
+				disabledReason={
+					offline
+						? "Signing in needs a connection."
+						: `Wait ${formatCountdown(cooldown.remaining)} before trying again.`
+				}>
 				{/* A full-width button keeps its width anyway, so the label swaps without the primitive's
 				    reserved busy width, which would push the arrow away from "Sign in" at rest. */}
-				{pending ? "Signing in…" : "Sign in"}
+				{auth.pending ? "Signing in…" : "Sign in"}
 			</Button>
 			<div className="-mt-2.5 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 type-body">
 				<TextLink
-					href={withQuery("/forgot-password", { email: email.trim() || undefined })}
+					href={withQuery("/forgot-password", nextQuery)}
 					arrow={false}
 					className="inline-flex min-h-touch items-center">
 					Forgot password?
 				</TextLink>
 				<TextLink
-					href={withQuery("/sign-up", { email: email.trim() || undefined })}
+					href={withQuery("/sign-up", nextQuery)}
 					arrow={false}
 					className="inline-flex min-h-touch items-center">
 					Create account

@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { ToastProvider } from "@/components/contour/Toast";
-import { PreviewLine } from "@/features/auth/PreviewLine";
+import { FlashToast } from "@/features/shell/FlashToast";
 
 export const metadata: Metadata = {
 	robots: { index: false, follow: false }
 };
 
 /**
- * Every sign-in, account and invitation page: one toast host that outlives the move from page to page, a
- * skip link, and the Preview data footer line. The two groups inside add their header and the split frame.
+ * Every sign-in, account and invitation page: one toast host that outlives the move from page to page
+ * (and shows a message another page left, such as "Account deleted"), and a skip link. The two groups
+ * inside add their header and the split frame; the invitation group, which still reads sample data,
+ * adds the Preview data footer line.
  */
 export default function AuthLayout({ children }: Readonly<{ children: ReactNode }>) {
 	return (
@@ -22,8 +24,8 @@ export default function AuthLayout({ children }: Readonly<{ children: ReactNode 
 					Skip to content
 				</a>
 				{children}
-				<PreviewLine />
 			</div>
+			<FlashToast />
 		</ToastProvider>
 	);
 }
