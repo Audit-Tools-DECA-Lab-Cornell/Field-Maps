@@ -16,6 +16,7 @@ import {
   useHaptics,
   useStyles,
 } from "../../ui";
+import { PendingInvitationNote } from "../onboarding/pending-invitation-note";
 import { useGate } from "./gate";
 import { openPrivacy } from "./links";
 import { type AuthNotice, takeAuthNotice } from "./notice";
@@ -225,6 +226,7 @@ export function SignInScreen() {
           {`They belong to ${waiting.owner} and upload only from that account.`}
         </Note>
       ) : null}
+      <PendingInvitationNote />
       {message ? (
         // Announced when it appears (see submit), so a repeat of the same failure is heard again.
         <Note tone="attention" title={message.title}>

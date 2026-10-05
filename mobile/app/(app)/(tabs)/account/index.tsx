@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import { useAccount } from "../src/auth/provider";
+import { useAccount } from "../../../../src/auth/provider";
 import {
   AttentionNote,
   FadeRule,
@@ -10,10 +10,10 @@ import {
   PrimaryAction,
   Prose,
   SectionLabel,
-} from "../src/components/chrome";
-import { PageScreen } from "../src/components/screen";
-import { useSync } from "../src/sync/provider";
-import { colors, fonts, radius, space, textStyles } from "../src/theme";
+} from "../../../../src/components/chrome";
+import { PageScreen } from "../../../../src/components/screen";
+import { useSync } from "../../../../src/sync/provider";
+import { colors, fonts, radius, space, textStyles } from "../../../../src/theme";
 
 const field = {
   backgroundColor: colors.neutral900,

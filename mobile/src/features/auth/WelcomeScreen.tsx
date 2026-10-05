@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { Button, Logo, Note, Screen, Text, TextLink, type Theme, useStyles } from "../../ui";
+import { PendingInvitationNote } from "../onboarding/pending-invitation-note";
 import { AuthPlan } from "./AuthPlan";
 import { openPrivacy } from "./links";
 import { DELETED_ACCOUNT_TITLE, deletedAccountBody, waitingTitle } from "./rules";
@@ -59,6 +60,7 @@ export function WelcomeScreen() {
           {`They belong to ${waiting.owner}. Sign in to that account to resume uploads.`}
         </Note>
       ) : null}
+      <PendingInvitationNote style={s.note} />
       <View style={s.spacer} />
       <View style={s.actions}>
         <Button

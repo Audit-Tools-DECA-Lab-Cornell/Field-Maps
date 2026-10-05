@@ -13,6 +13,7 @@ import {
   type Theme,
   useStyles,
 } from "../../ui";
+import { PendingInvitationNote } from "../onboarding/pending-invitation-note";
 import { openPrivacy } from "./links";
 import {
   AuthScreen,
@@ -123,6 +124,7 @@ export function CreateAccountScreen() {
         )
       }
     >
+      <PendingInvitationNote />
       <FieldStack>
         <Field label="Email address" error={errors.email}>
           <TextInput

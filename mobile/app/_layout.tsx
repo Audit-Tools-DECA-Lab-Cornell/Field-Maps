@@ -6,8 +6,6 @@ import { Suspense, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "../src/auth/provider";
-import { PrimaryAction } from "../src/components/chrome";
-import { ScreenMessage } from "../src/components/screen-message";
 import { MeProvider } from "../src/data/api/me-provider";
 import { type Gate, useGate } from "../src/features/auth/gate";
 import { ProfileQueue } from "../src/features/auth/profile-sync";
@@ -16,8 +14,17 @@ import { useOrientationPreference } from "../src/layout/orientation";
 import { FieldSessionProvider } from "../src/session/provider";
 import { initializeDatabase } from "../src/storage/observation-store";
 import { SyncProvider } from "../src/sync/provider";
-import { colors, space } from "../src/theme";
 import { interFonts } from "../src/theme-fonts";
+import {
+  Button,
+  Logo,
+  Screen,
+  ScreenState,
+  Text,
+  type Theme,
+  useStyles,
+  useTheme,
+} from "../src/ui";
 import { contourFonts } from "../src/ui/fonts";
 import { PreferencesProvider } from "../src/ui/preferences";
 import { ThemeProvider } from "../src/ui/theme";
@@ -25,13 +32,52 @@ import { ThemeProvider } from "../src/ui/theme";
 /** Inter stays until the last legacy Nocturne screen is replaced; Contour screens use Geologica. */
 const FONTS = { ...interFonts, ...contourFonts };
 
+/**
+ * When a screen throws: the collector's error state (Contour, screen states). Its first line says the
+ * work is safe, and "Try again" reloads the screen. It renders outside the root providers, so it brings
+ * its own preferences and theme.
+ */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
-    <View style={{ flex: 1, paddingVertical: 48, backgroundColor: colors.bg }}>
-      <ScreenMessage title="FieldMaps could not open" detail={error.message} />
-      <View style={{ padding: space.wide }}>
-        <PrimaryAction label="Try again" onPress={retry} />
+    <PreferencesProvider>
+      <ThemeProvider>
+        <Screen scroll>
+          <ScreenState
+            kind="error"
+            body={`The screen could not load, but the point and answers you entered are kept. ${error.message}`}
+            action={<Button variant="ink" icon="rotate-cw" label="Try again" onPress={retry} />}
+          />
+        </Screen>
+      </ThemeProvider>
+    </PreferencesProvider>
+  );
+}
+
+function splashStyles(t: Theme) {
+  return StyleSheet.create({
+    splash: {
+      flex: 1,
+      justifyContent: "center",
+      gap: t.space.s3,
+      padding: t.layout.gutter,
+      backgroundColor: t.c.ground,
+    },
+    mark: { marginBottom: t.space.s3 },
+  });
+}
+
+/** The splash while fonts, the database or the account's profile are read. */
+function Splash({ title, detail }: { title: string; detail: string }) {
+  const s = useStyles(splashStyles);
+  return (
+    <View style={s.splash} accessibilityLiveRegion="polite">
+      <View style={s.mark}>
+        <Logo wordmark />
       </View>
+      <Text variant="island" header>
+        {title}
+      </Text>
+      <Text tone="ink2">{detail}</Text>
     </View>
   );
 }
@@ -46,11 +92,11 @@ export default function RootLayout() {
       <PreferencesProvider>
         <ThemeProvider>
           {!fontsReady && !fontError ? (
-            <ScreenMessage title="Opening FieldMaps" detail="Preparing your local workspace…" />
+            <Splash title="Opening FieldMaps" detail="Preparing your local workspace…" />
           ) : (
             <Suspense
               fallback={
-                <ScreenMessage title="Opening FieldMaps" detail="Preparing your local workspace…" />
+                <Splash title="Opening FieldMaps" detail="Preparing your local workspace…" />
               }
             >
               <SQLiteProvider
@@ -102,14 +148,16 @@ const HOLD_DETAIL = "Reading your observer profile…";
  * before the first route opens, in place of the stack, so a cold-start link still lands where it points;
  * after that, over the routes last opened, which stay mounted underneath.
  *
- * Routes not listed here are not guarded; list new app routes in the app group.
+ * Routes not listed here are not guarded; new app routes go inside the (app) group. Two are open in
+ * every state on purpose: `+not-found`, which says nothing was lost, and `+native-intent`, which keeps an
+ * invitation link's code on this device before any gate is decided (pending-invitation-store).
  */
 function GatedStack() {
   const gate = useGate();
   const decided = useRef<Gate | null>(null);
   if (gate.route !== "hold") decided.current = gate;
   const shown = decided.current;
-  if (!shown) return <ScreenMessage title={HOLD_TITLE} detail={HOLD_DETAIL} />;
+  if (!shown) return <Splash title={HOLD_TITLE} detail={HOLD_DETAIL} />;
   const { signedIn, needsOnboarding } = shown;
   const holding = gate.route === "hold";
   return (
@@ -124,7 +172,7 @@ function GatedStack() {
       </View>
       {holding ? (
         <View style={StyleSheet.absoluteFill} accessibilityViewIsModal>
-          <ScreenMessage title={HOLD_TITLE} detail={HOLD_DETAIL} />
+          <Splash title={HOLD_TITLE} detail={HOLD_DETAIL} />
         </View>
       ) : null}
     </View>
@@ -138,22 +186,23 @@ function GuardedRoutes({
   signedIn: boolean;
   needsOnboarding: boolean;
 }) {
+  const { c } = useTheme();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.bg },
+        contentStyle: { backgroundColor: c.ground },
         animation: "fade",
       }}
     >
       <Stack.Protected guard={signedIn && !needsOnboarding}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="brief" />
+        {/* The tabs (Projects, Observations, Account), collect and the Explain sheet. */}
+        <Stack.Screen name="(app)" />
+        {/* Legacy Nocturne screens, until collect (phase 7) and the last tabs (phase 8) replace them. */}
         <Stack.Screen name="field" />
         <Stack.Screen name="review" />
         <Stack.Screen name="saved" />
         <Stack.Screen name="records" />
-        <Stack.Screen name="account" />
       </Stack.Protected>
       <Stack.Protected guard={signedIn && needsOnboarding}>
         <Stack.Screen name="(onboarding)" />

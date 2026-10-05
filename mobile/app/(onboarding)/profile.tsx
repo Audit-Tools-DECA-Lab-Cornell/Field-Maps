@@ -15,7 +15,9 @@ import {
   suggestInitials,
   typedInitials,
 } from "../../src/features/onboarding/identity";
-import { JOIN_CODE_LENGTH, joinCodeOf } from "../../src/features/onboarding/invitation";
+import { joinCodeOf } from "../../src/features/onboarding/invitation";
+import { afterProfileStep } from "../../src/features/onboarding/pending-invitation";
+import { usePendingInvitation } from "../../src/features/onboarding/pending-invitation-store";
 import {
   Button,
   Field,
@@ -46,8 +48,10 @@ function accountName(metadata: Record<string, unknown> | undefined): string {
 export default function ProfileStep() {
   const s = useStyles(makeStyles);
   const params = useLocalSearchParams<{ code?: string }>();
-  // An invitation link that arrived before the identity was saved carries on to that invitation.
+  // An invitation link that arrived before the identity was saved carries on to that invitation, and so
+  // does one that waited on this device through sign-in (pending-invitation).
   const linkedCode = joinCodeOf(params.code);
+  const waiting = usePendingInvitation();
   const profile = useProfile();
   const me = useMe();
   const sync = useProfileSync();
@@ -106,8 +110,9 @@ export default function ProfileStep() {
     }
     // A deleted account: the gate opens welcome in place of onboarding.
     if (outcome === "deleted") return;
-    if (linkedCode.length === JOIN_CODE_LENGTH)
-      router.push({ pathname: "/invitation/[code]", params: { code: linkedCode } });
+    const next = afterProfileStep(linkedCode, waiting.code);
+    if (next.pathname === "/invitation/[code]")
+      router.push({ pathname: "/invitation/[code]", params: { code: next.code } });
     else router.push("/join");
   }
 

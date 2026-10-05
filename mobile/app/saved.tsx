@@ -64,7 +64,7 @@ export default function SavedScreen() {
       />
       <GhostAction
         label="Change zone or round"
-        onPress={() => router.navigate("/brief")}
+        onPress={() => router.navigate("/")}
         style={{ marginTop: space.snug }}
       />
       <GhostAction

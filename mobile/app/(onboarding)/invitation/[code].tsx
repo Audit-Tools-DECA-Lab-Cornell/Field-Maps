@@ -19,6 +19,7 @@ import {
   scopeTitle,
   splitMessage,
 } from "../../../src/features/onboarding/invitation";
+import { useForgetInvitationOnLeave } from "../../../src/features/onboarding/pending-invitation-store";
 import {
   useInvitationLookup,
   useInvitations,
@@ -55,6 +56,9 @@ function toDifferentCode(code: string) {
  * link opens the screen directly), and "Join project" sends `POST /v1/invitations/redeem`, reads
  * `/v1/me` again, makes the joined project active and finishes onboarding. Preview data shows the
  * Play Study fixture and joins nothing.
+ *
+ * A link that arrived before sign-in waits on this device (pending-invitation-store) and the profile
+ * step brings the observer here; once shown, it is forgotten as the screen is left.
  */
 export default function InvitationScreen() {
   const s = useStyles(makeStyles);
@@ -68,6 +72,9 @@ export default function InvitationScreen() {
   const { lookup, retry } = useInvitationLookup(code);
   const [joining, setJoining] = useState(false);
   const [failure, setFailure] = useState<JoinFailure | null>(null);
+  // A code that waited on this device (a link opened before sign-in) is used up once this screen has
+  // shown what it opens and is left: joined, gone back from, or swapped for a different code.
+  useForgetInvitationOnLeave(code, profile.saved && lookup.status !== "loading");
 
   // The identity comes first: an invitation opened before it is saved goes back to step 1.
   if (!profile.saved) return <Redirect href={{ pathname: "/profile", params: { code } }} />;

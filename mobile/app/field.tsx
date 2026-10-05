@@ -173,7 +173,7 @@ export default function FieldScreen() {
               heldLabel={`${held} held`}
               onPlace={session.place}
               onNudge={session.nudgeTo}
-              onBack={() => router.navigate("/brief")}
+              onBack={() => router.back()}
             />
           </View>
           {panelOpen && panel}
