@@ -1,7 +1,8 @@
 import { type Observation as FixtureObservation, ZONES } from "@/fixtures";
-import { download, toCodebook, toCsv, toGeoJson } from "@/lib/exports";
+import { download, toCsv, toGeoJson } from "@/lib/exports";
 import type { Observation as ExportObservation } from "@/types/domain";
 
+import { answerColumns, codebookFor } from "./exportColumns";
 import type { MarkerPosition } from "./markers";
 
 /**
@@ -27,12 +28,7 @@ function toExportShape(record: FixtureObservation, position: MarkerPosition | un
 		longitude: position?.lng ?? 0,
 		latitude: position?.lat ?? 0,
 		playType: record.playType,
-		answers: (record.answers ?? []).map(answer => ({
-			code: answer.questionId,
-			exportColumn: answer.questionId,
-			label: answer.label,
-			value: answer.value
-		})),
+		answers: answerColumns(record.answers ?? []),
 		flagId: null,
 		state: "in-database",
 		history: []
@@ -57,6 +53,6 @@ export function exportRecords({
 	const options = { codebook, includeFlagged: true };
 	if (format === "csv") download(`${fileStem}.csv`, "text/csv;charset=utf-8", toCsv(rows, options));
 	else download(`${fileStem}.geojson`, "application/geo+json", toGeoJson(rows, options));
-	if (codebook) download(`${fileStem}-codebook.csv`, "text/csv;charset=utf-8", toCodebook());
+	if (codebook) download(`${fileStem}-codebook.csv`, "text/csv;charset=utf-8", codebookFor(rows));
 	return rows.length;
 }
