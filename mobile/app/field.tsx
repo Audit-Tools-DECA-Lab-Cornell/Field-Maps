@@ -6,7 +6,6 @@ import { QuestionPanel } from "../src/components/question-panel";
 import { Screen } from "../src/components/screen";
 import { observationSummary } from "../src/domain/build-observation";
 import { visibleQuestions } from "../src/forms/engine";
-import { useLandscapeOnTablet } from "../src/layout/orientation";
 import { useLayout } from "../src/layout/use-layout";
 import { FieldMap, type MapRecord } from "../src/maps/field-map";
 import { shortLabel, useFieldSession } from "../src/session/provider";
@@ -16,7 +15,6 @@ import { colors, space, textStyles } from "../src/theme";
 const AUTO_ADVANCE_MS = 160;
 
 export default function FieldScreen() {
-  useLandscapeOnTablet();
   const layout = useLayout();
   const session = useFieldSession();
   const { records } = useObservations();
@@ -143,6 +141,48 @@ export default function FieldScreen() {
     </View>
   );
 
+  // In portrait the toggle sits between the map and the form rather than over the map, where it
+  // would cover the map style and layer controls. Its slot is kept in landscape so the map and the
+  // panel stay mounted through a rotation, with their camera, layers and typed answers intact.
+  const toggle = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={panelOpen ? "Collapse the form panel" : "Show the form panel"}
+      onPress={() => setPanelOpen(!panelOpen)}
+      hitSlop={layout.portrait ? 6 : undefined}
+      style={
+        layout.portrait
+          ? { alignSelf: "center", marginBottom: panelOpen ? 0 : space.tight }
+          : {
+              position: "absolute",
+              right: panelOpen ? layout.panelWidth : 0,
+              top: "50%",
+              marginTop: -27,
+            }
+      }
+    >
+      <Glass
+        style={
+          layout.portrait
+            ? { paddingHorizontal: space.base, paddingVertical: 7 }
+            : {
+                width: 22,
+                height: 54,
+                alignItems: "center",
+                justifyContent: "center",
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+              }
+        }
+      >
+        <Text style={[textStyles.caption, { color: colors.neutral200 }]}>
+          {layout.portrait ? (panelOpen ? "Hide form" : "Show form") : panelOpen ? "›" : "‹"}
+        </Text>
+      </Glass>
+    </Pressable>
+  );
+  const mapShare = layout.portrait && panelOpen;
+
   return (
     <Screen>
       <KeyboardAvoidingView
@@ -158,9 +198,10 @@ export default function FieldScreen() {
         >
           <View
             style={{
-              flex: layout.portrait ? undefined : 1,
-              height: layout.portrait ? (panelOpen ? "46%" : "100%") : undefined,
+              flex: mapShare ? undefined : 1,
+              height: mapShare ? "46%" : undefined,
               minWidth: 0,
+              minHeight: 0,
               padding: space.snug + 2,
             }}
           >
@@ -176,43 +217,10 @@ export default function FieldScreen() {
               onBack={() => router.navigate("/brief")}
             />
           </View>
+          {layout.portrait && toggle}
           {panelOpen && panel}
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={panelOpen ? "Collapse the form panel" : "Show the form panel"}
-          onPress={() => setPanelOpen(!panelOpen)}
-          style={
-            layout.portrait
-              ? { position: "absolute", right: space.loose, top: space.loose }
-              : {
-                  position: "absolute",
-                  right: panelOpen ? layout.panelWidth : 0,
-                  top: "50%",
-                  marginTop: -27,
-                }
-          }
-        >
-          <Glass
-            style={
-              layout.portrait
-                ? { paddingHorizontal: space.base, paddingVertical: 7 }
-                : {
-                    width: 22,
-                    height: 54,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderTopRightRadius: 0,
-                    borderBottomRightRadius: 0,
-                  }
-            }
-          >
-            <Text style={[textStyles.caption, { color: colors.neutral200 }]}>
-              {layout.portrait ? (panelOpen ? "Hide form" : "Show form") : panelOpen ? "›" : "‹"}
-            </Text>
-          </Glass>
-        </Pressable>
+        {!layout.portrait && toggle}
       </KeyboardAvoidingView>
     </Screen>
   );
