@@ -99,7 +99,8 @@ describe("unfinished observation and the 404 note", () => {
     expect(unfinishedSentence({ placed: false, answered: 1, asked: 0 })).toBe(
       "No point yet, 1 answer. Kept on this device.",
     );
-    expect(unfinishedTitle("North meadow", 1)).toBe("North meadow · Round 1");
+    expect(unfinishedTitle("North meadow", "standard")).toBe("North meadow · Standard round");
+    expect(unfinishedTitle("North meadow", "inventory")).toBe("North meadow · Inventory round");
   });
 
   it("names what is still on the device", () => {

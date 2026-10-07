@@ -88,9 +88,9 @@ const riverside: SitePackage = {
   siteId: "riverside-north-playground",
   sizeOnDevice: "18.4 MB on device",
   zones: siteZones,
-  rounds: [1, 2, 3],
+  inventoryFormVersion: "janet-inventory-v1",
   inheritedContext:
-    "Climate and zone inventory are not collected yet, so a round inherits only its zone and number.",
+    "Climate and the loose parts on hand come from this zone's latest Inventory round.",
   centre: sampleCenter,
   bounds: sampleBounds,
   bases: {
@@ -121,7 +121,7 @@ const practice: SitePackage = {
       north: 42.449,
     },
   ],
-  rounds: [1],
+  inventoryFormVersion: "janet-inventory-v1",
   inheritedContext: "The practice form stores no round context; only its three fields are saved.",
   centre: sampleCenter,
   bounds: sampleBounds,
@@ -194,7 +194,7 @@ const fallCreek: SitePackage = {
   siteId: "sample-garden",
   sizeOnDevice: "Bundled with the app",
   zones: [fallCreekZone],
-  rounds: [1],
+  inventoryFormVersion: "janet-inventory-v1",
   inheritedContext:
     "Records upload as practice records (sample-garden) until the API accepts this site.",
   centre: fallCreekCentre,

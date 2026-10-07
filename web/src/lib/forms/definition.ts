@@ -10,7 +10,15 @@ import { z } from "zod";
  * executed. Every reference is validated before a definition is used.
  */
 
-export const ACTS = ["Child", "Social", "Play", "Setting", "Record"] as const;
+export const ACTS = [
+  "Child",
+  "Social",
+  "Play",
+  "Setting",
+  "Climate",
+  "Inventory",
+  "Record",
+] as const;
 export type Act = (typeof ACTS)[number];
 
 export type Condition =

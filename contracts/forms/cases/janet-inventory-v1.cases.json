@@ -1,0 +1,469 @@
+{
+  "formVersion": "janet-inventory-v1",
+  "definitions": {},
+  "cases": [
+    {
+      "id": "an empty zone inventory asks for climate, every quantity and the observer",
+      "steps": [
+        {
+          "answers": {},
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [
+              {
+                "id": "weather",
+                "reason": "required"
+              },
+              {
+                "id": "wind",
+                "reason": "required"
+              },
+              {
+                "id": "shade",
+                "reason": "required"
+              },
+              {
+                "id": "inv_nat_surfaces",
+                "reason": "required"
+              },
+              {
+                "id": "inv_nat_lps_sm",
+                "reason": "required"
+              },
+              {
+                "id": "inv_nat_lps_med",
+                "reason": "required"
+              },
+              {
+                "id": "inv_nat_lps_lrg",
+                "reason": "required"
+              },
+              {
+                "id": "inv_mfgd_lps_sm",
+                "reason": "required"
+              },
+              {
+                "id": "inv_mfgd_lps_med",
+                "reason": "required"
+              },
+              {
+                "id": "inv_mfgd_lps_lrg",
+                "reason": "required"
+              },
+              {
+                "id": "observer_initials",
+                "reason": "required"
+              }
+            ],
+            "answers": {},
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "a zone with nothing available saves without any list",
+      "steps": [
+        {
+          "answers": {
+            "weather": [
+              "full_sun"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "none",
+            "inv_nat_lps_sm": "none",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "none"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [],
+            "answers": {
+              "weather": [
+                "full_sun"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "none",
+              "inv_nat_lps_sm": "none",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "none"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "a quantity other than None opens its list, which stays optional",
+      "steps": [
+        {
+          "answers": {
+            "weather": [
+              "full_sun"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "none",
+            "inv_nat_lps_sm": "moderate",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "none"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_sm_list",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [],
+            "answers": {
+              "weather": [
+                "full_sun"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "none",
+              "inv_nat_lps_sm": "moderate",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "none"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "changing a quantity to None drops the typed list",
+      "steps": [
+        {
+          "answers": {
+            "weather": [
+              "full_sun"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "none",
+            "inv_nat_lps_sm": "none",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "large",
+            "inv_mfgd_lps_lrg_list": "sand table, large tires"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "inv_mfgd_lps_lrg_list",
+              "observer_initials"
+            ],
+            "problems": [],
+            "answers": {
+              "weather": [
+                "full_sun"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "none",
+              "inv_nat_lps_sm": "none",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "large",
+              "inv_mfgd_lps_lrg_list": "sand table, large tires"
+            },
+            "dropped": []
+          }
+        },
+        {
+          "answers": {
+            "weather": [
+              "full_sun"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "none",
+            "inv_nat_lps_sm": "none",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "none",
+            "inv_mfgd_lps_lrg_list": "sand table, large tires"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [],
+            "answers": {
+              "weather": [
+                "full_sun"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "none",
+              "inv_nat_lps_sm": "none",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "none"
+            },
+            "dropped": [
+              "inv_mfgd_lps_lrg_list"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "weather takes several conditions but never the same one twice",
+      "steps": [
+        {
+          "answers": {
+            "weather": [
+              "partial_sun",
+              "light_rain"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "none",
+            "inv_nat_lps_sm": "none",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "none"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [],
+            "answers": {
+              "weather": [
+                "partial_sun",
+                "light_rain"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "none",
+              "inv_nat_lps_sm": "none",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "none"
+            },
+            "dropped": []
+          }
+        },
+        {
+          "answers": {
+            "weather": [
+              "light_rain",
+              "light_rain"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "none",
+            "inv_nat_lps_sm": "none",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "none"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [
+              {
+                "id": "weather",
+                "reason": "duplicate"
+              }
+            ],
+            "answers": {
+              "weather": [
+                "light_rain",
+                "light_rain"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "none",
+              "inv_nat_lps_sm": "none",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "none"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "a list longer than 300 characters blocks the save",
+      "steps": [
+        {
+          "answers": {
+            "weather": [
+              "full_sun"
+            ],
+            "wind": "no_wind",
+            "shade": "dappled_shade",
+            "observer_initials": "JL",
+            "inv_nat_surfaces": "small",
+            "inv_nat_lps_sm": "none",
+            "inv_nat_lps_med": "none",
+            "inv_nat_lps_lrg": "none",
+            "inv_mfgd_lps_sm": "none",
+            "inv_mfgd_lps_med": "none",
+            "inv_mfgd_lps_lrg": "none",
+            "inv_nat_surfaces_list": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          },
+          "expected": {
+            "visible": [
+              "weather",
+              "wind",
+              "shade",
+              "inv_nat_surfaces",
+              "inv_nat_surfaces_list",
+              "inv_nat_lps_sm",
+              "inv_nat_lps_med",
+              "inv_nat_lps_lrg",
+              "inv_mfgd_lps_sm",
+              "inv_mfgd_lps_med",
+              "inv_mfgd_lps_lrg",
+              "observer_initials"
+            ],
+            "problems": [
+              {
+                "id": "inv_nat_surfaces_list",
+                "reason": "maxLength"
+              }
+            ],
+            "answers": {
+              "weather": [
+                "full_sun"
+              ],
+              "wind": "no_wind",
+              "shade": "dappled_shade",
+              "observer_initials": "JL",
+              "inv_nat_surfaces": "small",
+              "inv_nat_lps_sm": "none",
+              "inv_nat_lps_med": "none",
+              "inv_nat_lps_lrg": "none",
+              "inv_mfgd_lps_sm": "none",
+              "inv_mfgd_lps_med": "none",
+              "inv_mfgd_lps_lrg": "none",
+              "inv_nat_surfaces_list": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "dropped": []
+          }
+        }
+      ]
+    }
+  ]
+}

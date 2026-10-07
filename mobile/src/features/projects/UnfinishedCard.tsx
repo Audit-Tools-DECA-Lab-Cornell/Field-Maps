@@ -48,7 +48,7 @@ export function useUnfinished(): Unfinished | null {
     const form = formFor(recovered.formVersion);
     return {
       kind: "recovered",
-      title: unfinishedTitle(recovered.context.zoneLabel, recovered.context.round),
+      title: unfinishedTitle(recovered.context.zoneLabel, recovered.context.roundType),
       sentence: unfinishedSentence({
         placed: recovered.coordinates !== null,
         answered: countAnswered(recovered.answers),
@@ -60,7 +60,7 @@ export function useUnfinished(): Unfinished | null {
     const answers = session.state.answers;
     return {
       kind: "open",
-      title: unfinishedTitle(session.zone?.label ?? inProgress.packageName, session.round),
+      title: unfinishedTitle(session.zone?.label ?? inProgress.packageName, session.roundType),
       sentence: unfinishedSentence({
         placed: session.placed !== null,
         answered: countAnswered(answers),

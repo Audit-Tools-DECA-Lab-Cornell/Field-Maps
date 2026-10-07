@@ -121,7 +121,7 @@ export function addQuestion(
 	return { raw: { ...raw, questions }, id };
 }
 
-export const ACT_ORDER: readonly Act[] = ["Child", "Social", "Play", "Setting", "Record"];
+export const ACT_ORDER: readonly Act[] = ["Child", "Social", "Play", "Setting", "Climate", "Inventory", "Record"];
 
 /* ── Options ──────────────────────────────────────────────────────────────── */
 

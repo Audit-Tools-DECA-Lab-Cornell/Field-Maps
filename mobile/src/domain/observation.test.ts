@@ -3,7 +3,13 @@ import { questionSchema } from "../forms/definition";
 import { janetTestV1 } from "../forms/fixtures/janet-test-v1";
 import { shellV1 } from "../forms/fixtures/shell-v1";
 import { buildObservation, type ObservationInput } from "./build-observation";
-import { coordinateSchema, countInputSchema, shellObservationSchema } from "./observation";
+import {
+  coordinateSchema,
+  countInputSchema,
+  placementSchema,
+  roundContextSchema,
+  shellObservationSchema,
+} from "./observation";
 
 describe("Observation boundaries", () => {
   const input: ObservationInput = {
@@ -17,7 +23,7 @@ describe("Observation boundaries", () => {
       packageVersion: "v1",
       zoneId: "A",
       zoneLabel: "Zone A",
-      round: 1,
+      roundType: "standard",
       freshPeriod: true,
       inheritedFrom: "",
     },
@@ -113,5 +119,36 @@ describe("Observation boundaries", () => {
     expect(record.observer).toBe("JL");
     expect(record.notes).toBe(input.notes);
     expect(shellObservationSchema.safeParse({ ...input, observer: " " }).success).toBe(false);
+  });
+});
+
+describe("Round context across the move to round types", () => {
+  const legacy = {
+    packageId: "riverside-play-study",
+    packageVersion: "v4",
+    zoneId: "B",
+    zoneLabel: "Zone B · North playground",
+    round: 2,
+    freshPeriod: false,
+    inheritedFrom: "",
+  };
+
+  it("reads a draft or record saved with a round number as a Standard round, keeping the number", () => {
+    const parsed = roundContextSchema.parse(legacy);
+    expect(parsed.roundType).toBe("standard");
+    expect(parsed.round).toBe(2);
+  });
+
+  it("keeps the round type an observer chose", () => {
+    const { round: _unused, ...rest } = legacy;
+    expect(roundContextSchema.parse({ ...rest, roundType: "inventory" }).roundType).toBe(
+      "inventory",
+    );
+    expect(roundContextSchema.safeParse({ ...rest, roundType: "weekly" }).success).toBe(false);
+  });
+
+  it("stores a whole-zone inventory as a zone placement, never as a hand-placed point", () => {
+    expect(placementSchema.parse({ source: "zone", gpsAccuracyMetres: null }).source).toBe("zone");
+    expect(placementSchema.safeParse({ source: "gps", gpsAccuracyMetres: 3 }).success).toBe(false);
   });
 });

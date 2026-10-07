@@ -74,3 +74,17 @@ independent answer but has no export column; presenting gender, the manufactured
 collision on `Nat_LP_Intn_Binary`, and the "list to be provided" natural materials checklist are
 carried as protocol notes and their fields are held out of this version. Option codes in the
 definition are provisional implementation identifiers, not workbook values.
+
+## Inventory round (2026-10-07)
+
+Janet asked for three rounds on every project — Standard, Reliability and Inventory — with the
+inventory "entered by zone" and the zone chosen by the observer. `contracts/forms/janet-inventory-v1.json`
+implements the Inventory round from Sheet1 rows 13–32: weather (several), wind and shade (one
+each), and the seven loose-parts quantity bands, each followed by its item list. The eight hidden
+inventory rows (33–40) stay excluded. Three choices are recorded as protocol notes for Janet to
+confirm: each quantity has a None option and the list opens for any quantity except None (H19–H31
+say "if YES" over quantity bands); the item lists are typed until the common checklist is supplied
+(G20–G32); and climate is asked with each zone rather than once per round. Shared cases in
+`contracts/forms/cases/janet-inventory-v1.cases.json` run in both the mobile and the Python engines.
+Like `janet-test-v1`, the version is a draft: its records are held on the device until the project
+publishes it on the server.

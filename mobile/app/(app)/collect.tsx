@@ -1,6 +1,6 @@
-import { Redirect } from "expo-router";
+import { CollectScreen } from "../../src/features/collect/CollectScreen";
 
-/** Until the Contour collect screen lands (Phase 7), collecting continues on the existing field screen. */
+/** Collecting: place, answer, review and save, with the map mounted throughout (MOB-26). */
 export default function Collect() {
-  return <Redirect href="/field" />;
+  return <CollectScreen />;
 }

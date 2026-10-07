@@ -37,7 +37,7 @@ const draft: ObservationDraft = {
     packageVersion: "v4",
     zoneId: "B",
     zoneLabel: "Zone B · North playground",
-    round: 3,
+    roundType: "reliability",
     freshPeriod: false,
     inheritedFrom: "Round context inherited.",
   },

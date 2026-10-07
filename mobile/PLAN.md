@@ -576,7 +576,8 @@ Done when: the dock hides only in collect; preview and device modes both render 
 Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (download preview, both themes, a tablet).
 
 ### MOB-26: Collect flow on phone and tablet
-Status: todo · Phase 1 · Size L · Depends: MOB-25 · Blocks: none
+Status: doing (code in place 2026-10-07; not yet run on a device or simulator) · Phase 1 · Size L · Depends: MOB-25 · Blocks: none
+2026-10-07: `app/(app)/collect.tsx` and `src/features/collect/` replace the `field`, `review` and `saved` routes. Placement follows Janet's iPhone Maps request instead of step 2's armed tap: a fixed × at the exact coordinate with the pin floating above it, the map moving under it, "Place point here" reading the map's exact centre, the in-zone check, the precision line and a half-metre nudge pad. The Standard, Reliability and Inventory rounds (D26) add a Zone step for inventories; `session.save` gained the placement source and the session's list of saves, and is otherwise unchanged. Verified by types, Biome, 395 tests and both Metro exports only; the simulator checklist is still owed.
 Added 2026-10-03. Collect always runs the real form engine, drafts and SQLite queue. MOB-13 (forms from the server) and MOB-16 later change where its form and site come from, without changing its layout. The save path (`session.save`) is unchanged.
 Read first: `DESIGN.md`, `PRODUCT.md`; designs: Contour system p. 7, Mobile collector pp. 1–9; `src/maps/field-map.tsx`, `src/components/question-panel.tsx`, `src/session/provider.tsx`, `src/layout/orientation.ts`.
 Do:

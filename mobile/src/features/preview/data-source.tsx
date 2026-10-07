@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { useMe } from "../../data/api/me-provider";
-import type { Observation } from "../../domain/observation";
+import { isShellObservation, type Observation } from "../../domain/observation";
 import { bundledPackage } from "../../packages/bundled";
 import type { SitePackage } from "../../packages/site-package";
 import { shortLabel } from "../../session/provider";
@@ -316,17 +316,21 @@ const STATUS_TO_STATE: Record<Observation["storageStatus"], QueueState> = {
 function fromDevice(record: Observation): QueueRecord {
   const created = new Date(record.createdAt);
   const time = `${String(created.getHours()).padStart(2, "0")}:${String(created.getMinutes()).padStart(2, "0")}`;
-  const zone =
-    record.formVersion === "janet-test-v1" ? record.context.zoneLabel : "Practice garden";
-  const round = record.formVersion === "janet-test-v1" ? record.context.round : 1;
+  const practice = isShellObservation(record);
+  const zone = practice ? "Practice garden" : record.context.zoneLabel;
+  const roundType = practice ? "standard" : record.context.roundType;
   return {
     id: record.id,
     label: shortLabel(record.id),
     zone,
-    round,
+    roundType,
     time,
     state: STATUS_TO_STATE[record.storageStatus],
-    summary: record.formVersion === "janet-test-v1" ? "Behaviour mapping" : "Practice record",
+    summary: practice
+      ? "Practice record"
+      : roundType === "inventory"
+        ? "Zone inventory"
+        : "Behaviour mapping",
     problem: record.syncError || undefined,
     storage: record.storageStatus === "synced" ? "Uploaded" : "On this device",
     observer: record.observer,
