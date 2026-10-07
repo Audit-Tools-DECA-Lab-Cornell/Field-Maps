@@ -10,9 +10,12 @@ from fieldmaps_api.errors import (
     RoleRequiredError,
     ValidationFailedError,
 )
+from fieldmaps_api.queries import tenancy as tenancy_queries
 from fieldmaps_api.repositories import sites
+from fieldmaps_api.repositories import tenancy as tenancy_db
 from fieldmaps_api.schemas import PackageDetail, PackageSummary
 from fieldmaps_api.services.tenancy import project
+from fieldmaps_api.site_schemas import Site, SiteCreate, SitePatch
 
 
 async def prepare_package(
@@ -26,6 +29,13 @@ async def prepare_package(
     if target is None:
         message = "Only a manager of this project, site and form may prepare a package"
         raise RoleRequiredError(message)
+    if target.form_state != "published":
+        # A device collects with the package's form, so it must be one that uploads accept.
+        message = (
+            f"{submission.form_version} is {target.form_state}; "
+            "prepare the package with a published form version"
+        )
+        raise ValidationFailedError(message, field="form_version")
     try:
         prepared = prepare(submission)
     except PackageError as error:
@@ -79,3 +89,41 @@ async def read_package_archive(
         message = "This package was blocked during preparation and cannot be downloaded"
         raise ConflictError(message)
     return archive, digest
+
+
+async def list_sites(session: AsyncSession, project_id: UUID) -> list[Site]:
+    await project(session, project_id)
+    return await sites.list_sites(session, project_id)
+
+
+async def get_site(session: AsyncSession, project_id: UUID, code: str) -> Site:
+    site = await sites.get_site(session, project_id, code)
+    if site is None:
+        message = "Site not found"
+        raise NotFoundError(message)
+    return site
+
+
+async def create_site(session: AsyncSession, project_id: UUID, payload: SiteCreate) -> Site:
+    await tenancy_db.require_manager(session, tenancy_queries.PROJECT_MANAGER, project_id)
+    organization_id = await sites.project_organization(session, project_id)
+    if organization_id is None:
+        message = "Project not found"
+        raise NotFoundError(message)
+    try:
+        async with session.begin_nested():
+            await sites.insert_site(session, project_id, organization_id, payload)
+    except IntegrityError as error:
+        message = f'This project already has a site with the code "{payload.code}"'
+        raise ConflictError(message) from error
+    return await get_site(session, project_id, payload.code)
+
+
+async def update_site(
+    session: AsyncSession, project_id: UUID, code: str, payload: SitePatch
+) -> Site:
+    await tenancy_db.require_manager(session, tenancy_queries.PROJECT_MANAGER, project_id)
+    if not await sites.update_site(session, project_id, code, payload):
+        message = "Site not found"
+        raise NotFoundError(message)
+    return await get_site(session, project_id, code)

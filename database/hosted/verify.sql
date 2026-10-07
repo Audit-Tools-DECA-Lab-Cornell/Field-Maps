@@ -121,6 +121,18 @@ SELECT pg_temp.assert_true(NOT fieldmaps_private.has_project_role(
 SELECT pg_temp.assert_true(NOT has_column_privilege(current_user, 'fieldmaps.projects', 'is_training', 'UPDATE')
   AND NOT has_column_privilege(current_user, 'fieldmaps.organizations', 'is_platform', 'UPDATE'),
   'API cannot change protected tenancy flags');
+SELECT pg_temp.assert_true(NOT has_column_privilege(current_user, 'fieldmaps.form_versions', 'state', 'UPDATE')
+  AND NOT has_column_privilege(current_user, 'fieldmaps.form_versions', 'published_at', 'UPDATE')
+  AND NOT has_column_privilege(current_user, 'fieldmaps.sites', 'code', 'UPDATE'),
+  'API cannot publish by editing a version, or move a site to another code');
+SELECT pg_temp.assert_true(EXISTS (SELECT FROM pg_policies WHERE schemaname = 'fieldmaps'
+    AND tablename = 'form_versions' AND policyname = 'member_reads_published_versions')
+  AND NOT EXISTS (SELECT FROM pg_policies WHERE schemaname = 'fieldmaps'
+    AND tablename = 'form_versions' AND policyname = 'assigned_forms'),
+  'members read published versions only; drafts stay with managers');
+SELECT pg_temp.assert_rejected($$SELECT fieldmaps_private.publish_form_version(
+  '10000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000004')$$,
+  'FM006', 'publishing requires identity');
 SELECT pg_temp.assert_rejected($$SELECT fieldmaps_private.ensure_profile(NULL)$$, 'FM006', 'tenancy functions require identity');
 SELECT pg_temp.assert_rejected($$SELECT fieldmaps_private.ensure_profile_row()$$, '42501', 'internal membership helper is not callable');
 RESET ROLE;

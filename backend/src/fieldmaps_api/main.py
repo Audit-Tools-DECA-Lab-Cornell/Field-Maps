@@ -16,7 +16,7 @@ from fieldmaps_api.database import database_connection
 from fieldmaps_api.deps import Authentication
 from fieldmaps_api.errors import ERROR_RESPONSES, register_error_handlers
 from fieldmaps_api.observability import RequestIdMiddleware, configure_observability
-from fieldmaps_api.routers import collection, identity, sites, tenancy
+from fieldmaps_api.routers import collection, forms, identity, sites, tenancy
 
 
 class HealthResponse(BaseModel):
@@ -98,6 +98,7 @@ def create_app(
     app.include_router(identity.create_router(sessions, authenticate, configuration))
     app.include_router(collection.create_router(sessions, authenticate))
     app.include_router(sites.create_router(sessions, authenticate))
+    app.include_router(forms.create_router(sessions, authenticate))
     return app
 
 
