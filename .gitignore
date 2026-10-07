@@ -81,6 +81,7 @@ Thumbs.db
 .claude/**/*.local.json
 .claude/cache/
 .claude/.tmp/
+.claude/worktrees/
 
 # Aider
 .aider*
