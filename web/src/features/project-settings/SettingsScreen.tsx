@@ -18,12 +18,12 @@ import { useToast } from "@/components/contour/Toast";
 import { projectHref } from "@/features/shell/navigation";
 import { usePreview } from "@/features/shell/PreviewProvider";
 import { PreviewStateView } from "@/features/shell/PreviewStateView";
+import { useLeaveGuard } from "@/features/shell/useLeaveGuard";
 import { VIEWER } from "@/fixtures";
 import { cx } from "@/lib/cx";
 
 import { DangerZone } from "./DangerZone";
 import { type ProjectSettings, type PublicationScope, SCOPE_LABEL, useProjectSettings } from "./store";
-import { useLeaveGuard } from "./useLeaveGuard";
 
 export type SettingsScreenProps = { org: string; project: string };
 
