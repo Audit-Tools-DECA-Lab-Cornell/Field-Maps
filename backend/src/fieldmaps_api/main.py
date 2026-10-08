@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from jwt import PyJWKClient
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from starlette.middleware.errors import ServerErrorMiddleware
 
 from fieldmaps_api import readiness
 from fieldmaps_api.auth import JwksVerifier, TokenVerifier, UnconfiguredVerifier
@@ -14,7 +15,7 @@ from fieldmaps_api.body_limits import BodySizeMiddleware
 from fieldmaps_api.config import Settings, read_local_settings
 from fieldmaps_api.database import database_connection
 from fieldmaps_api.deps import Authentication
-from fieldmaps_api.errors import ERROR_RESPONSES, register_error_handlers
+from fieldmaps_api.errors import ERROR_RESPONSES, error_response, register_error_handlers
 from fieldmaps_api.observability import (
     RequestIdMiddleware,
     configure_observability,
@@ -73,6 +74,9 @@ def create_app(
             await engine.dispose()
 
     app = FastAPI(title="FieldMaps API", version="0.1.0", lifespan=lifespan)
+    # Handle unexpected failures inside CORS and request-id middleware, so browsers can read
+    # the sanitized error and its request ID instead of seeing an opaque network failure.
+    app.add_middleware(ServerErrorMiddleware, handler=error_response)
     app.add_middleware(BodySizeMiddleware)
     # The management application runs on its own origin and sends an Authorization header, so
     # every call it makes is preflighted. Named origins only: a wildcard here would let any page

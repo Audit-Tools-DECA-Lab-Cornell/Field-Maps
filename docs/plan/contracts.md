@@ -141,6 +141,26 @@ This is the full target surface. **Exists** means it is already served by `backe
 | analysis | `GET /v1/projects/{p}/exports?format=csv\|geojson&…filters` (streamed, audited) | viewer and up | BE-14 |
 | gis | `GET /v1/projects/{p}/gis-access` (pilot: list grants and connection info, no secrets) | manager | BE-15 |
 
+### Current web observation reads
+
+`GET /v1/projects/{p}/observations` returns a bare array with at most 500 rows, ordered by
+`observed_at DESC, observation_id ASC`. `site` and `round_type` filter before the limit;
+`since` is an inclusive **received_at** cutoff, not an observation-date filter. All reads
+use the caller's project access and RLS. A response containing 500 rows is potentially
+limited; no cursor or exact matching total is returned. Browser filters and derived
+reports/exports cover that returned subset only. Site `observation_count` instead counts
+all accessible, non-deleted records at that site.
+
+`GET /v1/projects/{p}/observations/{uuid}` preserves its existing fields and additionally
+returns `site_code`, `site_name`, `form_version`, `received_at`, `zone`, `round_type`,
+`first_round` and `placement`. These fields have the same meanings as the list response.
+`form_version` identifies the definition stored with the observation, including retired
+versions; fetch it through `GET /v1/projects/{p}/form-versions/{code}` to label answers.
+Never infer a record's definition from the current package or latest form. Legacy records
+without round context read as `round_type: "standard"` with null zone/first_round/placement.
+Details remain accessible outside the newest 500 rows; missing, deleted and inaccessible
+records return 404. Existing mobile upload bodies and receipts are unchanged.
+
 ### `POST /v1/sync/upload` semantics
 
 These follow PowerSync's guidance: <https://docs.powersync.com/handling-writes/writing-client-changes.md>.

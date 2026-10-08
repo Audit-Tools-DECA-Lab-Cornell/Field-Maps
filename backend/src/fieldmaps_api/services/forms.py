@@ -99,7 +99,11 @@ async def create_draft(
     if form is None:
         message = "Form not found"
         raise NotFoundError(message)
-    source = payload.definition or await forms.latest_definition(session, form.id)
+    source = (
+        payload.definition
+        if payload.definition is not None
+        else await forms.latest_definition(session, form.id)
+    )
     if source is None:
         message = "This form has no version to copy; send a definition"
         raise ValidationFailedError(message, field="definition")
@@ -141,8 +145,11 @@ async def update_draft(
         raise ConflictError(message)
     definition = checked_definition(payload.definition, code, "draft")
     if not await forms.update_draft(session, project_id, code, definition):
-        message = "Form version not found"
-        raise NotFoundError(message)
+        # Another manager can publish or discard after the initial read. Distinguish a
+        # surviving, frozen version from a missing one; neither is a successful save.
+        await get_version(session, project_id, code)
+        message = f"{code} changed while you were saving; reload it before trying again"
+        raise ConflictError(message)
     return await get_version(session, project_id, code)
 
 
@@ -152,7 +159,10 @@ async def discard_draft(session: AsyncSession, project_id: UUID, code: str) -> N
     if current.state != "draft":
         message = f"{code} is {current.state}; only a draft can be discarded"
         raise ConflictError(message)
-    await forms.discard_draft(session, project_id, code)
+    if not await forms.discard_draft(session, project_id, code):
+        await get_version(session, project_id, code)
+        message = f"{code} changed while you were discarding it; reload it before trying again"
+        raise ConflictError(message)
 
 
 async def publish(session: AsyncSession, project_id: UUID, code: str) -> FormVersionDetail:

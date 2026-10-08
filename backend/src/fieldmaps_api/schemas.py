@@ -100,6 +100,8 @@ class UploadReceipt(BaseModel):
 
 
 class StoredObservation(BaseModel):
+    """A direct record read, including the historical form needed to label its answers."""
+
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
     observation_id: UUID
@@ -109,6 +111,15 @@ class StoredObservation(BaseModel):
     answers: dict[str, JsonValue]
     observed_at: AwareDatetime
     revision: int
+
+    site_code: str
+    site_name: str
+    form_version: str
+    received_at: AwareDatetime
+    zone: str | None
+    round_type: Literal["standard", "reliability", "inventory"]
+    first_round: bool | None
+    placement: Literal["hand", "zone"] | None
 
 
 class ObservationQuery(BaseModel):

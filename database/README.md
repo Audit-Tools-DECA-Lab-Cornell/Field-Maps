@@ -24,6 +24,13 @@ The separate Auth-hook suite connects through Docker as local `supabase_admin`, 
 
 ## Schema and access
 
+For browser acceptance data after starting the local Auth-connected API on port 8001, run
+`node database/seed-web-workspace.mjs` from the repository root. It seeds synthetic role
+accounts and eight observations through Auth and application APIs, refuses hosted targets,
+and can be repeated without a reset. See the [backend handoff](../backend/WEB-FLOW-HANDOFF.md#repeatable-local-browser-acceptance)
+for test credentials, exact counts and the generated public fixture manifest. Run its guard
+tests with `node --test database/seed-web-workspace.test.mjs`.
+
 The schema now includes profiles linked to Auth users, organizations, organization members, projects, project memberships, invitations, sites, immutable form versions, observations, immutable site packages and package checks. Composite foreign keys enforce project/organization boundaries.
 
 Organization owners/admins act as managers on their organization's projects. Project managers can read their collaborators' profiles and memberships, except Training memberships. Browser roles and `service_role` cannot access application tables or execute application functions. `fieldmaps_api` cannot bypass RLS or directly grant membership. Column-limited grants allow only the documented profile, organization and project edits.

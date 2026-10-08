@@ -248,6 +248,18 @@ def test_form_definitions_are_checked_as_the_collector_reads_them(
     assert bad_code.status_code == 422
 
 
+def test_an_explicit_empty_definition_is_not_replaced_with_a_copy(
+    api_client: TestClient, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    start_inventory(api_client, base)
+    rejected = api_client.post(f"{base}/forms/inventory/versions", json={"definition": {}})
+    assert rejected.status_code == 422, rejected.text
+    listed = FORMS.validate_json(api_client.get(f"{base}/forms").content)
+    versions = next(form for form in listed if form.code == "inventory").versions
+    assert [version.code for version in versions] == ["inventory-v1"]
+
+
 @pytest.mark.parametrize("reserved", ["zone", "round_type", "first_round", "placement"])
 def test_a_question_cannot_take_a_name_the_record_itself_uses(
     api_client: TestClient, tenant: Tenant, reserved: str

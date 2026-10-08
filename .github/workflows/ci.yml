@@ -105,4 +105,4 @@ jobs:
         with:
           node-version: 24
       - run: node docs/plan/check-plan.mjs
-      - run: node --test "scripts/*.test.mjs"
+      - run: node --test "scripts/*.test.mjs" "database/*.test.mjs"

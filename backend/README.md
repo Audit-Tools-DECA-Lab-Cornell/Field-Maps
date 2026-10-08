@@ -1,5 +1,8 @@
 # FieldMaps observation API
 
+The [live web workspace handoff](WEB-FLOW-HANDOFF.md) documents current endpoint roles,
+observation-detail metadata, bounded reporting, local browser fixtures and release checks.
+
 FastAPI, SQLAlchemy, and PostgreSQL/PostGIS implement the first authenticated, append-only upload slice. The mobile app saves to SQLite first; its foreground queue uploads when connected. QGIS can consume the same committed database records through a scoped GIS view. QGIS itself is not the synchronization server.
 
 ## Run locally

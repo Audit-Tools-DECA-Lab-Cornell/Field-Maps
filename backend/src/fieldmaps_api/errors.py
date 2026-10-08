@@ -210,6 +210,5 @@ def register_error_handlers(app: FastAPI) -> None:
         RequestValidationError,
         SQLAlchemyError,
         FrameworkError,
-        Exception,
     ):
         app.add_exception_handler(exception_type, error_response)

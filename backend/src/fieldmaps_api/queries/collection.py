@@ -32,11 +32,18 @@ WHERE id = :id AND project_id = :project AND created_by = :user_id AND upload_ha
 """)
 
 OBSERVATION: Final = text("""
-SELECT json_build_object('observation_id', id, 'project_id', project_id,
-  'observer', observer_code, 'coordinates',
-  json_build_array(fieldmaps.longitude(geom), fieldmaps.latitude(geom)),
-  'answers', answers, 'observed_at', observed_at, 'revision', revision)::text
-FROM fieldmaps.observations WHERE id = :id AND project_id = :project AND deleted_at IS NULL
+SELECT json_build_object('observation_id', o.id, 'project_id', o.project_id,
+  'observer', o.observer_code, 'coordinates',
+  json_build_array(fieldmaps.longitude(o.geom), fieldmaps.latitude(o.geom)),
+  'answers', o.answers, 'observed_at', o.observed_at, 'revision', o.revision,
+  'site_code', s.code, 'site_name', s.name, 'form_version', f.code,
+  'received_at', o.received_at, 'zone', o.zone_code,
+  'round_type', coalesce(o.round_type, 'standard'),
+  'first_round', o.first_round, 'placement', o.placement_source)::text
+FROM fieldmaps.observations o
+JOIN fieldmaps.sites s ON s.id = o.site_id
+JOIN fieldmaps.form_versions f ON f.id = o.form_version_id
+WHERE o.id = :id AND o.project_id = :project AND o.deleted_at IS NULL
 """)
 
 #: What a project's members can see, newest first, with its round context. Training records stay

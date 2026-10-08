@@ -213,6 +213,7 @@ def test_unhandled_failure_telemetry_keeps_request_id(monkeypatch: pytest.Monkey
 
     with TestClient(app, raise_server_exceptions=False) as client:
         assert client.get("/failure", headers={"X-Request-Id": "correlated"}).status_code == 500
+    assert len(events) == 1
     assert events[0].get("tags") == {"request_id": "correlated"}
     assert "secret" not in str(events)
 

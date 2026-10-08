@@ -89,3 +89,20 @@ def test_the_pattern_matches_the_whole_origin_and_not_a_prefix() -> None:
 def test_a_pattern_the_engine_cannot_compile_is_refused_at_startup() -> None:
     with pytest.raises(ValidationError, match="not a valid regular expression"):
         Settings(browser_origin_pattern="https://field-maps-[")
+
+
+def test_browser_can_read_sanitized_unexpected_errors() -> None:
+    app = create_app(Settings(browser_origins=(HttpUrl(WEB),)))
+
+    @app.get("/failure")
+    async def fail() -> None:
+        message = "private failure"
+        raise RuntimeError(message)
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/failure", headers={"Origin": WEB})
+    assert response.status_code == 500
+    assert response.headers["access-control-allow-origin"] == WEB
+    assert "x-request-id" in response.headers["access-control-expose-headers"].lower()
+    assert response.headers["x-request-id"]
+    assert "private failure" not in response.text

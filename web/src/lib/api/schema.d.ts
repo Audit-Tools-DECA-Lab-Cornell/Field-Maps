@@ -1504,7 +1504,10 @@ export interface components {
             name?: components["schemas"]["Name"] | null;
         };
         Slug: string;
-        /** StoredObservation */
+        /**
+         * StoredObservation
+         * @description A direct record read, including the historical form needed to label its answers.
+         */
         StoredObservation: {
             /** Answers */
             answers: {
@@ -1515,6 +1518,10 @@ export interface components {
                 number,
                 number
             ];
+            /** First Round */
+            first_round: boolean | null;
+            /** Form Version */
+            form_version: string;
             /**
              * Observation Id
              * Format: uuid
@@ -1527,13 +1534,31 @@ export interface components {
             observed_at: string;
             /** Observer */
             observer: string;
+            /** Placement */
+            placement: ("hand" | "zone") | null;
             /**
              * Project Id
              * Format: uuid
              */
             project_id: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
             /** Revision */
             revision: number;
+            /**
+             * Round Type
+             * @enum {string}
+             */
+            round_type: "standard" | "reliability" | "inventory";
+            /** Site Code */
+            site_code: string;
+            /** Site Name */
+            site_name: string;
+            /** Zone */
+            zone: string | null;
         };
         /** UploadReceipt */
         UploadReceipt: {

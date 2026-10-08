@@ -2407,6 +2407,7 @@
         "type": "string"
       },
       "StoredObservation": {
+        "description": "A direct record read, including the historical form needed to label its answers.",
         "properties": {
           "answers": {
             "additionalProperties": {
@@ -2429,6 +2430,21 @@
             "title": "Coordinates",
             "type": "array"
           },
+          "first_round": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Round"
+          },
+          "form_version": {
+            "title": "Form Version",
+            "type": "string"
+          },
           "observation_id": {
             "format": "uuid",
             "title": "Observation Id",
@@ -2443,14 +2459,62 @@
             "title": "Observer",
             "type": "string"
           },
+          "placement": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hand",
+                  "zone"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placement"
+          },
           "project_id": {
             "format": "uuid",
             "title": "Project Id",
             "type": "string"
           },
+          "received_at": {
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
           "revision": {
             "title": "Revision",
             "type": "integer"
+          },
+          "round_type": {
+            "enum": [
+              "standard",
+              "reliability",
+              "inventory"
+            ],
+            "title": "Round Type",
+            "type": "string"
+          },
+          "site_code": {
+            "title": "Site Code",
+            "type": "string"
+          },
+          "site_name": {
+            "title": "Site Name",
+            "type": "string"
+          },
+          "zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Zone"
           }
         },
         "required": [
@@ -2460,7 +2524,15 @@
           "coordinates",
           "answers",
           "observed_at",
-          "revision"
+          "revision",
+          "site_code",
+          "site_name",
+          "form_version",
+          "received_at",
+          "zone",
+          "round_type",
+          "first_round",
+          "placement"
         ],
         "title": "StoredObservation",
         "type": "object"

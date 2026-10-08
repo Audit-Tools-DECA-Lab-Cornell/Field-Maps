@@ -1,6 +1,7 @@
 # API plan (`backend/`)
 
 This file is part of the [FieldMaps production plan](../docs/plan/README.md) and defines the `BE-*` tasks.
+- The [web flow completion proposal](WEB-FLOW-PLAN.md) scopes the backend work supporting Claude's live-web implementation; task status remains in this file and the other owning plans.
 - **Endpoint shapes and the error envelope** are owned by [contracts.md](../docs/plan/contracts.md). Implement them as written there; if one must change, change contracts.md first.
 - **Database objects** these tasks rely on are `DB-*` tasks in [supabase/PLAN.md](../supabase/PLAN.md).
 - **Layering and module boundaries** are in [architecture.md](../docs/plan/architecture.md#layering-inside-each-component).
@@ -50,6 +51,18 @@ backend/src/fieldmaps_api/
 ```
 
 ## Tasks
+
+### BE-17: Complete the backend contract for the live web workspace
+Status: done (2026-10-08, local backend acceptance) · Phase 3 · Size L · Depends: BE-07, BE-11 · Blocks: none
+Verified locally: 293 API tests, SQL/Auth-hook/hosted-verification-on-local suites, Ruff and BasedPyright pass. All 433 mobile tests, mobile typecheck/lint, form parity, generated contract consistency and plan checks pass. The local browser seed ran twice with eight unique records; live HTTP checks verified role inheritance, tenant denial, CORS and archive checksum. See [handoff and release evidence](WEB-FLOW-HANDOFF.md#verification-2026-10-08). No new migration or hosted change; frontend browser/device acceptance remains separate.
+Read first: [web flow completion proposal](WEB-FLOW-PLAN.md); `tests/test_workspace_api.py`; the current observation-read contract in `docs/plan/contracts.md`.
+Do:
+1. Add historical form, site and round metadata to direct observation reads without changing upload or list contracts.
+2. Verify role changes, invitations, package selection and form lifecycle; fix reproducible backend failures, including browser-readable errors and draft mutation races.
+3. Provide a local-only, repeatable browser acceptance seed and a frontend contract handoff documenting bounded reports/exports.
+4. Run API, SQL, contract and mobile compatibility checks; record local evidence separately from frontend and hosted acceptance.
+Done when: backend acceptance and isolation checks pass, generated contracts are consistent, and the documented local seed succeeds twice without duplicating observations. Frontend browser acceptance and hosted deployment remain separate handoff steps. Full-data analysis remains BE-14; Storage remains BE-13.
+Verify: `pnpm backend:check`; `pnpm backend:test`; `pnpm db:test`; `node --test database/seed-web-workspace.test.mjs`; `pnpm contracts:generate`; `pnpm mobile:test`; `pnpm mobile:check`; `pnpm plan:check`.
 
 ### BE-01: Harden the container image
 Status: done (2026-10-04) · Phase 0 · Size S · Depends: none · Blocks: OPS-04
@@ -155,7 +168,7 @@ Done when:
 - the tests pass.
 
 ### BE-07: Tenancy: organizations, projects, members, invitations
-Status: done (2026-10-04) · Phase 1 · Size L · Depends: BE-03, BE-06, DB-05, DB-06 · Blocks: MOB-06, QA-01, WEB-06, WEB-07
+Status: done (2026-10-04) · Phase 1 · Size L · Depends: BE-03, BE-06, DB-05, DB-06 · Blocks: BE-17, MOB-06, QA-01, WEB-06, WEB-07
 Verified locally on 2026-10-04: organization/project lifecycle, membership changes, ownership transfer and invitation lifecycle pass. The two-organization, every-role isolation matrix passes; full API suite: 214 passed.
 Read first: the tenancy rows in the contracts catalog; DB-05 and DB-06. Every write goes through a DB-06 function. The API holds no INSERT, UPDATE or DELETE on membership or invitation tables.
 Do:
@@ -253,7 +266,7 @@ Do:
 Done when: all shared cases pass in both pytest and Vitest (CON-02), and the old upload tests pass.
 
 ### BE-11: Instrument endpoints
-Status: done (2026-10-07) · Phase 2 · Size M · Depends: BE-10, DB-09 · Blocks: WEB-09
+Status: done (2026-10-07) · Phase 2 · Size M · Depends: BE-10, DB-09 · Blocks: BE-17, WEB-09
 What now works (`routers/forms.py`, `services/forms.py`):
 - `GET/POST /v1/projects/{p}/forms`, `POST …/forms/{form_code}/versions` (the next draft, copied from the newest version unless a definition is sent), and `GET/PUT/DELETE …/form-versions/{code}` with `POST …/publish` and `…/retire`. Versions are addressed by their code (`inventory-v2`), the name devices and exports already use, so a version id from another project can never be named.
 - Every definition is stamped with its code and state and checked by `FormDefinition` before it is stored, and again at publication; a 422 names up to eight problems. Form bodies may be 1 MiB.

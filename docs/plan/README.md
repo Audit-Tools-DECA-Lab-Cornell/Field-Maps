@@ -138,7 +138,7 @@ WEB-20 to WEB-26 and MOB-23 to MOB-27 build the Contour screens on fixtures ahea
 
 **Demo:** every web screen reads the API. CSV/GeoJSON export works, and QGIS opens a typed per-form layer for one project.
 
-- **API:** BE-14, BE-15
+- **API:** BE-14, BE-15, BE-17
 - **Web:** WEB-08, WEB-09, WEB-10, WEB-11, WEB-12, WEB-13
 - **GIS:** GIS-01, GIS-02, GIS-03, GIS-04
 - **Operations:** OPS-16
