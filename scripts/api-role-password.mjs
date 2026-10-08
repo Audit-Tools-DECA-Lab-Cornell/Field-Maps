@@ -10,6 +10,8 @@
 // no dependencies.
 
 import { createHash, createHmac, pbkdf2Sync, randomBytes } from "node:crypto";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const ROLE = "fieldmaps_api";
 const ITERATIONS = 4096;
@@ -24,7 +26,17 @@ export function scramVerifier(password, salt = randomBytes(16), iterations = ITE
   return `SCRAM-SHA-256$${iterations}:${b64(salt)}$${b64(storedKey)}:${b64(serverKey)}`;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+/** Run as a command, not imported by its test. Node runs the main script by its real path, so the argument
+ * is resolved too: `/tmp` is a link on macOS, and a raw `file://` string would also miss spaces and `%`. */
+function isMain() {
+  try {
+    return realpathSync(process.argv[1] ?? "") === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isMain()) {
   // Hex only: nothing to escape in SQL, a Secret File or a shell.
   const password = randomBytes(24).toString("hex");
   console.log(`1. Supabase dashboard → SQL Editor, run:
