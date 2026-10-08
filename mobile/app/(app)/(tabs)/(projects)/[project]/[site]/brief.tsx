@@ -9,7 +9,8 @@ import {
 } from "../../../../../../src/domain/rounds";
 import { useSite } from "../../../../../../src/features/preview";
 import { PageIntro, useAccountInitials } from "../../../../../../src/features/projects/parts";
-import { formForRound, useFieldSession } from "../../../../../../src/session/provider";
+import { useFieldSession } from "../../../../../../src/session/provider";
+import { offersRound } from "../../../../../../src/session/round-forms";
 import {
   Button,
   Field,
@@ -135,7 +136,7 @@ export default function BriefScreen() {
     label: ROUNDS[type].label,
     description: ROUNDS[type].description,
     disabled:
-      (session.roundBlock !== null && type !== roundType) || !formForRound(sitePackage, type),
+      (session.roundBlock !== null && type !== roundType) || !offersRound(sitePackage, type),
   }));
   const inventory = !placesPoints(roundType);
   const openHere = inProgress !== null && inProgress.packageId === sitePackage.id;

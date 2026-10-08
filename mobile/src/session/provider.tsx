@@ -16,7 +16,7 @@ import type { Coordinate, Placement, RoundContext } from "../domain/observation"
 import type { RoundType } from "../domain/rounds";
 import type { Answers, FormDefinition } from "../forms/definition";
 import { type ReviewProblem, reviewProblems } from "../forms/engine";
-import { carriedQuestionIds, formFor, isUploadable } from "../forms/registry";
+import { carriedQuestionIds, isUploadable } from "../forms/registry";
 import {
   reduceSession,
   type SessionAction,
@@ -43,6 +43,7 @@ import {
   packageSwitchProblem,
   recoveryProblem,
 } from "./ownership";
+import { formForRound, offersRound } from "./round-forms";
 
 /**
  * One observation period: the package, the zone and round it is stamped with, and the
@@ -150,17 +151,6 @@ const FieldSessionContext = createContext(missing);
 export { shortLabel } from "../domain/labels";
 
 /** The form a round collects on a package: the play-event form, or the zone inventory. */
-export function formForRound(
-  sitePackage: SitePackage,
-  roundType: RoundType,
-): FormDefinition | null {
-  return (
-    formFor(
-      roundType === "inventory" ? sitePackage.inventoryFormVersion : sitePackage.formVersion,
-    ) ?? null
-  );
-}
-
 const OPEN_OBSERVATION_BLOCK =
   "An observation is open. Save or discard it first, so its answers keep the round they were collected in.";
 const OPEN_INVENTORY_BLOCK =
@@ -176,7 +166,14 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
   const [roundType, setRoundType] = useState<RoundType>("standard");
   const [freshPeriod, setFreshPeriod] = useState(false);
   const [placed, setPlaced] = useState<Coordinate | null>(null);
-  const [placementSource, setPlacementSource] = useState<Placement["source"]>("hand");
+  const [placementSource, setPlacementState] = useState<Placement["source"]>("hand");
+  // Read by callbacks in the same handler that changes it (beginning an inventory writes its first
+  // draft at once), so the value lives in a ref as well as in state.
+  const placementRef = useRef<Placement["source"]>("hand");
+  const setPlacementSource = useCallback((source: Placement["source"]) => {
+    placementRef.current = source;
+    setPlacementState(source);
+  }, []);
   const [saves, setSaves] = useState<readonly SessionSave[]>([]);
   const [armed, setArmed] = useState(false);
   const [state, setState] = useState<SessionState>(startSession());
@@ -223,7 +220,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         siteId: sitePackage.siteId,
         context,
         coordinates: coordinate,
-        placement: coordinate ? { source: placementSource, gpsAccuracyMetres: null } : null,
+        placement: coordinate ? { source: placementRef.current, gpsAccuracyMetres: null } : null,
         answers: next.answers,
         questionIndex: next.index,
         startedAt: owner.startedAt,
@@ -234,7 +231,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         setStatus("The draft could not be written to storage. Answers stay on screen.");
       });
     },
-    [context, database, form, key, placementSource, ready, sitePackage],
+    [context, database, form, key, ready, sitePackage],
   );
 
   // A draft left behind by a force quit is offered back before anything else on launch.
@@ -266,6 +263,10 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (lastKey.current === key) return;
     lastKey.current = key;
+    // What this session saved belongs to the account that saved it: the next observer starts with
+    // no zone marked as inventoried, even when nothing was open at the switch.
+    setSaves([]);
+    openedPackage.current = null;
     if (identity.current === null) return;
     const previous = identity.current;
     holdIdentity(null);
@@ -300,6 +301,8 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         (current) =>
           opened.zones.find((entry) => entry.id === current?.id) ?? opened.zones[0] ?? null,
       );
+      // A round this site cannot record falls back to Standard rather than staying chosen.
+      setRoundType((current) => (offersRound(opened, current) ? current : "standard"));
     }
     return { ok: true, sitePackage: opened };
   }, []);
@@ -332,7 +335,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
           : "Point placed by hand. This build records no device location, so no GPS accuracy is stored beside it.",
       );
     },
-    [apply, holdIdentity, key, persist, sitePackage],
+    [apply, holdIdentity, key, persist, setPlacementSource, sitePackage],
   );
 
   const place = useCallback((coordinate: Coordinate) => begin(coordinate, "hand"), [begin]);
@@ -359,7 +362,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
       // Stepping back past the first question releases the point but not the observation: the
       // answers stay, and the draft keeps them without coordinates so a force quit still recovers.
       // A zone inventory has no point to release: stepping back past its first question keeps it open.
-      const release = step.destination === "map" && placementSource === "hand";
+      const release = step.destination === "map" && placementRef.current === "hand";
       if (release) setPlaced(null);
       persist(step.state, release ? null : placed);
       if (step.state.notice)
@@ -370,7 +373,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
         );
       return step;
     },
-    [apply, form, persist, placed, placementSource],
+    [apply, form, persist, placed],
   );
 
   const reset = useCallback(
@@ -381,7 +384,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
       setArmed(false);
       apply(startSession(keep));
     },
-    [apply, holdIdentity],
+    [apply, holdIdentity, setPlacementSource],
   );
 
   const save = useCallback(async (): Promise<SaveOutcome> => {
@@ -392,7 +395,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     if (mismatch !== null) return { ok: false, problems: [], message: mismatch };
     const found = reviewProblems(form, stateRef.current.answers);
     if (found.length > 0) return { ok: false, problems: found };
-    const placement: Placement = { source: placementSource, gpsAccuracyMetres: null };
+    const placement: Placement = { source: placementRef.current, gpsAccuracyMetres: null };
     const built = buildObservation({
       id: owner.id,
       form,
@@ -439,7 +442,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     reset(carried);
     wake();
     return { ok: true, heldOnly };
-  }, [context, database, form, key, placed, placementSource, reset, sitePackage, wake]);
+  }, [context, database, form, key, placed, reset, sitePackage, wake]);
 
   const discard = useCallback(() => {
     reset({});
@@ -480,7 +483,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     setRecovered(null);
     setStatus("Draft restored — every answer was written to storage as you tapped it.");
     return opened;
-  }, [apply, holdIdentity, key, recovered]);
+  }, [apply, holdIdentity, key, recovered, setPlacementSource]);
 
   const discardRecovered = useCallback(async () => {
     setRecovered(null);

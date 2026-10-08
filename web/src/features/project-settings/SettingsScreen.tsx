@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type FormEvent, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/contour/Button";
@@ -95,7 +94,6 @@ function validate(form: Form): Errors {
  */
 export function SettingsScreen({ org, project }: SettingsScreenProps) {
 	const id = useId();
-	const router = useRouter();
 	const { toast } = useToast();
 	const { screenState, offline } = usePreview();
 	const { settings, update } = useProjectSettings(org, project);
@@ -325,10 +323,8 @@ export function SettingsScreen({ org, project }: SettingsScreenProps) {
 							variant="ink"
 							icon="arrow-right"
 							onClick={() => {
-								const to = guard.leavingTo;
 								setDraft({});
-								guard.stay();
-								if (to) router.push(to);
+								guard.leave();
 							}}>
 							Leave without saving
 						</Button>

@@ -1003,8 +1003,11 @@ export interface components {
             received_at: string;
             /** Revision */
             revision: number;
-            /** Round Type */
-            round_type: ("standard" | "reliability" | "inventory") | null;
+            /**
+             * Round Type
+             * @enum {string}
+             */
+            round_type: "standard" | "reliability" | "inventory";
             /** Site Code */
             site_code: string;
             /** Site Name */

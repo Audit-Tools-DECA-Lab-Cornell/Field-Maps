@@ -56,7 +56,7 @@ export default function RecordsScreen() {
       <LinkAction
         label={sitePackage ? "← Back to the map" : "← Studies"}
         muted
-        onPress={() => router.navigate(sitePackage ? "/field" : "/")}
+        onPress={() => router.navigate(sitePackage ? "/collect" : "/")}
         style={{ alignSelf: "flex-start" }}
       />
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>

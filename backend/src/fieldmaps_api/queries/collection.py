@@ -40,20 +40,24 @@ FROM fieldmaps.observations WHERE id = :id AND project_id = :project AND deleted
 """)
 
 #: What a project's members can see, newest first, with its round context. Training records stay
-#: visible only to their creator (RLS), so a manager's list never shows another trainee's.
+#: visible only to their creator (RLS), so a manager's list never shows another trainee's. A record
+#: uploaded without a round (practice uploads, and every record from before D26) is a play event
+#: outside any reliability round: it lists, and filters, as Standard.
 OBSERVATIONS: Final = text("""
 SELECT json_build_object('observation_id', o.id, 'observer', o.observer_code,
   'observed_at', o.observed_at, 'received_at', o.received_at,
   'coordinates', json_build_array(fieldmaps.longitude(o.geom), fieldmaps.latitude(o.geom)),
   'site_code', s.code, 'site_name', s.name, 'form_version', f.code,
-  'zone', o.zone_code, 'round_type', o.round_type, 'first_round', o.first_round,
+  'zone', o.zone_code, 'round_type', coalesce(o.round_type, 'standard'),
+  'first_round', o.first_round,
   'placement', o.placement_source, 'answers', o.answers, 'revision', o.revision)::text
 FROM fieldmaps.observations o
 JOIN fieldmaps.sites s ON s.id = o.site_id
 JOIN fieldmaps.form_versions f ON f.id = o.form_version_id
 WHERE o.project_id = :project AND o.deleted_at IS NULL
   AND (CAST(:site AS text) IS NULL OR s.code = CAST(:site AS text))
-  AND (CAST(:round_type AS text) IS NULL OR o.round_type = CAST(:round_type AS text))
+  AND (CAST(:round_type AS text) IS NULL
+    OR coalesce(o.round_type, 'standard') = CAST(:round_type AS text))
   AND (CAST(:since AS timestamptz) IS NULL OR o.received_at >= CAST(:since AS timestamptz))
 ORDER BY o.observed_at DESC, o.id
 LIMIT :limit

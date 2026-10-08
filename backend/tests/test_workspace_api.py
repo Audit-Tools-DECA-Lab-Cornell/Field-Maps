@@ -249,6 +249,39 @@ def test_form_definitions_are_checked_as_the_collector_reads_them(
     assert bad_code.status_code == 422
 
 
+@pytest.mark.parametrize("reserved", ["zone", "round_type", "first_round", "placement"])
+def test_a_question_cannot_take_a_name_the_record_itself_uses(
+    api_client: TestClient, tenant: Tenant, reserved: str
+) -> None:
+    # Its answer would travel beside the record's own field of that name and never be checked.
+    base = f"/v1/projects/{tenant.project}"
+    definition = inventory()
+    questions = definition["questions"]
+    assert isinstance(questions, list)
+    first = questions[0]
+    assert isinstance(first, dict)
+    definition["questions"] = [{**first, "id": reserved}, *questions[1:]]
+    refused = api_client.post(
+        f"{base}/forms", json={"code": "reserved", "name": "Reserved", "definition": definition}
+    )
+    assert refused.status_code == 422, refused.text
+    assert f'"{reserved}" is reserved' in error(refused.content).error.message
+
+
+def test_the_practice_form_is_not_copied_into_a_draft(
+    api_client: TestClient, tenant: Tenant
+) -> None:
+    # The tenant's shell-v1 predates the editor: a field list, which no draft can be made from.
+    base = f"/v1/projects/{tenant.project}"
+    refused = api_client.post(f"{base}/forms/shell/versions", json={})
+    assert refused.status_code == 409, refused.text
+    assert "cannot be copied" in error(refused.content).error.message
+    # Starting from a definition still works.
+    started = api_client.post(f"{base}/forms/shell/versions", json={"definition": inventory()})
+    assert started.status_code == 201, started.text
+    assert FormVersionDetail.model_validate_json(started.content).code == "shell-v2"
+
+
 def test_viewers_and_observers_cannot_author_forms(
     api_client: TestClient, signer: Signer, tenant: Tenant
 ) -> None:
@@ -330,7 +363,13 @@ def test_records_list_filters_and_bounds(api_client: TestClient, tenant: Tenant)
     base = f"/v1/projects/{tenant.project}"
     every = ROWS.validate_json(api_client.get(f"{base}/observations").content)
     assert [row.observation_id for row in every] == [tenant.observation]
-    assert every[0].round_type is None
+    # Uploaded without a round, as every record before D26 was: it lists and filters as Standard.
+    assert every[0].round_type == "standard"
+    standard = ROWS.validate_json(
+        api_client.get(f"{base}/observations", params={"round_type": "standard"}).content
+    )
+    assert [row.observation_id for row in standard] == [tenant.observation]
+    assert api_client.get(f"{base}/observations", params={"round_type": "reliability"}).json() == []
     assert api_client.get(f"{base}/observations", params={"site": "elsewhere"}).json() == []
     assert api_client.get(f"{base}/observations", params={"limit": 0}).status_code == 422
     assert (

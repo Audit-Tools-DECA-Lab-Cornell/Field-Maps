@@ -65,6 +65,21 @@ export function optionsProblem(question: RawQuestion): string | null {
 export const ADDED_SOURCE = "Added in the FieldMaps preview — no workbook row";
 
 /**
+ * Whether a question's answer format and options are still open: it was added in a draft and is not in
+ * the published version the draft was copied from. Once published, its option codes name answers in
+ * collected records, so they stay fixed in every later draft even though the source marker remains.
+ */
+export function isOpenQuestion(question: RawQuestion, base: RawQuestion | undefined): boolean {
+	return question.source === ADDED_SOURCE && base === undefined;
+}
+
+/** Why a question cannot be saved to the draft as it stands, or null when it can. */
+export function saveProblem(question: RawQuestion, base: RawQuestion | undefined): string | null {
+	if (question.label.trim() === "") return "Enter a question label first.";
+	return isOpenQuestion(question, base) ? optionsProblem(question) : null;
+}
+
+/**
  * Question settings (project-13): the label and guidance a draft may reword, the stable identifier it
  * never changes, the answer format and options as the source list fixes them, and whether an answer is
  * required. Every keystroke reaches the live preview; "Save question to draft" keeps it in the draft.
@@ -90,7 +105,7 @@ export function QuestionSettings({
 	onSave: () => void;
 }) {
 	const id = useId();
-	const added = question.source === ADDED_SOURCE;
+	const added = isOpenQuestion(question, base);
 	const locked = readOnly || writeBlock !== null;
 	const wording = questionChanges(question, base).filter(
 		change => change.field === "Question label" || change.field === "Guidance" || change.field === "Required"

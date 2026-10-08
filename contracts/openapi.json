@@ -1085,20 +1085,13 @@
             "type": "integer"
           },
           "round_type": {
-            "anyOf": [
-              {
-                "enum": [
-                  "standard",
-                  "reliability",
-                  "inventory"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "enum": [
+              "standard",
+              "reliability",
+              "inventory"
             ],
-            "title": "Round Type"
+            "title": "Round Type",
+            "type": "string"
           },
           "site_code": {
             "title": "Site Code",

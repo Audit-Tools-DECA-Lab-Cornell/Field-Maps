@@ -116,7 +116,8 @@ class ObservationRow(BaseModel):
     site_name: str
     form_version: str
     zone: str | None
-    round_type: Literal["standard", "reliability", "inventory"] | None
+    #: Standard when uploaded without a round: a play event outside any reliability round.
+    round_type: Literal["standard", "reliability", "inventory"]
     first_round: bool | None
     placement: Literal["hand", "zone"] | None
     answers: dict[str, JsonValue]

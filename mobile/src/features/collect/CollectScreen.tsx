@@ -95,12 +95,13 @@ export function CollectScreen() {
     }),
   );
 
-  useEffect(
-    () => () => {
-      if (advance.current) clearTimeout(advance.current);
-    },
-    [],
-  );
+  // A chosen option moves on after a beat. Leaving the question by any other way first (Back, Review,
+  // Adjust point, a jump, the mode strip) cancels that pending move, so it cannot undo the observer.
+  const cancelAdvance = useCallback(() => {
+    if (advance.current) clearTimeout(advance.current);
+    advance.current = null;
+  }, []);
+  useEffect(() => cancelAdvance, [cancelAdvance]);
 
   // The save is announced once its card shows, with the record's label.
   const savedId = step === "saved" ? (saves[0]?.id ?? null) : null;
@@ -140,6 +141,7 @@ export function CollectScreen() {
   }, [session.inProgress]);
 
   const stepBack = useCallback((): boolean => {
+    cancelAdvance();
     if (step === "review") {
       setStep("answer");
       return true;
@@ -156,7 +158,7 @@ export function CollectScreen() {
     }
     leave();
     return true;
-  }, [adjusting, inventory, leave, session, step]);
+  }, [adjusting, cancelAdvance, inventory, leave, session, step]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", stepBack);
@@ -190,16 +192,16 @@ export function CollectScreen() {
 
   function dispatchStep(action: Parameters<typeof session.dispatch>[0]) {
     const result = session.dispatch(action);
-    if (advance.current) clearTimeout(advance.current);
+    cancelAdvance();
     const go = (destination: "stay" | "review" | "map") => {
       if (destination === "review") setStep("review");
       if (destination === "map") setStep(inventory ? "zone" : "place");
     };
     if (result.autoAdvance)
-      advance.current = setTimeout(
-        () => go(session.dispatch({ kind: "next" }).destination),
-        AUTO_ADVANCE_MS,
-      );
+      advance.current = setTimeout(() => {
+        advance.current = null;
+        go(session.dispatch({ kind: "next" }).destination);
+      }, AUTO_ADVANCE_MS);
     else go(result.destination);
   }
 
@@ -214,6 +216,7 @@ export function CollectScreen() {
   }
 
   function adjustPoint() {
+    cancelAdvance();
     if (placed) mapRef.current?.moveTo(placed);
     setAdjusting(true);
     setStep("place");
@@ -339,7 +342,10 @@ export function CollectScreen() {
             stepBack();
           }}
           onAdvance={() => dispatchStep({ kind: "next" })}
-          onReview={() => setStep("review")}
+          onReview={() => {
+            cancelAdvance();
+            setStep("review");
+          }}
           onAdjust={placementSource === "hand" ? adjustPoint : undefined}
         />
       ) : null}
@@ -421,6 +427,7 @@ export function CollectScreen() {
             steps={stripSteps}
             current={stripIndex}
             onSelect={(target) => {
+              cancelAdvance();
               if (target === 0 && step !== "place" && step !== "zone") {
                 if (inventory) {
                   if (!session.inProgress) setStep("zone");

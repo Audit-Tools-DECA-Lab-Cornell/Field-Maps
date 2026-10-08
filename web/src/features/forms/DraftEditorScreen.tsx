@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
@@ -23,7 +22,7 @@ import { CollectorPreview, type PreviewDevice } from "./CollectorPreview";
 import { useCreateDraft, useFormWriteBlock } from "./CreateDraftDialog";
 import { changedIds, definitionOf, findVersion, questionNumber, toForm } from "./model";
 import { QuestionList } from "./QuestionList";
-import { ADDED_SOURCE, type QuestionPatch, QuestionSettings } from "./QuestionSettings";
+import { ADDED_SOURCE, type QuestionPatch, QuestionSettings, saveProblem } from "./QuestionSettings";
 import { saveDraftDefinition, useFormsPreview } from "./store";
 
 export type EditorSession = {
@@ -76,14 +75,21 @@ export function DraftEditorScreen({
 	const working = useMemo(() => (saved ? applyEdits(saved, edits) : undefined), [saved, edits]);
 	const form = useMemo(() => (working ? toForm(working) : undefined), [working]);
 	const dirty = Object.keys(edits).length > 0;
-	const router = useRouter();
 
 	// Leaving with unsaved edits asks first: closing the tab gets the browser's question, and a link inside the
 	// workspace ("Review publication", a breadcrumb, a tab) is held until the manager saves, discards or stays.
 	// Without this, the publication page would read the older saved wording.
 	const guard = useLeaveGuard(dirty);
 	const unsavedLabels = Object.keys(edits).filter(id => (working?.questions ?? []).some(q => q.id === id));
-	const blankLabel = unsavedLabels.some(id => working?.questions.find(q => q.id === id)?.label.trim() === "");
+	// Leaving through "Save edits and leave" holds every edited question to the rules its own Save button does.
+	const leaveProblem =
+		unsavedLabels
+			.map(id => {
+				const question = working?.questions.find(q => q.id === id);
+				const base = baseRaw?.questions.find(q => q.id === id);
+				return question ? saveProblem(question, base) : null;
+			})
+			.find(problem => problem !== null) ?? null;
 
 	const forms = projectHref(org, project, "forms");
 	const versions = projectHref(org, project, "forms/versions");
@@ -162,21 +168,19 @@ export function DraftEditorScreen({
 	function saveAllAndLeave() {
 		const to = guard.leavingTo;
 		if (!saved || !to) return;
+		if (leaveProblem) return;
 		saveDraftDefinition(versionId, applyEdits(saved, edits));
 		setEdits({});
-		guard.stay();
 		toast({
 			title: `${unsavedLabels.length === 1 ? "1 question" : `${unsavedLabels.length} questions`} saved to the ${versionId} draft`,
 			description: "In this preview only."
 		});
-		router.push(to);
+		guard.leave();
 	}
 
 	function leaveWithoutSaving() {
-		const to = guard.leavingTo;
 		setEdits({});
-		guard.stay();
-		if (to) router.push(to);
+		guard.leave();
 	}
 
 	function add() {
@@ -385,9 +389,9 @@ export function DraftEditorScreen({
 						<Button
 							variant="ink"
 							icon="check"
-							disabled={blankLabel}
+							disabled={leaveProblem !== null}
 							disabledReason={
-								blankLabel ? "A question has no label. Enter one, or leave without saving." : undefined
+								leaveProblem ? `${leaveProblem} Or leave without saving.` : undefined
 							}
 							onClick={saveAllAndLeave}>
 							Save edits and leave

@@ -589,7 +589,8 @@ export function CollectMap({
           );
         })}
 
-        {placed && mode !== "aim" ? (
+        {/* Only a hand-placed point is drawn: a zone inventory belongs to the whole zone. */}
+        {placed && mode === "placed" ? (
           <Marker id="placed-observation" lngLat={placed} anchor="center">
             <View style={PLACED_BOX}>
               <PlacedMark colours={colours} />
