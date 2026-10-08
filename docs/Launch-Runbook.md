@@ -42,7 +42,7 @@ New **Web Service** from this repository:
 | Instance | Starter or larger, so it does not sleep between requests |
 | Health check path | `/ready` |
 | Environment variable | `FIELDMAPS_CONFIG=config.render.json` |
-| Secret File | `database-password`: the hosted `fieldmaps_api` password, nothing else |
+| Secret File | `database-password`: the hosted `fieldmaps_api` password, nothing else (`node scripts/api-role-password.mjs` makes a new one) |
 
 The password is in your local volume: `docker run --rm -v fieldmaps_hosted_api_secrets:/s alpine cat /s/database-password`. Account deletion needs a second Secret File, `supabase-secret-key`, and `auth_admin_key_file` in the configuration (BE-08); without it, deleting an account answers "not available yet" and changes nothing.
 
@@ -50,7 +50,7 @@ Check: `curl https://<service>.onrender.com/ready` returns `{"status":"ready"}`,
 
 If the deploy exits with status 3, the API could not start, and its log has one `startup_failed` line saying why:
 
-- `password authentication failed for user "fieldmaps_api"`: the Secret File is not the role's password. Supabase's pooler logs show the same line. Set a new one in both places. Generate it on your machine (`openssl rand -hex 24`). Run `ALTER ROLE fieldmaps_api WITH PASSWORD '<it>';` in the Supabase SQL editor. Paste the same value, and nothing else, as the `database-password` Secret File, then redeploy. Update your local volume too if you run the API against the hosted database.
+- `password authentication failed for user "fieldmaps_api"`: the Secret File is not the role's password, and Supabase's pooler logs say the same. Give the role a new one with `node scripts/api-role-password.mjs`. It prints an `ALTER ROLE` for the Supabase SQL editor and the password for the `database-password` Secret File; paste each, then redeploy. The statement carries only the password's SCRAM verifier, because Postgres logs DDL and would otherwise keep the password in clear. Anything else that signs in as `fieldmaps_api` needs the new password too.
 - `Tenant or user not found`: the pooler host in `config.render.json` is not this project's. Copy the session pooler host from **Connect** in the Supabase dashboard.
 - `must not be superuser or bypass row security`: the configuration names the wrong role.
 
