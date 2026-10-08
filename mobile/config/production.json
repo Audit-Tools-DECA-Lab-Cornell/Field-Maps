@@ -1,7 +1,7 @@
 {
-  "apiUrl": "https://api.example.invalid",
-  "supabaseUrl": "https://project.example.invalid",
-  "publishableKey": "sb_publishable_PRODUCTION_SETUP_REQUIRED",
+  "apiUrl": "https://field-maps.onrender.com",
+  "supabaseUrl": "https://lezmqhuucfwqknspgcdy.supabase.co",
+  "publishableKey": "sb_publishable_Qaatm3EvnUsE-7ECeT5SjA_kYknDDCR",
   "powersyncUrl": null,
   "bundleIdSuffix": ".productionplaceholder"
 }

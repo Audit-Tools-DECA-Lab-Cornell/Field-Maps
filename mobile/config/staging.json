@@ -1,5 +1,5 @@
 {
-  "apiUrl": "http://127.0.0.1:8000",
+  "apiUrl": "https://field-maps.onrender.com",
   "supabaseUrl": "https://lezmqhuucfwqknspgcdy.supabase.co",
   "publishableKey": "sb_publishable_jkMFOW9fOrrwIJB4Y_YP7Q_yBut6-Jd",
   "powersyncUrl": null,
