@@ -109,14 +109,8 @@ function isPosition(value: unknown): value is Coordinate {
   );
 }
 
-/** A zone feature's rings: a Polygon's own, or the first part of a MultiPolygon. */
-function rings(geometry: LayerData["features"][number]["geometry"]): Coordinate[][] | undefined {
-  const polygon =
-    geometry.type === "MultiPolygon" && Array.isArray(geometry.coordinates)
-      ? geometry.coordinates[0]
-      : geometry.type === "Polygon"
-        ? geometry.coordinates
-        : undefined;
+/** One polygon's rings, an outer ring then its holes, when it has at least a triangle. */
+function polygonRings(polygon: unknown): Coordinate[][] | undefined {
   if (!Array.isArray(polygon)) return undefined;
   const parsed = polygon.map((ring) =>
     Array.isArray(ring) ? ring.filter(isPosition).map(([x, y]) => [x, y] as Coordinate) : [],
@@ -124,11 +118,25 @@ function rings(geometry: LayerData["features"][number]["geometry"]): Coordinate[
   return parsed.length > 0 && (parsed[0]?.length ?? 0) >= 3 ? parsed : undefined;
 }
 
+/** A zone feature's parts: a Polygon's own rings, or each part of a MultiPolygon. */
+function parts(geometry: LayerData["features"][number]["geometry"]): Coordinate[][][] {
+  const polygons =
+    geometry.type === "MultiPolygon" && Array.isArray(geometry.coordinates)
+      ? geometry.coordinates
+      : geometry.type === "Polygon"
+        ? [geometry.coordinates]
+        : [];
+  return polygons.flatMap((polygon) => {
+    const rings = polygonRings(polygon);
+    return rings ? [rings] : [];
+  });
+}
+
 function siteZone(zone: ManifestZone, layer: LayerData): SiteZone {
   const feature = layer.features.find(
     (entry) => String(entry.properties?.["id"] ?? "") === zone.id,
   );
-  const polygon = feature ? rings(feature.geometry) : undefined;
+  const [polygon, ...moreParts] = feature ? parts(feature.geometry) : [];
   return {
     id: zone.id,
     label: zone.label,
@@ -138,6 +146,7 @@ function siteZone(zone: ManifestZone, layer: LayerData): SiteZone {
     east: zone.east,
     north: zone.north,
     ...(polygon ? { polygon } : {}),
+    ...(moreParts.length > 0 ? { moreParts } : {}),
   };
 }
 

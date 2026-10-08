@@ -110,6 +110,8 @@ export type SiteZone = {
    * is its box. Used for the focus outline, the in-zone check and where a whole-zone record is stored.
    */
   readonly polygon?: readonly (readonly Coordinate[])[];
+  /** Any further parts of a zone drawn as a MultiPolygon, each an outer ring then its holes. */
+  readonly moreParts?: readonly (readonly (readonly Coordinate[])[])[];
 };
 
 export const siteZones: readonly SiteZone[] = [

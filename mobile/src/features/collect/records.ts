@@ -12,13 +12,19 @@ function clock(iso: string): string {
 }
 
 /**
- * The play events on this device for one site, as the collect map draws them. Whole-zone inventory
- * records are left out: their stored point is the zone's centre, not a place where play happened, and
- * drawing it would read as an observation that never occurred.
+ * The play events on this device for one site, as the collect map draws them. A site code is unique
+ * only within its project, so the project is matched too: a hosted site and a bundled one may share a
+ * code. Whole-zone inventory records are left out: their stored point is the zone's centre, not a place
+ * where play happened, and drawing it would read as an observation that never occurred.
  */
-export function mapRecords(records: readonly Observation[], siteId: string): readonly MapRecord[] {
+export function mapRecords(
+  records: readonly Observation[],
+  siteId: string,
+  projectId: string | undefined,
+): readonly MapRecord[] {
   return records
     .filter((record) => record.siteId === siteId)
+    .filter((record) => (isShellObservation(record) ? undefined : record.projectId) === projectId)
     .filter((record) => isShellObservation(record) || record.placement.source === "hand")
     .map((record) => ({
       id: record.id,

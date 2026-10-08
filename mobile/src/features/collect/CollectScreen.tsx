@@ -114,7 +114,11 @@ export function CollectScreen() {
   }, [inventory, zoneId]);
 
   const siteId = sitePackage?.siteId ?? "";
-  const shownRecords = useMemo(() => mapRecords(records, siteId), [records, siteId]);
+  const projectId = sitePackage?.projectId;
+  const shownRecords = useMemo(
+    () => mapRecords(records, siteId, projectId),
+    [records, siteId, projectId],
+  );
   const sessionIds = useMemo(() => new Set(saves.map((save) => save.id)), [saves]);
   const doneZones = useMemo(() => inventoriedZones(saves), [saves]);
   const unsent = records.filter(

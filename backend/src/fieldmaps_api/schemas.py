@@ -57,6 +57,26 @@ class ObservationUpload(BaseModel):
         return value.astimezone(UTC)
 
     @model_validator(mode="after")
+    def coherent_round(self) -> "ObservationUpload":
+        """Accept no round at all (practice) or a whole, consistent one."""
+        if self.round_type is None:
+            if (self.zone, self.first_round, self.placement) != (None, None, None):
+                message = "zone, first_round and placement are sent with a round_type"
+                raise ValueError(message)
+            return self
+        if self.zone is None or self.placement is None:
+            message = "A round's record names its zone and placement"
+            raise ValueError(message)
+        if self.round_type == "inventory":
+            if self.placement != "zone" or self.first_round is not None:
+                message = "An inventory belongs to its whole zone: placement zone, no first_round"
+                raise ValueError(message)
+        elif self.placement != "hand" or self.first_round is None:
+            message = "A play event is placed by hand and says whether it opens a round"
+            raise ValueError(message)
+        return self
+
+    @model_validator(mode="after")
     def limit_answers(self) -> "ObservationUpload":
         if len(self.model_extra or {}) > MAX_ANSWERS:
             message = f"An observation may carry up to {MAX_ANSWERS} answers"

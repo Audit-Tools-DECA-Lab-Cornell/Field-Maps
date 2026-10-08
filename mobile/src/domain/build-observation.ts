@@ -28,6 +28,8 @@ export type ObservationInput = {
   readonly siteId: string;
   /** The project a hosted site belongs to, so the record uploads there. */
   readonly projectId?: string | undefined;
+  /** The account's initials, for a form that asks no observer question of its own. */
+  readonly observer?: string | undefined;
   readonly createdAt: string;
 };
 
@@ -68,12 +70,18 @@ export function buildObservation(input: ObservationInput): BuildResult {
     const observerQuestion = input.form.questions.find(
       (question) => question.exportColumn === "observer" && question.kind === "text",
     );
+    const observer = observerQuestion ? text(answers, observerQuestion.id) : (input.observer ?? "");
+    if (!observerQuestion && observer.trim() === "")
+      return {
+        ok: false,
+        message: "Add your initials under Account; this form does not ask for them.",
+      };
     const parsed = instrumentObservationSchema.safeParse({
       ...shared,
       ...(input.projectId ? { projectId: input.projectId } : {}),
       siteId: input.siteId,
       formVersion: input.form.version,
-      observer: observerQuestion ? text(answers, observerQuestion.id) : "",
+      observer,
       answers,
       context: input.context,
       placement: input.placement,

@@ -1,5 +1,5 @@
 import type { LngLatBounds } from "@maplibre/maplibre-react-native";
-import type { Feature, Polygon } from "geojson";
+import type { Feature, MultiPolygon, Polygon } from "geojson";
 import type { Coordinate } from "../domain/observation";
 import { metresPerPixel } from "./clustering";
 import type { SiteZone } from "./sample-site";
@@ -29,6 +29,13 @@ export function zoneRings(zone: SiteZone): PolygonRings {
   ];
 }
 
+/** Every part of a zone: its shape (or box), then any further parts of a MultiPolygon drawing. */
+export function zoneParts(zone: SiteZone): readonly PolygonRings[] {
+  const first = zoneRings(zone);
+  if (!zone.polygon || first !== zone.polygon) return [first];
+  return [first, ...(zone.moreParts ?? []).filter((part) => (part[0]?.length ?? 0) >= 3)];
+}
+
 /** Ray casting on one ring. A point exactly on an edge may fall either way, as for any ray cast. */
 function inRing(point: Coordinate, ring: Ring): boolean {
   const [x, y] = point;
@@ -51,7 +58,7 @@ export function pointInPolygon(point: Coordinate, rings: PolygonRings): boolean 
 }
 
 export function pointInZone(point: Coordinate, zone: SiteZone): boolean {
-  return pointInPolygon(point, zoneRings(zone));
+  return zoneParts(zone).some((rings) => pointInPolygon(point, rings));
 }
 
 /** The zone a point falls in, the session's own zone first when zones overlap. */
@@ -64,9 +71,9 @@ export function zoneAt(
   return zones.find((zone) => pointInZone(point, zone)) ?? null;
 }
 
-/** West, south, east, north of a zone's outer ring. */
+/** West, south, east, north of a zone's outer rings. */
 export function zoneBounds(zone: SiteZone): LngLatBounds {
-  const outer = zoneRings(zone)[0] ?? [];
+  const outer = zoneParts(zone).flatMap((rings) => rings[0] ?? []);
   let west = Number.POSITIVE_INFINITY;
   let south = Number.POSITIVE_INFINITY;
   let east = Number.NEGATIVE_INFINITY;
@@ -159,30 +166,34 @@ export function zoneSpotlight(zone: SiteZone, site: LngLatBounds, margin = 0.01)
     [west - margin, north + margin],
     [west - margin, south - margin],
   ];
-  const hole = [...(zoneRings(zone)[0] ?? [])];
-  const first = hole[0];
-  if (first) hole.push(first);
+  const holes = zoneParts(zone).map((rings) => {
+    const hole = [...(rings[0] ?? [])];
+    const first = hole[0];
+    if (first) hole.push(first);
+    return hole;
+  });
   return {
     type: "Feature",
     properties: { kind: "spotlight", zone: zone.id },
-    geometry: { type: "Polygon", coordinates: [outer, hole] },
+    geometry: { type: "Polygon", coordinates: [outer, ...holes] },
   };
 }
 
 /** One zone's outline as a feature, closed, for the focus outline layer. */
-export function zoneFeature(zone: SiteZone): Feature<Polygon> {
-  const rings = zoneRings(zone).map((ring) => {
-    const closed = [...ring];
-    const first = ring[0];
-    const last = ring[ring.length - 1];
-    if (first && last && (first[0] !== last[0] || first[1] !== last[1])) closed.push(first);
-    return closed;
-  });
-  return {
-    type: "Feature",
-    properties: { kind: "zone", id: zone.id, label: zone.label },
-    geometry: { type: "Polygon", coordinates: rings },
-  };
+export function zoneFeature(zone: SiteZone): Feature<Polygon | MultiPolygon> {
+  const parts = zoneParts(zone).map((rings) =>
+    rings.map((ring) => {
+      const closed = [...ring];
+      const first = ring[0];
+      const last = ring[ring.length - 1];
+      if (first && last && (first[0] !== last[0] || first[1] !== last[1])) closed.push(first);
+      return closed;
+    }),
+  );
+  const properties = { kind: "zone", id: zone.id, label: zone.label };
+  return parts.length === 1
+    ? { type: "Feature", properties, geometry: { type: "Polygon", coordinates: parts[0] ?? [] } }
+    : { type: "Feature", properties, geometry: { type: "MultiPolygon", coordinates: parts } };
 }
 
 export type ScaleBar = {

@@ -42,6 +42,7 @@ describe("map records", () => {
         instrument("3f2a1b00-0000-4000-8000-000000000002", { siteId: "elsewhere" }),
       ],
       "riverside-north-playground",
+      undefined,
     );
     expect(shown).toHaveLength(1);
     expect(shown[0]).toMatchObject({
@@ -61,8 +62,25 @@ describe("map records", () => {
         }),
       ],
       "riverside-north-playground",
+      undefined,
     );
     expect(shown).toEqual([]);
+  });
+
+  it("keeps another project's site of the same code off this map", () => {
+    const project = "10000000-0000-4000-8000-0000000000aa";
+    const records = [
+      instrument("3f2a1b00-0000-4000-8000-000000000004", { projectId: project }),
+      instrument("3f2a1b00-0000-4000-8000-000000000005", {
+        projectId: "10000000-0000-4000-8000-0000000000bb",
+      }),
+      instrument("3f2a1b00-0000-4000-8000-000000000006"),
+    ];
+    const hosted = mapRecords(records, "riverside-north-playground", project);
+    expect(hosted.map((record) => record.id)).toEqual(["3f2a1b00-0000-4000-8000-000000000004"]);
+    // A bundled site has no project; only records made there, with none, are its own.
+    const bundled = mapRecords(records, "riverside-north-playground", undefined);
+    expect(bundled.map((record) => record.id)).toEqual(["3f2a1b00-0000-4000-8000-000000000006"]);
   });
 });
 

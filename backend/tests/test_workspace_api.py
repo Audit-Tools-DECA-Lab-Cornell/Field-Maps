@@ -56,7 +56,6 @@ def inventory_upload(**overrides: JsonValue) -> dict[str, JsonValue]:
         "observed_at": "2026-10-07T14:00:00Z",
         "zone": "A",
         "round_type": "inventory",
-        "first_round": True,
         "placement": "zone",
         "weather": ["full_sun"],
         "wind": "light_wind",
@@ -188,7 +187,7 @@ def test_an_observer_collects_a_round_with_a_published_version(
     assert (row.zone, row.round_type, row.first_round, row.placement, row.form_version) == (
         "A",
         "inventory",
-        True,
+        None,
         "zone",
         "inventory-v1",
     )

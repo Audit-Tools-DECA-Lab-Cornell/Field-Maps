@@ -23,6 +23,12 @@ export type PackageSource = {
 export class PrepareError extends Error {}
 
 function publishedForm(version: FormVersion): FormDefinition {
+  // A retired version keeps the definition it was published with, so its state is the API's word.
+  if (version.state === "retired")
+    throw new PrepareError(
+      `${version.code} has been retired; ask the project's manager for its new form.`,
+    );
+  if (version.state !== "published") throw new PrepareError(`${version.code} is not published.`);
   try {
     const form = parseFormDefinition(version.definition);
     if (form.status !== "published") throw new PrepareError(`${version.code} is not published.`);

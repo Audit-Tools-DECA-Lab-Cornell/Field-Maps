@@ -3,7 +3,7 @@ import { strToU8, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import inventoryDefinition from "../../../../contracts/forms/janet-inventory-v1.json";
 import playDefinition from "../../../../contracts/forms/janet-test-v1.json";
-import { pointInZone } from "../../maps/geometry";
+import { pointInZone, zoneBounds, zoneFeature } from "../../maps/geometry";
 import { readArchive } from "./archive";
 import { hostedSitePackage } from "./build";
 import { type PackageSource, PrepareError, preparePackage, storedForms } from "./prepare";
@@ -227,6 +227,17 @@ describe("Making a hosted site ready offline", () => {
     ).rejects.toThrow(/no map package/);
   });
 
+  it("refuses a site whose form was retired, though its definition still reads as published", async () => {
+    const bytes = archive();
+    const retired = source(bytes, {
+      formVersion: async (code) => ({
+        ...published(code, playDefinition, "play"),
+        state: "retired",
+      }),
+    });
+    await expect(preparePackage(PROJECT, await site(bytes), retired)).rejects.toThrow(/retired/);
+  });
+
   it("has no inventory form when the project publishes none", async () => {
     const bytes = archive();
     const stored = await preparePackage(
@@ -257,5 +268,43 @@ describe("A hosted site on the field map", () => {
     expect(zone && pointInZone([-76.499, 42.441], zone)).toBe(true);
     const ids = (built.bases.day.layers ?? []).map((layer) => layer.id);
     expect(ids).toContain("surface-grass");
+  });
+
+  it("keeps every part of a zone drawn as a MultiPolygon", async () => {
+    const twoParts = {
+      ...layers,
+      zones: {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: { id: "A", label: "Zone A · Whole playground" },
+            geometry: {
+              type: "MultiPolygon",
+              coordinates: [
+                ring(-76.5, 42.44, -76.497, 42.443),
+                ring(-76.493, 42.447, -76.49, 42.45),
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const files = {
+      "manifest.json": manifest,
+      ...Object.fromEntries(
+        Object.entries(twoParts).map(([name, value]) => [`layers/${name}.json`, value]),
+      ),
+    };
+    const bytes = archive(files);
+    const stored = await preparePackage(PROJECT, await site(bytes), source(bytes));
+    const zone = hostedSitePackage(stored, storedForms(stored)).zones[0];
+    if (!zone) throw new Error("no zone");
+    expect(pointInZone([-76.499, 42.441], zone)).toBe(true);
+    // The second part counts as the zone, and the gap between the parts does not.
+    expect(pointInZone([-76.491, 42.449], zone)).toBe(true);
+    expect(pointInZone([-76.495, 42.445], zone)).toBe(false);
+    expect(zoneFeature(zone).geometry.type).toBe("MultiPolygon");
+    expect(zoneBounds(zone)).toEqual([-76.5, 42.44, -76.49, 42.45]);
   });
 });

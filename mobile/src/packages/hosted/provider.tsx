@@ -169,7 +169,8 @@ export function HostedSitesProvider({ children }: PropsWithChildren) {
           [siteId]: { state: "failed", message: message(error) },
         }));
       } finally {
-        running.current.delete(siteId);
+        // A cancelled attempt settles after its retry may have started; only its own entry is cleared.
+        if (running.current.get(siteId) === controller) running.current.delete(siteId);
       }
     },
     [api, sites],

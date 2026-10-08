@@ -1,4 +1,4 @@
-import { CryptoDigestAlgorithm, digest } from "expo-crypto";
+import { CryptoDigestAlgorithm, digest, randomUUID } from "expo-crypto";
 import { Directory, File, Paths } from "expo-file-system";
 import type { z } from "zod";
 import type { ApiClient } from "../../data/api/client";
@@ -71,7 +71,11 @@ export function writeSiteList(userId: string, projectId: string, sites: readonly
   sitesFile(userId, projectId).write(JSON.stringify(sites));
 }
 
-/** The API, as the preparation pipeline reads it: the archive arrives as a file, then is read once. */
+/**
+ * The API, as the preparation pipeline reads it: the archive arrives as a file, then is read once.
+ * Cancelling aborts the native transfer, and each attempt writes its own file, so a retry made at once
+ * never shares a file with the attempt it replaces.
+ */
 export function apiPackageSource(
   api: ApiClient,
   projectId: string,
@@ -80,12 +84,12 @@ export function apiPackageSource(
   return {
     archive: async (packageId) => {
       const request = await api.archiveRequest(projectId, packageId);
-      const target = new File(Paths.cache, `package-${packageId}.zip`);
-      if (target.exists) target.delete();
+      const target = new File(Paths.cache, `package-${packageId}-${randomUUID()}.zip`);
       try {
         const file = await File.downloadFileAsync(request.url, target, {
           headers: request.headers,
           idempotent: true,
+          signal,
         });
         return await file.bytes();
       } finally {

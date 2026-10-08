@@ -10,10 +10,12 @@ import {
   useState,
 } from "react";
 import { useAccount } from "../auth/provider";
+import { useMe } from "../data/api/me-provider";
 import { buildObservation } from "../domain/build-observation";
 import { shortLabel } from "../domain/labels";
 import type { Coordinate, Placement, RoundContext } from "../domain/observation";
 import type { RoundType } from "../domain/rounds";
+import { useProfile } from "../features/auth/profile-store";
 import type { Answers, FormDefinition } from "../forms/definition";
 import { type ReviewProblem, reviewProblems } from "../forms/engine";
 import { carriedQuestionIds, isUploadableRecord } from "../forms/registry";
@@ -160,6 +162,10 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
   const database = useSQLiteContext();
   const { key, ready } = useAccount();
   const { wake } = useSync();
+  // A hosted form may ask no observer question; its records then carry the account's initials.
+  const profile = useProfile();
+  const me = useMe();
+  const initials = profile.initials || me.profile?.observer_initials || "";
 
   const [sitePackage, setSitePackage] = useState<SitePackage | null>(null);
   const [zone, setZone] = useState<SiteZone | null>(null);
@@ -405,6 +411,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
       context,
       siteId: sitePackage.siteId,
       projectId: sitePackage.projectId,
+      observer: initials,
       createdAt: new Date().toISOString(),
     });
     if (!built.ok) return { ok: false, problems: [], message: built.message };
@@ -443,7 +450,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     reset(carried);
     wake();
     return { ok: true, heldOnly };
-  }, [context, database, form, key, placed, reset, sitePackage, wake]);
+  }, [context, database, form, initials, key, placed, reset, sitePackage, wake]);
 
   const discard = useCallback(() => {
     reset({});

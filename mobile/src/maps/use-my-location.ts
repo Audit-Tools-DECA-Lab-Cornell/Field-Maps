@@ -1,7 +1,7 @@
 import { requireOptionalNativeModule } from "expo";
 import Storage from "expo-sqlite/kv-store";
 import { useEffect, useSyncExternalStore } from "react";
-import { Linking } from "react-native";
+import { AppState, Linking } from "react-native";
 import type { Fix } from "./my-location";
 
 /**
@@ -144,14 +144,24 @@ function subscribe(listener: () => void) {
 
 /**
  * The observer's position while a map shows it. Mounting the map starts the watch when location is on
- * (asking for nothing new: permission is only requested by turning it on); unmounting stops it.
+ * (asking for nothing new: permission is only requested by turning it on), and so does coming back to
+ * the app while it was blocked; unmounting stops it.
  */
 export function useMyLocation(): State {
   useEffect(() => {
     watchers += 1;
     if (state.status !== "off")
       void startWatching(false).catch(() => set({ status: "unavailable", fix: null }));
+    // Back from Settings: permission or location services may have been turned on there, so a blocked
+    // dot looks again, still without asking.
+    const subscription = AppState.addEventListener("change", (next) => {
+      if (next !== "active" || (state.status !== "denied" && state.status !== "services-off"))
+        return;
+      set({ status: "searching", fix: null });
+      void startWatching(false).catch(() => set({ status: "unavailable", fix: null }));
+    });
     return () => {
+      subscription.remove();
       watchers -= 1;
       if (watchers === 0) {
         stopWatching();
