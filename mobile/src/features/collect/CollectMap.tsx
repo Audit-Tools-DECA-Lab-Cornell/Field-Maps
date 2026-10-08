@@ -283,7 +283,11 @@ export function CollectMap({
   const haptics = useHaptics();
   const camera = useRef<CameraRef>(null);
   const native = useRef<MapRef>(null);
-  const base = useMapBase();
+  const chosen = useMapBase();
+  // A package without imagery (every hosted one) offers Day and Night only; Aerial reads as Day there.
+  const aerialAvailable = sitePackage.aerialAvailable !== false;
+  const base: MapBase = chosen === "aerial" && !aerialAvailable ? "day" : chosen;
+  const bases = aerialAvailable ? BASES : BASES.filter((option) => option.value !== "aerial");
   const palette = mapPalettes[base === "night" ? "night" : "day"];
   const colours = useMemo(() => markColours(base), [base]);
   const home = zone.zoom ?? DEFAULT_ZOOM;
@@ -657,7 +661,7 @@ export function CollectMap({
             <Text variant="smallStrong">Plan</Text>
             <Segmented
               label="Map plan"
-              options={BASES}
+              options={bases}
               value={base}
               onValueChange={(value) => setMapBase(value)}
             />

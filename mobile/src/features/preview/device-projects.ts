@@ -7,8 +7,8 @@ import { PREVIEW_PROJECTS, type PreviewProject } from "./fixtures";
  * account's organization memberships. Training belongs to an organization the observer is not a member
  * of, so its name falls back to "FieldMaps".
  *
- * Sites still ship with the app until hosted packages arrive (MOB-14). Training opens the bundled
- * practice site; a joined project lists no sites yet, rather than claiming bundled ones as its own.
+ * Training opens the practice sites that ship with the app. Every other project lists the sites its
+ * managers created, read from the FieldMaps API (MOB-14); it never claims bundled sites as its own.
  */
 
 /** The organization name when the account is not a member of the project's organization. */
@@ -22,6 +22,7 @@ const TRAINING_SITE_IDS = TRAINING_FIXTURE?.siteIds ?? [];
 export function deviceProjects(
   projects: Identity["project_memberships"],
   organizations: Identity["organization_memberships"],
+  hostedSiteIds: (projectId: string) => string[] = () => [],
 ): PreviewProject[] {
   return projects.map((membership) => {
     const org =
@@ -32,7 +33,9 @@ export function deviceProjects(
       name: membership.name,
       org,
       summary: membership.is_training ? TRAINING_SUMMARY : `${org} · ${membership.role} access`,
-      siteIds: membership.is_training ? [...TRAINING_SITE_IDS] : [],
+      siteIds: membership.is_training
+        ? [...TRAINING_SITE_IDS]
+        : hostedSiteIds(membership.project_id),
       training: membership.is_training,
     };
   });

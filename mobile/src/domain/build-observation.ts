@@ -26,6 +26,8 @@ export type ObservationInput = {
   readonly placement: Placement;
   readonly context: RoundContext;
   readonly siteId: string;
+  /** The project a hosted site belongs to, so the record uploads there. */
+  readonly projectId?: string | undefined;
   readonly createdAt: string;
 };
 
@@ -68,6 +70,7 @@ export function buildObservation(input: ObservationInput): BuildResult {
     );
     const parsed = instrumentObservationSchema.safeParse({
       ...shared,
+      ...(input.projectId ? { projectId: input.projectId } : {}),
       siteId: input.siteId,
       formVersion: input.form.version,
       observer: observerQuestion ? text(answers, observerQuestion.id) : "",

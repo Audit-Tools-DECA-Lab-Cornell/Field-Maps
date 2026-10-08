@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type Observation, observationSchema, storageStatusSchema } from "../domain/observation";
-import { isUploadable } from "../forms/registry";
+import { isUploadableRecord } from "../forms/registry";
 
 export interface LocalDatabase {
   execAsync(sql: string): Promise<void>;
@@ -86,12 +86,13 @@ export async function initializeDatabase(db: LocalDatabase): Promise<void> {
 }
 
 /**
- * A record is queued for upload only when it belongs to an account and its form version is one
- * the API accepts. A draft form version stays `local-only`, so nothing is sent against a
- * contract the server would reject and nothing is silently lost.
+ * A record is queued for upload only when it belongs to an account and has somewhere to go: a
+ * practice record, or an instrument record naming the project that published its form. Anything else
+ * stays `local-only`, so nothing is sent against a contract the server would reject and nothing is
+ * silently lost.
  */
 export function initialSyncState(record: Observation, scope: string) {
-  return scope === "local" || !isUploadable(record.formVersion) ? "local-only" : "pending";
+  return scope === "local" || !isUploadableRecord(record) ? "local-only" : "pending";
 }
 
 const INSERT_OBSERVATION =

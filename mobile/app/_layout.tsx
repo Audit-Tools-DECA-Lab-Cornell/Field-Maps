@@ -11,6 +11,7 @@ import { type Gate, useGate } from "../src/features/auth/gate";
 import { ProfileQueue } from "../src/features/auth/profile-sync";
 import { DataSourceProvider, PREVIEW_ALLOWED } from "../src/features/preview/data-source";
 import { useOrientationPreference } from "../src/layout/orientation";
+import { HostedSitesProvider } from "../src/packages/hosted/provider";
 import { FieldSessionProvider } from "../src/session/provider";
 import { initializeDatabase } from "../src/storage/observation-store";
 import { SyncProvider } from "../src/sync/provider";
@@ -112,16 +113,18 @@ export default function RootLayout() {
                       {/* Preview or device data for every screen. It sits under Sync and SQLite,
                           which its queue reads, and above the field session, so a session may
                           read it too. */}
-                      <DataSourceProvider>
-                        <FieldSessionProvider>
-                          {/* Legacy screens are dark Nocturne. Contour screens set their own status
+                      <HostedSitesProvider>
+                        <DataSourceProvider>
+                          <FieldSessionProvider>
+                            {/* Legacy screens are dark Nocturne. Contour screens set their own status
                               bar through the Screen primitive. */}
-                          <StatusBar style="light" />
-                          {/* Sends an observer profile saved offline once the account can take it. */}
-                          <ProfileQueue />
-                          <GatedStack />
-                        </FieldSessionProvider>
-                      </DataSourceProvider>
+                            <StatusBar style="light" />
+                            {/* Sends an observer profile saved offline once the account can take it. */}
+                            <ProfileQueue />
+                            <GatedStack />
+                          </FieldSessionProvider>
+                        </DataSourceProvider>
+                      </HostedSitesProvider>
                     </SyncProvider>
                   </MeProvider>
                 </AuthProvider>

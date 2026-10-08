@@ -3,10 +3,15 @@ import type { FormDefinition } from "../forms/definition";
 import { formFor } from "../forms/registry";
 import type { SitePackage } from "../packages/site-package";
 
-type RoundForms = Pick<SitePackage, "formVersion" | "inventoryFormVersion">;
+type RoundForms = Pick<SitePackage, "formVersion" | "inventoryFormVersion" | "forms">;
 
-/** The form a round asks: the zone inventory in an Inventory round, the site's own form otherwise. */
+/**
+ * The form a round asks: the zone inventory in an Inventory round, the site's own form otherwise. A
+ * hosted site carries the forms its project published; a bundled site names versions the app carries.
+ */
 export function formForRound(sitePackage: RoundForms, roundType: RoundType): FormDefinition | null {
+  if (sitePackage.forms)
+    return roundType === "inventory" ? sitePackage.forms.inventory : sitePackage.forms.play;
   return (
     formFor(
       roundType === "inventory" ? sitePackage.inventoryFormVersion : sitePackage.formVersion,

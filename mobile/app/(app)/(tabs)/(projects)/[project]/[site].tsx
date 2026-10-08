@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, StyleSheet, View } from "react-native";
 import {
   type AssetState,
@@ -12,13 +12,12 @@ import {
   type AssetCheck,
   allVerified,
   deviceAssetChecks,
-  type PackageFacts,
   type SiteWithDownload,
   zonesSentence,
 } from "../../../../../src/features/projects/readiness";
 import { SitePlanFrame } from "../../../../../src/features/projects/SitePlan";
-import { formFor } from "../../../../../src/forms/registry";
 import { bundledPackage } from "../../../../../src/packages/bundled";
+import { packageFacts } from "../../../../../src/packages/open";
 import { useFieldSession } from "../../../../../src/session/provider";
 import {
   announce,
@@ -73,28 +72,16 @@ function siteStyles(t: Theme) {
   });
 }
 
-/** What this device can check about the package that really ships with the app for a site. */
-function deviceFacts(packageId: string): PackageFacts | null {
-  const found = bundledPackage(packageId);
-  if (!found || found.availability !== "on-device") return null;
-  return {
-    hasGeometry: Boolean(found.bases.day && found.bases.night) && found.layers.length > 0,
-    zoneCount: found.zones.length,
-    formKnown: formFor(found.formVersion) !== undefined,
-    // The offline field guide is part of the app, not of a package.
-    guideInApp: true,
-  };
-}
-
 /**
  * A site (Mobile 12 and 13): its map package, and whether everything collection needs is on this
  * device. Not downloaded, downloading (progress, each part Waiting → Downloading → Verified) or ready
  * offline. "Set up this session" turns on once all four parts verify, opens the package in the field
  * session, and continues to "Before you begin".
  *
- * On device data a site is ready only when its package ships with the app, and the four parts are
- * checked against that package; there is no download to start until package delivery exists (MOB-14),
- * and the screen says so. Preview data simulates the designed download and removal.
+ * On device data a site is ready only when its package is on this phone, shipped with the app or
+ * downloaded from the FieldMaps API (MOB-14), and the four parts are checked against that package. A
+ * hosted download is checked against the digest the server recorded before anything is kept. Preview
+ * data simulates the designed download and removal.
  */
 export default function SiteScreen() {
   const s = useStyles(siteStyles);
@@ -120,6 +107,13 @@ export default function SiteScreen() {
     previous.current = state;
   }, [state, site, haptics]);
 
+  // Read from the device once per package and state, rather than on every render.
+  const packageId = site?.packageId ?? "";
+  const facts = useMemo(
+    () => (data.mode === "device" && state === "ready" ? packageFacts(packageId) : null),
+    [data.mode, packageId, state],
+  );
+
   const header = <ScreenHeader back showOnline />;
 
   if (!project || !site || !project.siteIds.includes(site.id))
@@ -141,7 +135,6 @@ export default function SiteScreen() {
     );
 
   const device = data.mode === "device";
-  const facts = device ? deviceFacts(site.packageId) : null;
   const assets: AssetCheck[] = device
     ? deviceAssetChecks(site.download.state === "ready" ? facts : null)
     : site.download.assets;
@@ -284,15 +277,16 @@ function PackageIsland({
       <StateBadge kind="readiness" state="notDownloaded" />
     );
 
+  const hasPackage = !device || site.bundled || site.packageId !== "";
   const description =
     download.state === "ready"
-      ? device
+      ? device && site.bundled
         ? `${found?.sizeOnDevice ?? "On this device"} · checked on this device`
         : `${site.sizeMb} MB on this device · ${site.verifiedLabel}`
       : download.state === "notDownloaded"
-        ? device
-          ? "Not on this device"
-          : `${site.sizeMb} MB · needs a connection`
+        ? hasPackage
+          ? `${site.sizeMb} MB · needs a connection`
+          : "No map package yet"
         : undefined;
 
   return (
@@ -303,7 +297,7 @@ function PackageIsland({
             value={download.receivedMb}
             max={download.totalMb}
             label={`${title} download`}
-            detail={`${download.receivedMb} of ${download.totalMb} MB`}
+            detail={download.detail ?? `${download.receivedMb} of ${download.totalMb} MB`}
           />
         ) : null}
         <View style={s.rows}>
@@ -319,6 +313,11 @@ function PackageIsland({
             </View>
           ))}
         </View>
+        {download.problem ? (
+          <Note tone="attention" title="The download did not finish." live="assertive">
+            {`${download.problem} Nothing was kept; you can try again.`}
+          </Note>
+        ) : null}
         {problem ? (
           <Note tone="attention" title="The session was not set up." live="assertive">
             {problem}
@@ -327,11 +326,15 @@ function PackageIsland({
         <View style={s.actions}>
           {download.state === "notDownloaded" ? (
             <Button
-              label={canDownload ? `Download ${site.sizeMb} MB` : "Download"}
+              label={canDownload && hasPackage ? `Download ${site.sizeMb} MB` : "Download"}
               icon="download"
               fullWidth
-              disabled={!canDownload}
-              disabledReason="Package delivery is not built yet. Only the sites that ship with the app are on this device."
+              disabled={!canDownload || !hasPackage}
+              disabledReason={
+                hasPackage
+                  ? "Sign in with a connection to download this site."
+                  : "This site has no map package yet. A project manager uploads one on the web."
+              }
               onPress={onDownload}
               testID="site-download"
             />
@@ -354,7 +357,7 @@ function PackageIsland({
           )}
           {download.state === "downloading" ? (
             <TextLink label="Cancel download" tone="ink" onPress={onCancel} style={s.link} />
-          ) : download.state === "ready" && !site.bundled && !device ? (
+          ) : download.state === "ready" && !site.bundled ? (
             <TextLink
               label="Remove this download"
               tone="ink"

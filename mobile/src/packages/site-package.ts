@@ -1,13 +1,13 @@
 import type { LngLatBounds, StyleSpecification } from "@maplibre/maplibre-react-native";
 import type { FeatureCollection } from "geojson";
 import type { Coordinate } from "../domain/observation";
+import type { FormDefinition } from "../forms/definition";
 import type { SiteZone } from "../maps/sample-site";
 
 /**
- * The shape a site package will take when packages are really delivered: geometry, zones and
- * the form versions the site collects. Delivery itself is stubbed behind
- * {@link PackageProvider} — there is no hosted package format yet, so nothing here pretends to
- * download one or to enforce a cellular policy.
+ * A site as the field map and the session read it: geometry, zones and the form versions the site
+ * collects. It comes either with the app (`bundled.ts`) or from a project's hosted package, downloaded
+ * and kept on the device (`hosted/`); the field flow treats both alike.
  */
 
 export type PackageAvailability = "on-device" | "not-downloaded" | "archived";
@@ -60,6 +60,21 @@ export type SitePackage = PackageSummary & {
     readonly aerial: StyleSpecification;
   };
   readonly layers: readonly PackageLayer[];
+  /**
+   * The project a hosted site belongs to: its records upload there. Bundled sites have none; their
+   * practice records go to the practice project, and their instrument records stay on the device.
+   */
+  readonly projectId?: string;
+  /**
+   * The forms a hosted site collects, as its project published them. Bundled sites name versions the
+   * app carries instead ({@link PackageSummary.formVersion}, {@link SitePackage.inventoryFormVersion}).
+   */
+  readonly forms?: {
+    readonly play: FormDefinition;
+    readonly inventory: FormDefinition | null;
+  };
+  /** False when the package carries no imagery, so Aerial is not offered. Defaults to true. */
+  readonly aerialAvailable?: boolean;
 };
 
 /**

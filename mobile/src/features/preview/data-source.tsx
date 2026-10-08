@@ -12,6 +12,7 @@ import {
 import { useMe } from "../../data/api/me-provider";
 import { isShellObservation, type Observation } from "../../domain/observation";
 import { bundledPackage } from "../../packages/bundled";
+import { isStored, useHostedSites } from "../../packages/hosted/provider";
 import type { SitePackage } from "../../packages/site-package";
 import { shortLabel } from "../../session/provider";
 import { useObservations } from "../../storage/use-observations";
@@ -27,6 +28,7 @@ import {
   type QueueRecord,
   type QueueState,
 } from "./fixtures";
+import { hostedDownload, hostedPreviewSite } from "./hosted-sites";
 
 /**
  * Where the collector's screens read from. `device` uses the account and this phone: projects and the
@@ -59,6 +61,10 @@ export type SiteDownload = {
   receivedMb: number;
   totalMb: number;
   assets: { label: string; state: AssetState }[];
+  /** Replaces the megabyte line under the progress bar, for a download that reports parts. */
+  detail?: string;
+  /** Why the last download did not finish. */
+  problem?: string;
 };
 
 type DataSourceValue = {
@@ -67,9 +73,8 @@ type DataSourceValue = {
   previewAllowed: boolean;
   downloads: Record<string, SiteDownload>;
   /**
-   * Whether this mode can fetch a package. Package delivery is not built yet, so only preview simulates
-   * one; on the device a site is ready only when its package ships with the app, and screens say that a
-   * download needs the server instead of pretending to run one.
+   * Whether this mode can fetch a package: preview simulates one; on the device a project's hosted
+   * site downloads from the FieldMaps API while signed in, and a bundled site is always on the device.
    */
   canDownload: boolean;
   startDownload: (siteId: string) => void;
@@ -142,6 +147,7 @@ const SIMULATED_DOWNLOAD_MS = 6000;
 const PROGRESS_STEP_MS = 250;
 
 export function DataSourceProvider({ children }: { children: ReactNode }) {
+  const hosted = useHostedSites();
   const [mode, setModeState] = useState<DataMode>(readMode);
   const [simulated, setDownloads] = useState<Record<string, SiteDownload>>(previewDownloads);
   const timers = useRef(new Map<string, ReturnType<typeof setInterval>>());
@@ -169,17 +175,39 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
     timers.current.delete(siteId);
   }, []);
 
-  const canDownload = mode === "preview";
-  const downloads = useMemo<Record<string, SiteDownload>>(
-    () =>
-      canDownload
-        ? simulated
-        : Object.fromEntries(PREVIEW_SITES.map((site) => [site.id, deviceSite(site).download])),
-    [canDownload, simulated],
+  const preview = mode === "preview";
+  const canDownload = preview || hosted.signedIn;
+  const downloads = useMemo<Record<string, SiteDownload>>(() => {
+    if (preview) return simulated;
+    // `revision` changes whenever a package is saved or removed, so what is stored is read again.
+    void hosted.revision;
+    return Object.fromEntries([
+      ...PREVIEW_SITES.map((site) => [site.id, deviceSite(site).download]),
+      ...Object.values(hosted.sites)
+        .flat()
+        .map((site) => [
+          site.site_id,
+          hostedDownload(site, isStored(site), hosted.downloads[site.site_id]),
+        ]),
+    ]);
+  }, [preview, simulated, hosted.sites, hosted.downloads, hosted.revision]);
+
+  /** The project a hosted site belongs to, or undefined for a bundled one. */
+  const hostedProject = useCallback(
+    (siteId: string) =>
+      Object.entries(hosted.sites).find(([, sites]) =>
+        sites.some((site) => site.site_id === siteId),
+      )?.[0],
+    [hosted.sites],
   );
 
   const startDownload = useCallback(
     (siteId: string) => {
+      if (!preview) {
+        const projectId = hostedProject(siteId);
+        if (projectId) void hosted.download(projectId, siteId);
+        return;
+      }
       const site = PREVIEW_SITES.find((entry) => entry.id === siteId);
       if (!site || !canDownload) return;
       stopTimer(siteId);
@@ -203,13 +231,16 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
       tick();
       timers.current.set(siteId, setInterval(tick, PROGRESS_STEP_MS));
     },
-    [canDownload, stopTimer],
+    [canDownload, hosted, hostedProject, preview, stopTimer],
   );
 
   const cancelDownload = useCallback(
     (siteId: string) => {
       stopTimer(siteId);
-      if (!canDownload) return;
+      if (!preview) {
+        hosted.cancel(siteId);
+        return;
+      }
       setDownloads((current) => {
         const site = current[siteId];
         if (!site) return current;
@@ -224,7 +255,15 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
         };
       });
     },
-    [canDownload, stopTimer],
+    [hosted, preview, stopTimer],
+  );
+
+  const removeDownload = useCallback(
+    (siteId: string) => {
+      if (preview) cancelDownload(siteId);
+      else hosted.remove(siteId);
+    },
+    [cancelDownload, hosted, preview],
   );
 
   const value = useMemo<DataSourceValue>(
@@ -236,9 +275,9 @@ export function DataSourceProvider({ children }: { children: ReactNode }) {
       canDownload,
       startDownload,
       cancelDownload,
-      removeDownload: cancelDownload,
+      removeDownload,
     }),
-    [mode, setMode, downloads, canDownload, startDownload, cancelDownload],
+    [mode, setMode, downloads, canDownload, startDownload, cancelDownload, removeDownload],
   );
 
   return <DataSourceContext.Provider value={value}>{children}</DataSourceContext.Provider>;
@@ -257,9 +296,15 @@ export function useDataSource(): DataSourceValue {
 export function useProjects(): PreviewProject[] {
   const { mode } = useDataSource();
   const { projects, organizations } = useMe();
+  const { sites } = useHostedSites();
   return useMemo(
-    () => (mode === "preview" ? PREVIEW_PROJECTS : deviceProjects(projects, organizations)),
-    [mode, projects, organizations],
+    () =>
+      mode === "preview"
+        ? PREVIEW_PROJECTS
+        : deviceProjects(projects, organizations, (projectId) =>
+            (sites[projectId] ?? []).map((site) => site.site_id),
+          ),
+    [mode, projects, organizations, sites],
   );
 }
 
@@ -291,19 +336,47 @@ function withDownload(
   return { ...site, download: downloads[site.id] ?? notDownloaded(site) };
 }
 
-/** A project's sites, which still ship with the app on device data (MOB-14 brings hosted ones). */
+/** The hosted sites this account has read, with the download state this device knows. */
+function useHostedSiteList(): SiteWithDownload[] {
+  const { mode, downloads } = useDataSource();
+  const { sites } = useHostedSites();
+  return useMemo(
+    () =>
+      mode === "preview"
+        ? []
+        : Object.entries(sites).flatMap(([projectId, list]) =>
+            list.map((site) => {
+              const shown = hostedPreviewSite(projectId, site);
+              return { ...shown, download: downloads[site.site_id] ?? notDownloaded(shown) };
+            }),
+          ),
+    [mode, sites, downloads],
+  );
+}
+
+/**
+ * A project's sites: on device data, Training's practice sites ship with the app and every other
+ * project's come from the FieldMaps API (MOB-14); preview shows the designed fixtures.
+ */
 export function useSites(projectId: string): SiteWithDownload[] {
   const { mode, downloads } = useDataSource();
   const siteIds = useProject(projectId)?.siteIds ?? [];
-  return PREVIEW_SITES.filter((site) => siteIds.includes(site.id)).map((site) =>
-    withDownload(site, mode, downloads),
-  );
+  const hostedSites = useHostedSiteList();
+  return [
+    ...PREVIEW_SITES.filter((site) => siteIds.includes(site.id)).map((site) =>
+      withDownload(site, mode, downloads),
+    ),
+    ...hostedSites.filter((site) => site.projectId === projectId),
+  ];
 }
 
 export function useSite(siteId: string): SiteWithDownload | undefined {
   const { mode, downloads } = useDataSource();
+  const hostedSites = useHostedSiteList();
   const site = PREVIEW_SITES.find((entry) => entry.id === siteId);
-  return site ? withDownload(site, mode, downloads) : undefined;
+  return site
+    ? withDownload(site, mode, downloads)
+    : hostedSites.find((entry) => entry.id === siteId);
 }
 
 const STATUS_TO_STATE: Record<Observation["storageStatus"], QueueState> = {

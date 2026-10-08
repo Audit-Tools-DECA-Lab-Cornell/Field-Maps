@@ -16,7 +16,7 @@ import type { Coordinate, Placement, RoundContext } from "../domain/observation"
 import type { RoundType } from "../domain/rounds";
 import type { Answers, FormDefinition } from "../forms/definition";
 import { type ReviewProblem, reviewProblems } from "../forms/engine";
-import { carriedQuestionIds, isUploadable } from "../forms/registry";
+import { carriedQuestionIds, isUploadableRecord } from "../forms/registry";
 import {
   reduceSession,
   type SessionAction,
@@ -26,7 +26,7 @@ import {
 } from "../forms/session";
 import { zoneAnchor } from "../maps/geometry";
 import type { SiteZone } from "../maps/sample-site";
-import { bundledPackages } from "../packages/bundled";
+import { openSitePackage } from "../packages/open";
 import type { SitePackage } from "../packages/site-package";
 import {
   clearDraft,
@@ -290,7 +290,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
     // form and context, and overwrite its draft. Finish or discard it first; nothing is lost.
     const blocked = packageSwitchProblem(open, id);
     if (blocked !== null) return { ok: false, reason: blocked };
-    const opened = await bundledPackages.open(id);
+    const opened = await openSitePackage(id);
     if (!opened) return { ok: false, reason: "That package could not be opened." };
     // Saves belong to the package they were made in; opening another clears the session's list.
     if (openedPackage.current !== opened.id) setSaves([]);
@@ -404,6 +404,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
       placement,
       context,
       siteId: sitePackage.siteId,
+      projectId: sitePackage.projectId,
       createdAt: new Date().toISOString(),
     });
     if (!built.ok) return { ok: false, problems: [], message: built.message };
@@ -421,7 +422,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
             : "Could not save. Your answers are still here; try again.",
       };
     }
-    const heldOnly = key === "local" || !isUploadable(form.version);
+    const heldOnly = key === "local" || !isUploadableRecord(built.record);
     const carried: Record<string, Answers[string]> = {};
     for (const id of carriedQuestionIds(form)) {
       const value = stateRef.current.answers[id];
@@ -459,7 +460,7 @@ export function FieldSessionProvider({ children }: PropsWithChildren) {
       setStatus(wrongAccount);
       return undefined;
     }
-    const opened = await bundledPackages.open(draft.packageId);
+    const opened = await openSitePackage(draft.packageId);
     if (!opened) {
       setStatus("That draft belongs to a package this device no longer has.");
       return undefined;

@@ -83,6 +83,12 @@ const instrumentVersionSchema = z
 
 export const instrumentObservationSchema = z.object({
   ...identity,
+  /**
+   * The project this record uploads to, for a site downloaded from a project. Absent on records made
+   * on a site that ships with the app: those stay on the device, as no project published their form.
+   */
+  projectId: z.uuid().optional(),
+  /** The site's code within its project, which is what the API names the site by. */
   siteId: z.string().min(1),
   formVersion: instrumentVersionSchema,
   observer: z.string().trim().min(1).max(10),

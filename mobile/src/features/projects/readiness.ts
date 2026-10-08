@@ -1,4 +1,5 @@
 import { type RoundType, roundLabel } from "../../domain/rounds";
+import type { PackageFacts } from "../../packages/open";
 import type { AssetState, SiteDownload } from "../preview/data-source";
 import { PACKAGE_ASSETS, type PreviewProject, type PreviewSite } from "../preview/fixtures";
 
@@ -85,16 +86,8 @@ export function downloadsSummary(sites: readonly SiteWithDownload[]): string {
   return megabytes > 0 ? `${count} · ${megabytes} MB` : count;
 }
 
-/** What the device can check about a package that is on it. */
-export type PackageFacts = {
-  /** Base styles for every map palette and at least one overlay layer. */
-  hasGeometry: boolean;
-  zoneCount: number;
-  /** The package's form version is registered in this build. */
-  formKnown: boolean;
-  /** The offline field guide is part of the app itself. */
-  guideInApp: boolean;
-};
+/** What the device can check about a site's package: geometry, zones, a readable form, the guide. */
+export type { PackageFacts };
 
 export type AssetCheck = { label: string; state: AssetState };
 

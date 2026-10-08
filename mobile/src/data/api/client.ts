@@ -1,5 +1,13 @@
 import ky, { NetworkError, TimeoutError } from "ky";
 import type { z } from "zod";
+import {
+  type FormSummary,
+  type FormVersion,
+  formSummariesSchema,
+  formVersionSchema,
+  type HostedSite,
+  sitesSchema,
+} from "../../packages/hosted/schemas";
 import { ApiError, readApiError } from "./errors";
 import {
   type Identity,
@@ -16,8 +24,9 @@ import {
 type Method = "get" | "patch" | "post";
 
 export function createApiClient(apiUrl: string, getToken: () => Promise<string | null>) {
+  const origin = apiUrl.replace(/\/$/, "");
   const http = ky.create({
-    prefix: apiUrl.replace(/\/$/, ""),
+    prefix: origin,
     retry: 0,
     timeout: 10000,
     throwHttpErrors: false,
@@ -75,6 +84,36 @@ export function createApiClient(apiUrl: string, getToken: () => Promise<string |
     /** `POST /v1/invitations/redeem`: joins the organization or project the code opens. */
     redeemInvitation(code: string, signal: AbortSignal): Promise<InvitationRedeemed> {
       return request("post", "v1/invitations/redeem", invitationRedeemedSchema, signal, { code });
+    },
+    /** `GET /v1/projects/{project}/sites`: the project's sites and each one's current package. */
+    sites(projectId: string, signal: AbortSignal): Promise<HostedSite[]> {
+      return request("get", `v1/projects/${projectId}/sites`, sitesSchema, signal);
+    },
+    /** `GET /v1/projects/{project}/forms`: its forms and their published and retired versions. */
+    forms(projectId: string, signal: AbortSignal): Promise<FormSummary[]> {
+      return request("get", `v1/projects/${projectId}/forms`, formSummariesSchema, signal);
+    },
+    /** `GET /v1/projects/{project}/form-versions/{code}`: one version and its definition. */
+    formVersion(projectId: string, code: string, signal: AbortSignal): Promise<FormVersion> {
+      return request(
+        "get",
+        `v1/projects/${projectId}/form-versions/${encodeURIComponent(code)}`,
+        formVersionSchema,
+        signal,
+      );
+    },
+    /**
+     * Where a package archive downloads from, with the header that authorizes it. The archive is
+     * downloaded to a file natively (`packages/hosted/device.ts`), then read from there to be checked
+     * against its digest and unpacked.
+     */
+    async archiveRequest(projectId: string, packageId: string) {
+      const token = await getToken();
+      if (!token) throw new ApiError("unauthenticated", "sign-in");
+      return {
+        url: `${origin}/v1/projects/${projectId}/packages/${packageId}/archive`,
+        headers: { Authorization: `Bearer ${token}` },
+      };
     },
   };
 }

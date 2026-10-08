@@ -1,15 +1,25 @@
 import ky, { NetworkError, TimeoutError } from "ky";
 import { readApiError } from "../data/api/errors";
-import type { ShellObservation } from "../domain/observation";
+import { legacyProjectId } from "../data/legacy/scope";
+import { isShellObservation, type Observation } from "../domain/observation";
 import { receiptSchema, type SyncScope, type UploadResult, uploadPayload } from "./contracts";
+
+/** The project a record uploads to: the one it names, or the practice project for practice records. */
+export function uploadProject(record: Observation): string | null {
+  return isShellObservation(record) ? legacyProjectId : (record.projectId ?? null);
+}
 
 export async function uploadObservation(
   scope: SyncScope,
-  destination: { readonly apiUrl: string; readonly projectId: string },
-  record: ShellObservation,
+  apiUrl: string,
+  record: Observation,
   token: string,
   signal: AbortSignal,
 ): Promise<UploadResult> {
+  const projectId = uploadProject(record);
+  if (projectId === null)
+    return { kind: "rejected", message: "This record names no project to upload to." };
+  const destination = { apiUrl, projectId };
   try {
     const response = await ky.put(
       `${destination.apiUrl}/v1/projects/${destination.projectId}/observations/${record.id}`,

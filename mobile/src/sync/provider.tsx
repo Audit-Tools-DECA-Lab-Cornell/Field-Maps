@@ -10,7 +10,6 @@ import {
 } from "react";
 import { AppState } from "react-native";
 import { useAccount } from "../auth/provider";
-import { legacyProjectId } from "../data/legacy/scope";
 import { connection } from "../platform/config";
 import { retryAttention } from "../storage/sync-store";
 import { createSyncCoordinator } from "./coordinator";
@@ -54,13 +53,7 @@ export function SyncProvider({ children }: PropsWithChildren) {
           : null;
       },
       upload: (record, token, signal) =>
-        uploadObservation(
-          activeScope,
-          { apiUrl: connection.apiUrl, projectId: legacyProjectId },
-          record,
-          token,
-          signal,
-        ),
+        uploadObservation(activeScope, connection.apiUrl, record, token, signal),
     });
     const run = async () => {
       if (busy || !online || !isCurrent() || AppState.currentState !== "active") return;
