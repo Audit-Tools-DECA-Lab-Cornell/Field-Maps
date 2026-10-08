@@ -71,27 +71,37 @@ export function zoneAt(
   return zones.find((zone) => pointInZone(point, zone)) ?? null;
 }
 
-/** West, south, east, north of a zone's outer rings. */
-export function zoneBounds(zone: SiteZone): LngLatBounds {
-  const outer = zoneParts(zone).flatMap((rings) => rings[0] ?? []);
+/** West, south, east, north of a set of positions, or `null` when there are none. */
+function extent(points: readonly Coordinate[]): LngLatBounds | null {
   let west = Number.POSITIVE_INFINITY;
   let south = Number.POSITIVE_INFINITY;
   let east = Number.NEGATIVE_INFINITY;
   let north = Number.NEGATIVE_INFINITY;
-  for (const [x, y] of outer) {
+  for (const [x, y] of points) {
     west = Math.min(west, x);
     south = Math.min(south, y);
     east = Math.max(east, x);
     north = Math.max(north, y);
   }
-  if (!Number.isFinite(west)) return [zone.west, zone.south, zone.east, zone.north];
-  return [west, south, east, north];
+  return Number.isFinite(west) ? [west, south, east, north] : null;
+}
+
+/** West, south, east, north of a zone's outer rings. */
+export function zoneBounds(zone: SiteZone): LngLatBounds {
+  return (
+    extent(zoneParts(zone).flatMap((rings) => rings[0] ?? [])) ?? [
+      zone.west,
+      zone.south,
+      zone.east,
+      zone.north,
+    ]
+  );
 }
 
 /**
- * The point a whole-zone record (an inventory) is stored at: the area centroid of the zone's shape
- * when it lies inside the zone, otherwise the zone's own centre, so the stored point is always one
- * the observer would recognise as "in the zone".
+ * The point a whole-zone record (an inventory) is stored at: the area centroid of the zone's first
+ * part when it lies inside the zone, otherwise the zone's own centre, otherwise a point found inside
+ * one of its parts, so the stored point is always one the observer would recognise as "in the zone".
  */
 export function zoneAnchor(zone: SiteZone): Coordinate {
   const outer = zoneRings(zone)[0] ?? [];
@@ -112,16 +122,21 @@ export function zoneAnchor(zone: SiteZone): Coordinate {
     if (pointInZone(centroid, zone)) return centroid;
   }
   if (pointInZone(zone.centre, zone)) return zone.centre;
-  return interiorPoint(zone) ?? zone.centre;
+  for (const rings of zoneParts(zone)) {
+    const inside = interiorPoint(rings);
+    if (inside) return inside;
+  }
+  return zone.centre;
 }
 
 /**
- * A point inside a concave zone (an L, a U) whose centroid falls outside it: the middle of the widest
- * stretch of the shape along a few horizontal lines across it.
+ * A point inside a concave polygon (an L, a U) whose centroid falls outside it: the middle of the
+ * widest stretch of the shape along a few horizontal lines across its own extent.
  */
-function interiorPoint(zone: SiteZone): Coordinate | null {
-  const rings = zoneRings(zone);
-  const [west, south, east, north] = zoneBounds(zone);
+function interiorPoint(rings: PolygonRings): Coordinate | null {
+  const bounds = extent(rings[0] ?? []);
+  if (!bounds) return null;
+  const [west, south, east, north] = bounds;
   let best: { readonly point: Coordinate; readonly width: number } | null = null;
   for (const fraction of [0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875]) {
     const y = south + (north - south) * fraction;

@@ -67,6 +67,25 @@ describe("zones", () => {
     expect(pointInZone(anchor, lShape)).toBe(true);
   });
 
+  it("stores a two-part zone's record inside a part, not in the gap between them", () => {
+    // A thin L whose centroid falls outside it, and a second part far to the north: the box's centre
+    // lies in the gap, and lines across the whole zone's extent all pass north of the L.
+    const at = (u: number, v: number): Coordinate => [-76.486 + u * 1e-4, 42.448 + v * 1e-4];
+    const split: SiteZone = {
+      id: "S",
+      label: "Zone S",
+      centre: at(5, 50),
+      west: at(0, 0)[0],
+      south: at(0, 0)[1],
+      east: at(10, 101)[0],
+      north: at(10, 101)[1],
+      polygon: [[at(0, 0), at(10, 0), at(10, 1), at(1, 1), at(1, 10), at(0, 10)]],
+      moreParts: [[[at(0, 100), at(10, 100), at(10, 101), at(0, 101)]]],
+    };
+    expect(pointInZone(split.centre, split)).toBe(false);
+    expect(pointInZone(zoneAnchor(split), split)).toBe(true);
+  });
+
   it("bounds a zone by its outer ring", () => {
     expect(zoneBounds(lShape)).toEqual([-76.486, 42.448, -76.485, 42.449]);
   });
