@@ -11,7 +11,7 @@ const connection = publicConfigSchema.parse(
 const base = {
   name: "FieldMaps",
   slug: "fieldmaps-mobile",
-  version: "0.1.1",
+  version: "0.2.0",
   scheme: "fieldmaps",
   orientation: "default",
   userInterfaceStyle: "automatic",
