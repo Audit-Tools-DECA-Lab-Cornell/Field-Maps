@@ -390,9 +390,7 @@ export function DraftEditorScreen({
 							variant="ink"
 							icon="check"
 							disabled={leaveProblem !== null}
-							disabledReason={
-								leaveProblem ? `${leaveProblem} Or leave without saving.` : undefined
-							}
+							disabledReason={leaveProblem ? `${leaveProblem} Or leave without saving.` : undefined}
 							onClick={saveAllAndLeave}>
 							Save edits and leave
 						</Button>
