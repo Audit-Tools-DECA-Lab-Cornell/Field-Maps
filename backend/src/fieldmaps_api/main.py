@@ -60,9 +60,10 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
-        configure_observability()
         try:
             try:
+                # Inside the guard: a malformed SENTRY_DSN fails here, after the log handlers exist.
+                configure_observability()
                 await readiness.assert_safe_role(engine)
             except Exception as error:
                 log_startup_failure(error)

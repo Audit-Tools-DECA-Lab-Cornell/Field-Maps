@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
+from sentry_sdk.utils import BadDsn
 from sqlalchemy.exc import DBAPIError, InterfaceError, SQLAlchemyError
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -95,6 +96,17 @@ def test_startup_failure_names_its_cause(
     assert '"event":"startup_failed"' in captured
     assert '"exception":["builtins.OSError"]' in captured
     assert "password authentication failed" in captured
+
+
+def test_startup_failure_names_a_malformed_sentry_dsn(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("SENTRY_DSN", "not a dsn")
+    with pytest.raises(BadDsn), TestClient(create_app()):
+        pytest.fail("Startup went ahead with a malformed SENTRY_DSN")
+    captured = capsys.readouterr().err
+    assert '"event":"startup_failed"' in captured
+    assert "sentry_sdk.utils.BadDsn" in captured
 
 
 @pytest.mark.parametrize("path", ["/health", "/missing", "/failure"])
