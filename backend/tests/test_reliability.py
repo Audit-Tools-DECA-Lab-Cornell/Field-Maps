@@ -81,6 +81,22 @@ def test_startup_refuses_unsafe_role(monkeypatch: pytest.MonkeyPatch) -> None:
         pytest.fail("Startup accepted an unsafe database role")
 
 
+def test_startup_failure_names_its_cause(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    async def unreachable(_engine: AsyncEngine) -> None:
+        message = 'password authentication failed for user "fieldmaps_api"'
+        raise OSError(message)
+
+    monkeypatch.setattr("fieldmaps_api.readiness.assert_safe_role", unreachable)
+    with pytest.raises(OSError, match="password authentication"), TestClient(create_app()):
+        pytest.fail("Startup went ahead without its database")
+    captured = capsys.readouterr().err
+    assert '"event":"startup_failed"' in captured
+    assert '"exception":["builtins.OSError"]' in captured
+    assert "password authentication failed" in captured
+
+
 @pytest.mark.parametrize("path", ["/health", "/missing", "/failure"])
 def test_request_id_survives_all_responses(path: str) -> None:
     app = create_app()
@@ -147,8 +163,15 @@ def test_server_logs_strip_raw_urls_and_exception_messages(
     with TestClient(create_app()) as client:
         client.get("/health?token=secret", headers={"Authorization": "Bearer secret"})
         logging.getLogger("uvicorn.error").error("secret exception")
+        detail = "secret detail"
+        try:
+            raise ValueError(detail)  # noqa: TRY301
+        except ValueError:
+            logging.getLogger("uvicorn.error").exception("secret message")
         logging.getLogger("uvicorn.access").info("secret URL")
     captured = capsys.readouterr().err
     assert '"event":"http_response"' in captured
     assert '"event":"server_log"' in captured
+    # The kind of failure is kept; its text, which may carry request data, is not.
+    assert '"exception":["builtins.ValueError"]' in captured
     assert "secret" not in captured

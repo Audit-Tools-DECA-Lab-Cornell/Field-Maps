@@ -15,7 +15,11 @@ from fieldmaps_api.config import Settings, read_local_settings
 from fieldmaps_api.database import database_connection
 from fieldmaps_api.deps import Authentication
 from fieldmaps_api.errors import ERROR_RESPONSES, register_error_handlers
-from fieldmaps_api.observability import RequestIdMiddleware, configure_observability
+from fieldmaps_api.observability import (
+    RequestIdMiddleware,
+    configure_observability,
+    log_startup_failure,
+)
 from fieldmaps_api.routers import collection, forms, identity, sites, tenancy
 
 
@@ -58,7 +62,11 @@ def create_app(
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
         configure_observability()
         try:
-            await readiness.assert_safe_role(engine)
+            try:
+                await readiness.assert_safe_role(engine)
+            except Exception as error:
+                log_startup_failure(error)
+                raise
             yield
         finally:
             await engine.dispose()

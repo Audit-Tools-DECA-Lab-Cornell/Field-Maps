@@ -16,6 +16,8 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 REQUEST_ID: Final = ContextVar("request_id", default="")
 LOGGER: Final = logging.getLogger("fieldmaps.requests")
 VALID_ID: Final = re.compile(r"[A-Za-z0-9_-]{1,64}\Z")
+#: How far down a chain of causes a log line follows.
+CAUSE_DEPTH: Final = 8
 
 
 class ExceptionType(BaseModel):
@@ -50,12 +52,41 @@ def scrub_event(event: Event, _hint: Hint) -> Event:
     }
 
 
+def exception_types(error: BaseException | None) -> list[str]:
+    """Name the class of an exception and of each one behind it, outermost first; never text."""
+    kinds: list[str] = []
+    seen: set[int] = set()
+    while error is not None and id(error) not in seen and len(kinds) < CAUSE_DEPTH:
+        seen.add(id(error))
+        kinds.append(f"{type(error).__module__}.{type(error).__qualname__}")
+        error = error.__cause__ or error.__context__
+    return kinds
+
+
 class SafeServerFormatter(logging.Formatter):
     @override
     def format(self, record: logging.LogRecord) -> str:
-        return orjson.dumps(
-            {"event": "server_log", "level": record.levelname, "logger": record.name}
+        line: dict[str, object] = {
+            "event": "server_log",
+            "level": record.levelname,
+            "logger": record.name,
+        }
+        if record.exc_info and record.exc_info[1] is not None:
+            line["exception"] = exception_types(record.exc_info[1])
+        return orjson.dumps(line).decode()
+
+
+def log_startup_failure(error: BaseException) -> None:
+    """Say why the API could not start: before any request there is no request data to leak."""
+    LOGGER.error(
+        orjson.dumps(
+            {
+                "event": "startup_failed",
+                "exception": exception_types(error),
+                "detail": str(error)[:300],
+            }
         ).decode()
+    )
 
 
 def configure_observability() -> None:
