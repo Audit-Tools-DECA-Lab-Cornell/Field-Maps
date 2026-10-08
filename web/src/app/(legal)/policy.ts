@@ -36,7 +36,7 @@ export const policy = {
 	/** Assumed. How many days a deletion request may take. */
 	deletionDays: 30 as number | null,
 	/** The date this version of the policy takes effect. */
-	effectiveDate: "September 22, 2026"
+	effectiveDate: "October 8, 2026"
 };
 
 export const missingFacts: readonly string[] = [

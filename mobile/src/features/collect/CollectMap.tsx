@@ -12,6 +12,7 @@ import {
   type ReactElement,
   type Ref,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -30,6 +31,13 @@ import {
   zoneSpotlight,
 } from "../../maps/geometry";
 import {
+  accuracyCircle,
+  accuracyLabel,
+  distanceLabel,
+  distanceMetres,
+  type Fix,
+} from "../../maps/my-location";
+import {
   hexWithAlpha,
   type MapBase,
   mapPalettes,
@@ -37,8 +45,15 @@ import {
   useMapBase,
 } from "../../maps/palette";
 import type { SiteZone } from "../../maps/sample-site";
+import {
+  openLocationSettings,
+  turnLocationOff,
+  turnLocationOn,
+  useMyLocation,
+} from "../../maps/use-my-location";
 import type { LayerPaint, PackageLayer, SitePackage } from "../../packages/site-package";
 import {
+  announce,
   Icon,
   IconButton,
   Mono,
@@ -166,6 +181,38 @@ function packageLayers(paint: LayerPaint, visible: boolean, id: string): readonl
   ];
 }
 
+/** Whether a fix falls inside the site's extent, the only part of the world this map can show. */
+function insideSite(fix: Fix, bounds: SitePackage["bounds"]): boolean {
+  const [x, y] = fix.coordinate;
+  const [west, south, east, north] = bounds;
+  return x >= west && x <= east && y >= south && y <= north;
+}
+
+/** What the map's label says about the observer's own position, or nothing while it is off. */
+function locationLine(
+  status: ReturnType<typeof useMyLocation>["status"],
+  fix: Fix | null,
+  sitePackage: SitePackage,
+): string | null {
+  switch (status) {
+    case "off":
+      return null;
+    case "searching":
+      return "Finding your location…";
+    case "on":
+      if (!fix) return "Finding your location…";
+      return insideSite(fix, sitePackage.bounds)
+        ? `You are here · ${accuracyLabel(fix)}`
+        : `You are ${distanceLabel(distanceMetres(fix.coordinate, sitePackage.centre))}`;
+    case "denied":
+      return "Location is off for FieldMaps. Tap the location button to open Settings.";
+    case "services-off":
+      return "Location services are off on this device.";
+    case "unavailable":
+      return "This build cannot show your location. Rebuild the app.";
+  }
+}
+
 function mapStyles(t: Theme) {
   return StyleSheet.create({
     frame: { flex: 1, borderRadius: t.radius.island, overflow: "hidden" },
@@ -184,6 +231,17 @@ function mapStyles(t: Theme) {
       borderColor: t.c.line,
     },
     labelArmed: { borderColor: t.c.accent, borderWidth: 2 },
+    meDot: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      borderWidth: 3,
+      shadowColor: "#000",
+      shadowOpacity: 0.35,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 3,
+    },
     controls: {
       position: "absolute",
       top: t.space.s3,
@@ -298,8 +356,47 @@ export function CollectMap({
   const [selected, setSelected] = useState<string | null>(null);
   const lifted = useSharedValue(0);
   const latitude = zone.centre[1];
+
   const motion = t.motion.duration;
 
+  // The observer's own position, shown only while they have it on; never stored with a record.
+  const me = useMyLocation();
+  const mePaint = palette.me;
+  const meFix = me.status === "on" ? me.fix : null;
+  const meLine = locationLine(me.status, me.fix, sitePackage);
+  const centreOnMe = useRef(false);
+  const goToMe = useCallback(
+    (fix: Fix) => {
+      if (!insideSite(fix, sitePackage.bounds)) {
+        announce(`You are ${distanceLabel(distanceMetres(fix.coordinate, sitePackage.centre))}.`);
+        return;
+      }
+      haptics.light();
+      camera.current?.easeTo({ center: fix.coordinate, zoom: 19, duration: motion.camera });
+    },
+    [haptics, motion.camera, sitePackage],
+  );
+  // The first fix after the observer asks for their location brings the map to them.
+  useEffect(() => {
+    if (!centreOnMe.current || !meFix) return;
+    centreOnMe.current = false;
+    goToMe(meFix);
+  }, [goToMe, meFix]);
+  function locate() {
+    if (me.status === "denied" || me.status === "services-off") {
+      openLocationSettings();
+      return;
+    }
+    if (meFix) {
+      goToMe(meFix);
+      return;
+    }
+    centreOnMe.current = true;
+    if (me.status === "off" || me.status === "unavailable") {
+      turnLocationOn();
+      announce("Finding your location.");
+    }
+  }
   const moveTo = useCallback(
     (centre: Coordinate, next?: number) => {
       camera.current?.easeTo({
@@ -476,6 +573,22 @@ export function CollectMap({
           />
         </GeoJSONSource>
 
+        {/* The observer's own position: how sure the fix is, as a circle on the ground. */}
+        {meFix && meFix.accuracy !== null && meFix.accuracy > 0 ? (
+          <GeoJSONSource id="me-accuracy" data={accuracyCircle(meFix.coordinate, meFix.accuracy)}>
+            <Layer
+              id="me-accuracy-fill"
+              type="fill"
+              paint={{ "fill-color": hexWithAlpha(mePaint.accuracy, mePaint.accuracyOpacity) }}
+            />
+            <Layer
+              id="me-accuracy-edge"
+              type="line"
+              paint={{ "line-color": hexWithAlpha(mePaint.accuracy, 0.55), "line-width": 1 }}
+            />
+          </GeoJSONSource>
+        ) : null}
+
         {/* The rest of the site dims, so the eye goes to the zone being collected. */}
         <GeoJSONSource id="collect-spotlight" data={spotlight}>
           <Layer
@@ -593,6 +706,15 @@ export function CollectMap({
           );
         })}
 
+        {meFix ? (
+          <Marker id="me" lngLat={meFix.coordinate} anchor="center">
+            <View
+              pointerEvents="none"
+              style={[s.meDot, { backgroundColor: mePaint.fill, borderColor: mePaint.ring }]}
+            />
+          </Marker>
+        ) : null}
+
         {/* Only a hand-placed point is drawn: a zone inventory belongs to the whole zone. */}
         {placed && mode === "placed" ? (
           <Marker id="placed-observation" lngLat={placed} anchor="center">
@@ -610,7 +732,7 @@ export function CollectMap({
         pointerEvents="none"
         style={[s.label, aiming ? s.labelArmed : null]}
         accessible
-        accessibilityLabel={`${title}. ${detail}`}
+        accessibilityLabel={`${title}. ${detail}${meLine ? `. ${meLine}` : ""}`}
       >
         <Text variant="smallStrong" tone={aiming ? "accent" : "ink"}>
           {title}
@@ -618,6 +740,11 @@ export function CollectMap({
         <Text variant="small" tone="ink2">
           {detail}
         </Text>
+        {meLine ? (
+          <Text variant="small" tone="ink2">
+            {meLine}
+          </Text>
+        ) : null}
       </View>
 
       <View pointerEvents="box-none" style={s.controls}>
@@ -640,6 +767,21 @@ export function CollectMap({
           }
         />
         <IconButton variant="map" icon="locate-fixed" label="Frame this zone" onPress={fitZone} />
+        <IconButton
+          variant="map"
+          icon="navigation"
+          label={
+            me.status === "denied" || me.status === "services-off"
+              ? "Location is off. Open Settings"
+              : me.status === "off" || me.status === "unavailable"
+                ? "Show my location"
+                : aiming
+                  ? "Move the cross to my location"
+                  : "Centre on my location"
+          }
+          selected={me.status === "on" || me.status === "searching"}
+          onPress={locate}
+        />
         <IconButton
           variant="map"
           icon="layers"
@@ -673,6 +815,15 @@ export function CollectMap({
               onValueChange={(value) => {
                 setFilter(value);
                 setSelected(null);
+              }}
+            />
+            <Switch
+              label="Show my location"
+              description="Shown on this map only. Never saved with a record."
+              checked={me.status !== "off"}
+              onCheckedChange={(on) => {
+                if (on) turnLocationOn();
+                else turnLocationOff();
               }}
             />
             <Text variant="smallStrong">Layers</Text>

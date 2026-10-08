@@ -95,13 +95,13 @@ both, and its content spans the full window width — a deliberate departure fro
   materials checklist (Test G171 says "list to be provided") — all three are carried as protocol
   notes on the form and are read from the site brief rather than shipped as if they were settled.
 - Option codes are provisional implementation identifiers, distinct from export column names.
-- Site package delivery is **stubbed** behind `PackageProvider`. The three packages on the device
-  are bundled with the app; the other rows are fixtures. No download, cellular policy or hosted
-  package format is implied.
-- GPS accuracy has a place in the record and is stored as `null`: this build asks for no location
-  permission, so there is no accuracy to record beside the hand-placed coordinates. Hand
-  placement is authoritative and is never overwritten. MapLibre declares the Android location
-  permissions in its own manifest; `app.config.ts` blocks both, so the published app declares none.
+- Hosted site packages download over the existing upload path, not PowerSync (D2 remains the
+  plan). There is no cellular policy yet: a download runs on any connection, and its size is shown
+  first. The Training project keeps the three packages bundled with the app.
+- "Show my location" draws the observer's position on the field map only. Permission is asked
+  when the observer turns it on, foreground only; background location is blocked in
+  `app.config.ts`. The fix is never stored with a record, uploaded or kept, so `gpsAccuracyMetres`
+  stays `null`: hand placement is authoritative and is never overwritten.
 
 ## Run
 

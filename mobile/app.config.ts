@@ -31,9 +31,10 @@ const base = {
       monochromeImage: "./assets/adaptive-icon-monochrome.png",
       backgroundColor: "#161826",
     },
+    // Location is foreground-only, for "Show my location" on the field map; never in the background.
     blockedPermissions: [
-      "android.permission.ACCESS_FINE_LOCATION",
-      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_BACKGROUND_LOCATION",
+      "android.permission.FOREGROUND_SERVICE_LOCATION",
       "android.permission.READ_EXTERNAL_STORAGE",
       "android.permission.WRITE_EXTERNAL_STORAGE",
       "android.permission.SYSTEM_ALERT_WINDOW",
@@ -53,6 +54,19 @@ const base = {
       },
     ],
     "./plugins/with-large-screen-orientation",
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "FieldMaps shows where you are on the site map while you collect, so you can find your place. Your location is never saved with an observation or sent anywhere.",
+        locationAlwaysAndWhenInUsePermission: false,
+        locationAlwaysPermission: false,
+        motionUsagePermission: false,
+        isIosBackgroundLocationEnabled: false,
+        isAndroidBackgroundLocationEnabled: false,
+        isAndroidForegroundServiceEnabled: false,
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
