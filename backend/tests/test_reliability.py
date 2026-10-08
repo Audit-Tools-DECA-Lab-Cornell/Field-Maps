@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 import pytest
@@ -9,7 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from fieldmaps_api.database_errors import database_error
 from fieldmaps_api.main import create_app
-from fieldmaps_api.observability import scrub_event
+from fieldmaps_api.observability import (
+    CAUSE_DEPTH,
+    SafeServerFormatter,
+    exception_types,
+    scrub_event,
+)
 from fieldmaps_api.readiness import DatabaseRole, require_restricted_role
 
 if TYPE_CHECKING:
@@ -80,6 +86,50 @@ def test_startup_refuses_unsafe_role(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("fieldmaps_api.readiness.assert_safe_role", unsafe)
     with pytest.raises(RuntimeError, match="must not be superuser"), TestClient(create_app()):
         pytest.fail("Startup accepted an unsafe database role")
+
+
+def chained(depth: int) -> BaseException:
+    """Build an exception raised from `depth - 1` others, each carrying secret text."""
+    error: BaseException = KeyError("secret 0")
+    for level in range(1, depth):
+        outer = RuntimeError(f"secret {level}") if level % 2 else ValueError(f"secret {level}")
+        outer.__cause__ = error
+        error = outer
+    return error
+
+
+def test_exception_types_follow_causes_outermost_first() -> None:
+    assert exception_types(chained(3)) == [
+        "builtins.ValueError",
+        "builtins.RuntimeError",
+        "builtins.KeyError",
+    ]
+    implicit = ValueError("secret")
+    implicit.__context__ = OSError("secret")
+    assert exception_types(implicit) == ["builtins.ValueError", "builtins.OSError"]
+
+
+def test_exception_types_stop_at_a_cycle_and_at_the_depth_limit() -> None:
+    first, second = ValueError("secret"), OSError("secret")
+    first.__cause__, second.__cause__ = second, first
+    assert exception_types(first) == ["builtins.ValueError", "builtins.OSError"]
+    assert len(exception_types(chained(CAUSE_DEPTH + 4))) == CAUSE_DEPTH
+
+
+def test_server_log_lines_never_carry_exception_text() -> None:
+    error = chained(CAUSE_DEPTH + 4)
+    record = logging.LogRecord(
+        "uvicorn.error",
+        logging.ERROR,
+        __file__,
+        1,
+        "secret message",
+        None,
+        (type(error), error, None),
+    )
+    line = SafeServerFormatter().format(record)
+    assert "secret" not in line
+    assert '"exception":["builtins.' in line
 
 
 def test_startup_failure_names_its_cause(
@@ -170,8 +220,6 @@ def test_unhandled_failure_telemetry_keeps_request_id(monkeypatch: pytest.Monkey
 def test_server_logs_strip_raw_urls_and_exception_messages(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import logging  # noqa: PLC0415
-
     with TestClient(create_app()) as client:
         client.get("/health?token=secret", headers={"Authorization": "Bearer secret"})
         logging.getLogger("uvicorn.error").error("secret exception")
