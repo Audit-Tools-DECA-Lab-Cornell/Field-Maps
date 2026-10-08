@@ -1,0 +1,203 @@
+{
+  "type": "FeatureCollection",
+  "$comment": "Fixture: a small training garden for practice sessions (Project 6). Training geometry, never counted toward coverage. Drawn in plan units by scripts/site-fixtures.mjs and converted to WGS84; see README.md.",
+  "name": "Practice garden",
+  "frame": {
+    "origin": [-76.4872, 42.4466],
+    "metresPerUnit": 0.1,
+    "width": 720,
+    "height": 500
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "site",
+        "id": "site",
+        "name": "Practice garden"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.487099, 42.446538],
+            [-76.4864245, 42.446538],
+            [-76.4864245, 42.4462101],
+            [-76.487099, 42.4462101],
+            [-76.487099, 42.446538]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "grass",
+        "id": "grass-1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4870539, 42.4465048],
+            [-76.4867958, 42.4465048],
+            [-76.4867958, 42.4462434],
+            [-76.4870539, 42.4462434],
+            [-76.4870539, 42.4465048]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "dirt",
+        "id": "dirt-1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4867167, 42.4465048],
+            [-76.4864696, 42.4465048],
+            [-76.4864696, 42.4463889],
+            [-76.4867167, 42.4463889],
+            [-76.4867167, 42.4465048]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mulch",
+        "id": "mulch-1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4867167, 42.4463593],
+            [-76.4864696, 42.4463593],
+            [-76.4864696, 42.4462434],
+            [-76.4867167, 42.4462434],
+            [-76.4867167, 42.4463593]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "id": "path-1",
+        "width_m": 2.2
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-76.4867532, 42.446538],
+          [-76.4867532, 42.4462101]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "equipment",
+        "id": "equipment-1",
+        "name": "Balance beam"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4866437, 42.4463305],
+            [-76.4865365, 42.4463305],
+            [-76.4865365, 42.4462766],
+            [-76.4866437, 42.4462766],
+            [-76.4866437, 42.4463305]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-01",
+        "radius_m": 2.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.487015, 42.446476]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-02",
+        "radius_m": 2.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4869748, 42.4463431]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-03",
+        "radius_m": 2.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4868689, 42.4462928]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "zone",
+        "id": "zone-a",
+        "code": "A",
+        "name": "Lawn bed"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4870369, 42.4464922],
+            [-76.4868129, 42.4464922],
+            [-76.4868129, 42.4462604],
+            [-76.4870369, 42.4462604],
+            [-76.4870369, 42.4464922]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "zone",
+        "id": "zone-b",
+        "code": "B",
+        "name": "Sand bed"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4866948, 42.4464922],
+            [-76.4864866, 42.4464922],
+            [-76.4864866, 42.4464015],
+            [-76.4866948, 42.4464015],
+            [-76.4866948, 42.4464922]
+          ]
+        ]
+      }
+    }
+  ]
+}

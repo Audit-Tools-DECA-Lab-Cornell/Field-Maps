@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { CONTOUR } from "@/lib/contour";
+
 export default function manifest(): MetadataRoute.Manifest {
 	return {
 		name: "FieldMaps",
@@ -7,9 +9,9 @@ export default function manifest(): MetadataRoute.Manifest {
 		description: "Manage FieldMaps projects, places, instruments and collected observations.",
 		start_url: "/o",
 		display: "standalone",
-		// Nocturne's ground and surface, the same two values the collector opens on.
-		background_color: "#161826",
-		theme_color: "#161826",
+		// Contour's Day ground, the same value the collector opens on.
+		background_color: CONTOUR.themes.day.ground,
+		theme_color: CONTOUR.themes.day.ground,
 		orientation: "any",
 		// The FieldMaps app icon; sources and rebuild steps are in mobile/assets/icon-source/.
 		icons: [

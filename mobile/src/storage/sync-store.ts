@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { observationSchema, type ShellObservation } from "../domain/observation";
-import { isUploadable } from "../forms/registry";
+import { observationSchema } from "../domain/observation";
+import { isUploadableRecord } from "../forms/registry";
 import type { Receipt } from "../sync/contracts";
 import type { LocalDatabase } from "./observation-store";
 
 /**
- * Records ready for another upload attempt. Only a form version the API accepts can be queued,
- * and the filter is repeated here so a version that stops being accepted is never sent against
- * a contract that would reject it.
+ * Records ready for another upload attempt: practice records, and instrument records that name the
+ * project they upload to. The filter repeats the queueing rule, so a record that should never have
+ * been queued is never sent against a contract that would reject it.
  */
 export async function pendingObservations(db: LocalDatabase, scope: string, now: number) {
   const rows = z
@@ -24,10 +24,7 @@ export async function pendingObservations(db: LocalDatabase, scope: string, now:
       record: observationSchema.parse(JSON.parse(row.payload)),
       attempts: row.attempts,
     }))
-    .filter(
-      (item): item is { record: ShellObservation; attempts: number } =>
-        item.record.formVersion === "shell-v1" && isUploadable(item.record.formVersion),
-    );
+    .filter((item) => isUploadableRecord(item.record));
 }
 
 export async function acknowledge(

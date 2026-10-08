@@ -44,7 +44,8 @@ SELECT pg_temp.assert_true(
 SELECT pg_temp.assert_true(
   (SELECT array_agg(version ORDER BY version) FROM fieldmaps_meta.schema_migrations)
     = ARRAY['0001_initial', '0002_observation_uploads', '0003_spatial_interface',
-            '0004_site_packages', '0005_package_policy_identity', '0006_default_privileges', '0007_identity_tenancy', '0008_tenancy_functions', '0009_invitation_membership_guard', '0010_tenancy_role_guards', '0011_training', '0012_auth_hooks'],
+            '0004_site_packages', '0005_package_policy_identity', '0006_default_privileges', '0007_identity_tenancy', '0008_tenancy_functions', '0009_invitation_membership_guard', '0010_tenancy_role_guards', '0011_training', '0012_auth_hooks',
+            '0013_sites_forms_collection'],
   'migration replay records each version once'
 );
 \ir constraints.sql
@@ -53,5 +54,6 @@ SELECT pg_temp.assert_true(
 \ir tenancy.sql
 \ir tenancy_functions.sql
 \ir training.sql
+\ir lifecycle.sql
 ROLLBACK;
 \echo All database scenarios passed; test records rolled back.

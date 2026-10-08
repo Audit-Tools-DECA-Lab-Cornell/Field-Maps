@@ -1,0 +1,396 @@
+"""Sites, forms and records as a manager's workspace and an observer's device use them."""
+
+from collections.abc import Iterator
+from pathlib import Path
+from uuid import uuid4
+
+import pytest
+from fastapi.testclient import TestClient
+from pydantic import JsonValue, TypeAdapter
+
+from fieldmaps_api.errors import ErrorEnvelope
+from fieldmaps_api.form_schemas import FormSummary, FormVersionDetail
+from fieldmaps_api.schemas import ObservationRow
+from fieldmaps_api.site_schemas import Site
+from fieldmaps_api.tenancy_schemas import ProjectMember
+from tests.local_database import admin_sql
+from tests.signing import Signer
+from tests.tenant_fixtures import Tenant, cleanup_tenant, create_tenant, sign_in
+from tests.test_site_packages import submission
+
+pytestmark = pytest.mark.integration
+
+CONTRACTS = Path(__file__).resolve().parents[2] / "contracts" / "forms"
+FORMS = TypeAdapter(list[FormSummary])
+SITES = TypeAdapter(list[Site])
+ROWS = TypeAdapter(list[ObservationRow])
+MEMBERS = TypeAdapter(list[ProjectMember])
+DEFINITION: TypeAdapter[dict[str, JsonValue]] = TypeAdapter(dict[str, JsonValue])
+
+
+@pytest.fixture
+def tenant(api_client: TestClient, signer: Signer) -> Iterator[Tenant]:
+    value = Tenant.new()
+    create_tenant(value)
+    sign_in(api_client, signer, value.users["manager"])
+    try:
+        yield value
+    finally:
+        cleanup_tenant(value)
+
+
+def inventory() -> dict[str, JsonValue]:
+    return DEFINITION.validate_json((CONTRACTS / "janet-inventory-v1.json").read_bytes())
+
+
+def error(response_content: bytes) -> ErrorEnvelope:
+    return ErrorEnvelope.model_validate_json(response_content)
+
+
+def inventory_upload(**overrides: JsonValue) -> dict[str, JsonValue]:
+    payload: dict[str, JsonValue] = {
+        "site_id": "sample-garden",
+        "form_version": "inventory-v1",
+        "coordinates": [-76.4857, 42.4483],
+        "observer": "QA",
+        "observed_at": "2026-10-07T14:00:00Z",
+        "zone": "A",
+        "round_type": "inventory",
+        "placement": "zone",
+        "weather": ["full_sun"],
+        "wind": "light_wind",
+        "shade": "partial_shade",
+        "inv_nat_surfaces": "none",
+        "inv_nat_lps_sm": "small",
+        "inv_nat_lps_sm_list": "pine cones, sticks",
+        "inv_nat_lps_med": "none",
+        "inv_nat_lps_lrg": "none",
+        "inv_mfgd_lps_sm": "none",
+        "inv_mfgd_lps_med": "none",
+        "inv_mfgd_lps_lrg": "none",
+        "observer_initials": "QA",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def start_inventory(client: TestClient, base: str) -> FormVersionDetail:
+    created = client.post(
+        f"{base}/forms",
+        json={"code": "inventory", "name": "Inventory round", "definition": inventory()},
+    )
+    assert created.status_code == 201, created.text
+    return FormVersionDetail.model_validate_json(created.content)
+
+
+def test_a_manager_drafts_edits_and_publishes_a_form(
+    api_client: TestClient, signer: Signer, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    draft = start_inventory(api_client, base)
+    assert (draft.code, draft.version, draft.state, draft.form_code) == (
+        "inventory-v1",
+        1,
+        "draft",
+        "inventory",
+    )
+    # The stored definition names the version it is, so devices key records by it.
+    assert (draft.definition["version"], draft.definition["status"]) == ("inventory-v1", "draft")
+    assert draft.question_count > 0
+    duplicate = api_client.post(
+        f"{base}/forms",
+        json={"code": "inventory", "name": "Again", "definition": inventory()},
+    )
+    assert duplicate.status_code == 409, duplicate.text
+
+    # Drafts are the managers' alone: an observer neither sees one nor uploads against it.
+    sign_in(api_client, signer, tenant.users["observer"])
+    listed = FORMS.validate_json(api_client.get(f"{base}/forms").content)
+    assert next(form for form in listed if form.code == "inventory").versions == []
+    assert api_client.get(f"{base}/form-versions/inventory-v1").status_code == 404
+    refused = api_client.put(f"{base}/observations/{uuid4()}", json=inventory_upload())
+    assert refused.status_code == 403, refused.text
+    assert api_client.post(f"{base}/form-versions/inventory-v1/publish").status_code == 403
+
+    sign_in(api_client, signer, tenant.users["manager"])
+    edited = api_client.put(
+        f"{base}/form-versions/inventory-v1",
+        json={"definition": {**inventory(), "title": "Inventory, by zone"}},
+    )
+    assert edited.status_code == 200, edited.text
+    assert FormVersionDetail.model_validate_json(edited.content).title == "Inventory, by zone"
+    broken = api_client.put(
+        f"{base}/form-versions/inventory-v1", json={"definition": {**inventory(), "questions": 3}}
+    )
+    assert broken.status_code == 422, broken.text
+    assert error(broken.content).error.details["fields"] == [
+        {"id": "definition", "problem": error(broken.content).error.message}
+    ]
+
+    published = api_client.post(f"{base}/form-versions/inventory-v1/publish")
+    assert published.status_code == 200, published.text
+    version = FormVersionDetail.model_validate_json(published.content)
+    assert (version.state, version.definition["status"]) == ("published", "published")
+    assert version.published_at is not None
+    assert version.title == "Inventory, by zone"
+
+
+def test_a_published_version_is_frozen_and_the_next_starts_as_a_copy(
+    api_client: TestClient, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    _ = start_inventory(api_client, base)
+    assert api_client.post(f"{base}/form-versions/inventory-v1/publish").status_code == 200
+    saved = api_client.put(f"{base}/form-versions/inventory-v1", json={"definition": inventory()})
+    assert saved.status_code == 409, saved.text
+    assert api_client.delete(f"{base}/form-versions/inventory-v1").status_code == 409
+    assert api_client.post(f"{base}/form-versions/inventory-v1/publish").status_code == 409
+
+    following = api_client.post(f"{base}/forms/inventory/versions", json={})
+    assert following.status_code == 201, following.text
+    second = FormVersionDetail.model_validate_json(following.content)
+    assert (second.code, second.version, second.state) == ("inventory-v2", 2, "draft")
+    assert (second.definition["version"], second.definition["status"]) == ("inventory-v2", "draft")
+    listed = FORMS.validate_json(api_client.get(f"{base}/forms").content)
+    versions = next(form for form in listed if form.code == "inventory").versions
+    assert [(item.code, item.state) for item in versions] == [
+        ("inventory-v2", "draft"),
+        ("inventory-v1", "published"),
+    ]
+    assert api_client.delete(f"{base}/form-versions/inventory-v2").status_code == 204
+    assert api_client.get(f"{base}/form-versions/inventory-v2").status_code == 404
+
+
+def test_an_observer_collects_a_round_with_a_published_version(
+    api_client: TestClient, signer: Signer, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    _ = start_inventory(api_client, base)
+    assert api_client.post(f"{base}/form-versions/inventory-v1/publish").status_code == 200
+
+    sign_in(api_client, signer, tenant.users["observer"])
+    assert api_client.get(f"{base}/form-versions/inventory-v1").status_code == 200
+    record = uuid4()
+    uploaded = api_client.put(f"{base}/observations/{record}", json=inventory_upload())
+    assert uploaded.status_code == 200, uploaded.text
+    retried = api_client.put(f"{base}/observations/{record}", json=inventory_upload())
+    assert retried.status_code == 200, retried.text
+    forbidden = api_client.post(f"{base}/form-versions/inventory-v1/retire")
+    assert forbidden.status_code == 403, forbidden.text
+
+    sign_in(api_client, signer, tenant.users["manager"])
+    rows = ROWS.validate_json(
+        api_client.get(f"{base}/observations", params={"round_type": "inventory"}).content
+    )
+    assert [row.observation_id for row in rows] == [record]
+    row = rows[0]
+    assert (row.zone, row.round_type, row.first_round, row.placement, row.form_version) == (
+        "A",
+        "inventory",
+        None,
+        "zone",
+        "inventory-v1",
+    )
+    assert row.answers["inv_nat_lps_sm_list"] == "pine cones, sticks"
+    assert row.site_name == "Isolation site"
+
+    retired = api_client.post(f"{base}/form-versions/inventory-v1/retire")
+    assert retired.status_code == 200, retired.text
+    assert FormVersionDetail.model_validate_json(retired.content).state == "retired"
+    # Records collected before retirement still drain from devices that were offline.
+    sign_in(api_client, signer, tenant.users["observer"])
+    late = api_client.put(f"{base}/observations/{uuid4()}", json=inventory_upload())
+    assert late.status_code == 200, late.text
+
+
+def test_a_manager_of_another_organization_cannot_reach_the_forms(
+    api_client: TestClient, signer: Signer, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    _ = start_inventory(api_client, base)
+    other = Tenant.new()
+    create_tenant(other)
+    try:
+        # Another tenant's project does not exist for them; writing to it needs its manager.
+        sign_in(api_client, signer, other.users["manager"])
+        for path in ("forms", "sites", "observations", "form-versions/inventory-v1"):
+            assert api_client.get(f"{base}/{path}").status_code == 404, path
+        assert api_client.post(f"{base}/form-versions/inventory-v1/publish").status_code == 403
+        assert api_client.delete(f"{base}/form-versions/inventory-v1").status_code == 403
+        assert (
+            api_client.post(f"{base}/sites", json={"code": "x-1", "name": "x"}).status_code == 403
+        )
+    finally:
+        cleanup_tenant(other)
+
+
+def test_form_definitions_are_checked_as_the_collector_reads_them(
+    api_client: TestClient, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    unanswerable = inventory()
+    questions = unanswerable["questions"]
+    assert isinstance(questions, list)
+    first = questions[0]
+    assert isinstance(first, dict)
+    unanswerable["questions"] = [{**first, "options": []}, *questions[1:]]
+    refused = api_client.post(
+        f"{base}/forms", json={"code": "broken", "name": "Broken", "definition": unanswerable}
+    )
+    assert refused.status_code == 422, refused.text
+    assert error(refused.content).error.message.startswith("This form cannot be used yet.")
+    listed = FORMS.validate_json(api_client.get(f"{base}/forms").content)
+    assert all(form.code != "broken" for form in listed)
+    assert api_client.post(f"{base}/forms/missing/versions", json={}).status_code == 404
+    bad_code = api_client.post(
+        f"{base}/forms", json={"code": "Has Spaces", "name": "x", "definition": inventory()}
+    )
+    assert bad_code.status_code == 422
+
+
+@pytest.mark.parametrize("reserved", ["zone", "round_type", "first_round", "placement"])
+def test_a_question_cannot_take_a_name_the_record_itself_uses(
+    api_client: TestClient, tenant: Tenant, reserved: str
+) -> None:
+    # Its answer would travel beside the record's own field of that name and never be checked.
+    base = f"/v1/projects/{tenant.project}"
+    definition = inventory()
+    questions = definition["questions"]
+    assert isinstance(questions, list)
+    first = questions[0]
+    assert isinstance(first, dict)
+    definition["questions"] = [{**first, "id": reserved}, *questions[1:]]
+    refused = api_client.post(
+        f"{base}/forms", json={"code": "reserved", "name": "Reserved", "definition": definition}
+    )
+    assert refused.status_code == 422, refused.text
+    assert f'"{reserved}" is reserved' in error(refused.content).error.message
+
+
+def test_the_practice_form_is_not_copied_into_a_draft(
+    api_client: TestClient, tenant: Tenant
+) -> None:
+    # The tenant's shell-v1 predates the editor: a field list, which no draft can be made from.
+    base = f"/v1/projects/{tenant.project}"
+    refused = api_client.post(f"{base}/forms/shell/versions", json={})
+    assert refused.status_code == 409, refused.text
+    assert "cannot be copied" in error(refused.content).error.message
+    # Starting from a definition still works.
+    started = api_client.post(f"{base}/forms/shell/versions", json={"definition": inventory()})
+    assert started.status_code == 201, started.text
+    assert FormVersionDetail.model_validate_json(started.content).code == "shell-v2"
+
+
+def test_viewers_and_observers_cannot_author_forms(
+    api_client: TestClient, signer: Signer, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    for role in ("observer", "viewer"):
+        sign_in(api_client, signer, tenant.users[role])
+        response = api_client.post(
+            f"{base}/forms", json={"code": f"by-{role}", "name": role, "definition": inventory()}
+        )
+        assert response.status_code == 403, response.text
+
+
+def test_a_manager_creates_and_renames_sites(
+    api_client: TestClient, signer: Signer, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    created = api_client.post(
+        f"{base}/sites",
+        json={"code": "north-yard", "name": "  North yard ", "description": "Behind the gym"},
+    )
+    assert created.status_code == 201, created.text
+    site = Site.model_validate_json(created.content)
+    assert (site.code, site.name) == ("north-yard", "North yard")
+    assert site.description == "Behind the gym"
+    assert (site.package, site.zones, site.observation_count) == (None, [], 0)
+    assert (
+        api_client.post(f"{base}/sites", json={"code": "north-yard", "name": "Again"}).status_code
+        == 409
+    )
+
+    renamed = api_client.patch(f"{base}/sites/north-yard", json={"name": "North play yard"})
+    assert renamed.status_code == 200, renamed.text
+    assert Site.model_validate_json(renamed.content).description == "Behind the gym"
+    cleared = api_client.patch(f"{base}/sites/north-yard", json={"description": None})
+    assert Site.model_validate_json(cleared.content).description is None
+    assert api_client.patch(f"{base}/sites/north-yard", json={"name": None}).status_code == 422
+    assert api_client.patch(f"{base}/sites/missing", json={"name": "x"}).status_code == 404
+
+    sign_in(api_client, signer, tenant.users["observer"])
+    assert api_client.post(f"{base}/sites", json={"code": "mine", "name": "x"}).status_code == 403
+    assert api_client.patch(f"{base}/sites/north-yard", json={"name": "x"}).status_code == 403
+    codes = [item.code for item in SITES.validate_json(api_client.get(f"{base}/sites").content)]
+    assert codes == ["sample-garden", "north-yard"]  # by name: "Isolation site", "North play yard"
+
+
+def test_a_site_reports_its_current_package_and_zones(
+    api_client: TestClient, tenant: Tenant
+) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    prepared = api_client.post(f"{base}/packages", json=submission())
+    assert prepared.status_code == 201, prepared.text
+    site = Site.model_validate_json(api_client.get(f"{base}/sites/sample-garden").content)
+    assert site.package is not None
+    assert (site.package.version, site.package.form_version) == (1, "shell-v1")
+    assert [(zone.id, zone.label) for zone in site.zones] == [("A", "Lawn")]
+    assert site.extent is not None
+    assert site.centre is not None
+    assert site.observation_count == 1
+
+
+def test_a_package_needs_a_published_form(api_client: TestClient, tenant: Tenant) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    created = api_client.post(
+        f"{base}/forms",
+        json={"code": "inventory", "name": "Inventory round", "definition": inventory()},
+    )
+    assert created.status_code == 201, created.text
+    refused = api_client.post(f"{base}/packages", json=submission(form_version="inventory-v1"))
+    assert refused.status_code == 422, refused.text
+    assert error(refused.content).error.details["fields"] == [
+        {
+            "id": "form_version",
+            "problem": "inventory-v1 is draft; prepare the package with a published form version",
+        }
+    ]
+
+
+def test_records_list_filters_and_bounds(api_client: TestClient, tenant: Tenant) -> None:
+    base = f"/v1/projects/{tenant.project}"
+    every = ROWS.validate_json(api_client.get(f"{base}/observations").content)
+    assert [row.observation_id for row in every] == [tenant.observation]
+    # Uploaded without a round, as every record before D26 was: it lists and filters as Standard.
+    assert every[0].round_type == "standard"
+    standard = ROWS.validate_json(
+        api_client.get(f"{base}/observations", params={"round_type": "standard"}).content
+    )
+    assert [row.observation_id for row in standard] == [tenant.observation]
+    assert api_client.get(f"{base}/observations", params={"round_type": "reliability"}).json() == []
+    assert api_client.get(f"{base}/observations", params={"site": "elsewhere"}).json() == []
+    assert api_client.get(f"{base}/observations", params={"limit": 0}).status_code == 422
+    assert (
+        api_client.get(f"{base}/observations", params={"round_type": "round-1"}).status_code == 422
+    )
+    future = api_client.get(f"{base}/observations", params={"since": "2999-01-01T00:00:00Z"})
+    assert future.json() == []
+
+
+def test_a_manager_sees_their_team_by_name(
+    api_client: TestClient, signer: Signer, tenant: Tenant
+) -> None:
+    admin_sql(
+        "UPDATE fieldmaps.profiles SET display_name='Avery Observer', observer_initials='AO' "
+        "WHERE user_id=:'observer';",
+        *tenant.variables(),
+    )
+    members = MEMBERS.validate_json(
+        api_client.get(f"/v1/projects/{tenant.project}/members").content
+    )
+    observer = next(member for member in members if member.user_id == tenant.users["observer"])
+    assert (observer.display_name, observer.observer_initials) == ("Avery Observer", "AO")
+    # The team list, with its names, is the managers' alone.
+    sign_in(api_client, signer, tenant.users["viewer"])
+    assert api_client.get(f"/v1/projects/{tenant.project}/members").status_code == 403

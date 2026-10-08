@@ -2,7 +2,7 @@
 
 The icon is a site plan: three zones cut by a path, with the collector's own observation marker
 (dark halo, light ring, lavender dot) placed on the path. Colours are Nocturne tokens from
-`src/theme.ts`.
+`src/theme.ts`, the previous design system; the icon has not been redrawn in Contour (D19).
 
 | File | Used for |
 | --- | --- |

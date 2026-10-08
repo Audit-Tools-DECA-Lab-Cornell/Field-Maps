@@ -42,7 +42,7 @@ Current changes verified 2026-10-04: MOB-01 selects public per-build configurati
 - the form engine (`src/forms/engine.ts`, `definition.ts`);
 - the draft ownership rules (`src/session/ownership.ts`);
 - `PackageProvider` (`src/packages/site-package.ts:60-63`);
-- the Nocturne chrome (`src/components/chrome.tsx`);
+- the Nocturne chrome (`src/components/chrome.tsx`), only until MOB-23 to MOB-27 replace it with Contour (D19);
 - clustering and orientation policy;
 - the idempotent upload-receipt ideas.
 
@@ -53,13 +53,19 @@ mobile/
   app.config.ts                 reads config/<APP_ENV>.json (MOB-01)
   config/{development,staging,production}.json   public values only
   app/
-    _layout.tsx                 providers + Stack.Protected gates (MOB-03)
-    (auth)/  welcome, sign-in, create-account, verify, forgot-password, reset
-    (onboarding)/  profile, join
-    (app)/(tabs)/  studies, records, account        tablet: side rail (MOB-16)
-    (app)/study/[siteId]/  brief, collect, review   collect hides tabs
-    (app)/records/[id]
+    _layout.tsx                 providers + Stack.Protected gates (MOB-03, MOB-24)
+    (auth)/  welcome, sign-in, create-account, verify, forgot-password, reset-password
+    (onboarding)/  profile, join, invitation/[code]
+    (app)/(tabs)/               Projects · Observations · Account in the floating tab dock; tablets use the same dock
+      (projects)/  index, [project], [project]/[site], [project]/[site]/brief
+      observations/  index, [id]
+      account/  index, preferences, field-guide, sign-out, delete-account
+    (app)/collect               one route: place → answer → review → saved; outside the tabs, so the dock hides
+    (app)/explain/[question]    "Explain this question" sheet
+    (app)/(dev)/  gallery, states   development only
+    +not-found
   src/
+    ui/                         Contour tokens, theme, preferences and primitives (MOB-23)
     features/<area>/            screens' logic and components
     domain/                     forms engine, record builder (pure)
     data/                       powersync/{schema,connector,db}.ts, api/{client,schema.d.ts,errors}.ts, files/
@@ -138,7 +144,7 @@ Do:
 
 Done when:
 - a fresh install lands on the welcome screen;
-- a signed-in user with a profile lands on Studies;
+- a signed-in user with a profile lands on Projects;
 - the gate-selection tests pass, including:
   - no session, no cached account, but A's queued records present → `(auth)`;
   - no session, cached account → `(app)`;
@@ -163,7 +169,7 @@ Evidence (2026-10-04): generated Identity type and runtime parser, account-scope
 
 ### MOB-05: Authentication screens
 Status: todo · Phase 1 · Size L · Depends: DB-02, MOB-02, MOB-03 · Blocks: MOB-06, MOB-21
-Read first: [product.md](../docs/plan/product.md) J2; `app/account.tsx` (current form styles); `src/components/chrome.tsx`; `designs/_ds/nocturne-*/readme.md`. There is **no design** for auth screens yet. Follow the Nocturne primitives, and keep each screen to a single primary action at the bottom (thumb zone).
+Read first: [product.md](../docs/plan/product.md) J2; `app/account.tsx` (current form styles); `DESIGN.md`; the Mobile collector designs, pp. 23–28. MOB-24 builds these screens in Contour on preview data; wire them and keep their layout, with a single primary action at the bottom (thumb zone).
 Do:
 1. `(auth)/welcome`: app name, "Create account", "Sign in".
    - For each signed-out account with queued or held records, show "N records waiting on this device for {email}". They upload when that account signs in again.
@@ -181,7 +187,7 @@ Do:
    - `verifyOtp({email, token, type: 'email'})`;
    - "Resend code" with a 60-second cooldown (`auth.resend`);
    - a clear error for an expired code.
-5. `(auth)/forgot-password`, then `(auth)/reset`:
+5. `(auth)/forgot-password`, then `(auth)/reset-password`:
    - `resetPasswordForEmail`, then `verifyOtp({type: 'recovery'})`, then `updateUser({password})`.
 6. Every screen:
    - `KeyboardAvoidingView`;
@@ -213,7 +219,7 @@ Do:
    - It never redeems without the confirm screen: a link from someone else must not silently enrol the user.
 4. After a join succeeds, refresh `/v1/me` and set the active project to the one joined.
 
-Done when: a newly signed-up user reaches Studies with Training, and after entering a valid code they also see the joined project.
+Done when: a newly signed-up user reaches Projects with Training, and after entering a valid code they also see the joined project.
 
 ### MOB-07: Account tab: profile, sync status, sign out, delete account
 Status: todo · Phase 1 · Size M · Depends: BE-08, MOB-04 · Blocks: MOB-21, OPS-11
@@ -303,7 +309,7 @@ Do:
    - **Throw on everything else**, so PowerSync retries: 400, 401, 403, 404, 408, 409, 422, 429, 5xx, network errors, and an unparseable 200 (a captive portal on park Wi-Fi answers 200 with HTML).
    - On 413, halve `n` and retry.
    - Completing on any other response would drop the batch, and PowerSync would then revert those local rows: silent data loss.
-2. **Record states** for the Records tab, as defined in sync-powersync.md: on device, uploading, uploaded, needs attention, held.
+2. **Record states** for the Observations tab, as defined in sync-powersync.md: on device, uploading, uploaded, needs attention, held.
    - The list draws on `observations`, unresolved `upload_rejections` and `held_observations`, as **one entry per observation id**. When an id appears in several, the precedence is: local queue, then rejection, then held, then uploaded.
    - A rejected record is rendered from `operation`, because PowerSync removes the local row after the checkpoint.
    - Show the rejection's `code` and `message`.
@@ -338,7 +344,7 @@ Do:
    - `synced` rows are **never queued**.
      - Their `server_receipt` shows that the server accepted them, and the server copy returns through `my_observations`.
      - The stored `apiUrl` cannot tell where a row went: since MOB-01 every key carries the frozen `http://127.0.0.1:8000`.
-     - Copy each one into `held_observations` with reason `legacy_synced`, read-only and never uploaded. The Records list hides it once the same id is in `observations`.
+     - Copy each one into `held_observations` with reason `legacy_synced`, read-only and never uploaded. The Observations list hides it once the same id is in `observations`.
    - `local-only` rows of this account (for example `janet-test-v1` records held because the form was a draft) go into `held_observations` with reason `unpublished_form` and their legacy form code. MOB-13 defines how they are queued, exported or discarded.
    - Drafts are rewritten to the new draft shape and owner key. An unparseable one goes to a quarantine table; it is never deleted.
    - Write `migration_state = copied` in the same transaction.
@@ -377,7 +383,7 @@ Do:
 Done when: the draft tests pass, and a force-quit mid-observation offers Resume or Discard.
 
 ### MOB-13: Forms from the server, and a generic observation record
-Status: todo · Phase 2 · Size L · Depends: CON-02, DB-09, MOB-09, MOB-12 · Blocks: MOB-15
+Status: doing (2026-10-08: on the existing upload queue per D27, a hosted site's published forms download with its package and records upload with their project; the PowerSync parts remain) · Phase 2 · Size L · Depends: CON-02, DB-09, MOB-09, MOB-12 · Blocks: MOB-15
 Read first: `src/forms/registry.ts`, `src/domain/observation.ts`, `src/domain/build-observation.ts`, `src/session/provider.tsx:340-360`; the envelope in [contracts.md](../docs/plan/contracts.md#observation-envelope-sync-upload-and-storage).
 Do:
 1. The registry becomes an async repository over synced `form_versions`, published and retired.
@@ -399,10 +405,10 @@ Do:
 Done when: the brief, field and review screens work against a synced published form. The shared cases pass, and no TypeScript branches on a form version string.
 
 ### MOB-14: Hosted site packages
-Status: todo · Phase 2 · Size L · Depends: BE-13, MOB-09 · Blocks: MOB-15
+Status: doing (2026-10-08: sites list, archive download checked against its digest, offline storage and removal work on the existing upload path per D27; Storage-backed delivery and the cellular policy remain) · Phase 2 · Size L · Depends: BE-13, MOB-09 · Blocks: MOB-15
 Read first: `src/packages/site-package.ts`, `src/packages/bundled.ts`, `src/maps/field-map.tsx`; the manifest format in `backend/src/fieldmaps_api/domain/packages.py` (moved there by BE-03).
 Do:
-1. Studies list:
+1. Project and Site screens:
    - sites from sync, with `current_package_id`;
    - status "On device", "Download (12 MB)", or "Update available (v4 → v5)".
 2. Download:
@@ -444,22 +450,24 @@ Done when: `grep -rn "fixture\|stub\|not built\|sample-garden\|Protocol question
 
 ### MOB-16: Navigation and information architecture overhaul
 Status: todo · Phase 4 · Size L · Depends: MOB-03, MOB-15 · Blocks: MOB-17, MOB-18
-Read first: `designs/Riverside Collector v2.dc.html` (grep the screen names); `designs/Handoff.dc.html` (behaviour spec only; its tokens conflict with Nocturne); `src/layout/*`.
+Changed 2026-10-03: MOB-25 and MOB-26 build these screens in Contour on preview data. This task wires them to real navigation data (projects, sites, packages, records) without changing their layout.
+Read first: `DESIGN.md`; the Mobile collector designs, pp. 1–16; `designs/Handoff.dc.html` (behaviour spec only); `src/layout/*`.
 Do:
-1. Tabs: Studies, Records (with a badge for pending and needs-attention counts), Account. On tablets (smallest width 600 dp or more), use a side rail.
-2. The field screen is `study/[siteId]/collect`: full screen, tabs hidden. No route locks orientation; the observer's app-wide choice (`src/layout/orientation.ts`) is kept, and its control moves with the Account screen.
-3. Review is a sheet over the field screen. "Saved" is a banner on the field screen, not a separate route. Use no transition between repeated observations, as Handoff specifies.
-4. Primary actions ("Start observing", "Save observation") sit in a pinned bottom bar. Remove the top-left back links in favour of system back and tabs.
-5. Records rows open `records/[id]`, which shows the state, the answers and any rejection.
+1. Tabs: Projects, Observations (with a badge for pending and needs-attention counts), Account, in the floating tab dock. Tablets use the same dock, centred; there is no side rail.
+2. Collect is one route, `(app)/collect`, outside the tabs, so the dock hides there. Place, answer, review and saved are internal states of that route, not separate routes. No screen locks orientation; the observer's app-wide choice (`src/layout/orientation.ts`) applies.
+3. On a phone, Review is a panel step and Saved is a full card. On a tablet, Saved is a "Last saved on this device" card in the Place panel. Use no transition between repeated observations, as Handoff specifies.
+4. Primary actions ("Start collection", "Save on this device") sit at the bottom, in the thumb zone. Pushed screens keep the designs' round back button, and system back works everywhere.
+5. Observations rows open `observations/[id]`, which shows the state, the answers and any rejection.
+6. Replace the MOB-23 preview data source with real data: projects from MOB-04, sites and packages from MOB-14, records from MOB-10.
 
-Done when: every route from the target structure exists, and the orientation tests still pass.
+Done when: every route from the target structure exists and reads real data, and the orientation tests still pass.
 
 ### MOB-17: A state for every screen
 Status: todo · Phase 4 · Size M · Depends: MOB-16 · Blocks: QA-05
 Do:
 1. Give each screen these states: loading, empty, error with retry, offline, signed-out, no membership (only Training), and expired session (the banner from MOB-08).
 2. Add a connectivity indicator in the chrome.
-3. Studies must not show "No studies waiting" while it is still loading (`app/index.tsx:36,109`).
+3. Projects must not show its empty state while it is still loading (today's `app/index.tsx:36,109` shows "No studies waiting").
 
 Done when: every screen has a snapshot or unit test for each state, or a documented manual check.
 
@@ -479,7 +487,7 @@ Do:
 Done when: a VoiceOver pass through J2 is recorded in the task notes.
 
 ### MOB-19: Design-system cleanup (Nocturne), together with web
-Status: todo · Phase 4 · Size M · Depends: none · Blocks: none
+Status: dropped (superseded by MOB-23) · Phase 4 · Size M · Depends: none · Blocks: none
 Do:
 1. Remove the hard-coded hex values (`src/components/chrome.tsx:229,231`, `src/maps/field-map.tsx:317,453,471,481`).
 2. Align chips, ghost buttons, pressed states and input focus with `designs/_ds/nocturne-*/styles.css`.
@@ -519,3 +527,84 @@ Added 2026-10-01 after Janet found the QGIS layers hard to read on the dark plan
 Do: read `contracts/map-palettes.json` in `src/maps/palette.ts`; build every plan base and layer paint from a palette; replace the Plan/Aerial toggle with a Day · Night · Aerial control, Day by default, remembered for the app session.
 Done when: the field map opens in Day on a simulator or device, the QGIS surfaces read clearly, and Night and Aerial still match today's look.
 Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test` (142 tests passed on 2026-10-01), plus a recorded device or simulator check.
+
+### MOB-23: Contour foundation (mobile)
+Status: todo · Phase 1 · Size L · Depends: none · Blocks: MOB-24, MOB-25
+Added 2026-10-03 (D19, D22). It builds no product screen. The screens built on it (MOB-24 to MOB-27) run in `preview` mode on the designed fixtures, or in `device` mode on the real local packages, records and queue; the wiring tasks (MOB-03 to MOB-17) later connect them to the API and PowerSync without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`, `contracts/contour.json`, `contracts/map-palettes.json`; designs: Contour system pp. 1–7 and 11; `app/_layout.tsx`, `src/theme.ts`, `src/maps/palette.ts`.
+Do:
+1. Add every new dependency in this task, so the dev client is rebuilt once: `@expo-google-fonts/geologica`, `@expo-google-fonts/spline-sans-mono` and `lucide-react-native` (JavaScript only), and `react-native-svg` and `expo-haptics` (native). Put `GestureHandlerRootView` at the root.
+2. `src/ui/tokens.ts` parses `contracts/contour.json` with zod. `src/ui/theme.tsx` provides `ThemeProvider`, `useTheme()` and `useStyles(factory)`, memoised per scheme. A Day-mapped legacy `theme.ts` keeps old screens compiling until MOB-27 removes it.
+3. `src/ui/preferences.tsx` keeps the screen theme (Day · Dusk), the map palette (through the existing `setMapBase`), the preferred hand, haptics and larger question text in `expo-sqlite/kv-store`, read synchronously so the first frame never flashes. `Appearance.setColorScheme()` makes native alerts and pickers follow the theme. In `app.config.ts`: `userInterfaceStyle: "automatic"` and the Contour ground colour as the root background.
+4. Primitives in `src/ui/*`, with the same names as `web/src/components/contour/*`. `Text` sets `maxFontSizeMultiplier` per role and the larger-question-text step, and never sets `numberOfLines`. `Icon` maps the Lucide names in the state vocabulary and adds the custom two-bar held glyph. Collector buttons are 56 or 60 tall. `haptics.ts` honours the preference.
+5. Rebuild the bundled Riverside from `contracts/fixtures/sites/riverside.json`. `features/preview/DataSourceProvider` has a `preview` mode (the designed fixtures, including Uploading and a 60 of 126 MB download) and a `device` mode that wraps the real `bundledPackages`, `useObservations` and `useSync` (local-only → Held, pending → On device, synced → Uploaded, needs attention → Needs attention). Collect always uses the real engine and SQLite.
+6. `(dev)/gallery` (every primitive in Day and Dusk, with one Reanimated worklet so a misconfigured build shows on first launch) and `(dev)/states` (gate, data source and screen state). Dev builds open signed in on Projects through a gate override allowed only when `__DEV__` or `extra.preview` is set.
+
+Done when: typecheck, lint and test pass; `expo export` bundles for iOS and Android; the gallery shows every primitive in both themes.
+
+Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (rebuild the dev client, fonts load, both themes, the largest text size wraps). Record only the device checks actually made.
+
+### MOB-24: Identity screens and gates
+Status: todo · Phase 1 · Size L · Depends: MOB-23 · Blocks: none
+Added 2026-10-03. These screens run on preview data, except sign-in, which keeps the real `signInWithPassword`. MOB-03 (gates on the real session and profile), MOB-05 (auth calls) and MOB-06 (profile and join) later wire them without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Mobile collector pp. 23–31; `app/account.tsx`, `src/auth/*`.
+Do:
+1. `(auth)`: welcome ("Fieldwork starts here."), sign-in, create-account, verify, forgot-password and reset-password.
+2. `(onboarding)`: profile (1 of 2, "Your observer identity"), join (2 of 2, with Scan QR) and `invitation/[code]` ("Join Play Study?"), which the join deep link opens with the code filled in.
+3. `Stack.Protected` gates in `_layout.tsx` over `(auth)`, `(onboarding)` and `(app)`, with MOB-23's dev-only override.
+4. Codes are one wide mono field with a counter: a paste is cleaned, the field submits by itself at the 6th digit, a wrong code reselects it, and the resend countdown is mono. Join codes are uppercased as you type. Password checks update live, "Does not match yet" appears only after blur, and a disabled button always carries its reason.
+5. Every screen: a heading with `accessibilityRole="header"`, errors announced, keyboard avoidance, targets of 48 pt or more, and every error state in the designs, in Contour wording.
+
+Done when: each screen matches its design page on a phone in Day and Dusk; codes paste and submit by themselves; unit tests cover the gate selection and the code-field cleaning.
+
+Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (VoiceOver from sign-in to join).
+
+### MOB-25: Shell, projects, sites and the session brief
+Status: todo · Phase 1 · Size L · Depends: MOB-23 · Blocks: MOB-26, MOB-27
+Added 2026-10-03. These screens run on preview data, or in device mode on the real bundled packages. MOB-04 (projects from `/v1/me`), MOB-14 (hosted packages) and MOB-16 (navigation data) later wire them without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Contour system p. 11, Mobile collector pp. 10–14 and 22; `src/packages/*`, `src/session/provider.tsx`.
+Do:
+1. `(app)/(tabs)` with expo-router `Tabs` and a custom `tabBar`: the floating ink TabDock (Projects · Observations · Account), also on tablets, centred, at most 420 wide. Its badge counts records that need attention. Each tab has its own stack. Collect sits outside `(tabs)`, so the dock hides only there.
+2. Projects (home), with the Unfinished observation card wired to `recovered` and `inProgress` (Resume, Discard draft).
+3. Project (its sites with download state), and Site in three states: not downloaded, downloading and ready offline. Progress is linear, and each asset row moves Waiting → Downloading → Verified. "Ready offline" appears only when all four package parts verify, and "Set up this session" enables only then.
+4. Before you begin (`[site]/brief`), wired to `openPackage`, `chooseZone` and `chooseRound`, with the observer code and the locked map and form versions.
+5. The Online indicator, and `+not-found` with the "Nothing was lost" note and the dock.
+6. Delete the old `index` and `brief` routes once their logic has moved.
+
+Done when: the dock hides only in collect; preview and device modes both render every screen.
+
+Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (download preview, both themes, a tablet).
+
+### MOB-26: Collect flow on phone and tablet
+Status: doing (code in place 2026-10-07; not yet run on a device or simulator) · Phase 1 · Size L · Depends: MOB-25 · Blocks: none
+2026-10-07: `app/(app)/collect.tsx` and `src/features/collect/` replace the `field`, `review` and `saved` routes. Placement follows Janet's iPhone Maps request instead of step 2's armed tap: a fixed × at the exact coordinate with the pin floating above it, the map moving under it, "Place point here" reading the map's exact centre, the in-zone check, the precision line and a half-metre nudge pad. The Standard, Reliability and Inventory rounds (D26) add a Zone step for inventories; `session.save` gained the placement source and the session's list of saves, and is otherwise unchanged. Verified by types, Biome, 395 tests and both Metro exports only; the simulator checklist is still owed.
+Added 2026-10-03. Collect always runs the real form engine, drafts and SQLite queue. MOB-13 (forms from the server) and MOB-16 later change where its form and site come from, without changing its layout. The save path (`session.save`) is unchanged.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Contour system p. 7, Mobile collector pp. 1–9; `src/maps/field-map.tsx`, `src/components/question-panel.tsx`, `src/session/provider.tsx`, `src/layout/orientation.ts`.
+Do:
+1. `app/(app)/collect.tsx` and `features/collect/*`: one route with internal states (Place, idle and armed → Answer → Review → Saved), driven by `useFieldSession` and a local `reviewing` flag. X and Android back confirm "Leave? Your draft stays on this device"; back also steps through the states. The header shows the real form id.
+2. Restyle `field-map.tsx`: controls of 44 or more, the label island, the scale chip, the hatched zone through `fill-pattern`, and violet markers, all from the palette. Arming gives the map island a 3 px magenta border and the banner "Tap where the play happened", and stops panning. The point drops in with a light haptic. "Place at map centre" places at the camera centre (MOB-18's crosshair request); "Adjust point" re-arms with a nudge pad of 44 pt or more. MapLibre stays mounted across the states.
+3. Rebuild `QuestionPanel` on `AnswerTile`. A single choice fills the tile, then advances after 160 ms; the next question fades in and focus moves to its heading; a revealed follow-up appears below the current question. "Explain this question" is the `explain/[question]` sheet.
+4. Phone: the map island above the panel; Review is a panel step; Saved replaces the panel with a full card, whose check scales in with a success haptic, and the save is announced. "Place the next observation" returns with no transition.
+5. Tablet: a 58/42 split with the panel on the preferred hand's side; Saved becomes a "Last saved on this device" card in the Place panel. No screen sets its own orientation lock; the app-wide choice (PR 14) applies.
+6. Delete the old `field`, `review` and `saved` routes.
+
+Done when: the orientation and logic tests pass; `session.save` is unchanged; the engine files are untouched.
+
+Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `pnpm forms:parity`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (arming blocks panning, place at centre, no transition between observations, landscape with each hand, VoiceOver through place, answer, review and save).
+
+### MOB-27: Observations, account, preferences, field guide and leaving
+Status: todo · Phase 1 · Size L · Depends: MOB-25 · Blocks: none
+Added 2026-10-03. These screens run on preview data, or in device mode on the real records and sync. MOB-07 (account, sign out, delete account), MOB-10 (record states) and MOB-17 (every state) later wire them without changing their layout.
+Read first: `DESIGN.md`, `PRODUCT.md`; designs: Mobile collector pp. 15–21; `src/storage/use-observations.ts`, `src/sync/*`.
+Do:
+1. Observations: one FlatList, zone chips, each queue state as a glyph, a word and a colour, and pull to refresh calling the real `wake()`.
+2. Record (`observations/[id]`): the answers, the state, and for a record that needs attention, the reason and "Correct and send again".
+3. Account: profile, the queue breakdown, and "Upload now" calling `wake()`.
+4. Preferences: preferred hand, map palette (Day · Night), haptics, larger question text, and "Screen: Day · Dusk", which the design lacks (D19).
+5. Field guide: search and 140 ms accordions, readable offline.
+6. Sign out? and Delete account, each saying what stays on this device. Confirmations the designs do not cover use `Alert.alert`. No control claims a deletion it does not perform.
+7. Remove the legacy `theme.ts`, `chrome.tsx`, `expo-blur` and Inter, and the old `records` and `account` routes.
+
+Done when: no hex literal remains outside `src/ui/tokens.ts`; all tests pass.
+
+Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (airplane mode shows the offline states, haptics only when the switch is on, the gallery in both themes).

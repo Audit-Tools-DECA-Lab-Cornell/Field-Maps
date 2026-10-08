@@ -10,7 +10,15 @@ import { z } from "zod";
  * executed. Every reference is validated before a definition is used.
  */
 
-export const ACTS = ["Child", "Social", "Play", "Setting", "Record"] as const;
+export const ACTS = [
+  "Child",
+  "Social",
+  "Play",
+  "Setting",
+  "Climate",
+  "Inventory",
+  "Record",
+] as const;
 export type Act = (typeof ACTS)[number];
 
 export type Condition =
@@ -187,11 +195,29 @@ function conditionProblems(
   return problems;
 }
 
+/**
+ * The upload envelope's own fields. An answer travels beside them under its question id, so a
+ * question with one of these ids would have its answer read as the envelope's and never checked.
+ * `observer` is the exception: the practice form's observer question is that envelope field.
+ */
+export const RESERVED_QUESTION_IDS: ReadonlySet<string> = new Set([
+  "site_id",
+  "form_version",
+  "coordinates",
+  "observed_at",
+  "zone",
+  "round_type",
+  "first_round",
+  "placement",
+]);
+
 export function validateFormDefinition(form: FormDefinition): readonly string[] {
   const problems: string[] = [];
   const byId = new Map<string, Question>();
   for (const question of form.questions) {
     if (byId.has(question.id)) problems.push(`Duplicate question id "${question.id}".`);
+    if (RESERVED_QUESTION_IDS.has(question.id))
+      problems.push(`Question id "${question.id}" is reserved for the record itself.`);
     byId.set(question.id, question);
   }
 

@@ -41,6 +41,8 @@
     "test": "pnpm mobile:test && pnpm backend:test && pnpm db:test",
     "help": "make help",
     "plan:check": "node docs/plan/check-plan.mjs",
-    "forms:parity": "node scripts/check-form-engine-parity.mjs"
+    "forms:parity": "node scripts/check-form-engine-parity.mjs",
+    "tokens": "node scripts/contour-tokens.mjs",
+    "tokens:check": "node scripts/contour-tokens.mjs --check"
   }
 }

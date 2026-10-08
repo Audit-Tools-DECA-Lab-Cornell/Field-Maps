@@ -99,6 +99,9 @@ class OrganizationMember(BaseModel):
     organization_id: UUID
     role: OrgRole
     granted_at: datetime
+    #: The member's profile as the caller may see it; null when it is not shared with the caller.
+    display_name: str | None = None
+    observer_initials: str | None = None
 
 
 class ProjectMember(BaseModel):
@@ -108,6 +111,8 @@ class ProjectMember(BaseModel):
     project_id: UUID
     role: ProjectRole
     granted_at: datetime
+    display_name: str | None = None
+    observer_initials: str | None = None
 
 
 class OrgRolePatch(Input):

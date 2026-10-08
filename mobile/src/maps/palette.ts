@@ -39,7 +39,19 @@ const paletteSchema = z.strictObject({
     edge: hexColor,
     label: hexColor,
   }),
+  /** The pill behind a zone's name on the plan: a light pill in Day, a dark one in Night. */
+  zoneLabel: z.strictObject({ fill: hexColor, text: hexColor }),
   observation: z.strictObject({ fill: hexColor, ring: hexColor, selected: hexColor }),
+  /**
+   * The observer's own position, when they turn it on: the usual blue dot with a light ring, and a
+   * translucent circle for the fix's accuracy. Shown only; never stored with a record.
+   */
+  me: z.strictObject({
+    fill: hexColor,
+    ring: hexColor,
+    accuracy: hexColor,
+    accuracyOpacity: z.number().min(0).max(1),
+  }),
 });
 
 const PALETTE_KEYS = ["day", "night"] as const;

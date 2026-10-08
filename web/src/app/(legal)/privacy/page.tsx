@@ -39,7 +39,10 @@ export default function PrivacyPage() {
 				<h2 id="summary">In short</h2>
 				<ul>
 					<li>We collect your sign-in email address and the observations you record.</li>
-					<li>The app does not read your device’s location (GPS), contacts, photos, camera or microphone.</li>
+					<li>
+						The app does not read your contacts, photos, camera or microphone. It reads your device’s
+						location only if you turn on “Show my location”, and only to draw where you are on the map.
+					</li>
 					<li>There are no ads, analytics or tracking, and we never sell data.</li>
 					<li>
 						What you upload is seen by your research project team and the people who run {policy.appName}.
@@ -128,9 +131,14 @@ export default function PrivacyPage() {
 
 			<h3>The map point is not your GPS location</h3>
 			<p>
-				You place each point yourself by tapping the site map. The app never reads your device’s location and
-				does not ask for location permission. A point still shows where on the study site something was
+				You place each point yourself on the site map. A point still shows where on the study site something was
 				observed. Because you record it while you are on site, it also shows roughly where you were at the time.
+			</p>
+			<p>
+				The app asks for location permission only if you turn on “Show my location”. It then reads your device’s
+				location while the map is open, only to draw your position on it. Your location is never saved with an
+				observation, uploaded, or kept after the map closes, and the app never reads it in the background. You
+				can turn it off on the map or in your device’s settings at any time.
 			</p>
 
 			<h3>Observations about other people, including children</h3>

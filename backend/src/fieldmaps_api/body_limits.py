@@ -28,6 +28,11 @@ def body_limit(method: str, path: str) -> int:
             return 4 * MIB
         if re.fullmatch(r"/v1/projects/[^/]+/packages", path):
             return 24 * MIB
+    # A form definition with many questions, options and protocol notes outgrows the default.
+    if method in {"POST", "PUT"} and re.fullmatch(
+        r"/v1/projects/[^/]+/(forms(/[^/]+/versions)?|form-versions/[^/]+)", path
+    ):
+        return MIB
     return 256 * KIB
 
 

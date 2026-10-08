@@ -1,0 +1,525 @@
+{
+  "type": "FeatureCollection",
+  "$comment": "Fixture: the fictional Riverside site as drawn in the Contour designs (System 9). Drawn in plan units by scripts/site-fixtures.mjs and converted to WGS84; see README.md.",
+  "name": "Riverside",
+  "frame": {
+    "origin": [-76.498, 42.444],
+    "metresPerUnit": 0.5,
+    "width": 720,
+    "height": 500
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "site",
+        "id": "site",
+        "name": "Riverside"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4977078, 42.443452],
+            [-76.4972148, 42.443744],
+            [-76.4944758, 42.443744],
+            [-76.4939585, 42.4433442],
+            [-76.4939585, 42.4420866],
+            [-76.4960523, 42.4419159],
+            [-76.4977078, 42.442154],
+            [-76.4977078, 42.443452]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "grass",
+        "id": "grass-1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4975739, 42.4435823],
+            [-76.4942385, 42.4435059],
+            [-76.4942993, 42.442657],
+            [-76.494488, 42.442154],
+            [-76.4972513, 42.4420507],
+            [-76.4974583, 42.4427064],
+            [-76.4975739, 42.4435823]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mulch",
+        "id": "mulch-1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4975739, 42.442675],
+            [-76.4963018, 42.4426974],
+            [-76.4958636, 42.4422213],
+            [-76.4972574, 42.4420911],
+            [-76.4975739, 42.442675]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "dirt",
+        "id": "dirt-1"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4955471, 42.4427648],
+            [-76.4943419, 42.4427783],
+            [-76.4945002, 42.4421495],
+            [-76.495401, 42.4421764],
+            [-76.4955471, 42.4427648]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "id": "path-1",
+        "width_m": 6
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-76.4971722, 42.4438203],
+          [-76.4966183, 42.4429669],
+          [-76.4964723, 42.4419698]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "id": "path-2",
+        "width_m": 6
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-76.4966183, 42.4429669],
+          [-76.4977139, 42.442383]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "id": "path-3",
+        "width_m": 6
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-76.4966183, 42.4429669],
+          [-76.4954436, 42.4428457],
+          [-76.4940559, 42.4433308]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "structure",
+        "id": "structure-1",
+        "name": "Shelter"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4946219, 42.4435868],
+            [-76.4943237, 42.4435868],
+            [-76.4943237, 42.4432724],
+            [-76.4946219, 42.4432724],
+            [-76.4946219, 42.4435868]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "equipment",
+        "id": "equipment-1",
+        "name": "Play structure"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4952914, 42.4426346],
+            [-76.4947863, 42.4426346],
+            [-76.4947863, 42.4424819],
+            [-76.4952914, 42.4424819],
+            [-76.4952914, 42.4426346]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-01",
+        "radius_m": 7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4974218, 42.4436946]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-02",
+        "radius_m": 8.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4953584, 42.4437395]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-03",
+        "radius_m": 7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4971235, 42.4435284]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-04",
+        "radius_m": 7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4968253, 42.4433622]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-05",
+        "radius_m": 7.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4971296, 42.4432724]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-06",
+        "radius_m": 9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4953645, 42.443488]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-07",
+        "radius_m": 9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4950662, 42.4433218]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-08",
+        "radius_m": 9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4947741, 42.4431556]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-09",
+        "radius_m": 7.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4968375, 42.4431107]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-10",
+        "radius_m": 7.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4965392, 42.4429445]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-11",
+        "radius_m": 9.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4947741, 42.4428996]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-12",
+        "radius_m": 7.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4962349, 42.4427783]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-13",
+        "radius_m": 8
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4965392, 42.4426885]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-14",
+        "radius_m": 9.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4944819, 42.4427334]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-15",
+        "radius_m": 8
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.496247, 42.4425268]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-16",
+        "radius_m": 8
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4959488, 42.4423561]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-17",
+        "radius_m": 9.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4941837, 42.4425672]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-18",
+        "radius_m": 10
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4941898, 42.4423157]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-19",
+        "radius_m": 8
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4956506, 42.4421899]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-20",
+        "radius_m": 10
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4977139, 42.442145]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-21",
+        "radius_m": 10
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4974218, 42.4419833]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-22",
+        "radius_m": 8.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.495961, 42.4421001]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "tree",
+        "id": "tree-23",
+        "radius_m": 8.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.4956566, 42.4419384]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "zone",
+        "id": "zone-a",
+        "code": "A",
+        "name": "North meadow",
+        "label_point": [-76.4960584, 42.4434116]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4970687, 42.4435958],
+            [-76.4948654, 42.4435688],
+            [-76.4946889, 42.4430658],
+            [-76.4962897, 42.4430119],
+            [-76.497154, 42.4431915],
+            [-76.4970687, 42.4435958]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "zone",
+        "id": "zone-b",
+        "code": "B",
+        "name": "Woodland edge",
+        "label_point": [-76.4969105, 42.4424235]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.4974705, 42.4426391],
+            [-76.4964479, 42.442684],
+            [-76.495961, 42.4422842],
+            [-76.497227, 42.4421315],
+            [-76.4974705, 42.4426391]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "zone",
+        "id": "zone-c",
+        "code": "C",
+        "name": "Sand area",
+        "label_point": [-76.4950297, 42.4423561]
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.495468, 42.4427379],
+            [-76.4944211, 42.4427109],
+            [-76.4945671, 42.4422258],
+            [-76.4953827, 42.4422169],
+            [-76.495468, 42.4427379]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -14,7 +14,12 @@ import { connection } from "../sync/config";
 import { type CachedAccount, forgetAccount, rememberAccount } from "./cached-account";
 import { createAuthClient } from "./client";
 import { deletedAccountStore } from "./deleted-account";
-import { allowedSession, persistDeletedSignOut, persistDeliberateSignOut } from "./deleted-session";
+import {
+  allowedSession,
+  isAccountDeleted,
+  persistDeletedSignOut,
+  persistDeliberateSignOut,
+} from "./deleted-session";
 import { accountWorkspace, sessionChange, signInRecovery } from "./session-retention";
 
 type AuthState = {
@@ -22,6 +27,16 @@ type AuthState = {
   readonly session: Session | null;
   readonly account: CachedAccount | null;
   readonly ready: boolean;
+  /**
+   * The stored session has been read back (or the first auth event arrived), so a null `session`
+   * means there is none, not that it is still loading.
+   */
+  readonly restored: boolean;
+  /**
+   * The account the server reported deleted (403 account_deleted), set by markAccountDeleted and
+   * restored from the deleted-account marker on restart. Cleared when another account signs in.
+   */
+  readonly deletedUserId: string | null;
   readonly error: string | null;
 };
 const initial: AuthState = {
@@ -29,6 +44,8 @@ const initial: AuthState = {
   session: null,
   account: null,
   ready: !connection,
+  restored: false,
+  deletedUserId: null,
   error: null,
 };
 type AuthContextValue = AuthState & {
@@ -87,6 +104,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setState((previous) => ({
           ...previous,
           session: null,
+          deletedUserId: account.id,
           error: "This account has been deleted. Local records remain available.",
         }));
       },
@@ -112,7 +130,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
           client.auth.stopAutoRefresh();
           return;
         }
-        setState({ client, account, session: null, ready: true, error: null });
+        setState({
+          client,
+          account,
+          session: null,
+          ready: true,
+          restored: false,
+          deletedUserId,
+          error: null,
+        });
         let authChanged = false;
         const { data } = client.auth.onAuthStateChange((event, session) => {
           if (
@@ -143,6 +169,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
             setState({
               client,
               ready: true,
+              restored: true,
+              deletedUserId: deleted.current,
               ...identity,
             });
         });
@@ -166,6 +194,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
                 account:
                   allowedSession(sessionData.session, deleted.current)?.user ?? previous.account,
                 ready: true,
+                restored: true,
+                deletedUserId: deleted.current,
                 error: error ? "Could not restore sign-in. Try signing in again." : null,
               }));
           })
@@ -176,6 +206,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
                 client,
                 session: null,
                 ready: true,
+                restored: true,
                 error: "Could not restore sign-in. Saved account records remain available offline.",
               }));
           });
@@ -187,6 +218,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
             session: null,
             account: null,
             ready: true,
+            restored: true,
+            deletedUserId: null,
             error:
               "Sign-in could not start. Rebuild the development app after installing its native dependencies.",
           });
@@ -222,5 +255,7 @@ export function useAccount() {
   const { scope, key } = accountWorkspace(connection && auth.ready ? auth.account : null);
   const current = useRef(key);
   current.current = key;
-  return { ...auth, scope, key, current, configured: connection !== null };
+  // The gate opens welcome for a deleted account, in place of onboarding or the app.
+  const accountDeleted = isAccountDeleted(auth.deletedUserId, auth.account);
+  return { ...auth, scope, key, current, accountDeleted, configured: connection !== null };
 }

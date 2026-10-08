@@ -15,7 +15,7 @@ import {
 	SectionLabel
 } from "@/components/nocturne/chrome";
 import {
-	ACTS,
+	type Act,
 	type Answers,
 	answerSummary,
 	type AnswerValue,
@@ -262,6 +262,7 @@ export function PhonePreview(props: {
 								}`}>
 								{current ? (
 									<AskingPanel
+										acts={formActs(props.form)}
 										question={current}
 										value={answers[current.id]}
 										position={safeIndex + 1}
@@ -400,7 +401,15 @@ function PhoneOption({
 	);
 }
 
+/** The acts a form actually asks, in order, so the progress bar has one segment per act it uses. */
+function formActs(form: FormDefinition): readonly Act[] {
+	const acts: Act[] = [];
+	for (const question of form.questions) if (!acts.includes(question.act)) acts.push(question.act);
+	return acts;
+}
+
 function AskingPanel({
+	acts,
 	question,
 	value,
 	position,
@@ -413,6 +422,7 @@ function AskingPanel({
 	onBack,
 	onContinue
 }: {
+	readonly acts: readonly Act[];
 	readonly question: ResolvedQuestion;
 	readonly value: AnswerValue | undefined;
 	readonly position: number;
@@ -425,7 +435,7 @@ function AskingPanel({
 	readonly onBack: () => void;
 	readonly onContinue: () => void;
 }) {
-	const actIndex = ACTS.indexOf(question.act);
+	const actIndex = acts.indexOf(question.act);
 	const selectedOne = typeof value === "string" ? value : "";
 	const selectedMany = Array.isArray(value) ? value : [];
 	const textValue = typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -433,7 +443,7 @@ function AskingPanel({
 	return (
 		<div className="flex min-h-0 flex-1 flex-col">
 			<div className="flex shrink-0 gap-hair px-base pt-snug" aria-hidden="true">
-				{ACTS.map((act, i) => (
+				{acts.map((act, i) => (
 					<span
 						key={act}
 						className={`h-[3px] flex-1 rounded-full ${

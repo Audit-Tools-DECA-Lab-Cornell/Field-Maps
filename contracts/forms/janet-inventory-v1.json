@@ -1,0 +1,585 @@
+{
+  "version": "janet-inventory-v1",
+  "title": "Janet zone inventory",
+  "summary": "Weather, wind, shade and the loose parts available in one zone, recorded at the start of a round.",
+  "source": "Variables to use for App testing.xlsx, Sheet1 rows 13–32 — see docs/Janet-Test-Form-Scope.md",
+  "status": "draft",
+  "inclusion": "Climate (Sheet1 rows 13–17) and the loose-parts inventory by zone (rows 19–32), asked once per zone in an Inventory round. Excludes the eight hidden inventory rows (33–40). Option codes are provisional implementation identifiers and are not workbook values.",
+  "knownExportCollisions": [],
+  "protocolNotes": [
+    {
+      "id": "none-option",
+      "title": "Each quantity has a None option",
+      "detail": "The workbook's quantity bands start at Small (3 items or less) and its display rule reads 'if YES'. A None option records absence explicitly, and the list of items opens for any quantity except None. Confirm before research use.",
+      "source": "Sheet1 H19, H21, H23, H25, H27, H29, H31"
+    },
+    {
+      "id": "inventory-checklists",
+      "title": "The inventory checklists are typed for now",
+      "detail": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available, so no item list is invented from the examples.",
+      "source": "Sheet1 G20, G22, G24, G26, G28, G30, G32"
+    },
+    {
+      "id": "climate-per-zone",
+      "title": "Climate is recorded with each zone",
+      "detail": "Weather, wind and shade are asked with each zone's inventory, as Janet asked on 2026-10-07. If climate should be recorded once per round instead, it moves to the round.",
+      "source": "Janet, 2026-10-07 · Sheet1 B13:G17"
+    },
+    {
+      "id": "hidden-inventory-rows",
+      "title": "Four hidden inventory groups stay excluded",
+      "detail": "Sand, mud and water toys, household items, sporting equipment and riding equipment (Sheet1 rows 33–40) are hidden in the workbook and stay out, as for the first test form.",
+      "source": "Sheet1 rows 33–40"
+    }
+  ],
+  "questions": [
+    {
+      "id": "weather",
+      "code": "Climate1",
+      "exportColumn": "Weather",
+      "act": "Climate",
+      "label": "What is the weather right now?",
+      "hint": "Select every option that applies.",
+      "kind": "many",
+      "options": [
+        {
+          "code": "full_sun",
+          "label": "Full sun"
+        },
+        {
+          "code": "partial_sun",
+          "label": "Partial sun or cloud"
+        },
+        {
+          "code": "overcast",
+          "label": "Cloudy or overcast"
+        },
+        {
+          "code": "fog",
+          "label": "Foggy or misty"
+        },
+        {
+          "code": "light_rain",
+          "label": "Light rain"
+        },
+        {
+          "code": "heavy_rain",
+          "label": "Heavy rain"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B13:G13"
+    },
+    {
+      "id": "wind",
+      "code": "Climate2",
+      "exportColumn": "Wind",
+      "act": "Climate",
+      "label": "How windy is it?",
+      "hint": "The option that fits best.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "no_wind",
+          "label": "No wind"
+        },
+        {
+          "code": "light_wind",
+          "label": "Light wind"
+        },
+        {
+          "code": "heavy_wind",
+          "label": "Heavy wind"
+        },
+        {
+          "code": "gusts",
+          "label": "Occasional gusts"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B15:G15"
+    },
+    {
+      "id": "shade",
+      "code": "Climate3",
+      "exportColumn": "Shade",
+      "act": "Climate",
+      "label": "How much of this zone is shaded?",
+      "hint": "The option that fits best.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "full_sun",
+          "label": "Full sun"
+        },
+        {
+          "code": "partial_shade",
+          "label": "Partial shade"
+        },
+        {
+          "code": "dappled_shade",
+          "label": "Dappled shade"
+        },
+        {
+          "code": "full_shade",
+          "label": "Full shade"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B17:G17"
+    },
+    {
+      "id": "inv_nat_surfaces",
+      "code": "LP Inventory 1",
+      "exportColumn": "Inv_Nat_Surfaces",
+      "act": "Inventory",
+      "label": "Natural ground surfaces and loose materials",
+      "hint": "E.g. sand, water, mud, mulch, loose hay, loose grass.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B19:H20"
+    },
+    {
+      "id": "inv_nat_surfaces_list",
+      "code": "LP Inventory 2",
+      "exportColumn": "Inv_Nat_Surfaces_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_nat_surfaces"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_nat_surfaces",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. sand, mulch",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B19:H20",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "inv_nat_lps_sm",
+      "code": "LP Inventory 3",
+      "exportColumn": "Inv_Nat_LPs_Sm",
+      "act": "Inventory",
+      "label": "Small natural loose parts",
+      "hint": "Light, easy to move or handle. E.g. acorns, pinecones, sticks, flowers, weeds, leaves, small rocks or pebbles, feathers, bugs, fruit.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B21:H22"
+    },
+    {
+      "id": "inv_nat_lps_sm_list",
+      "code": "LP Inventory 4",
+      "exportColumn": "Inv_Nat_LPs_Sm_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_nat_lps_sm"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_nat_lps_sm",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. sticks, pinecones",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B21:H22",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "inv_nat_lps_med",
+      "code": "LP Inventory 5",
+      "exportColumn": "Inv_Nat_LPs_Med",
+      "act": "Inventory",
+      "label": "Medium natural loose parts",
+      "hint": "A bit of weight, relatively easy to handle or move. E.g. tree cookies, medium rocks, small stumps, small logs, large sticks, medium branches, bamboo poles.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B23:H24"
+    },
+    {
+      "id": "inv_nat_lps_med_list",
+      "code": "LP Inventory 6",
+      "exportColumn": "Inv_Nat_LPs_Med_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_nat_lps_med"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_nat_lps_med",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. tree cookies, small logs",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B23:H24",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "inv_nat_lps_lrg",
+      "code": "LP Inventory 7",
+      "exportColumn": "Inv_Nat_LPs_Lrg",
+      "act": "Inventory",
+      "label": "Large natural loose parts",
+      "hint": "Heavy, more difficult to handle or move. E.g. large stumps, large rocks, medium to large logs, medium to large branches.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B25:H26"
+    },
+    {
+      "id": "inv_nat_lps_lrg_list",
+      "code": "LP Inventory 8",
+      "exportColumn": "Inv_Nat_LPs_Lrg_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_nat_lps_lrg"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_nat_lps_lrg",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. large stumps",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B25:H26",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "inv_mfgd_lps_sm",
+      "code": "LP Inventory 9",
+      "exportColumn": "Inv_Mfgd_LPs_Sm",
+      "act": "Inventory",
+      "label": "Small manufactured loose parts",
+      "hint": "Light, easy to move or handle; sensory play items. E.g. small to medium blocks, bubbles, books, musical instruments, art materials such as chalk, paint or crayons, binoculars or magnifiers.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B27:H28"
+    },
+    {
+      "id": "inv_mfgd_lps_sm_list",
+      "code": "LP Inventory 10",
+      "exportColumn": "Inv_Mfgd_LPs_Sm_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_mfgd_lps_sm"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_mfgd_lps_sm",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. chalk, blocks",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B27:H28",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "inv_mfgd_lps_med",
+      "code": "LP Inventory 11",
+      "exportColumn": "Inv_Mfgd_LPs_Med",
+      "act": "Inventory",
+      "label": "Medium manufactured loose parts",
+      "hint": "Mobile, but a bit heavier or harder to move. E.g. large blocks, pylons, small tires, milk crates, large tubs or pails, very small chairs, pool noodles.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B29:H30"
+    },
+    {
+      "id": "inv_mfgd_lps_med_list",
+      "code": "LP Inventory 12",
+      "exportColumn": "Inv_Mfgd_LPs_Med_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_mfgd_lps_med"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_mfgd_lps_med",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. milk crates, pylons",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B29:H30",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "inv_mfgd_lps_lrg",
+      "code": "LP Inventory 13",
+      "exportColumn": "Inv_Mfgd_LPs_Lrg",
+      "act": "Inventory",
+      "label": "Large manufactured loose parts or play equipment",
+      "hint": "Mobile, but very heavy or not easily moved. E.g. a water or sand table, play kitchen, small climber, rocker or slide, large tires, chairs or a small bench, small table, ladder, large spools.",
+      "kind": "one",
+      "options": [
+        {
+          "code": "none",
+          "label": "None available"
+        },
+        {
+          "code": "small",
+          "label": "Small quantity · 3 items or less"
+        },
+        {
+          "code": "moderate",
+          "label": "Moderate quantity · 4 to 10 items"
+        },
+        {
+          "code": "large",
+          "label": "Large quantity · more than 10 items"
+        }
+      ],
+      "columns": 2,
+      "required": true,
+      "source": "Sheet1 B31:H32"
+    },
+    {
+      "id": "inv_mfgd_lps_lrg_list",
+      "code": "LP Inventory 14",
+      "exportColumn": "Inv_Mfgd_LPs_Lrg_List",
+      "act": "Inventory",
+      "label": "Which ones are available?",
+      "hint": "Type what is in this zone now, separated by commas.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": false,
+      "dependsOn": {
+        "kind": "all",
+        "of": [
+          {
+            "kind": "answered",
+            "question": "inv_mfgd_lps_lrg"
+          },
+          {
+            "kind": "notEquals",
+            "question": "inv_mfgd_lps_lrg",
+            "option": "none"
+          }
+        ]
+      },
+      "openedBy": "Opened by the quantity you chose",
+      "placeholder": "e.g. sand table, large tires",
+      "rows": 2,
+      "maxLength": 300,
+      "source": "Sheet1 B31:H32",
+      "protocolFlag": "The workbook asks for a checklist of common items with room for custom ones, but the common list has not been supplied. Observers type what is available until it is."
+    },
+    {
+      "id": "observer_initials",
+      "code": "Observer1",
+      "exportColumn": "observer",
+      "act": "Record",
+      "label": "Who is observing?",
+      "hint": "Up to ten uppercase characters. Carried into the next zone in this session.",
+      "kind": "text",
+      "options": [],
+      "columns": 1,
+      "required": true,
+      "placeholder": "e.g. JL",
+      "rows": 1,
+      "maxLength": 10,
+      "source": "Sheet1 B5:G5"
+    }
+  ]
+}

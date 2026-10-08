@@ -3,13 +3,19 @@
 The [production plan](../plan/README.md) says what has to work for Janet's pilot. This track decides which screens the product has and what each one does, then how they look. It defines no plan tasks. Its output becomes `WEB-*` and `MOB-*` tasks at the handoff stage (stage 8).
 
 - Started: 2026-10-01, in week 2 of the 13-week plan.
-- Current stage: **1, information architecture.** The draft page list is in [sitemap.md](sitemap.md).
+- Current stage: **8, handoff, in progress.** The build tasks are WEB-20 to WEB-26 in [`web/PLAN.md`](../../web/PLAN.md) and MOB-23 to MOB-27 in [`mobile/PLAN.md`](../../mobile/PLAN.md). The page list is in [sitemap.md](sitemap.md).
+- Delivered:
+  - **Stage 5, visual direction:** Contour, a light system with Day (the default) and Dusk themes. [D19](../plan/decisions.md#decision-log) records it and closes Q8 (U9).
+  - **Stage 6, design system v2:** the tokens in [`contracts/contour.json`](../../contracts/contour.json), and the system described in the root [`DESIGN.md`](../../DESIGN.md).
+  - **Stage 7, high fidelity:** four design sets: the Contour system (12 pages), the project workspace (19 screens), organization, auth and public pages (19 screens), and the mobile collector (31 screens, phone and tablet).
+- Where the designs are: the four sets were supplied as PDFs in the build session and are not committed. [`DESIGN.md`](../../DESIGN.md) is the committed reference.
+- Stages 2 to 4 have no separate documents in the repo (no `flows.md` or `pages/`); the high-fidelity designs cover their pages and states.
 
 ## Why this track exists
 
 - **There is no single list of pages.** Screens were added one task at a time. The web has eight routes, and only one of them talks to the API. The mobile app has seven screens in one flat stack. No document lists what exists, what works, and what is still missing. [sitemap.md](sitemap.md) now does.
 - **Phase 1 builds screens nobody has designed.** WEB-04, WEB-06 and WEB-07 (web sign-in, onboarding, team) and MOB-05 and MOB-06 (mobile sign-in, join) are scheduled for weeks 2–4. MOB-05 says outright: "There is no design for auth screens yet."
-- **The visual direction was chosen and then not built.** The September [Direction Study](../../designs/Direction%20Study.dc.html) picked "Survey Sheet": light, steel accent, condensed type, square corners. It rejected "Night Transit" because a dark screen turns into a mirror in direct sun. The apps were then built in Nocturne, which is Night Transit. D18 has since moved the maps back to a light palette, and Q8 (a light theme for the whole app) is still open. That choice affects every screen built from now on, so this track settles it in stage 5, before the Phase 1 screens are built.
+- **The visual direction was chosen and then not built.** The September [Direction Study](../../designs/Direction%20Study.dc.html) picked "Survey Sheet": light, steel accent, condensed type, square corners. It rejected "Night Transit" because a dark screen turns into a mirror in direct sun. The apps were then built in Nocturne, which is Night Transit. D18 has since moved the maps back to a light palette, and Q8 (a light theme for the whole app) stayed open until stage 5 settled it: Contour, Day by default with a Dusk preference (D19).
 
 ## Stages
 
@@ -28,6 +34,8 @@ The [production plan](../plan/README.md) says what has to work for Janet's pilot
 The total is **20–28 working days of design.** I can produce most of each stage's drafts. Your time goes mainly into the review at each gate.
 
 ## Order: each slice is ready before its build phase
+
+*This schedule was written before the designs arrived. All four design sets were delivered together, so the identity screens are built directly on Contour (WEB-21, MOB-24), with no Nocturne restyle step.*
 
 Stages 1, 2 and 5 cover the whole product at once: the sitemap has to be complete, and the direction has to be chosen before any high-fidelity work. Stages 3, 4, 6 and 7 run in three slices. Each slice is finished before the production phase that builds it starts:
 
@@ -104,10 +112,11 @@ Each one is set out with options and a recommendation in [sitemap.md § Decision
 | U6 | Rounds and assignments: does anyone plan them ahead? | Mobile home, overview |
 | U7 | What a "report" is | Reports page |
 | U8 | An offline field guide on mobile | Slice C |
-| U9 | Light, dark, or both (Q8) | Decided in stage 5, not now |
+| U9 | Light, dark, or both (Q8) | Answered 2026-10-03: Day + Dusk, see D19 |
 | U10 | Where the design time comes from (see "The cost" above) | Schedule |
 
 ## Files
 
 - [sitemap.md](sitemap.md): what exists today, the target pages for web and mobile, and the decisions above.
-- Still to come: `flows.md` (stage 2), `pages/` (stage 3), wireframes and directions under `designs/` (stages 4 and 5).
+- [`DESIGN.md`](../../DESIGN.md) (repo root): Contour, the state vocabulary, motion and the copy guide; the committed reference to the design PDFs.
+- [`contracts/contour.json`](../../contracts/contour.json): the Contour tokens both apps read.

@@ -39,6 +39,7 @@ jobs:
       - run: pnpm web:check
       - run: pnpm --dir web test:api-errors
       - run: pnpm --dir web test:auth
+      - run: pnpm --dir web test:account
       - run: pnpm build
   mobile:
     runs-on: ubuntu-latest

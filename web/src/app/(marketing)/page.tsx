@@ -35,8 +35,8 @@ export default function LandingPage() {
 				</nav>
 			</header>
 
-			<main className="mx-auto w-full max-w-5xl px-gutter pb-page">
-				<section className="pt-page">
+			<main className="mx-auto w-full max-w-5xl px-gutter pb-10">
+				<section className="pt-10">
 					<p className="text-meta text-neutral-400">{ORGANIZATION.name}</p>
 					<h1 className="mt-snug max-w-[18ch] text-[clamp(2.25rem,1.6rem+3vw,4rem)] leading-[1.05] font-medium tracking-[-0.02em] text-balance text-text">
 						Field data that survives the walk back.
@@ -54,7 +54,7 @@ export default function LandingPage() {
 					</div>
 				</section>
 
-				<FadeRule className="my-page" />
+				<FadeRule className="my-10" />
 
 				<section className="grid grid-cols-1 gap-wide md:grid-cols-3">
 					{[
@@ -82,7 +82,7 @@ export default function LandingPage() {
 					))}
 				</section>
 
-				<FadeRule className="my-page" />
+				<FadeRule className="my-10" />
 
 				<section className="max-w-[70ch]">
 					<p className="text-meta text-neutral-400">Where it actually is</p>

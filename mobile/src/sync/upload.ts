@@ -1,15 +1,25 @@
-import ky, { TimeoutError } from "ky";
+import ky, { NetworkError, TimeoutError } from "ky";
 import { readApiError } from "../data/api/errors";
-import type { ShellObservation } from "../domain/observation";
+import { legacyProjectId } from "../data/legacy/scope";
+import { isShellObservation, type Observation } from "../domain/observation";
 import { receiptSchema, type SyncScope, type UploadResult, uploadPayload } from "./contracts";
+
+/** The project a record uploads to: the one it names, or the practice project for practice records. */
+export function uploadProject(record: Observation): string | null {
+  return isShellObservation(record) ? legacyProjectId : (record.projectId ?? null);
+}
 
 export async function uploadObservation(
   scope: SyncScope,
-  destination: { readonly apiUrl: string; readonly projectId: string },
-  record: ShellObservation,
+  apiUrl: string,
+  record: Observation,
   token: string,
   signal: AbortSignal,
 ): Promise<UploadResult> {
+  const projectId = uploadProject(record);
+  if (projectId === null)
+    return { kind: "rejected", message: "This record names no project to upload to." };
+  const destination = { apiUrl, projectId };
   try {
     const response = await ky.put(
       `${destination.apiUrl}/v1/projects/${destination.projectId}/observations/${record.id}`,
@@ -40,7 +50,14 @@ export async function uploadObservation(
       };
     return { kind: "accepted", receipt: receipt.data };
   } catch (error) {
-    if (error instanceof TimeoutError || error instanceof TypeError || error instanceof SyntaxError)
+    // ky wraps a dropped connection in NetworkError where it recognises the runtime's fetch failure
+    // (React Native's "Network request failed" among them), and leaves the bare TypeError elsewhere.
+    if (
+      error instanceof NetworkError ||
+      error instanceof TimeoutError ||
+      error instanceof TypeError ||
+      error instanceof SyntaxError
+    )
       return {
         kind: "retry",
         message: "Connection interrupted. Your record is saved and will retry.",

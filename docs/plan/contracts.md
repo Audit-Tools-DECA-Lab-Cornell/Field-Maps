@@ -75,7 +75,7 @@ Rules both sides must implement identically:
 }
 ```
 
-The current `PUT /v1/projects/{p}/observations/{uuid}` body (`site_id`, `form_version` code, `coordinates`, `observer`, flat answers) is accepted until MOB-10 ships, and is removed after the pilot.
+The current `PUT /v1/projects/{p}/observations/{uuid}` body (`site_id`, `form_version` code, `coordinates`, `observer`, flat answers) is accepted until MOB-10 ships, and is removed after the pilot. Since D26 it also takes an optional round context: `zone` (zone code), `round_type` (`standard` · `reliability` · `inventory`, which replaces the numeric `round` above), `first_round` and `placement` (`hand` · `zone`). Its idempotency hash covers only the fields sent, so a retried upload from before D26 still matches.
 
 ## Error envelope
 
@@ -127,16 +127,16 @@ This is the full target surface. **Exists** means it is already served by `backe
 | tenancy | `POST/GET /v1/projects/{p}/invitations` · `DELETE /v1/projects/{p}/invitations/{id}` | manager | BE-07 |
 | tenancy | `POST/GET /v1/orgs/{org}/invitations` · `DELETE /v1/orgs/{org}/invitations/{id}` (roles `member`, `admin`; `admin` needs an owner) | org owner/admin | BE-07 |
 | tenancy | `POST /v1/invitations/preview` (`{token}` or `{code}`, consumes nothing) · `POST /v1/invitations/redeem` | verified user | BE-07 |
-| sites | `GET/POST /v1/projects/{p}/sites` · `GET /v1/projects/{p}/sites/{s}/zones` | member / manager | BE-13 |
+| sites | `GET/POST /v1/projects/{p}/sites` · `GET/PATCH /v1/projects/{p}/sites/{code}` (current package, its zones, extent, centre, observation count) | member / manager | exists (BE-13 step 1) |
 | sites | `POST /v1/projects/{p}/packages` · `GET …/packages` · `GET …/packages/{id}` | manager / member | exists (moved to Storage by BE-13) |
 | sites | `GET …/packages/{id}/archive` | member | exists (kept for web download) |
 | sites | `GET …/packages/{id}/download`: short-lived signed Storage URL plus sha256 | member | BE-13 |
-| instrument | `GET /v1/projects/{p}/forms` · `GET …/forms/{f}/versions` (published and retired; drafts for managers) | member | BE-11 |
-| instrument | `POST /v1/projects/{p}/forms` | manager | BE-11 |
-| instrument | `POST …/forms/{f}/versions` (draft from JSON) · `POST …/versions/{v}/publish` · `POST …/versions/{v}/retire` | manager | BE-11 |
+| instrument | `GET /v1/projects/{p}/forms` (each form with its versions; published and retired, drafts for managers) · `GET …/form-versions/{code}` | member | exists (BE-11) |
+| instrument | `POST /v1/projects/{p}/forms` (form + first draft) · `POST …/forms/{form}/versions` (next draft, copied unless a definition is sent) | manager | exists (BE-11) |
+| instrument | `PUT/DELETE …/form-versions/{code}` (drafts only) · `POST …/form-versions/{code}/publish` · `POST …/form-versions/{code}/retire` | manager | exists (BE-11) |
 | collection | `POST /v1/sync/upload`: a PowerSync CRUD batch, with one result per operation (see below) | observer / manager | BE-12 |
 | collection | `PUT /v1/projects/{p}/observations/{uuid}` · `GET …/observations/{uuid}` | observer / member | exists (legacy after MOB-10) |
-| analysis | `GET /v1/projects/{p}/observations` (cursor on `(observed_at,id)`; filters: site, zone, round, form version, observer, date range, bbox) | viewer and up | BE-14 |
+| analysis | `GET /v1/projects/{p}/observations` (cursor on `(observed_at,id)`; filters: site, zone, round, form version, observer, date range, bbox). A first version exists: `site`, `round_type`, `since`, `limit` ≤ 500, no cursor | viewer and up | BE-14 |
 | analysis | `GET /v1/projects/{p}/summary` | viewer and up | BE-14 |
 | analysis | `GET /v1/projects/{p}/exports?format=csv\|geojson&…filters` (streamed, audited) | viewer and up | BE-14 |
 | gis | `GET /v1/projects/{p}/gis-access` (pilot: list grants and connection info, no secrets) | manager | BE-15 |

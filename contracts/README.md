@@ -7,7 +7,8 @@ Language-neutral JSON shared by the independently managed mobile, web and API ap
 | `form-definition.schema.json` | Generated from `mobile/src/forms/definition.ts` using Zod's `io: "input"` mode. Never edit by hand. | Definition tooling; backend structural validation in BE-10 |
 | `forms/shell-v1.json`, `forms/janet-test-v1.json` | Canonical, reviewed definitions. Initially exported from the mobile fixtures; edit the JSON, not the thin TypeScript imports. | Mobile registry/tests now; Training seeds (DB-07), publishing (DB-09), backend validation (BE-10) and GIS later |
 | `forms/cases/*.cases.json` | Hand-authored expected behavior. Never regenerate expectations from the engine. | Mobile Vitest now; the same cases in Python during BE-10 |
-| `map-palettes.json` | Hand-authored cartography for every map canvas: `day` (default) and `night`, with identical keys. The app chrome stays Nocturne; only the map changes palette. | Mobile field map (MapLibre) and web observation and package-preview maps (Leaflet) |
+| `contour.json` | Hand-authored Contour design tokens: the Day (default) and Dusk colours, with the Dusk values the design left out derived and listed under `derived`; the contrast pairs; fonts; the type, spacing, layout, radius, size and motion scales; and the state vocabulary (kind × state → label, Lucide icon and tone). Edit the JSON, then run `pnpm tokens`. Map colours do not belong here. | `scripts/contour-tokens.mjs` generates `web/src/styles/contour.css` (checked in, never edited by hand); web code reads the state vocabulary and motion through `web/src/lib/contour.ts`; the collector reads the file in `mobile/src/ui/tokens.ts` |
+| `map-palettes.json` | Hand-authored cartography for every map canvas: `day` (default) and `night`, with identical keys. The app chrome follows Contour's own Day or Dusk theme; only the map changes palette, and UI state colours never appear on it. | Mobile field map (MapLibre) and web observation and package-preview maps (Leaflet) |
 | `openapi.json` | Generated from FastAPI with `make -C backend openapi`; never edit by hand. | Separate generated TypeScript declarations in web and mobile |
 
 ## Generate and verify
@@ -19,8 +20,11 @@ pnpm --dir mobile contracts:forms
 pnpm --dir mobile test
 pnpm mobile:check
 pnpm plan:check
+pnpm tokens:check
 pnpm contracts:generate
 ```
+
+`pnpm tokens:check` fails if `web/src/styles/contour.css` has drifted from `contour.json`, or if any declared colour pair misses its WCAG minimum in Day or Dusk: 4.5:1 for text, 3:1 for UI.
 
 The form generator only writes the JSON Schema. It does not overwrite authored forms or cases. The mobile suite compares the committed schema to fresh generation and discovers every `*.cases.json` file. Run the generator twice and confirm the second run makes no change. CI runs these tests through its mobile job and separately regenerates OpenAPI and both app declarations to reject contract drift.
 

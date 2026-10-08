@@ -11,26 +11,54 @@ import { useAccount } from "../../auth/provider";
 import { connection } from "../../platform/config";
 import { createApiClient } from "./client";
 import { ApiError } from "./errors";
+import type { ProfilePatch } from "./identity";
 import { type MeSnapshot, refreshMeCache, selectProject } from "./me-cache";
 import { meFileStore } from "./me-file";
 
+/** What a write to the API came to: done, or the typed reason it was not. */
+export type ApiResult = { readonly ok: true } | { readonly ok: false; readonly error: ApiError };
+
 type MeState = {
+  /** The account this state belongs to. A different account reads as not ready until it settles. */
+  readonly owner: string | null;
   readonly snapshot: MeSnapshot | null;
   readonly error: string | null;
+  /**
+   * The profile and projects are known as well as they can be right now: read from this device's
+   * cache, fetched, or the first fetch failed or cannot run (no session). The gate holds its splash
+   * until then, so onboarding never flashes for an account whose server profile is already complete.
+   */
   readonly ready: boolean;
 };
-const initial: MeState = { snapshot: null, error: null, ready: false };
-const MeContext = createContext({ ...initial, selectProject: (_id: string) => {} });
+const initial: MeState = { owner: null, snapshot: null, error: null, ready: false };
+const notSignedIn: ApiResult = { ok: false, error: new ApiError("unauthenticated", "sign-in") };
+
+const MeContext = createContext({
+  ...initial,
+  selectProject: (_id: string) => {},
+  refresh: async (): Promise<boolean> => false,
+  updateProfile: async (_patch: ProfilePatch): Promise<ApiResult> => notSignedIn,
+});
+
+/** Any thrown value as a typed API error; an unexpected Error counts as retryable. */
+function asApiError(error: unknown): ApiError {
+  if (error instanceof ApiError) return error;
+  if (error instanceof Error) return new ApiError("unknown", "retry");
+  throw error;
+}
+
 export function MeProvider({ children }: PropsWithChildren) {
-  const { account, client, session, markAccountDeleted } = useAccount();
+  const { account, client, session, restored, markAccountDeleted } = useAccount();
   const userId = account?.id;
   const [state, setState] = useState(initial);
   const current = useRef<string | undefined>(userId);
   current.current = userId;
   const select = useRef((_id: string) => {});
+  const refreshNow = useRef(async (): Promise<boolean> => false);
+  const update = useRef(async (_patch: ProfilePatch): Promise<ApiResult> => notSignedIn);
   useEffect(() => {
     if (!userId) {
-      setState({ ...initial, ready: true });
+      setState({ owner: null, snapshot: null, error: null, ready: true });
       return;
     }
     const id = userId;
@@ -38,46 +66,98 @@ export function MeProvider({ children }: PropsWithChildren) {
     const store = meFileStore(connection.supabaseUrl, id);
     let snapshot = store.read();
     const isCurrent = () => !controller.signal.aborted && current.current === id;
-    setState({ snapshot, error: null, ready: true });
+    // A session change for the same account keeps what is already known; a new account starts over.
+    setState((previous) => ({
+      owner: id,
+      snapshot,
+      error: null,
+      ready: snapshot !== null || (previous.owner === id && previous.ready),
+    }));
+    const settle = () =>
+      setState((previous) =>
+        previous.owner === id && !previous.ready ? { ...previous, ready: true } : previous,
+      );
+    const publish = (next: MeSnapshot) => {
+      snapshot = next;
+      store.write(next);
+      setState({ owner: id, snapshot: next, error: null, ready: true });
+    };
+    const api =
+      client && session
+        ? createApiClient(connection.apiUrl, async () => {
+            const { data } = await client.auth.getSession();
+            return data.session?.user.id === id ? data.session.access_token : null;
+          })
+        : null;
+    // Nothing can be fetched without a session: once sign-in is restored, what is cached is all
+    // there is (an offline start with an expired token).
+    if (!api && restored) settle();
+
     select.current = (projectId) => {
       if (!snapshot || !isCurrent() || selectProject(snapshot.identity, projectId) !== projectId)
         return;
-      snapshot = { ...snapshot, activeProjectId: projectId };
-      store.write(snapshot);
-      setState({ snapshot, error: null, ready: true });
+      publish({ ...snapshot, activeProjectId: projectId });
     };
-    let busy = false;
-    const refresh = async () => {
-      if (busy || !client || !session || !isCurrent()) return;
-      busy = true;
+
+    const fetchOnce = async (): Promise<boolean> => {
+      if (!api || !isCurrent()) return false;
       try {
-        const api = createApiClient(connection.apiUrl, async () => {
-          const { data } = await client.auth.getSession();
-          return data.session?.user.id === id ? data.session.access_token : null;
-        });
         const identity = await api.me(controller.signal);
-        if (!isCurrent()) return;
+        if (!isCurrent()) return false;
         if (identity.profile.user_id !== id) throw new ApiError("unknown", "retry");
-        snapshot = refreshMeCache(identity, snapshot);
-        store.write(snapshot);
-        setState({ snapshot, error: null, ready: true });
+        publish(refreshMeCache(identity, snapshot));
+        return true;
       } catch (error) {
-        if (!isCurrent()) return;
+        if (!isCurrent()) return false;
         if (!(error instanceof ApiError)) {
           if (!(error instanceof Error)) throw error;
           setState({
+            owner: id,
             snapshot,
             error: "Could not refresh your profile. Cached projects remain available.",
             ready: true,
           });
-          return;
+          return false;
         }
         if (error.code === "account_deleted") markAccountDeleted();
-        setState({ snapshot, error: error.message, ready: true });
+        setState({ owner: id, snapshot, error: error.message, ready: true });
+        return false;
       } finally {
-        busy = false;
+        if (isCurrent()) settle();
       }
     };
+    let running: Promise<boolean> | null = null;
+    // Automatic reads (sign-in, resume) join one already under way.
+    const refresh = (): Promise<boolean> => {
+      running ??= fetchOnce().finally(() => {
+        running = null;
+      });
+      return running;
+    };
+    // A requested read starts after any read under way, so it sees every change made before it was
+    // asked for (a project just joined).
+    refreshNow.current = async () => {
+      if (running) await running.catch(() => false);
+      return refresh();
+    };
+
+    update.current = async (patch) => {
+      if (!api || !isCurrent()) return notSignedIn;
+      try {
+        const profile = await api.updateProfile(patch, controller.signal);
+        if (profile.user_id !== id) throw new ApiError("unknown", "retry");
+        if (isCurrent()) {
+          if (snapshot) publish({ ...snapshot, identity: { ...snapshot.identity, profile } });
+          else void refresh();
+        }
+        return { ok: true };
+      } catch (error) {
+        const failure = asApiError(error);
+        if (failure.code === "account_deleted" && isCurrent()) markAccountDeleted();
+        return { ok: false, error: failure };
+      }
+    };
+
     void refresh();
     const listener = AppState.addEventListener("change", (value) => {
       if (value === "active") void refresh();
@@ -86,25 +166,40 @@ export function MeProvider({ children }: PropsWithChildren) {
       controller.abort();
       listener.remove();
       select.current = () => {};
+      refreshNow.current = async () => false;
+      update.current = async () => notSignedIn;
     };
-  }, [userId, client, session, markAccountDeleted]);
+  }, [userId, client, session, restored, markAccountDeleted]);
+  const own = state.owner === (userId ?? null);
   return (
     <MeContext
       value={{
-        ...state,
-        snapshot: state.snapshot?.identity.profile.user_id === userId ? state.snapshot : null,
+        owner: state.owner,
+        snapshot:
+          own && state.snapshot?.identity.profile.user_id === userId ? state.snapshot : null,
+        error: own ? state.error : null,
+        ready: own && state.ready,
         selectProject: (id) => select.current(id),
+        refresh: () => refreshNow.current(),
+        updateProfile: (patch) => update.current(patch),
       }}
     >
       {children}
     </MeContext>
   );
 }
+
+/**
+ * The signed-in account's `/v1/me`: profile, organizations, projects and the active project, with
+ * `refresh()` for a read that must see a change just made (joining a project) and `updateProfile()`
+ * for `PATCH /v1/me`.
+ */
 export function useMe() {
-  const { snapshot, ...state } = useContext(MeContext);
+  const { snapshot, owner: _owner, ...state } = useContext(MeContext);
   return {
     ...state,
     profile: snapshot?.identity.profile ?? null,
+    organizations: snapshot?.identity.organization_memberships ?? [],
     projects: snapshot?.identity.project_memberships ?? [],
     activeProjectId: snapshot?.activeProjectId ?? null,
   };

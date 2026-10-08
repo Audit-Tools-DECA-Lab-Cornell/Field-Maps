@@ -1,13 +1,23 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from fieldmaps_api.deps import Authentication, user_transaction
 from fieldmaps_api.errors import ERROR_RESPONSES
-from fieldmaps_api.schemas import ObservationUpload, StoredObservation, UploadReceipt
-from fieldmaps_api.services.collection import get_observation, upload_observation
+from fieldmaps_api.schemas import (
+    ObservationQuery,
+    ObservationRow,
+    ObservationUpload,
+    StoredObservation,
+    UploadReceipt,
+)
+from fieldmaps_api.services.collection import (
+    get_observation,
+    list_observations,
+    upload_observation,
+)
 
 
 def create_router(
@@ -30,6 +40,16 @@ def create_router(
                 session, project_id, observation_id, user_id, payload
             )
         return receipt
+
+    @router.get("/v1/projects/{project_id}/observations", operation_id="listObservations")
+    async def observations(
+        project_id: UUID,
+        filters: Annotated[ObservationQuery, Query()],
+        user_id: Annotated[UUID, Depends(authenticate)],
+    ) -> list[ObservationRow]:
+        """List the project's records, newest first, as the workspace shows and exports them."""
+        async with user_transaction(sessions, user_id) as session:
+            return await list_observations(session, project_id, filters)
 
     @router.get(
         "/v1/projects/{project_id}/observations/{observation_id}",

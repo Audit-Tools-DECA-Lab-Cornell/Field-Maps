@@ -105,6 +105,13 @@ export type SiteZone = {
   readonly north: number;
   /** The zoom that frames the zone; the map opens and recentres here. Defaults to 17.4. */
   readonly zoom?: number;
+  /**
+   * The zone's drawn shape (outer ring, then holes) when the package carries one. Without it the zone
+   * is its box. Used for the focus outline, the in-zone check and where a whole-zone record is stored.
+   */
+  readonly polygon?: readonly (readonly Coordinate[])[];
+  /** Any further parts of a zone drawn as a MultiPolygon, each an outer ring then its holes. */
+  readonly moreParts?: readonly (readonly (readonly Coordinate[])[])[];
 };
 
 export const siteZones: readonly SiteZone[] = [

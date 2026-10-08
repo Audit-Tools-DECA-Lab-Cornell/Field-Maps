@@ -6,7 +6,15 @@ one-handed, often in sun. This app is independent of the Next.js prototype in `.
 [product workspace](../docs/Workspace.md) provides root command aliases while preserving this
 app's dependencies and lockfile.
 
-The interface follows `../designs/Riverside Collector v2.dc.html` and the Nocturne design
+The interface is moving to **Contour**, the design system it shares with the web workspace
+([`DESIGN.md`](../DESIGN.md)). Its tokens live in [`../contracts/contour.json`](../contracts/contour.json),
+which this app reads in `src/ui/tokens.ts`; the primitives live in `src/ui/`, and
+`app/(dev)/gallery` shows them in both themes. Day is the default; Dusk is a preference
+("Screen: Day · Dusk" in Preferences). The map keeps its own palette (Day, Night) from
+[`../contracts/map-palettes.json`](../contracts/map-palettes.json), and UI state colours never
+appear on it. Words are Geologica; IDs, versions, codes and counts are Spline Sans Mono. Icons are
+Lucide (`lucide-react-native`) plus a two-bar held glyph. MOB-23 to MOB-27 carry the move; until a
+screen moves, it follows `../designs/Riverside Collector v2.dc.html` and the previous design
 system in `../designs/_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/`. On the field map,
 tablet landscape (1024×768) is the primary target, then phone landscape (844×390); in portrait the
 map stacks over the panel. Every screen, the field map included, runs in portrait or landscape on
@@ -15,13 +23,38 @@ both, and its content spans the full window width — a deliberate departure fro
 
 ## What is implemented
 
-- **Navigating and marking are separate map modes.** Panning and zooming stay live until
-  "Place a point" is armed; a single tap then places the point, disarms the mode and opens the
-  first question. Map chrome sits on its own translucent glass and takes its own touches, so no
-  control can drop an observation.
-- **One question per screen.** A single choice moves on by itself after a beat; multi-select and
-  text wait for Continue. The questionnaire is never scrolled as a whole, and the map never
-  disappears — side by side in landscape, stacked in portrait, with a collapsible panel.
+- **Collect on Contour (MOB-26), one route with internal steps.** `app/(app)/collect.tsx` and
+  `src/features/collect/` run Place → Answer → Review → Saved for play events, and Zone → Answer →
+  Review → Saved for an Inventory round. MapLibre stays mounted across every step. Phones stack the
+  map over the panel; tablets and landscape put them side by side with the panel on the preferred
+  hand. X and Android back ask "Leave? Your draft stays on this device"; back also steps back.
+- **Placing a point works like iPhone Maps' "choose a point" (Janet, 2026-10-07).** An × marks the
+  exact coordinate at the centre of the map and the pin floats above it with a clear gap, so the
+  spot is never covered; the pin's head is open, so the plan shows through it. The map moves under
+  the cross: the pin lifts while it moves and drops, with a light haptic, when it settles. A tap
+  brings the tapped spot under the cross. Nothing is placed until "Place point here", which reads
+  the map's exact centre. The panel shows the coordinate, the ground one screen point covers
+  ("1 pt ≈ 6 cm"), whether the cross is inside the session's zone (and which zone it is in if not,
+  with "Switch to Zone C"), a "Zoom in to place" hint when the zoom is too coarse, and a half-metre
+  nudge pad as the gesture-free alternative. "Adjust point" re-enters placement on the point and
+  keeps every answer.
+- **Three rounds for every project: Standard, Reliability and Inventory** (`src/domain/rounds.ts`).
+  They replace the numbered rounds. Standard and Reliability collect play events (reliability
+  records are marked for comparison); an Inventory round records `janet-inventory-v1` — weather,
+  wind, shade and the seven loose-parts quantities with their item lists, from workbook rows 13–32 —
+  once per zone, with the zone chosen from a list or by tapping it on the map. An inventory record
+  belongs to its whole zone: it is stored at the zone's centre with `placement.source = "zone"` and
+  is never drawn as a play event. Drafts and records saved with a round number read as Standard.
+- **The map**: the session's zone outlined with the rest of the site dimmed; zone names in pills,
+  with a check once a zone's inventory is saved; prior observations drawn on the GPU (this
+  session's at full strength), clustered into counts below zoom 18 and opening a callout; zoom,
+  "Frame this zone", Layers (Day plan, Night plan, aerial; each site layer; all, this session's or
+  no observations) and a full-map toggle, all 44 pt with 48 pt targets; an honest scale bar
+  ("0–10 m · north ↑") computed for MapLibre's 512-point tiles.
+- **One question per screen.** A single choice moves on by itself after 160 ms; multi-select and
+  text wait for Continue, which reads "Skip for now" until something is answered. The next
+  question fades in and the screen reader moves to its heading; the progress bar has one segment
+  per act the form actually asks.
 - **A reusable form engine** (`src/forms/`) built from versioned definitions: stable question and
   option identifiers, a restricted declarative condition format, dynamic option sets, and
   validation of duplicate export columns, dangling references and dependency cycles. Workbook
@@ -40,11 +73,20 @@ both, and its content spans the full window width — a deliberate departure fro
   Drafts are account-scoped and never enter the upload queue.
 - **Validation only at review.** The review sheet is act-ordered, jumps back to any question, and
   blocks the save while naming how many required answers are still empty.
-- **Map work**: subdued plan and aerial bases from the bundled fixture, markers with a dark halo
-  and a light ring that hold on both, zoom-aware clustering into counts with labels at high zoom,
-  a grouped layer control with active indicators, edge-anchored callouts on a prior observation,
-  grouped zoom/recentre/scale chrome, and a placed point that can be nudged half a metre at a
-  time after it lands.
+- **An offline field guide** (`app/(app)/(tabs)/account/field-guide.tsx`): placing a point, the
+  three rounds, zones, answering, saving and uploading, the map controls and what to do when
+  something goes wrong, with search and sections that open in place.
+- **A project's own sites (D27).** A joined project lists the sites its managers created
+  (`GET /v1/projects/{p}/sites`, kept on the device so the list opens offline). Downloading a site
+  fetches its package archive, checks it against the digest the server recorded, and keeps its
+  manifest, layers and forms (`src/packages/hosted/`); nothing is kept unless every part checks. The
+  map draws it from its own layers in the map palette; hosted packages carry no imagery, so Aerial is
+  not offered. Its records carry their project and site code and upload there with their zone, round
+  type, first-round answer and placement. Training keeps the practice sites bundled with the app.
+- **Show my location (D28).** Off until the observer turns it on (the map's location button or the
+  Layers menu); permission is asked then, foreground only. A dot and an accuracy circle in the map
+  palette; the button centres on the observer or, while placing, brings their position under the
+  cross. The fix is never stored, uploaded or kept, and placement stays by hand.
 - **Real sync, relabelled.** Records show the existing queue states — held, on device only,
   synced, needs attention — with no send button. There is no contested state, because the API has
   no revisions and no download sync.
@@ -64,13 +106,13 @@ both, and its content spans the full window width — a deliberate departure fro
   materials checklist (Test G171 says "list to be provided") — all three are carried as protocol
   notes on the form and are read from the site brief rather than shipped as if they were settled.
 - Option codes are provisional implementation identifiers, distinct from export column names.
-- Site package delivery is **stubbed** behind `PackageProvider`. The three packages on the device
-  are bundled with the app; the other rows are fixtures. No download, cellular policy or hosted
-  package format is implied.
-- GPS accuracy has a place in the record and is stored as `null`: this build asks for no location
-  permission, so there is no accuracy to record beside the hand-placed coordinates. Hand
-  placement is authoritative and is never overwritten. MapLibre declares the Android location
-  permissions in its own manifest; `app.config.ts` blocks both, so the published app declares none.
+- Hosted site packages download over the existing upload path, not PowerSync (D2 remains the
+  plan). There is no cellular policy yet: a download runs on any connection, and its size is shown
+  first. The Training project keeps the three packages bundled with the app.
+- "Show my location" draws the observer's position on the field map only. Permission is asked
+  when the observer turns it on, foreground only; background location is blocked in
+  `app.config.ts`. The fix is never stored with a record, uploaded or kept, so `gpsAccuracyMetres`
+  stays `null`: hand placement is authoritative and is never overwritten.
 
 ## Run
 
@@ -105,6 +147,11 @@ EXPO_NO_DOTENV=1 pnpm exec expo prebuild
 pnpm ios     # or pnpm android
 ```
 
+MOB-23 adds the Contour dependencies in one step: `react-native-svg` and `expo-haptics` (native),
+and the Geologica and Spline Sans Mono fonts and `lucide-react-native` (JavaScript only). Rebuild
+the development app once more after it. MOB-27 removes `expo-blur` and Inter. "Show my location"
+adds `expo-location` (native, October 8): rebuild again before running this version.
+
 Orientation is one observer choice for the whole app — **Follow the device** (the default),
 **Portrait** or **Landscape** — set under "Screen orientation" on the Account and synchronisation
 screen. No screen locks or releases orientation on its own, so choosing a round, placing a point,
@@ -135,6 +182,23 @@ orientation. iPadOS windowed multitasking (Stage Manager) does not rotate a lock
 `eas.json` also provides `development`, `simulator`, and `preview` profiles. Cloud builds have not been created; account/project configuration and physical-iOS signing remain setup tasks. The identifier `com.fieldmaps.collector.dev` is a development placeholder.
 
 ## Verify
+
+Collect, rounds and the inventory form, October 7, 2026: **395 Vitest tests** pass, including the
+`janet-inventory-v1` contract cases (also run by the API's Python engine), round types and the
+legacy round-number reading, zone geometry (point in zone, concave zones, zone anchors, the
+spotlight, the scale bar) and the throttled aim store. TypeScript, Biome (two existing infos) and
+iOS and Android Metro exports pass. **Not run on a device or simulator**: the crosshair, the pin's
+lift and drop, haptics, layouts and VoiceOver need the acceptance steps below.
+
+Hosted sites, study uploads and Show my location, October 8, 2026: **429 Vitest tests** pass,
+including archive reading, the digest check, form resolution, the hosted map build, study upload
+payloads and destinations, and the location geometry. TypeScript, Biome and both iOS and Android
+Metro exports pass. Against local Supabase and the API, the collector's own download, form and
+upload code ran as an invited manager: a package prepared by `scripts/bootstrap-study.mjs` passed
+its digest check, and one Reliability play event and one zone inventory were accepted and listed
+with their zone, round type, first-round answer and placement. Nothing has run on a device or
+simulator: downloads through `expo-file-system`, the location dot and permission prompts need step
+9 of the scenario below.
 
 CON-01/02 verification, September 29, 2026: **137 Vitest tests** pass, including 39 shared contract cases and schema drift checking. TypeScript, full mobile Biome checks and both iOS/Android Metro exports pass. Numeric answers survive SQLite draft close/reopen and observation serialization; practice upload tests remain green. Metro watches `../contracts/` so the native bundles include the canonical JSON. No device run or hosted form publication is claimed.
 
@@ -178,6 +242,13 @@ timing. The native acceptance scenario below has not been executed against this 
 
 Native acceptance scenario for this version:
 
+0. (Collect, October 7) Open Riverside with a Standard round. Drag the map: the pin lifts, the ×
+   stays on the exact spot and the pin drops with a tap when the map settles. Tap the map: the
+   tapped spot comes under the ×; nothing is placed. Move the × out of the zone and confirm
+   "Outside Zone B · in Zone C" and "Switch to Zone C". Press "Place point here" and confirm the
+   stored coordinate equals the one shown. Choose an Inventory round and confirm Zone → Answer →
+   Review → Saved, a check in the zone's map label, and "Inventory Zone C next". Check phone
+   portrait, phone landscape and a tablet with each preferred hand.
 1. Open the Riverside package, tap the map before arming — confirm nothing is placed and the
    status line does not change. Tap the layer, base, zoom and recentre controls and confirm the
    same.
@@ -201,6 +272,12 @@ Native acceptance scenario for this version:
    mid-answer with Follow the device and confirm the typed answer, the placed point and the map view
    are unchanged. Check phone landscape and portrait on every screen, and confirm 844×390 has no
    horizontal scroll.
+9. (October 8) Signed in as a member of a project with a site: open the site, Download, and confirm
+   the four parts verify and "Set up this session" turns on; remove it and download again. Save a
+   Standard record and a zone inventory and confirm both show Uploaded. Turn on Show my location:
+   one permission prompt, the dot and its circle, the button centres on you (or moves the cross while
+   placing); outside the site the label says how far away you are. Deny permission and confirm the
+   label and the button point to Settings.
 
 ## Boundaries
 
@@ -222,11 +299,10 @@ The sample map is hand-authored training geometry and is not a real QGIS export 
 aerial base is a fixture style, not imagery. The Fall Creek Elementary package is the exception:
 its bases and layers are the QGIS drawings and drone orthomosaic, generated into
 `src/maps/sites/fall-creek/` by `qgis/fall-creek/build.sh` (regenerate, don't edit). It has one
-whole-playground zone and collects the practice form under site id `sample-garden`, the only pair
-the API accepts today, so its records upload as practice records. A real site package requires its geometry/imagery,
-georeferencing, supported formats, and offline-use rights. Package delivery is stubbed behind
-`PackageProvider` in `src/packages/`, so ingestion can replace the fixtures without rebuilding the
-field flow. Nothing on the field screen touches the network.
+whole-playground zone and collects the practice form under site id `sample-garden`, so its bundled
+records upload as practice records. A project's own sites arrive as hosted packages
+(`src/packages/hosted/`, D27); `src/packages/open.ts` opens either kind, so the field flow is the
+same for both. Nothing on the field screen touches the network.
 
 The current `expo-sqlite` store implements an append-only upload queue, not a full bidirectional
 sync protocol. If PowerSync is selected later, migrate the queue rather than adding a second
@@ -257,15 +333,18 @@ was removed afterward; this does not establish the rest of the product acceptanc
 | `src/forms/fixtures/` | Thin imports of the canonical JSON definitions in `../contracts/forms/` |
 | `scripts/contracts-forms.mts` | Generates the shared input JSON Schema from the mobile Zod definition |
 | `src/packages/` | The site package interface and the bundled fixture provider |
-| `src/session/` | The observation period: package, zone, round, draft persistence, and saving |
-| `src/maps/` | Native map, bundled training geometry, the generated Fall Creek site, base styles, and clustering maths |
-| `src/domain/` | Observation contracts and the record builder for each form version |
+| `src/session/` | The observation period: package, zone, round type, draft persistence, and saving |
+| `src/features/collect/` | The collect route's steps, the Contour field map, the crosshair and pin, and the aim store |
+| `src/features/guide/` | The offline field guide's content and its search |
+| `src/maps/` | Bundled training geometry, the generated Fall Creek site, base styles, clustering and zone geometry |
+| `src/domain/` | Observation contracts, round types and the record builder for each form version |
 | `src/storage/` | SQLite schema, observation repository, draft store, and focused-screen reads |
 | `src/auth/` | Secure session persistence and offline account identity |
 | `src/sync/` | Upload protocol, scheduling, and verified receipts |
 | `src/layout/` | The observer's orientation choice, its storage, and the tablet/phone layout decisions |
-| `src/components/` | Nocturne chrome primitives, the question panel, and screen frames |
-| `src/theme.ts` | Nocturne tokens, copied from the design system's own stylesheet |
+| `src/ui/` | Contour, from MOB-23: tokens read from `../contracts/contour.json`, theme, preferences, and the primitives that share their names with `web/src/components/contour/` |
+| `src/components/` | Screen frames and the previous chrome primitives, which MOB-27 removes once every screen uses `src/ui/` |
+| `src/theme.ts` | The previous chrome tokens, kept so unmoved screens compile; MOB-27 removes them |
 | `assets/` | App icon, Android adaptive and themed layers, Play Store icon; sources in `assets/icon-source/` |
 | `plugins/` | Local config plugins: the Android 16 large-screen orientation opt-out |
 

@@ -56,7 +56,7 @@ class Question(ContractModel):
     id: NonEmpty
     code: NonEmpty
     export_column: str
-    act: Literal["Child", "Social", "Play", "Setting", "Record"]
+    act: Literal["Child", "Social", "Play", "Setting", "Climate", "Inventory", "Record"]
     label: NonEmpty
     hint: NonEmpty | None = None
     kind: Literal["one", "many", "text", "number"]

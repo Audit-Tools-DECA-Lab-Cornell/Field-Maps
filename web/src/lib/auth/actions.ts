@@ -7,7 +7,13 @@ import { z } from "zod";
 import { safeNext } from "@/lib/auth/navigation";
 import { createClient, requireUser } from "@/lib/supabase/server";
 
-export type AuthState = { readonly message: string; readonly verify?: boolean; readonly retryAfter?: number };
+export type AuthState = {
+	readonly message: string;
+	readonly verify?: boolean;
+	readonly retryAfter?: number;
+	/** A resend went through: the message is a confirmation, not an error. */
+	readonly sent?: boolean;
+};
 const emailSchema = z.email().max(254);
 const passwordSchema = z.string().min(8).max(128);
 const cookieOptions = {
@@ -97,7 +103,7 @@ export async function authenticate(_state: AuthState, form: FormData): Promise<A
 			: await supabase.auth.resend({ type: "signup", email });
 		if (error) return failure(error);
 		store.set("fm-email-sent", String(Date.now()), cookieOptions);
-		return { message: "If this email is eligible, a new code is on its way.", retryAfter: 60 };
+		return { message: "If this email is eligible, a new code is on its way.", retryAfter: 60, sent: true };
 	}
 	const email = emailSchema.safeParse(form.get("email"));
 	if (!email.success) return { message: "Enter a valid email address." };
@@ -107,7 +113,7 @@ export async function authenticate(_state: AuthState, form: FormData): Promise<A
 		if (error) return failure(error);
 		store.set("fm-recovery-email", email.data, cookieOptions);
 		store.set("fm-email-sent", String(Date.now()), cookieOptions);
-		redirect("/reset-password");
+		redirect(`/reset-password?next=${encodeURIComponent(next)}`);
 	}
 	const password = passwordSchema.safeParse(form.get("password"));
 	if (!password.success) return { message: "Use a password between 8 and 128 characters." };

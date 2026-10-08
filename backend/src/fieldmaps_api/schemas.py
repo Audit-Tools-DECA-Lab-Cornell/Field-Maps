@@ -44,11 +44,37 @@ class ObservationUpload(BaseModel):
     ]
     observer: Annotated[str, Field(min_length=1, max_length=12)]
     observed_at: AwareDatetime
+    #: The round the record belongs to (D26). Optional, so practice uploads keep their shape; the
+    #: fingerprint includes these only when they are sent, so a retried older upload still matches.
+    zone: Code | None = None
+    round_type: Literal["standard", "reliability", "inventory"] | None = None
+    first_round: bool | None = None
+    placement: Literal["hand", "zone"] | None = None
 
     @field_validator("observed_at")
     @classmethod
     def normalize_capture_time(cls, value: datetime) -> datetime:
         return value.astimezone(UTC)
+
+    @model_validator(mode="after")
+    def coherent_round(self) -> "ObservationUpload":
+        """Accept no round at all (practice) or a whole, consistent one."""
+        if self.round_type is None:
+            if (self.zone, self.first_round, self.placement) != (None, None, None):
+                message = "zone, first_round and placement are sent with a round_type"
+                raise ValueError(message)
+            return self
+        if self.zone is None or self.placement is None:
+            message = "A round's record names its zone and placement"
+            raise ValueError(message)
+        if self.round_type == "inventory":
+            if self.placement != "zone" or self.first_round is not None:
+                message = "An inventory belongs to its whole zone: placement zone, no first_round"
+                raise ValueError(message)
+        elif self.placement != "hand" or self.first_round is None:
+            message = "A play event is placed by hand and says whether it opens a round"
+            raise ValueError(message)
+        return self
 
     @model_validator(mode="after")
     def limit_answers(self) -> "ObservationUpload":
@@ -82,6 +108,39 @@ class StoredObservation(BaseModel):
     coordinates: tuple[float, float]
     answers: dict[str, JsonValue]
     observed_at: AwareDatetime
+    revision: int
+
+
+class ObservationQuery(BaseModel):
+    """Which records to list: one site's, one round type's, or those received since a time."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
+
+    site: Annotated[str, Field(max_length=100)] | None = None
+    round_type: Literal["standard", "reliability", "inventory"] | None = None
+    since: AwareDatetime | None = None
+    limit: Annotated[int, Field(ge=1, le=500)] = 500
+
+
+class ObservationRow(BaseModel):
+    """One observation as the workspace lists it, with its site, form version and round."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    observation_id: UUID
+    observer: str
+    observed_at: AwareDatetime
+    received_at: AwareDatetime
+    coordinates: tuple[float, float]
+    site_code: str
+    site_name: str
+    form_version: str
+    zone: str | None
+    #: Standard when uploaded without a round: a play event outside any reliability round.
+    round_type: Literal["standard", "reliability", "inventory"]
+    first_round: bool | None
+    placement: Literal["hand", "zone"] | None
+    answers: dict[str, JsonValue]
     revision: int
 
 
@@ -120,3 +179,5 @@ class UploadTarget(BaseModel):
     site_id: UUID
     form_version_id: UUID
     definition: StoredFormDefinition
+    #: Uploads only ever resolve published or retired versions; a package target reports its state.
+    form_state: Literal["draft", "published", "retired"] = "published"

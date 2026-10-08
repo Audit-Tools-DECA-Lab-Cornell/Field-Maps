@@ -93,6 +93,7 @@ def cleanup_tenant(tenant: Tenant) -> None:
         "(SELECT (value->>'id')::uuid FROM jsonb_array_elements(:'users'::jsonb)); "
         "DELETE FROM fieldmaps.invitations WHERE organization_id=:'org'; "
         "DELETE FROM fieldmaps.form_versions WHERE organization_id=:'org'; "
+        "DELETE FROM fieldmaps.forms WHERE organization_id=:'org'; "
         "DELETE FROM fieldmaps.sites WHERE organization_id=:'org'; "
         "DELETE FROM fieldmaps.project_memberships WHERE organization_id=:'org' OR user_id IN "
         "(SELECT (value->>'id')::uuid FROM jsonb_array_elements(:'users'::jsonb)); "
