@@ -48,6 +48,12 @@ The password is in your local volume: `docker run --rm -v fieldmaps_hosted_api_s
 
 Check: `curl https://<service>.onrender.com/ready` returns `{"status":"ready"}`, and `curl -o /dev/null -w '%{http_code}' https://<service>.onrender.com/v1/me` returns 401.
 
+If the deploy exits with status 3, the API could not start, and its log has one `startup_failed` line saying why:
+
+- `password authentication failed for user "fieldmaps_api"`: the Secret File is not the role's password. Supabase's pooler logs show the same line. Set a new one in both places. Generate it on your machine (`openssl rand -hex 24`). Run `ALTER ROLE fieldmaps_api WITH PASSWORD '<it>';` in the Supabase SQL editor. Paste the same value, and nothing else, as the `database-password` Secret File, then redeploy. Update your local volume too if you run the API against the hosted database.
+- `Tenant or user not found`: the pooler host in `config.render.json` is not this project's. Copy the session pooler host from **Connect** in the Supabase dashboard.
+- `must not be superuser or bypass row security`: the configuration names the wrong role.
+
 ## 4. The web app on Vercel (you, 5 minutes)
 
 Production environment variables, then redeploy:

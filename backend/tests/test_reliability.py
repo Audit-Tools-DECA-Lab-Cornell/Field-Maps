@@ -1,14 +1,21 @@
+import logging
 from typing import TYPE_CHECKING
 
 import pytest
 from fastapi.testclient import TestClient
+from sentry_sdk.utils import BadDsn
 from sqlalchemy.exc import DBAPIError, InterfaceError, SQLAlchemyError
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from fieldmaps_api.database_errors import database_error
 from fieldmaps_api.main import create_app
-from fieldmaps_api.observability import scrub_event
+from fieldmaps_api.observability import (
+    CAUSE_DEPTH,
+    SafeServerFormatter,
+    exception_types,
+    scrub_event,
+)
 from fieldmaps_api.readiness import DatabaseRole, require_restricted_role
 
 if TYPE_CHECKING:
@@ -81,6 +88,77 @@ def test_startup_refuses_unsafe_role(monkeypatch: pytest.MonkeyPatch) -> None:
         pytest.fail("Startup accepted an unsafe database role")
 
 
+def chained(depth: int) -> BaseException:
+    """Build an exception raised from `depth - 1` others, each carrying secret text."""
+    error: BaseException = KeyError("secret 0")
+    for level in range(1, depth):
+        outer = RuntimeError(f"secret {level}") if level % 2 else ValueError(f"secret {level}")
+        outer.__cause__ = error
+        error = outer
+    return error
+
+
+def test_exception_types_follow_causes_outermost_first() -> None:
+    assert exception_types(chained(3)) == [
+        "builtins.ValueError",
+        "builtins.RuntimeError",
+        "builtins.KeyError",
+    ]
+    implicit = ValueError("secret")
+    implicit.__context__ = OSError("secret")
+    assert exception_types(implicit) == ["builtins.ValueError", "builtins.OSError"]
+
+
+def test_exception_types_stop_at_a_cycle_and_at_the_depth_limit() -> None:
+    first, second = ValueError("secret"), OSError("secret")
+    first.__cause__, second.__cause__ = second, first
+    assert exception_types(first) == ["builtins.ValueError", "builtins.OSError"]
+    assert len(exception_types(chained(CAUSE_DEPTH + 4))) == CAUSE_DEPTH
+
+
+def test_server_log_lines_never_carry_exception_text() -> None:
+    error = chained(CAUSE_DEPTH + 4)
+    record = logging.LogRecord(
+        "uvicorn.error",
+        logging.ERROR,
+        __file__,
+        1,
+        "secret message",
+        None,
+        (type(error), error, None),
+    )
+    line = SafeServerFormatter().format(record)
+    assert "secret" not in line
+    assert '"exception":["builtins.' in line
+
+
+def test_startup_failure_names_its_cause(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    async def unreachable(_engine: AsyncEngine) -> None:
+        message = 'password authentication failed for user "fieldmaps_api"'
+        raise OSError(message)
+
+    monkeypatch.setattr("fieldmaps_api.readiness.assert_safe_role", unreachable)
+    with pytest.raises(OSError, match="password authentication"), TestClient(create_app()):
+        pytest.fail("Startup went ahead without its database")
+    captured = capsys.readouterr().err
+    assert '"event":"startup_failed"' in captured
+    assert '"exception":["builtins.OSError"]' in captured
+    assert "password authentication failed" in captured
+
+
+def test_startup_failure_names_a_malformed_sentry_dsn(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("SENTRY_DSN", "not a dsn")
+    with pytest.raises(BadDsn), TestClient(create_app()):
+        pytest.fail("Startup went ahead with a malformed SENTRY_DSN")
+    captured = capsys.readouterr().err
+    assert '"event":"startup_failed"' in captured
+    assert "sentry_sdk.utils.BadDsn" in captured
+
+
 @pytest.mark.parametrize("path", ["/health", "/missing", "/failure"])
 def test_request_id_survives_all_responses(path: str) -> None:
     app = create_app()
@@ -142,13 +220,18 @@ def test_unhandled_failure_telemetry_keeps_request_id(monkeypatch: pytest.Monkey
 def test_server_logs_strip_raw_urls_and_exception_messages(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    import logging  # noqa: PLC0415
-
     with TestClient(create_app()) as client:
         client.get("/health?token=secret", headers={"Authorization": "Bearer secret"})
         logging.getLogger("uvicorn.error").error("secret exception")
+        detail = "secret detail"
+        try:
+            raise ValueError(detail)  # noqa: TRY301
+        except ValueError:
+            logging.getLogger("uvicorn.error").exception("secret message")
         logging.getLogger("uvicorn.access").info("secret URL")
     captured = capsys.readouterr().err
     assert '"event":"http_response"' in captured
     assert '"event":"server_log"' in captured
+    # The kind of failure is kept; its text, which may carry request data, is not.
+    assert '"exception":["builtins.ValueError"]' in captured
     assert "secret" not in captured
