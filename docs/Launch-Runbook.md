@@ -50,7 +50,7 @@ Check: `curl https://<service>.onrender.com/ready` returns `{"status":"ready"}`,
 
 If the deploy exits with status 3, the API could not start, and its log has one `startup_failed` line saying why:
 
-- `password authentication failed for user "fieldmaps_api"`: the Secret File is not the role's password, and Supabase's pooler logs say the same. Give the role a new one with `node scripts/api-role-password.mjs`. It prints an `ALTER ROLE` for the Supabase SQL editor and the password for the `database-password` Secret File; paste each, then redeploy. The statement carries only the password's SCRAM verifier, because Postgres logs DDL and would otherwise keep the password in clear. Anything else that signs in as `fieldmaps_api` needs the new password too.
+- `password authentication failed for user "fieldmaps_api"`: the Secret File is not the role's password, and Supabase's pooler logs say the same. Give the role a new one with `node scripts/api-role-password.mjs`. It prints an `ALTER ROLE` for the Supabase SQL editor and the password for the `database-password` Secret File; paste each, then redeploy. The statement carries only the password's SCRAM verifier, so the password itself never reaches the SQL editor or its history. Run the statement and paste the password from the same run: a second run makes a different pair, and the role keeps whichever statement ran last. Anything else that signs in as `fieldmaps_api` needs the new password too.
 - `Tenant or user not found`: the pooler host in `config.render.json` is not this project's. Copy the session pooler host from **Connect** in the Supabase dashboard.
 - `must not be superuser or bypass row security`: the configuration names the wrong role.
 

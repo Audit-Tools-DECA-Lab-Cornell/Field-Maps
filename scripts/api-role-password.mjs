@@ -5,9 +5,9 @@
 //
 // It prints two things: the password itself, for the API's `database-password` Secret File on Render,
 // and an ALTER ROLE statement for the Supabase SQL editor that carries only its SCRAM-SHA-256 verifier.
-// Postgres logs DDL, so a plain `PASSWORD '...'` would be written to the project's logs in clear; the
-// verifier is what the server stores anyway, and the password cannot be read back from it. Plain Node 24,
-// no dependencies.
+// The verifier is what Postgres stores anyway, and the password cannot be read back from it, so the
+// password never reaches the SQL editor, its saved history or the database at all. Plain Node 24, no
+// dependencies.
 
 import { createHash, createHmac, pbkdf2Sync, randomBytes } from "node:crypto";
 import { realpathSync } from "node:fs";
