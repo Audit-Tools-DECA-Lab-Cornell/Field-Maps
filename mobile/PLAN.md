@@ -383,7 +383,7 @@ Do:
 Done when: the draft tests pass, and a force-quit mid-observation offers Resume or Discard.
 
 ### MOB-13: Forms from the server, and a generic observation record
-Status: todo · Phase 2 · Size L · Depends: CON-02, DB-09, MOB-09, MOB-12 · Blocks: MOB-15
+Status: doing (2026-10-08: on the existing upload queue per D27, a hosted site's published forms download with its package and records upload with their project; the PowerSync parts remain) · Phase 2 · Size L · Depends: CON-02, DB-09, MOB-09, MOB-12 · Blocks: MOB-15
 Read first: `src/forms/registry.ts`, `src/domain/observation.ts`, `src/domain/build-observation.ts`, `src/session/provider.tsx:340-360`; the envelope in [contracts.md](../docs/plan/contracts.md#observation-envelope-sync-upload-and-storage).
 Do:
 1. The registry becomes an async repository over synced `form_versions`, published and retired.
@@ -405,7 +405,7 @@ Do:
 Done when: the brief, field and review screens work against a synced published form. The shared cases pass, and no TypeScript branches on a form version string.
 
 ### MOB-14: Hosted site packages
-Status: todo · Phase 2 · Size L · Depends: BE-13, MOB-09 · Blocks: MOB-15
+Status: doing (2026-10-08: sites list, archive download checked against its digest, offline storage and removal work on the existing upload path per D27; Storage-backed delivery and the cellular policy remain) · Phase 2 · Size L · Depends: BE-13, MOB-09 · Blocks: MOB-15
 Read first: `src/packages/site-package.ts`, `src/packages/bundled.ts`, `src/maps/field-map.tsx`; the manifest format in `backend/src/fieldmaps_api/domain/packages.py` (moved there by BE-03).
 Do:
 1. Project and Site screens:

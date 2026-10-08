@@ -76,6 +76,17 @@ both, and its content spans the full window width — a deliberate departure fro
 - **An offline field guide** (`app/(app)/(tabs)/account/field-guide.tsx`): placing a point, the
   three rounds, zones, answering, saving and uploading, the map controls and what to do when
   something goes wrong, with search and sections that open in place.
+- **A project's own sites (D27).** A joined project lists the sites its managers created
+  (`GET /v1/projects/{p}/sites`, kept on the device so the list opens offline). Downloading a site
+  fetches its package archive, checks it against the digest the server recorded, and keeps its
+  manifest, layers and forms (`src/packages/hosted/`); nothing is kept unless every part checks. The
+  map draws it from its own layers in the map palette; hosted packages carry no imagery, so Aerial is
+  not offered. Its records carry their project and site code and upload there with their zone, round
+  type, first-round answer and placement. Training keeps the practice sites bundled with the app.
+- **Show my location (D28).** Off until the observer turns it on (the map's location button or the
+  Layers menu); permission is asked then, foreground only. A dot and an accuracy circle in the map
+  palette; the button centres on the observer or, while placing, brings their position under the
+  cross. The fix is never stored, uploaded or kept, and placement stays by hand.
 - **Real sync, relabelled.** Records show the existing queue states — held, on device only,
   synced, needs attention — with no send button. There is no contested state, because the API has
   no revisions and no download sync.
@@ -138,7 +149,8 @@ pnpm ios     # or pnpm android
 
 MOB-23 adds the Contour dependencies in one step: `react-native-svg` and `expo-haptics` (native),
 and the Geologica and Spline Sans Mono fonts and `lucide-react-native` (JavaScript only). Rebuild
-the development app once more after it. MOB-27 removes `expo-blur` and Inter.
+the development app once more after it. MOB-27 removes `expo-blur` and Inter. "Show my location"
+adds `expo-location` (native, October 8): rebuild again before running this version.
 
 Orientation is one observer choice for the whole app — **Follow the device** (the default),
 **Portrait** or **Landscape** — set under "Screen orientation" on the Account and synchronisation
@@ -177,6 +189,16 @@ legacy round-number reading, zone geometry (point in zone, concave zones, zone a
 spotlight, the scale bar) and the throttled aim store. TypeScript, Biome (two existing infos) and
 iOS and Android Metro exports pass. **Not run on a device or simulator**: the crosshair, the pin's
 lift and drop, haptics, layouts and VoiceOver need the acceptance steps below.
+
+Hosted sites, study uploads and Show my location, October 8, 2026: **429 Vitest tests** pass,
+including archive reading, the digest check, form resolution, the hosted map build, study upload
+payloads and destinations, and the location geometry. TypeScript, Biome and both iOS and Android
+Metro exports pass. Against local Supabase and the API, the collector's own download, form and
+upload code ran as an invited manager: a package prepared by `scripts/bootstrap-study.mjs` passed
+its digest check, and one Reliability play event and one zone inventory were accepted and listed
+with their zone, round type, first-round answer and placement. Nothing has run on a device or
+simulator: downloads through `expo-file-system`, the location dot and permission prompts need step
+9 of the scenario below.
 
 CON-01/02 verification, September 29, 2026: **137 Vitest tests** pass, including 39 shared contract cases and schema drift checking. TypeScript, full mobile Biome checks and both iOS/Android Metro exports pass. Numeric answers survive SQLite draft close/reopen and observation serialization; practice upload tests remain green. Metro watches `../contracts/` so the native bundles include the canonical JSON. No device run or hosted form publication is claimed.
 
@@ -250,6 +272,12 @@ Native acceptance scenario for this version:
    mid-answer with Follow the device and confirm the typed answer, the placed point and the map view
    are unchanged. Check phone landscape and portrait on every screen, and confirm 844×390 has no
    horizontal scroll.
+9. (October 8) Signed in as a member of a project with a site: open the site, Download, and confirm
+   the four parts verify and "Set up this session" turns on; remove it and download again. Save a
+   Standard record and a zone inventory and confirm both show Uploaded. Turn on Show my location:
+   one permission prompt, the dot and its circle, the button centres on you (or moves the cross while
+   placing); outside the site the label says how far away you are. Deny permission and confirm the
+   label and the button point to Settings.
 
 ## Boundaries
 
@@ -271,11 +299,10 @@ The sample map is hand-authored training geometry and is not a real QGIS export 
 aerial base is a fixture style, not imagery. The Fall Creek Elementary package is the exception:
 its bases and layers are the QGIS drawings and drone orthomosaic, generated into
 `src/maps/sites/fall-creek/` by `qgis/fall-creek/build.sh` (regenerate, don't edit). It has one
-whole-playground zone and collects the practice form under site id `sample-garden`, the only pair
-the API accepts today, so its records upload as practice records. A real site package requires its geometry/imagery,
-georeferencing, supported formats, and offline-use rights. Package delivery is stubbed behind
-`PackageProvider` in `src/packages/`, so ingestion can replace the fixtures without rebuilding the
-field flow. Nothing on the field screen touches the network.
+whole-playground zone and collects the practice form under site id `sample-garden`, so its bundled
+records upload as practice records. A project's own sites arrive as hosted packages
+(`src/packages/hosted/`, D27); `src/packages/open.ts` opens either kind, so the field flow is the
+same for both. Nothing on the field screen touches the network.
 
 The current `expo-sqlite` store implements an append-only upload queue, not a full bidirectional
 sync protocol. If PowerSync is selected later, migrate the queue rather than adding a second
