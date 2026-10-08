@@ -27,10 +27,16 @@ PATCH_PROJECT: Final = text("""UPDATE fieldmaps.projects SET
  name = coalesce(:name, name), timezone = coalesce(:timezone, timezone),
  status = coalesce(:status, status), description = CASE WHEN :has_description
  THEN :description ELSE description END WHERE id = :id""")
-ORG_MEMBERS: Final = text("""SELECT row_to_json(m)::text FROM fieldmaps.organization_members m
- WHERE organization_id = :id ORDER BY granted_at, user_id""")
-PROJECT_MEMBERS: Final = text("""SELECT row_to_json(m)::text FROM fieldmaps.project_memberships m
- WHERE project_id = :id ORDER BY granted_at, user_id""")
+# Members with the name and observer code their profile shows the caller (RLS: managers see their
+# collaborators' profiles), so a team list names people rather than listing account ids.
+ORG_MEMBERS: Final = text("""SELECT (to_jsonb(m) || jsonb_build_object(
+ 'display_name', p.display_name, 'observer_initials', p.observer_initials))::text
+ FROM fieldmaps.organization_members m LEFT JOIN fieldmaps.profiles p ON p.user_id = m.user_id
+ WHERE m.organization_id = :id ORDER BY m.granted_at, m.user_id""")
+PROJECT_MEMBERS: Final = text("""SELECT (to_jsonb(m) || jsonb_build_object(
+ 'display_name', p.display_name, 'observer_initials', p.observer_initials))::text
+ FROM fieldmaps.project_memberships m LEFT JOIN fieldmaps.profiles p ON p.user_id = m.user_id
+ WHERE m.project_id = :id ORDER BY m.granted_at, m.user_id""")
 ORG_MANAGER: Final = text("SELECT fieldmaps_private.has_org_role(:id, ARRAY['owner','admin'])")
 PROJECT_MANAGER: Final = text("SELECT fieldmaps_private.has_project_role(:id, ARRAY['manager'])")
 SET_ORG_ROLE: Final = text("SELECT fieldmaps_private.set_org_role(:id, :user, :role)")

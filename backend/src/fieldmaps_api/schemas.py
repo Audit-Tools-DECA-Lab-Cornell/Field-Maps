@@ -44,6 +44,12 @@ class ObservationUpload(BaseModel):
     ]
     observer: Annotated[str, Field(min_length=1, max_length=12)]
     observed_at: AwareDatetime
+    #: The round the record belongs to (D26). Optional, so practice uploads keep their shape; the
+    #: fingerprint includes these only when they are sent, so a retried older upload still matches.
+    zone: Code | None = None
+    round_type: Literal["standard", "reliability", "inventory"] | None = None
+    first_round: bool | None = None
+    placement: Literal["hand", "zone"] | None = None
 
     @field_validator("observed_at")
     @classmethod
@@ -85,6 +91,39 @@ class StoredObservation(BaseModel):
     revision: int
 
 
+class ObservationQuery(BaseModel):
+    """Which records to list: one site's, one round type's, or those received since a time."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True, extra="forbid")
+
+    site: Annotated[str, Field(max_length=100)] | None = None
+    round_type: Literal["standard", "reliability", "inventory"] | None = None
+    since: AwareDatetime | None = None
+    limit: Annotated[int, Field(ge=1, le=500)] = 500
+
+
+class ObservationRow(BaseModel):
+    """One observation as the workspace lists it, with its site, form version and round."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
+
+    observation_id: UUID
+    observer: str
+    observed_at: AwareDatetime
+    received_at: AwareDatetime
+    coordinates: tuple[float, float]
+    site_code: str
+    site_name: str
+    form_version: str
+    zone: str | None
+    #: Standard when uploaded without a round: a play event outside any reliability round.
+    round_type: Literal["standard", "reliability", "inventory"]
+    first_round: bool | None
+    placement: Literal["hand", "zone"] | None
+    answers: dict[str, JsonValue]
+    revision: int
+
+
 class ProjectAccess(BaseModel):
     model_config: ClassVar[ConfigDict] = ConfigDict(frozen=True)
 
@@ -120,3 +159,5 @@ class UploadTarget(BaseModel):
     site_id: UUID
     form_version_id: UUID
     definition: StoredFormDefinition
+    #: Uploads only ever resolve published or retired versions; a package target reports its state.
+    form_state: Literal["draft", "published", "retired"] = "published"

@@ -25,7 +25,8 @@ export type ClusterOptions = {
   readonly individualZoom?: number;
 };
 
-const TILE_PIXELS = 256;
+/** MapLibre lays the world out in 512-point tiles: at zoom 0 it is 512 points wide. */
+const TILE_PIXELS = 512;
 
 export function degreesPerPixel(zoom: number): number {
   return 360 / (TILE_PIXELS * 2 ** zoom);
@@ -33,7 +34,7 @@ export function degreesPerPixel(zoom: number): number {
 
 /** Ground resolution at a latitude, used for the scale bar and for nudging in metres. */
 export function metresPerPixel(zoom: number, latitude: number): number {
-  return (156543.03392 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
+  return (40075016.686 * Math.cos((latitude * Math.PI) / 180)) / (TILE_PIXELS * 2 ** zoom);
 }
 
 export function clusterPoints(

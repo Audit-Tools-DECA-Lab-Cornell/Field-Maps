@@ -1,9 +1,16 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import {
+  placesPoints,
+  ROUND_TYPES,
+  ROUNDS,
+  type RoundType,
+} from "../../../../../../src/domain/rounds";
 import { useSite } from "../../../../../../src/features/preview";
 import { PageIntro, useAccountInitials } from "../../../../../../src/features/projects/parts";
 import { useFieldSession } from "../../../../../../src/session/provider";
+import { offersRound } from "../../../../../../src/session/round-forms";
 import {
   Button,
   Field,
@@ -11,7 +18,6 @@ import {
   Island,
   Mono,
   Note,
-  NumberStepper,
   type RadioOption,
   RadioRows,
   Screen,
@@ -76,7 +82,7 @@ export default function BriefScreen() {
   const account = useAccountInitials();
   const haptics = useHaptics();
   const [notesOpen, setNotesOpen] = useState(false);
-  const { sitePackage, form, zone, round, freshPeriod, inProgress } = session;
+  const { sitePackage, form, zone, roundType, freshPeriod, inProgress } = session;
 
   const observerQuestion = form?.questions.find(
     (question) => question.exportColumn === OBSERVER_COLUMN && question.kind === "text",
@@ -123,9 +129,16 @@ export default function BriefScreen() {
   const zones: RadioOption<string>[] = sitePackage.zones.map((entry) => ({
     value: entry.id,
     label: entry.label,
+    disabled: session.zoneBlock !== null && entry.id !== zone.id,
   }));
-  const firstRound = sitePackage.rounds[0] ?? 1;
-  const lastRound = sitePackage.rounds[sitePackage.rounds.length - 1] ?? firstRound;
+  const rounds: RadioOption<RoundType>[] = ROUND_TYPES.map((type) => ({
+    value: type,
+    label: ROUNDS[type].label,
+    description: ROUNDS[type].description,
+    disabled:
+      (session.roundBlock !== null && type !== roundType) || !offersRound(sitePackage, type),
+  }));
+  const inventory = !placesPoints(roundType);
   const openHere = inProgress !== null && inProgress.packageId === sitePackage.id;
   const notes = form.protocolNotes;
 
@@ -143,9 +156,36 @@ export default function BriefScreen() {
         }
       />
       <View style={s.body}>
-        <PageIntro title="Before you begin" lead="Confirm where and when you are observing." />
+        <PageIntro
+          title="Before you begin"
+          lead="Choose the round, then where you are observing."
+        />
 
-        <Field label="Zone">
+        <Field label="Round">
+          <RadioRows
+            options={rounds}
+            value={roundType}
+            onValueChange={(next) => {
+              haptics.selection();
+              session.chooseRoundType(next);
+            }}
+            label="Round"
+            testID="brief-round"
+          />
+        </Field>
+        {session.roundBlock ? (
+          <Note tone="waiting" icon="lock">
+            {session.roundBlock}
+          </Note>
+        ) : null}
+        {roundType === "reliability" ? (
+          <Note tone="neutral" icon="users">
+            Agree the zone and start time with the other observer, then code independently. Your
+            records are marked as a reliability round so the two codings can be compared.
+          </Note>
+        ) : null}
+
+        <Field label={inventory ? "Zone to inventory first" : "Zone"}>
           <RadioRows
             options={zones}
             value={zone.id}
@@ -160,22 +200,13 @@ export default function BriefScreen() {
           />
         </Field>
 
+        {inventory ? (
+          <Text variant="small" tone="ink2" style={s.hint}>
+            You can choose each zone in turn while collecting; the map marks the zones done.
+          </Text>
+        ) : null}
+
         <View style={s.pair}>
-          <View style={s.half}>
-            <Field label="Round number">
-              <NumberStepper
-                value={round}
-                min={firstRound}
-                max={lastRound}
-                onChange={(next) => {
-                  haptics.selection();
-                  session.chooseRound(next);
-                }}
-                label="Round number"
-                testID="brief-round"
-              />
-            </Field>
-          </View>
           {observerQuestion ? (
             <View style={s.half}>
               <Field label="Observer code">
@@ -198,15 +229,11 @@ export default function BriefScreen() {
             </View>
           ) : null}
         </View>
-        <Text variant="small" tone="ink2" style={s.hint}>
-          Choose the protocol round. No scheduled assignment is implied.
-        </Text>
-
         <Switch
-          label="This is a fresh observation period"
+          label="First round of this observation period"
           description={
             freshPeriod
-              ? "Nothing is inherited from an earlier round."
+              ? "Nothing is carried over from an earlier round."
               : sitePackage.inheritedContext
           }
           checked={freshPeriod}
@@ -238,12 +265,12 @@ export default function BriefScreen() {
 
         <View style={s.actions}>
           <Button
-            label="Start collection"
-            icon="crosshair"
+            label={inventory ? "Start the inventory round" : "Start collection"}
+            icon={inventory ? "list" : "crosshair"}
             size="collector"
             fullWidth
             onPress={() => router.push("/collect")}
-            accessibilityHint={`${zone.label}, round ${round}.`}
+            accessibilityHint={`${zone.label}, ${ROUNDS[roundType].label}.`}
             testID="brief-start"
           />
           <TextLink

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { observationSchema, type ShellObservation } from "../domain/observation";
+import {
+  isShellObservation,
+  observationSchema,
+  type ShellObservation,
+} from "../domain/observation";
 import { isUploadable } from "../forms/registry";
 import type { Receipt } from "../sync/contracts";
 import type { LocalDatabase } from "./observation-store";
@@ -26,7 +30,7 @@ export async function pendingObservations(db: LocalDatabase, scope: string, now:
     }))
     .filter(
       (item): item is { record: ShellObservation; attempts: number } =>
-        item.record.formVersion === "shell-v1" && isUploadable(item.record.formVersion),
+        isShellObservation(item.record) && isUploadable(item.record.formVersion),
     );
 }
 

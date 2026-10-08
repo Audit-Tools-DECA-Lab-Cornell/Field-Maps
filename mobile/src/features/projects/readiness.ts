@@ -1,3 +1,4 @@
+import { type RoundType, roundLabel } from "../../domain/rounds";
 import type { AssetState, SiteDownload } from "../preview/data-source";
 import { PACKAGE_ASSETS, type PreviewProject, type PreviewSite } from "../preview/fixtures";
 
@@ -137,10 +138,10 @@ export function unfinishedSentence({ placed, answered, asked }: UnfinishedFacts)
   return `${point}, ${answers}. Kept on this device.`;
 }
 
-/** "North meadow · Round 1", or the package name when the zone is not known. */
-export function unfinishedTitle(zone: string | null | undefined, round: number | null): string {
+/** "North meadow · Standard round", or the package name when the zone is not known. */
+export function unfinishedTitle(zone: string | null | undefined, round: RoundType | null): string {
   const place = zone && zone.trim() !== "" ? zone : "Unnamed zone";
-  return round === null ? place : `${place} · Round ${round}`;
+  return round === null ? place : `${place} · ${roundLabel(round)}`;
 }
 
 /**

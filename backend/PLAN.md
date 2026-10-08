@@ -253,7 +253,13 @@ Do:
 Done when: all shared cases pass in both pytest and Vitest (CON-02), and the old upload tests pass.
 
 ### BE-11: Instrument endpoints
-Status: todo · Phase 2 · Size M · Depends: BE-10, DB-09 · Blocks: WEB-09
+Status: done (2026-10-07) · Phase 2 · Size M · Depends: BE-10, DB-09 · Blocks: WEB-09
+What now works (`routers/forms.py`, `services/forms.py`):
+- `GET/POST /v1/projects/{p}/forms`, `POST …/forms/{form_code}/versions` (the next draft, copied from the newest version unless a definition is sent), and `GET/PUT/DELETE …/form-versions/{code}` with `POST …/publish` and `…/retire`. Versions are addressed by their code (`inventory-v2`), the name devices and exports already use, so a version id from another project can never be named.
+- Every definition is stamped with its code and state and checked by `FormDefinition` before it is stored, and again at publication; a 422 names up to eight problems. Form bodies may be 1 MiB.
+- Writes need a manager of the project (403); reads by a non-member are 404, as for every project route.
+
+Verified by: `tests/test_workspace_api.py` (create, edit, refuse a broken definition, publish Janet's inventory definition from `contracts/forms/`, frozen after publication, next draft, discard, retire, observers never see drafts, another organization's manager refused).
 Do:
 1. `GET /v1/projects/{p}/forms` and `GET …/forms/{f}/versions` are for any member. They list published and retired versions; drafts are listed for managers only (DB-09's policies).
 2. `POST /v1/projects/{p}/forms` and `POST …/forms/{f}/versions` are for managers. The second creates a draft from JSON, validated with BE-10's parser, and the response lists every problem found.
@@ -312,7 +318,8 @@ Done when the tests cover:
 - rejections are readable by their owner and their project's managers only.
 
 ### BE-13: Sites, zones and packages in Storage
-Status: todo · Phase 2 · Size L · Depends: DB-12 · Blocks: DB-14, GIS-07, MOB-14, OPS-15, WEB-08
+Status: doing (step 1 in place 2026-10-07; Storage remains) · Phase 2 · Size L · Depends: DB-12 · Blocks: DB-14, GIS-07, MOB-14, OPS-15, WEB-08
+Done so far: `GET/POST /v1/projects/{p}/sites` and `GET/PATCH …/sites/{code}`. A site reports its newest ready package, that package's zones, extent and centre (from the manifest, still bounding boxes) and its observation count, which replaces the planned `…/zones` route until step 2 stores real polygons. A package can only be prepared with a published form version (422 on `form_version` otherwise).
 Needs user: a Storage S3 access key (Project Settings → Storage), provided as a runtime Secret File. It is never committed.
 Read first: `domain/packages.py` (`469-478` bounding-box zones; `31` the empty allow-list); `services/sites.py` and `repositories/sites.py` (`prepare_package`, `read_package_archive`); DB-12.
 Do:
@@ -339,7 +346,8 @@ Done when:
 - the zones table holds real polygons.
 
 ### BE-14: Analysis: observation list, summary, exports
-Status: todo · Phase 3 · Size L · Depends: BE-10, DB-10 · Blocks: WEB-10, WEB-11, WEB-12
+Status: doing (a first list 2026-10-07; cursor, summary and exports remain) · Phase 3 · Size L · Depends: BE-10, DB-10 · Blocks: WEB-10, WEB-11, WEB-12
+Done so far: `GET /v1/projects/{p}/observations` filtered by `site`, `round_type` and `since` (received), newest first, `limit` at most 500, each row with its site, form version, zone and round context. No cursor yet.
 Do:
 1. `GET /v1/projects/{p}/observations`:
    - cursor on `(observed_at, id)`, with `limit` at most 500;

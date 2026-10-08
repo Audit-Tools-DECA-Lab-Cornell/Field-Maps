@@ -1,3 +1,5 @@
+import type { RoundType } from "../../domain/rounds";
+
 /**
  * The collector's preview world: what an observer sees before the server is wired (MOB-04, MOB-14). It
  * matches the web fixtures (web/src/fixtures): the same people, project, sites and record IDs, so a review
@@ -35,7 +37,7 @@ export type QueueRecord = {
   id: string;
   label: string;
   zone: string;
-  round: number;
+  roundType: RoundType;
   time: string;
   state: QueueState;
   summary: string;
@@ -135,7 +137,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0249",
     label: "OBS-0249",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "11:34",
     state: "onDevice",
     summary: "Physical · Gross motor · 6–8 yrs",
@@ -144,7 +146,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0248",
     label: "OBS-0248",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "11:32",
     state: "attention",
     summary: "Physical play",
@@ -161,7 +163,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0247",
     label: "OBS-0247",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "11:31",
     state: "held",
     summary: "Exploratory · Sensory",
@@ -170,7 +172,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0246",
     label: "OBS-0246",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "11:30",
     state: "onDevice",
     summary: "Imaginative · Symbolic",
@@ -179,7 +181,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0245",
     label: "OBS-0245",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "11:29",
     state: "uploading",
     summary: "Physical · Gross motor",
@@ -188,7 +190,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0242",
     label: "OBS-0242",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "10:52",
     state: "uploaded",
     summary: "Imaginative · Socio-dramatic",
@@ -197,7 +199,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0240",
     label: "OBS-0240",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "10:41",
     state: "uploaded",
     summary: "Physical · Gross motor",
@@ -206,7 +208,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0236",
     label: "OBS-0236",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "09:31",
     state: "uploaded",
     summary: "Physical · Gross motor",
@@ -215,7 +217,7 @@ export const PREVIEW_QUEUE: QueueRecord[] = [
     id: "obs-0234",
     label: "OBS-0234",
     zone: "North meadow",
-    round: 1,
+    roundType: "standard",
     time: "09:12",
     state: "uploaded",
     summary: "Restorative · Onlooking",

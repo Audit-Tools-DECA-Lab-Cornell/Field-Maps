@@ -41,6 +41,16 @@ describe("Form definition validation", () => {
     expect(janetTestV1.questions.map((question) => question.id)).toContain("wildlife_interaction");
   });
 
+  it("refuses a question named after a field the record itself carries", () => {
+    // Its answer would travel beside the record's own field of that name and never be checked.
+    for (const id of ["zone", "round_type", "first_round", "placement"])
+      expect(() => parseFormDefinition(form([choice(id)]))).toThrow(
+        `Question id "${id}" is reserved for the record itself.`,
+      );
+    // The practice form's observer question is the record's observer, and stays allowed.
+    expect(parseFormDefinition(form([choice("observer")])).questions).toHaveLength(1);
+  });
+
   it("refuses two questions claiming the same export column", () => {
     // Given two fields that would land in one analysis column.
     const definition = form([

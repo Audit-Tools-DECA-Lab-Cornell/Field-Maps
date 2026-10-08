@@ -4,8 +4,8 @@ import type { Coordinate } from "../domain/observation";
 import type { SiteZone } from "../maps/sample-site";
 
 /**
- * The shape a site package will take when packages are really delivered: geometry, zones,
- * rounds and the form version the site collects. Delivery itself is stubbed behind
+ * The shape a site package will take when packages are really delivered: geometry, zones and
+ * the form versions the site collects. Delivery itself is stubbed behind
  * {@link PackageProvider} — there is no hosted package format yet, so nothing here pretends to
  * download one or to enforce a cellular policy.
  */
@@ -45,7 +45,11 @@ export type SitePackage = PackageSummary & {
   readonly siteId: string;
   readonly sizeOnDevice: string;
   readonly zones: readonly SiteZone[];
-  readonly rounds: readonly number[];
+  /**
+   * The form an Inventory round collects on this site, once per zone. Standard and Reliability rounds
+   * collect {@link PackageSummary.formVersion}. Every project offers all three rounds.
+   */
+  readonly inventoryFormVersion: string;
   /** What a round inherits when the observer has not declared a fresh period. */
   readonly inheritedContext: string;
   readonly centre: Coordinate;

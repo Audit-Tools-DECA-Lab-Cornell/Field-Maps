@@ -5,7 +5,14 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fieldmaps_api.queries import collection as queries
-from fieldmaps_api.schemas import ObservationUpload, StoredObservation, UploadReceipt, UploadTarget
+from fieldmaps_api.schemas import (
+    ObservationQuery,
+    ObservationRow,
+    ObservationUpload,
+    StoredObservation,
+    UploadReceipt,
+    UploadTarget,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy import Result
@@ -49,8 +56,28 @@ async def insert_observation(session: AsyncSession, upload: ObservationWrite) ->
             "answers": upload.answers_json,
             "user_id": upload.user_id,
             "fingerprint": upload.fingerprint,
+            "zone": upload.payload.zone,
+            "round_type": upload.payload.round_type,
+            "first_round": upload.payload.first_round,
+            "placement": upload.payload.placement,
         },
     )
+
+
+async def list_observations(
+    session: AsyncSession, project_id: UUID, filters: ObservationQuery
+) -> list[ObservationRow]:
+    result: Result[tuple[str]] = await session.execute(
+        queries.OBSERVATIONS,
+        {
+            "project": project_id,
+            "site": filters.site,
+            "round_type": filters.round_type,
+            "since": filters.since,
+            "limit": filters.limit,
+        },
+    )
+    return [ObservationRow.model_validate_json(row) for row in result.scalars()]
 
 
 async def receipt(session: AsyncSession, upload: ObservationWrite) -> UploadReceipt | None:

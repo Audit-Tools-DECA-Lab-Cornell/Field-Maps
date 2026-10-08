@@ -13,7 +13,12 @@ import {
 } from "../src/components/chrome";
 import { PageScreen } from "../src/components/screen";
 import { observationSummary } from "../src/domain/build-observation";
-import type { Observation, StorageStatus } from "../src/domain/observation";
+import {
+  isShellObservation,
+  type Observation,
+  type StorageStatus,
+} from "../src/domain/observation";
+import { roundLabel } from "../src/domain/rounds";
 import { shortLabel, useFieldSession } from "../src/session/provider";
 import { useObservations } from "../src/storage/use-observations";
 import { useSync } from "../src/sync/provider";
@@ -32,8 +37,8 @@ const STATES: Record<StorageStatus, { readonly label: string; readonly tone: Chi
 
 function meta(record: Observation): string {
   const time = new Date(record.createdAt).toLocaleString();
-  if (record.formVersion === "shell-v1") return `Practice form · ${record.observer} · ${time}`;
-  return `${record.context.zoneLabel} · round ${record.context.round} · ${record.observer} · ${time}`;
+  if (isShellObservation(record)) return `Practice form · ${record.observer} · ${time}`;
+  return `${record.context.zoneLabel} · ${roundLabel(record.context.roundType)} · ${record.observer} · ${time}`;
 }
 
 export default function RecordsScreen() {
@@ -51,7 +56,7 @@ export default function RecordsScreen() {
       <LinkAction
         label={sitePackage ? "← Back to the map" : "← Studies"}
         muted
-        onPress={() => router.navigate(sitePackage ? "/field" : "/")}
+        onPress={() => router.navigate(sitePackage ? "/collect" : "/")}
         style={{ alignSelf: "flex-start" }}
       />
       <Text style={[textStyles.title, { color: colors.text, marginTop: space.snug }]}>

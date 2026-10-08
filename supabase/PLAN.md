@@ -450,7 +450,14 @@ Do: add migration `auth_hooks`.
 Done when: a local sign-up with a blocked domain fails with that message, and a normal domain succeeds.
 
 ### DB-09: Instrument lifecycle (forms and versions)
-Status: todo · Phase 2 · Size M · Depends: CON-02, DB-05, DB-07 · Blocks: BE-11, DB-11, DB-13, GIS-01, MOB-13, OPS-15, SYNC-02
+Status: done (2026-10-07; local Supabase only, not yet applied to a hosted project) · Phase 2 · Size M · Depends: CON-02, DB-05, DB-07 · Blocks: BE-11, DB-11, DB-13, GIS-01, MOB-13, OPS-15, SYNC-02
+What now works (`supabase/migrations/20261007120000_sites_forms_collection.sql`, ledger `0013_sites_forms_collection`):
+- `forms` and the version lifecycle as specified in steps 1–7, with every existing version backfilled (`shell` / `training` / fixture forms).
+- **Two deliberate differences from the steps below.** The `state` default stays `published`, and a `BEFORE INSERT` trigger (`fill_form_version_lineage`) gives a version inserted without a form its form from the code. Seeds, fixtures and the Training form therefore keep inserting as before (step 8 is not needed), while the API always inserts drafts explicitly and RLS only accepts `state = 'draft'` from it.
+- Publishing also stamps `"status": "published"` into the stored definition, so the canonical parser reads a published version exactly as devices do.
+- `forms.created_by` and `form_versions.created_by/created_at` record who started each draft.
+
+Verified by: `database/tests/lifecycle.sql` (backfill, draft edit, freeze on publish, retire, drafts hidden from observers, another project's manager refused with FM007/FM006) and `database/hosted/verify.sql`; the API suite still resolves `shell-v1`.
 Read first: `supabase/migrations/20260918185806_fieldops_initial.sql:75-83` (the trigger that raises on every UPDATE and DELETE).
 Do: add migration `instrument`. The steps are in this order, because the backfill is an UPDATE that the current trigger rejects.
 1. `DROP TRIGGER immutable_form_version ON fieldmaps.form_versions;`
@@ -499,7 +506,8 @@ Do: add migration `instrument`. The steps are in this order, because the backfil
 Done when: the lifecycle tests pass, and the existing upload tests still resolve `shell-v1`.
 
 ### DB-10: Collection schema for sync
-Status: todo · Phase 2 · Size M · Depends: DB-05 · Blocks: BE-12, BE-14, DB-11, GIS-01, OPS-15, SYNC-02
+Status: doing (round context added 2026-10-07; rejections, assignments and devices remain) · Phase 2 · Size M · Depends: DB-05 · Blocks: BE-12, BE-14, DB-11, GIS-01, OPS-15, SYNC-02
+Done so far (D26): `observations.zone_code`, `round_type` (`standard` / `reliability` / `inventory`, replacing the planned numeric `round`), `first_round` and `placement_source` (`hand` / `zone`), with the INSERT grant and an index on `(organization_id, project_id, round_type, zone_code)`. Sites also gained `description`, `created_by` and `created_at`, with manager INSERT/UPDATE policies (BE-13 step 1).
 Read first: the observation envelope in [contracts.md](../docs/plan/contracts.md#observation-envelope-sync-upload-and-storage).
 Do: add migration `collection`.
 1. **Add to `observations`:**

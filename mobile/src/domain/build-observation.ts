@@ -3,11 +3,13 @@ import { pruneAnswers, reviewProblems } from "../forms/engine";
 import {
   type Coordinate,
   instrumentObservationSchema,
+  isShellObservation,
   type Observation,
   type Placement,
   type RoundContext,
   shellObservationSchema,
 } from "./observation";
+import { roundLabel } from "./rounds";
 
 /**
  * Turns a completed question stack into a stored record. Each form version keeps its own record
@@ -60,12 +62,15 @@ export function buildObservation(input: ObservationInput): BuildResult {
       ? { ok: true, record: parsed.data }
       : { ok: false, message: parsed.error.issues[0]?.message ?? "Check the answers." };
   }
-  if (input.form.version === "janet-test-v1") {
+  {
+    const observerQuestion = input.form.questions.find(
+      (question) => question.exportColumn === "observer" && question.kind === "text",
+    );
     const parsed = instrumentObservationSchema.safeParse({
       ...shared,
       siteId: input.siteId,
-      formVersion: "janet-test-v1",
-      observer: text(answers, "observer_initials"),
+      formVersion: input.form.version,
+      observer: observerQuestion ? text(answers, observerQuestion.id) : "",
       answers,
       context: input.context,
       placement: input.placement,
@@ -74,22 +79,18 @@ export function buildObservation(input: ObservationInput): BuildResult {
       ? { ok: true, record: parsed.data }
       : { ok: false, message: parsed.error.issues[0]?.message ?? "Check the answers." };
   }
-  return {
-    ok: false,
-    message: `This build cannot store records for form "${input.form.version}".`,
-  };
 }
 
 const SUMMARY_QUESTION = "play_event_summary";
 
 /** The single line a record shows in the device list and in a map callout. */
 export function observationSummary(record: Observation): string {
-  if (record.formVersion === "shell-v1")
+  if (isShellObservation(record))
     return record.notes !== ""
       ? record.notes
       : `${record.people} ${record.people === 1 ? "person" : "people"} observed`;
   const summary = record.answers[SUMMARY_QUESTION];
   return typeof summary === "string" && summary !== ""
     ? summary
-    : `${record.context.zoneLabel} · round ${record.context.round}`;
+    : `${record.context.zoneLabel} · ${roundLabel(record.context.roundType)}`;
 }

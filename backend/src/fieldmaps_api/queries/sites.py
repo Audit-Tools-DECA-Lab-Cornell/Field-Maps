@@ -4,7 +4,8 @@ from sqlalchemy import text
 
 PACKAGE_TARGET: Final = text("""
 SELECT json_build_object('organization_id', p.organization_id,
-  'site_id', s.id, 'form_version_id', f.id, 'definition', f.definition)::text
+  'site_id', s.id, 'form_version_id', f.id, 'definition', f.definition,
+  'form_state', f.state)::text
 FROM fieldmaps.projects p
 JOIN fieldmaps.sites s ON s.project_id = p.id AND s.code = :site
 JOIN fieldmaps.form_versions f ON f.project_id = p.id AND f.code = :form
@@ -57,4 +58,45 @@ WHERE k.project_id = :project AND k.id = :id
 PACKAGE_ARCHIVE: Final = text("""
 SELECT archive, archive_sha256, state FROM fieldmaps.site_packages
 WHERE project_id = :project AND id = :id
+""")
+
+#: A site as the workspace and the collector read it: its newest ready package, that package's
+#: zones and extent, and how many observations the caller can see there.
+SITE_SELECT: Final = """
+SELECT json_build_object('site_id', s.id, 'code', s.code, 'name', s.name,
+  'description', s.description, 'created_at', s.created_at,
+  'package', (SELECT json_build_object('package_id', k.id, 'version', k.version,
+      'form_version', (SELECT f.code FROM fieldmaps.form_versions f WHERE f.id = k.form_version_id),
+      'archive_bytes', octet_length(k.archive), 'archive_sha256', k.archive_sha256,
+      'prepared_at', k.prepared_at)
+    FROM fieldmaps.site_packages k WHERE k.site_id = s.id AND k.state = 'ready'
+    ORDER BY k.version DESC LIMIT 1),
+  'zones', coalesce((SELECT k.manifest -> 'zones' FROM fieldmaps.site_packages k
+    WHERE k.site_id = s.id AND k.state = 'ready' ORDER BY k.version DESC LIMIT 1), '[]'::jsonb),
+  'extent', (SELECT k.manifest -> 'extent' FROM fieldmaps.site_packages k
+    WHERE k.site_id = s.id AND k.state = 'ready' ORDER BY k.version DESC LIMIT 1),
+  'centre', (SELECT k.manifest -> 'centre' FROM fieldmaps.site_packages k
+    WHERE k.site_id = s.id AND k.state = 'ready' ORDER BY k.version DESC LIMIT 1),
+  'observation_count', (SELECT count(*) FROM fieldmaps.observations o
+    WHERE o.site_id = s.id AND o.deleted_at IS NULL))::text
+FROM fieldmaps.sites s
+WHERE s.project_id = :project
+"""
+SITES: Final = text(SITE_SELECT + " ORDER BY s.name, s.id")
+SITE: Final = text(SITE_SELECT + " AND s.code = :code")
+
+PROJECT_ORGANIZATION: Final = text(
+    "SELECT organization_id FROM fieldmaps.projects WHERE id = :project"
+)
+
+CREATE_SITE: Final = text("""
+INSERT INTO fieldmaps.sites (id, organization_id, project_id, code, name, description, created_by)
+VALUES (:id, :organization, :project, :code, :name, :description, fieldmaps.request_user_id())
+""")
+
+PATCH_SITE: Final = text("""
+UPDATE fieldmaps.sites SET name = coalesce(:name, name),
+  description = CASE WHEN :has_description THEN :description ELSE description END
+WHERE project_id = :project AND code = :code
+RETURNING id
 """)

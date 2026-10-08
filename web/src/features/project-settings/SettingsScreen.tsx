@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type FormEvent, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/contour/Button";
@@ -18,12 +17,12 @@ import { useToast } from "@/components/contour/Toast";
 import { projectHref } from "@/features/shell/navigation";
 import { usePreview } from "@/features/shell/PreviewProvider";
 import { PreviewStateView } from "@/features/shell/PreviewStateView";
+import { useLeaveGuard } from "@/features/shell/useLeaveGuard";
 import { VIEWER } from "@/fixtures";
 import { cx } from "@/lib/cx";
 
 import { DangerZone } from "./DangerZone";
 import { type ProjectSettings, type PublicationScope, SCOPE_LABEL, useProjectSettings } from "./store";
-import { useLeaveGuard } from "./useLeaveGuard";
 
 export type SettingsScreenProps = { org: string; project: string };
 
@@ -95,7 +94,6 @@ function validate(form: Form): Errors {
  */
 export function SettingsScreen({ org, project }: SettingsScreenProps) {
 	const id = useId();
-	const router = useRouter();
 	const { toast } = useToast();
 	const { screenState, offline } = usePreview();
 	const { settings, update } = useProjectSettings(org, project);
@@ -325,10 +323,8 @@ export function SettingsScreen({ org, project }: SettingsScreenProps) {
 							variant="ink"
 							icon="arrow-right"
 							onClick={() => {
-								const to = guard.leavingTo;
 								setDraft({});
-								guard.stay();
-								if (to) router.push(to);
+								guard.leave();
 							}}>
 							Leave without saving
 						</Button>
