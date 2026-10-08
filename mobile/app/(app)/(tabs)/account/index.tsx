@@ -7,11 +7,15 @@ import {
   FadeRule,
   GhostAction,
   LinkAction,
+  OptionButton,
   PrimaryAction,
   Prose,
   SectionLabel,
 } from "../../../../src/components/chrome";
 import { PageScreen } from "../../../../src/components/screen";
+import { useOrientationChoice } from "../../../../src/layout/orientation";
+import { ORIENTATION_CHOICES, orientationLabels } from "../../../../src/layout/orientation-policy";
+import { useLayout } from "../../../../src/layout/use-layout";
 import { useSync } from "../../../../src/sync/provider";
 import { colors, fonts, radius, space, textStyles } from "../../../../src/theme";
 
@@ -34,6 +38,9 @@ export default function AccountScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const layout = useLayout();
+  const [orientation, chooseOrientation] = useOrientationChoice();
+  const [orientationProblem, setOrientationProblem] = useState<string | null>(null);
   useEffect(() => {
     if (!signedIn) setEmail(cachedEmail);
   }, [cachedEmail, signedIn]);
@@ -141,6 +148,40 @@ export default function AccountScreen() {
           }}
           style={{ marginTop: space.snug }}
         />
+      )}
+
+      <FadeRule />
+      <SectionLabel>Screen orientation</SectionLabel>
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: space.tight,
+          marginTop: space.snug + 1,
+        }}
+      >
+        {ORIENTATION_CHOICES.map((choice) => (
+          <View key={choice} style={{ minWidth: layout.tablet ? 190 : 150 }}>
+            <OptionButton
+              label={orientationLabels[choice]}
+              selected={choice === orientation}
+              onPress={() => setOrientationProblem(chooseOrientation(choice))}
+            />
+          </View>
+        ))}
+      </View>
+      <View style={{ marginTop: space.snug }}>
+        <Prose tone="faint">
+          {orientation === "device"
+            ? "Every screen turns with the device."
+            : `Every screen stays in ${orientation}, from choosing a round to saving, until you change it here.`}{" "}
+          The field map works either way: side by side in landscape, map above the form in portrait.
+        </Prose>
+      </View>
+      {orientationProblem !== null && (
+        <View style={{ marginTop: space.snug }}>
+          <AttentionNote role="alert" title={orientationProblem} />
+        </View>
       )}
 
       <FadeRule />

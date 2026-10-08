@@ -5,7 +5,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { shortLabel } from "../../domain/labels";
 import { placesPoints, roundLabel } from "../../domain/rounds";
 import { visibleQuestions } from "../../forms/engine";
-import { useLandscapeOnTablet } from "../../layout/orientation";
 import { useLayout } from "../../layout/use-layout";
 import { useMapBase } from "../../maps/palette";
 import type { SiteZone } from "../../maps/sample-site";
@@ -70,7 +69,6 @@ function collectStyles(t: Theme) {
  * side, with the panel on the observer's preferred hand.
  */
 export function CollectScreen() {
-  useLandscapeOnTablet();
   const s = useStyles(collectStyles);
   const layout = useLayout();
   const { hand } = usePreferences();

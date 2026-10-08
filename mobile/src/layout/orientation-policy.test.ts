@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   createOrientationController,
+  createOrientationPreference,
+  DEFAULT_ORIENTATION,
   type NativeLock,
   nativeLock,
-  orientationLock,
+  type OrientationChoice,
+  type PreferenceFile,
+  readOrientationChoice,
+  writeOrientationChoice,
 } from "./orientation-policy";
 
 function recorder({ tablet = true, ios = false } = {}) {
@@ -19,28 +24,45 @@ function recorder({ tablet = true, ios = false } = {}) {
   return { calls, controller, device };
 }
 
+function memoryFile(initial: string | null = null) {
+  const stored = { text: initial, failWrites: false };
+  const file: PreferenceFile = {
+    read: () => stored.text,
+    write: (text) => {
+      if (stored.failWrites) throw new Error("disk full");
+      stored.text = text;
+    },
+  };
+  return { file, stored };
+}
+
 describe("Which way the screen may turn", () => {
-  it("holds only a tablet on a map screen in landscape", () => {
-    // Given each device on a reading screen and on a map screen.
-    // Then only the tablet on the map is held; everything else follows the device.
-    expect(orientationLock(true, 1)).toBe("landscape");
-    expect(orientationLock(true, 0)).toBe("free");
-    expect(orientationLock(false, 1)).toBe("free");
-    expect(orientationLock(false, 0)).toBe("free");
+  it("follows the device until the observer chooses otherwise", () => {
+    expect(DEFAULT_ORIENTATION).toBe("device");
   });
 
-  it("lets an iPad turn upside down when free, and leaves every other device to its default", () => {
-    // Given a free screen on each kind of device.
-    // Then only the iPad allows every orientation; landscape is the same lock everywhere.
-    expect(nativeLock("free", true, true)).toBe("ALL");
-    expect(nativeLock("free", true, false)).toBe("DEFAULT");
-    expect(nativeLock("free", false, true)).toBe("DEFAULT");
+  it("turns each choice into the same lock on a phone and a tablet", () => {
+    // Given each choice on an Android phone and an Android tablet.
+    // Then the device kind never changes what the observer chose.
+    for (const tablet of [false, true]) {
+      expect(nativeLock("device", false, tablet)).toBe("DEFAULT");
+      expect(nativeLock("portrait", false, tablet)).toBe("PORTRAIT_UP");
+      expect(nativeLock("landscape", false, tablet)).toBe("LANDSCAPE");
+    }
+  });
+
+  it("lets an iPad turn upside down, and keeps an iPhone the right way up", () => {
+    // Given iOS devices: an iPhone cannot take ALL or PORTRAIT, an iPad has no right way up.
+    expect(nativeLock("device", true, true)).toBe("ALL");
+    expect(nativeLock("portrait", true, true)).toBe("PORTRAIT");
     expect(nativeLock("landscape", true, true)).toBe("LANDSCAPE");
-    expect(nativeLock("landscape", false, true)).toBe("LANDSCAPE");
+    expect(nativeLock("device", true, false)).toBe("DEFAULT");
+    expect(nativeLock("portrait", true, false)).toBe("PORTRAIT_UP");
+    expect(nativeLock("landscape", true, false)).toBe("LANDSCAPE");
   });
 
-  it("releases the launch lock at startup when no map screen is open", async () => {
-    // Given a build that launched in landscape and a reading screen on top.
+  it("releases the launch lock at startup when nothing has been chosen", async () => {
+    // Given a build that launched in landscape and no stored choice.
     const { calls, controller } = recorder();
     // When the root reconciles.
     await controller.reconcile();
@@ -49,20 +71,27 @@ describe("Which way the screen may turn", () => {
     expect(calls).toEqual(["DEFAULT"]);
   });
 
-  it("locks a tablet while the map is focused and frees it when another screen takes over", async () => {
-    // Given a tablet opening the field map.
+  it("keeps a tablet's chosen orientation through round selection, the map, review and saving", async () => {
+    // Given an observer who chose portrait on a tablet — the device the map used to force sideways.
     const { calls, controller } = recorder();
-    const release = controller.hold();
-    await controller.reconcile();
-    expect(calls).toEqual(["LANDSCAPE"]);
-    // When the observer moves to the review sheet.
-    release();
-    await controller.reconcile();
-    // Then the screen follows the device again.
-    expect(calls).toEqual(["LANDSCAPE", "DEFAULT"]);
+    await controller.choose("portrait");
+    // When the workflow moves through every screen, each of which may reconcile on focus or resize.
+    for (let step = 0; step < 5; step += 1) await controller.reconcile();
+    // Then the lock was applied once and never released or turned.
+    expect(calls).toEqual(["PORTRAIT_UP"]);
   });
 
-  it("keeps the map's lock when the map focuses while the root's release is still in flight", async () => {
+  it("applies a new choice at once, and only the latest when choices race the native call", async () => {
+    // Given landscape chosen, then portrait and landscape again before any lock has settled.
+    const { calls, controller } = recorder();
+    void controller.choose("landscape");
+    void controller.choose("portrait");
+    await controller.choose("landscape");
+    // Then the tablet ends in landscape, without flipping through every intermediate choice.
+    expect(calls).toEqual(["LANDSCAPE"]);
+  });
+
+  it("keeps the stored choice when it lands while the launch release is still in flight", async () => {
     // Given the root releasing the launch lock, with the native call not yet settled.
     const calls: NativeLock[] = [];
     let settle = () => {};
@@ -78,60 +107,28 @@ describe("Which way the screen may turn", () => {
       () => true,
       false,
     );
-    const rootRelease = controller.reconcile();
+    const release = controller.reconcile();
     await Promise.resolve();
-    // When the field map focuses before that call settles.
-    controller.hold();
+    // When the stored landscape choice is applied before that call settles.
+    const chosen = controller.choose("landscape");
     settle();
-    await rootRelease;
-    await controller.reconcile();
-    // Then the tablet ends held in landscape.
+    await release;
+    await chosen;
+    // Then the device ends held in landscape.
     expect(calls).toEqual(["DEFAULT", "LANDSCAPE"]);
   });
 
-  it("lands on the latest state when focus and blur race ahead of the native call", async () => {
-    // Given the map focused, blurred and focused again before any lock has settled.
-    const { calls, controller } = recorder();
-    controller.hold()();
-    controller.hold();
+  it("re-evaluates an iPad-sized screen that folds to a phone-sized one", async () => {
+    // Given an unfolded foldable reporting iOS-style tablet rules, following the device.
+    const { calls, controller, device } = recorder({ ios: true });
     await controller.reconcile();
-    // Then the tablet ends in landscape, without flipping through every intermediate state.
-    expect(calls).toEqual(["LANDSCAPE"]);
-  });
-
-  it("ignores a second release of the same hold", async () => {
-    // Given two map holds, one of which is released twice.
-    const { calls, controller } = recorder();
-    const first = controller.hold();
-    controller.hold();
-    first();
-    first();
-    await controller.reconcile();
-    // Then the remaining hold still keeps the tablet in landscape.
-    expect(calls).toEqual(["LANDSCAPE"]);
-  });
-
-  it("never locks a phone, even on the map", async () => {
-    // Given a phone opening the field map.
-    const { calls, controller } = recorder({ tablet: false });
-    controller.hold();
-    await controller.reconcile();
-    // Then the phone is only ever set free.
-    expect(calls).toEqual(["DEFAULT"]);
-  });
-
-  it("follows a foldable that changes screens while the map stays open", async () => {
-    // Given an unfolded foldable held in landscape on the field map.
-    const { calls, controller, device } = recorder();
-    controller.hold();
-    await controller.reconcile();
-    // When it folds to its phone-sized screen and the screen size change is reconciled.
+    // When it folds to its phone-sized screen, and unfolds again.
     device.tablet = false;
     await controller.reconcile();
-    // Then the lock is released; unfolding again restores it.
     device.tablet = true;
     await controller.reconcile();
-    expect(calls).toEqual(["LANDSCAPE", "DEFAULT", "LANDSCAPE"]);
+    // Then upside-down is offered only while the screen is tablet-sized.
+    expect(calls).toEqual(["ALL", "DEFAULT", "ALL"]);
   });
 
   it("tries again after the native call fails", async () => {
@@ -151,5 +148,79 @@ describe("Which way the screen may turn", () => {
     await controller.reconcile();
     // Then the failure is swallowed and the lock is applied on the second attempt.
     expect(calls).toEqual(["DEFAULT", "DEFAULT"]);
+  });
+});
+
+describe("The observer's orientation preference", () => {
+  it("round-trips every choice through its stored form", () => {
+    for (const choice of ["device", "portrait", "landscape"] as const)
+      expect(readOrientationChoice(writeOrientationChoice(choice))).toBe(choice);
+  });
+
+  it.each([
+    null,
+    "",
+    "broken",
+    "{}",
+    '{"orientation":"sideways"}',
+    '["landscape"]',
+  ])("follows the device when the stored preference is missing or unreadable: %s", (text) => {
+    expect(readOrientationChoice(text)).toBe("device");
+  });
+
+  it("is kept across a relaunch", () => {
+    // Given an observer who chooses landscape.
+    const { file } = memoryFile();
+    const applied: OrientationChoice[] = [];
+    const first = createOrientationPreference(file, (choice) => applied.push(choice));
+    expect(first.current()).toBe("device");
+    expect(first.choose("landscape")).toBeNull();
+    // When the app starts again over the same storage.
+    const relaunched = createOrientationPreference(file, () => {});
+    // Then the choice is still landscape, and it was applied when it was made.
+    expect(relaunched.current()).toBe("landscape");
+    expect(applied).toEqual(["landscape"]);
+  });
+
+  it("tells subscribers when the choice changes, and only then", () => {
+    const { file } = memoryFile(writeOrientationChoice("portrait"));
+    const preference = createOrientationPreference(file, () => {});
+    let notified = 0;
+    const unsubscribe = preference.subscribe(() => {
+      notified += 1;
+    });
+    preference.choose("portrait");
+    preference.choose("landscape");
+    unsubscribe();
+    preference.choose("device");
+    expect(notified).toBe(1);
+  });
+
+  it("still applies a choice that cannot be written, and says it was not kept", () => {
+    // Given storage that refuses writes.
+    const { file, stored } = memoryFile(writeOrientationChoice("portrait"));
+    stored.failWrites = true;
+    const applied: OrientationChoice[] = [];
+    const preference = createOrientationPreference(file, (choice) => applied.push(choice));
+    // When the observer chooses landscape.
+    const problem = preference.choose("landscape");
+    // Then the screen turns for this launch, the old stored value stands, and the observer is told.
+    expect(applied).toEqual(["landscape"]);
+    expect(preference.current()).toBe("landscape");
+    expect(readOrientationChoice(stored.text)).toBe("portrait");
+    expect(problem).toMatch(/could not be kept/);
+  });
+
+  it("follows the device when the stored preference cannot be read", () => {
+    const preference = createOrientationPreference(
+      {
+        read: () => {
+          throw new Error("permission denied");
+        },
+        write: () => {},
+      },
+      () => {},
+    );
+    expect(preference.current()).toBe("device");
   });
 });

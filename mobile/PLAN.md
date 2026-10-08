@@ -454,7 +454,7 @@ Changed 2026-10-03: MOB-25 and MOB-26 build these screens in Contour on preview 
 Read first: `DESIGN.md`; the Mobile collector designs, pp. 1–16; `designs/Handoff.dc.html` (behaviour spec only); `src/layout/*`.
 Do:
 1. Tabs: Projects, Observations (with a badge for pending and needs-attention counts), Account, in the floating tab dock. Tablets use the same dock, centred; there is no side rail.
-2. Collect is one route, `(app)/collect`, outside the tabs, so the dock hides there. Place, answer, review and saved are internal states of that route, not separate routes. The tablet landscape lock is kept (`src/layout/orientation.ts`).
+2. Collect is one route, `(app)/collect`, outside the tabs, so the dock hides there. Place, answer, review and saved are internal states of that route, not separate routes. No screen locks orientation; the observer's app-wide choice (`src/layout/orientation.ts`) applies.
 3. On a phone, Review is a panel step and Saved is a full card. On a tablet, Saved is a "Last saved on this device" card in the Place panel. Use no transition between repeated observations, as Handoff specifies.
 4. Primary actions ("Start collection", "Save on this device") sit at the bottom, in the thumb zone. Pushed screens keep the designs' round back button, and system back works everywhere.
 5. Observations rows open `observations/[id]`, which shows the state, the answers and any rejection.
@@ -585,7 +585,7 @@ Do:
 2. Restyle `field-map.tsx`: controls of 44 or more, the label island, the scale chip, the hatched zone through `fill-pattern`, and violet markers, all from the palette. Arming gives the map island a 3 px magenta border and the banner "Tap where the play happened", and stops panning. The point drops in with a light haptic. "Place at map centre" places at the camera centre (MOB-18's crosshair request); "Adjust point" re-arms with a nudge pad of 44 pt or more. MapLibre stays mounted across the states.
 3. Rebuild `QuestionPanel` on `AnswerTile`. A single choice fills the tile, then advances after 160 ms; the next question fades in and focus moves to its heading; a revealed follow-up appears below the current question. "Explain this question" is the `explain/[question]` sheet.
 4. Phone: the map island above the panel; Review is a panel step; Saved replaces the panel with a full card, whose check scales in with a success haptic, and the save is announced. "Place the next observation" returns with no transition.
-5. Tablet: a 58/42 split with the panel on the preferred hand's side; Saved becomes a "Last saved on this device" card in the Place panel. The orientation lock is kept.
+5. Tablet: a 58/42 split with the panel on the preferred hand's side; Saved becomes a "Last saved on this device" card in the Place panel. No screen sets its own orientation lock; the app-wide choice (PR 14) applies.
 6. Delete the old `field`, `review` and `saved` routes.
 
 Done when: the orientation and logic tests pass; `session.save` is unchanged; the engine files are untouched.
