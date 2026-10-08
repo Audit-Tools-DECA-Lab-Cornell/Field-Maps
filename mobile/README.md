@@ -8,10 +8,10 @@ app's dependencies and lockfile.
 
 The interface follows `../designs/Riverside Collector v2.dc.html` and the Nocturne design
 system in `../designs/_ds/nocturne-0f5393a7-e60a-4d31-be24-f93ea06f52be/`. On the field map,
-tablet landscape (1024×768) is the primary target, then phone landscape (844×390); phone portrait
-stacks the map over the panel. Every other screen runs in portrait or landscape on both, and its
-content spans the full window width — a deliberate departure from the design file's 600px reading
-column.
+tablet landscape (1024×768) is the primary target, then phone landscape (844×390); in portrait the
+map stacks over the panel. Every screen, the field map included, runs in portrait or landscape on
+both, and its content spans the full window width — a deliberate departure from the design file's
+600px reading column.
 
 ## What is implemented
 
@@ -105,23 +105,32 @@ EXPO_NO_DOTENV=1 pnpm exec expo prebuild
 pnpm ios     # or pnpm android
 ```
 
-Orientation follows the device everywhere except the field map on a tablet, which is held in
-landscape while it is focused and released when another screen — review, records — takes over
-(`src/layout/orientation.ts`, rule and ordering in `orientation-policy.ts`). Phones are never locked,
-and an iPad may also turn upside down. A screen size change, such as a foldable opening, is
-re-evaluated. On iPad the lock needs `ios.requireFullScreen`. The app launches in the device's
-orientation (`initialOrientation: "DEFAULT"`, an iOS-only setting); an iOS build made before this
-change launches in landscape until it is rebuilt, and the root releases that lock as soon as
-JavaScript loads. If the orientation module is missing from the build, orientation is left free
-rather than the app refusing to open.
+Orientation is one observer choice for the whole app — **Follow the device** (the default),
+**Portrait** or **Landscape** — set under "Screen orientation" on the Account and synchronisation
+screen. No screen locks or releases orientation on its own, so choosing a round, placing a point,
+answering and saving never turn the screen; the field map lays out side by side in landscape and
+stacked in portrait. The choice is applied at the root on launch and kept on the device in
+`documentDirectory/preferences/orientation.json`, beside the other on-device JSON; it is not tied to
+an account and signing out leaves it. A missing or unreadable file means Follow the device; a choice
+that cannot be written still applies until the app closes, and the screen says so
+(`src/layout/orientation.ts`, rule, storage format and ordering in `orientation-policy.ts`). An iPad
+may also turn upside down when following the device or held in portrait. A screen size change, such
+as a foldable opening, is re-evaluated. On iPad a lock needs `ios.requireFullScreen`. The app
+launches in the device's orientation (`initialOrientation: "DEFAULT"`, an iOS-only setting) and the
+root applies the stored choice as soon as JavaScript loads. If the orientation module is missing from
+the build, orientation is left free rather than the app refusing to open.
+
+Rotating never resets work in progress: the answers, the open observation, the package, zone and
+round live in the session provider above every screen, and the field screen keeps the same component
+tree in both layouts, so the map's camera, layers and selection and a half-typed answer stay put.
 
 Android 16 ignores orientation locks on large screens (smallest width 600dp or more) for apps
 targeting API 36, which this build does. `plugins/with-large-screen-orientation.js` declares
 Google's documented opt-out, `android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY`, so
-the tablet map lock still holds; it takes effect after `expo prebuild` and a rebuild. The opt-out
-stops applying once the app targets API 37, and then the field map falls back to its stacked
-portrait layout on an upright Android tablet. iPadOS windowed multitasking (Stage Manager) does
-not rotate a locked app either.
+an observer's Portrait or Landscape choice still holds on a tablet; it takes effect after
+`expo prebuild` and a rebuild. The opt-out stops applying once the app targets API 37, and then an
+Android tablet follows the device whatever is chosen; every screen still works in either
+orientation. iPadOS windowed multitasking (Stage Manager) does not rotate a locked app either.
 
 `eas.json` also provides `development`, `simulator`, and `preview` profiles. Cloud builds have not been created; account/project configuration and physical-iOS signing remain setup tasks. The identifier `com.fieldmaps.collector.dev` is a development placeholder.
 
@@ -148,6 +157,14 @@ form version, the account and study an observation is bound to, the account a re
 draft may be resumed under, the atomic save that retires its draft, map clustering, nudging and scale, and
 which screens may rotate on which device. TypeScript, Biome on `src/` and the changed routes, and
 iOS and Android Metro exports pass.
+
+Orientation change verification, October 7, 2026: the field map no longer holds a tablet in
+landscape; one observer choice applies to every screen and is kept on the device. **227 Vitest
+cases** pass, including the choice-to-lock mapping on each device, a choice held unchanged across
+the workflow's screens, racing choices, restore after relaunch, unreadable storage and a failed
+write. TypeScript, Biome and iOS and Android Metro exports pass. Rotation, the locks themselves and
+the relocated portrait form toggle have not been run on a device or simulator; step 8 of the
+scenario below covers them.
 
 Standing build note, carried forward from the shell: a local Release build previously failed on
 Finder metadata attached to a generated `ExpoModulesJSI.framework` in the Desktop workspace. No
@@ -176,10 +193,14 @@ Native acceptance scenario for this version:
    assignments list with the answers intact.
 7. Save a practice (`shell-v1`) record while signed in and connected: confirm it drains with no
    send button. Confirm an instrument record stays on the device and says why.
-8. On a tablet held upright, confirm the assignments, brief, records and account screens are
-   portrait and fill the width; open the field map and confirm it turns to landscape; open Review
-   and confirm it follows the device again. Check phone landscape and portrait on every screen,
-   and confirm 844×390 has no horizontal scroll.
+8. On a tablet held upright with Follow the device chosen, choose a round, open the field map,
+   place a point, answer, review and save: confirm the screen stays portrait throughout, every
+   screen fills the width, and the map's style and Layers controls are not covered by the form
+   toggle. Choose Landscape on the Account screen and repeat the workflow holding the tablet
+   upright: confirm every screen stays landscape, and that the choice survives a force quit. Rotate
+   mid-answer with Follow the device and confirm the typed answer, the placed point and the map view
+   are unchanged. Check phone landscape and portrait on every screen, and confirm 844×390 has no
+   horizontal scroll.
 
 ## Boundaries
 
@@ -242,7 +263,7 @@ was removed afterward; this does not establish the rest of the product acceptanc
 | `src/storage/` | SQLite schema, observation repository, draft store, and focused-screen reads |
 | `src/auth/` | Secure session persistence and offline account identity |
 | `src/sync/` | Upload protocol, scheduling, and verified receipts |
-| `src/layout/` | The per-screen orientation rule and the tablet/phone layout decisions |
+| `src/layout/` | The observer's orientation choice, its storage, and the tablet/phone layout decisions |
 | `src/components/` | Nocturne chrome primitives, the question panel, and screen frames |
 | `src/theme.ts` | Nocturne tokens, copied from the design system's own stylesheet |
 | `assets/` | App icon, Android adaptive and themed layers, Play Store icon; sources in `assets/icon-source/` |

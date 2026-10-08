@@ -447,7 +447,7 @@ Status: todo · Phase 4 · Size L · Depends: MOB-03, MOB-15 · Blocks: MOB-17, 
 Read first: `designs/Riverside Collector v2.dc.html` (grep the screen names); `designs/Handoff.dc.html` (behaviour spec only; its tokens conflict with Nocturne); `src/layout/*`.
 Do:
 1. Tabs: Studies, Records (with a badge for pending and needs-attention counts), Account. On tablets (smallest width 600 dp or more), use a side rail.
-2. The field screen is `study/[siteId]/collect`: full screen, tabs hidden. The tablet landscape lock is kept (`src/layout/orientation.ts`).
+2. The field screen is `study/[siteId]/collect`: full screen, tabs hidden. No route locks orientation; the observer's app-wide choice (`src/layout/orientation.ts`) is kept, and its control moves with the Account screen.
 3. Review is a sheet over the field screen. "Saved" is a banner on the field screen, not a separate route. Use no transition between repeated observations, as Handoff specifies.
 4. Primary actions ("Start observing", "Save observation") sit in a pinned bottom bar. Remove the top-left back links in favour of system back and tabs.
 5. Records rows open `records/[id]`, which shows the state, the answers and any rejection.

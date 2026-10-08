@@ -1,10 +1,9 @@
 import { Dimensions, useWindowDimensions } from "react-native";
 
 /**
- * The field map targets tablet landscape first, then phone landscape; phone portrait is the
- * fallback where the map stacks over the panel. Reading screens run in either orientation on
- * both. Sizes come from the window so a split view or a rotation is handled the same way as a
- * different device.
+ * The field map targets tablet landscape first, then phone landscape; in portrait the map stacks
+ * over the panel. Every screen runs in either orientation on both, as the observer chooses. Sizes
+ * come from the window so a split view or a rotation is handled the same way as a different device.
  */
 
 export type Layout = {
