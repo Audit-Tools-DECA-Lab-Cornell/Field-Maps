@@ -1,58 +1,63 @@
-import {
-	coverageSummary,
-	observationsFor,
-	type Project,
-	PROJECT_MEMBERSHIPS,
-	projectsIn,
-	sitesIn,
-	VIEWER_ID
-} from "@/fixtures";
-import { stateOf } from "@/lib/contour";
+import type { Project } from "@/lib/api/types";
+import { plural } from "@/lib/labels";
 
-/**
- * Site counts for projects whose sites the fixtures do not draw yet (org-01: Schoolyard pilot has one site,
- * Training its practice geometry). Kept here rather than in src/fixtures, which this phase only reads.
- */
-const UNDRAWN_SITES: Record<string, number> = { "schoolyard-pilot": 1, training: 1 };
+/** Sites are read for this many projects at once; the rest are listed without counts. */
+export const SITE_READ_LIMIT = 12;
 
+/** What a row can say about a project's size. A failed or skipped read is never shown as zero. */
+export type ProjectCounts =
+	| { state: "counted"; sites: number; observations: number }
+	| { state: "failed" }
+	| { state: "skipped" };
+
+/** One project on the organization's page: plain values the server hands to the page. */
 export type ProjectRow = {
-	project: Project;
-	sites: number;
-	/** null: the project is not counted in research datasets (Training). */
-	observations: number | null;
-	role: string;
-	coverage: { kind: "dots"; dots: boolean[]; met: number; total: number } | { kind: "text"; text: string };
+	id: string;
+	code: string;
+	name: string;
+	description: string | null;
+	role: Project["role"];
+	status: Project["status"];
+	counts: ProjectCounts;
 };
 
-/** One row per project on the organization's home (org-01), every number derived from the fixtures. */
-export function projectRows(org: string): ProjectRow[] {
-	return projectsIn(org).map(project => {
-		const drawn = sitesIn(project.slug).length;
-		const sites = drawn || UNDRAWN_SITES[project.slug] || 0;
-		const records = observationsFor(project.slug);
-		const membership = PROJECT_MEMBERSHIPS.find(
-			entry => entry.personId === VIEWER_ID && entry.projectSlug === project.slug
-		);
-		// Training is the practice project every account joins (D4, D13).
-		const role = membership ? stateOf("role", membership.role).label : "Everyone";
+type ProjectLike = Pick<Project, "project_id" | "code" | "name" | "description" | "role" | "status" | "is_training">;
 
-		let coverage: ProjectRow["coverage"];
-		if (!project.counted) coverage = { kind: "text", text: "Not counted" };
-		else {
-			const site = sitesIn(project.slug).find(entry => !entry.training);
-			const summary = site ? coverageSummary(project.slug, site.slug) : null;
-			coverage =
-				summary && records.length > 0
-					? { kind: "dots", dots: summary.dots, met: summary.met, total: summary.total }
-					: { kind: "text", text: "Not started" };
-		}
+/**
+ * The projects to list: practice projects are left out (every account has one, and it is not part of a
+ * study), active ones come before archived ones, and each group reads in name order.
+ */
+export function listedProjects<T extends ProjectLike>(projects: readonly T[]): T[] {
+	return projects
+		.filter(project => !project.is_training)
+		.sort((a, b) => {
+			if (a.status !== b.status) return a.status === "active" ? -1 : 1;
+			return a.name.localeCompare(b.name, "en") || a.code.localeCompare(b.code, "en");
+		});
+}
 
-		return {
-			project,
-			sites,
-			observations: project.counted ? records.length : null,
-			role,
-			coverage
-		};
-	});
+/** A project's size from its sites: how many, and the sum of their exact observation counts. */
+export function countsFromSites(sites: readonly { observation_count: number }[]): ProjectCounts {
+	return {
+		state: "counted",
+		sites: sites.length,
+		observations: sites.reduce((total, site) => total + site.observation_count, 0)
+	};
+}
+
+/** "1 site · 26 observations". A project whose sites could not be read says so rather than showing zero. */
+export function countsLine(counts: ProjectCounts): string {
+	switch (counts.state) {
+		case "counted":
+			return `${plural(counts.sites, "site")} · ${plural(counts.observations, "observation")}`;
+		case "failed":
+			return "Sites and observations could not be counted.";
+		case "skipped":
+			return "Open the project to see its sites and observations.";
+	}
+}
+
+/** Where a project's row leads: observers collect in the app, so the web sends them to the collect page. */
+export function projectLink(orgSlug: string, row: Pick<ProjectRow, "code" | "role">): string {
+	return row.role === "observer" ? `/o/${orgSlug}/collect` : `/o/${orgSlug}/p/${row.code}`;
 }
