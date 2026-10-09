@@ -2,234 +2,140 @@
 
 import Link from "next/link";
 
-import { CoverageDots } from "@/components/contour/CoverageDots";
 import { Icon } from "@/components/contour/Icon";
 import { Island } from "@/components/contour/Island";
 import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
-import { StateBadge } from "@/components/contour/StateBadge";
-import { activeRow, packageRows, sizeLabel } from "@/features/packages/model";
-import { packagesStore } from "@/features/packages/store";
+import { ScreenState } from "@/components/contour/ScreenState";
+import { PlanThumbnail } from "@/components/map/PlanThumbnail";
 import { projectHref } from "@/features/shell/navigation";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { useSessionStore } from "@/features/shell/useSessionStore";
-import { coverageSummary, observationsFor, type Site, sitesIn } from "@/fixtures";
+import { plural } from "@/lib/labels";
 import type { ProjectedSite } from "@/lib/plan";
 
 import { CreateSiteDialog } from "./CreateSiteDialog";
-import { targetOf } from "./model";
-import { Eyebrow, SiteThumbnail } from "./parts";
-import { type CreatedSite, useSitesPreview } from "./store";
+import { Eyebrow } from "./parts";
+import type { SiteView } from "./view";
 
 /**
- * Sites (project-06): every place in the project with its plan, its active map package and its coverage
- * against the illustrative target. Sites created in this preview join the list with no map package yet.
+ * Sites: every place in the project with its current map package, its zones and how many observations it
+ * holds. Managers create sites here; a site's map and zones arrive with its first map package.
  */
 export function SitesScreen({
 	org,
 	project,
+	canManage,
+	sites,
 	plans
 }: {
 	org: string;
 	project: string;
-	/** Each fixture site's projected plan, loaded on the server for the thumbnails. */
+	canManage: boolean;
+	sites: SiteView[];
+	/** Plans of the first few sites with a map package, by site code, for the thumbnails. */
 	plans: Record<string, ProjectedSite>;
 }) {
-	const { created } = useSitesPreview();
-	const packages = useSessionStore(packagesStore);
-	const sites = sitesIn(project);
-	const createdHere = created.filter(site => site.projectSlug === project);
-	const base = projectHref(org, project, "sites");
-
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				title="Sites"
-				lead="Places in this project, each with versioned maps and zones."
-				actions={
-					<CreateSiteDialog
-						project={project}
-						existing={[...sites.map(site => site.name), ...createdHere.map(site => site.name)]}
-					/>
-				}
+				lead="Places where observers collect, each with its own map package and zones."
+				actions={<CreateSiteDialog org={org} project={project} canManage={canManage} />}
 			/>
-			<Island flush aria-label="Sites in this project">
-				<PreviewStateView
-					loadingLabel="Loading sites…"
-					rows={3}
-					headingLevel={2}
-					empty={{
-						icon: "map",
-						title: "No sites yet",
-						body: "A site is one real place. Create one, then upload its first QGIS package to give observers a map."
-					}}
-					filtered={{
-						title: "No sites match this view",
-						body: "Change your filters to see more sites. Your sites are unchanged."
-					}}>
-					<ul className="divide-y divide-rule">
+			<Island flush title="All sites" meta={plural(sites.length, "site")}>
+				{sites.length === 0 ? (
+					<ScreenState
+						kind="empty"
+						icon="map"
+						headingLevel={3}
+						title="No sites yet"
+						body={
+							canManage
+								? "A site is one real place. Use Create site to add the first one, then upload its map package from QGIS."
+								: "A site is one real place. A project manager can add the first one."
+						}
+					/>
+				) : (
+					<ul>
 						{sites.map(site => (
-							<li key={site.slug}>
-								<FixtureSiteRow
+							<li key={site.code} className="relative border-t border-rule first:border-t-0">
+								<SiteRow
 									site={site}
-									href={`${base}/${site.slug}`}
-									plan={plans[site.slug]}
-									packages={packageRows(site.slug, packages[site.slug] ?? {})}
+									href={projectHref(org, project, `sites/${site.code}`)}
+									plan={plans[site.code]}
 								/>
 							</li>
 						))}
-						{createdHere.map(site => (
-							<li key={site.slug}>
-								<CreatedSiteRow site={site} href={`${base}/${site.slug}`} />
-							</li>
-						))}
 					</ul>
-				</PreviewStateView>
+				)}
 			</Island>
 			<Note icon="layers">
-				Zone geometry comes from versioned QGIS packages for the pilot. Editing boundaries on the web is a
-				separate, clearly marked proposal.
+				A site&rsquo;s map and zones come from a map package prepared in QGIS. Open a site to upload one.
 			</Note>
 		</div>
 	);
 }
 
 const ROW =
-	"group grid grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-4 sm:gap-x-5 px-island-pad py-5 " +
+	"grid grid-cols-[5rem_minmax(0,1fr)_1.5rem] items-center gap-x-4 gap-y-4 px-island-pad py-5 " +
 	"transition-[background-color] duration-(--ct-duration-quick) ease-standard hover:bg-ground " +
-	"[--ct-size-focus-gap:calc(var(--ct-size-focus-ring)*-2)] " +
-	"md:grid-cols-[9.75rem_minmax(0,1fr)_auto] " +
-	"lg:grid-cols-[9.75rem_minmax(0,1.55fr)_minmax(0,1fr)_minmax(0,1.15fr)_auto]";
+	"md:grid-cols-[9.75rem_minmax(0,1fr)_1.5rem] " +
+	"lg:grid-cols-[9.75rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_1.5rem]";
 
-/** The package and coverage columns sit under the name until the row is wide enough for all four. */
-const DETAIL = "col-span-3 md:col-span-1 md:col-start-2 lg:col-start-auto";
+/** The facts sit under the name until the row is wide enough for them to sit beside it. */
+const FACT = "col-span-3 md:col-span-1 md:col-start-2 lg:col-start-auto";
 
-function Chevron() {
+function SiteRow({ site, href, plan }: { site: SiteView; href: string; plan: ProjectedSite | undefined }) {
 	return (
-		<Icon
-			name="chevron-right"
-			size={22}
-			className="col-start-3 row-start-1 shrink-0 text-ink lg:col-start-auto lg:row-start-auto"
-		/>
-	);
-}
-
-function SiteTitle({ name, summary }: { name: string; summary: string }) {
-	return (
-		<div className="min-w-0">
-			<h2 className="type-island text-ink sm:type-section">{name}</h2>
-			<p className="mt-1 type-small text-ink-2 sm:type-body">{summary}</p>
-		</div>
-	);
-}
-
-function FixtureSiteRow({
-	site,
-	href,
-	plan,
-	packages
-}: {
-	site: Site;
-	href: string;
-	plan: ProjectedSite | undefined;
-	packages: ReturnType<typeof packageRows>;
-}) {
-	const active = activeRow(packages);
-	const coverage = coverageSummary(site.projectSlug, site.slug);
-	const recorded = observationsFor(site.projectSlug, site.slug).length;
-	const rounds = targetOf(site.projectSlug).roundsPerZone;
-
-	return (
-		<Link href={href} className={ROW}>
+		<div className={ROW}>
 			{plan ? (
-				<SiteThumbnail site={plan} className="w-20 md:w-39" />
+				<PlanThumbnail site={plan} className="w-20 md:w-39" />
 			) : (
 				<span
 					aria-hidden="true"
-					className="aspect-[36/25] w-24 rounded-thumb border border-dashed border-edge md:w-39"
-				/>
+					className="grid aspect-[36/25] w-20 place-items-center rounded-thumb border border-dashed border-edge text-ink-2 md:w-39">
+					<Icon name="layers" size={20} />
+				</span>
 			)}
-			<SiteTitle name={site.name} summary={site.summary} />
 
-			<div className={DETAIL}>
+			<div className="min-w-0">
+				<h3 className="type-island text-ink sm:type-section">
+					{/* The whole row opens the site; the name is the link a keyboard or screen reader finds. */}
+					<Link href={href} className="break-words after:absolute after:inset-0">
+						{site.name}
+					</Link>
+				</h3>
+				<p className="mt-1 type-mono-data break-all text-ink-2">{site.code}</p>
+			</div>
+
+			<div className={FACT}>
 				<Eyebrow>Map package</Eyebrow>
-				{active?.state === "bundled" ? (
-					<p className="mt-2 type-body text-ink">Bundled with the app</p>
-				) : active ? (
-					<p className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-						<span className="type-mono-data text-ink">
-							{active.version} {sizeLabel(active)}
-						</span>
-						<StateBadge kind="package" state="active" />
+				{site.package ? (
+					<p className="mt-2 type-body text-ink">
+						<span className="type-mono-data">v{site.package.version}</span>
+						<span className="text-ink-2"> · {site.package.preparedDay}</span>
 					</p>
 				) : (
 					<p className="mt-2 type-body text-ink-2">No map package yet</p>
 				)}
 			</div>
 
-			<div className={DETAIL}>
-				<Eyebrow>Coverage</Eyebrow>
-				{site.training ? (
-					<div className="mt-2">
-						<StateBadge kind="coverage" state="training" />
-						<p className="mt-1 type-body text-ink-2">
-							{site.coverageNote ?? "never counted toward coverage"}
-						</p>
-					</div>
-				) : (
-					<div className="mt-2 flex items-start gap-4">
-						<CoverageDots
-							values={coverage.dots}
-							layout="grid"
-							columns={rounds}
-							className="mt-1"
-							label={`${coverage.met} of ${coverage.total} zone-rounds met the target`}
-						/>
-						<div className="min-w-0">
-							{recorded === 0 ? (
-								<StateBadge kind="coverage" state="none" />
-							) : coverage.met === coverage.total ? (
-								<StateBadge kind="coverage" state="complete" />
-							) : (
-								<StateBadge
-									kind="coverage"
-									state="belowExample"
-									label={`${coverage.met} of ${coverage.total} zone-rounds`}
-								/>
-							)}
-							<p className="mt-1 type-body text-ink-2">
-								{site.coverageNote ?? "on the illustrative target"}
-							</p>
-						</div>
-					</div>
-				)}
+			<div className={FACT}>
+				<Eyebrow>Zones</Eyebrow>
+				<p className={site.package ? "mt-2 type-body text-ink" : "mt-2 type-body text-ink-2"}>
+					{site.zonesLabel}
+				</p>
 			</div>
-			<Chevron />
-		</Link>
-	);
-}
 
-function CreatedSiteRow({ site, href }: { site: CreatedSite; href: string }) {
-	return (
-		<Link href={href} className={ROW}>
-			<span
-				aria-hidden="true"
-				className="grid aspect-[36/25] w-24 place-items-center rounded-thumb border border-dashed border-edge text-ink-2 md:w-39">
-				<Icon name="layers" size={20} />
-			</span>
-			<SiteTitle name={site.name} summary="Created in this preview · no zones yet" />
-			<div className={DETAIL}>
-				<Eyebrow>Map package</Eyebrow>
-				<p className="mt-2 type-body text-ink">No map package yet</p>
+			<div className={FACT}>
+				<Eyebrow>Observations</Eyebrow>
+				<p className="mt-2 type-body text-ink">{site.observationsLabel}</p>
 			</div>
-			<div className={DETAIL}>
-				<Eyebrow>Coverage</Eyebrow>
-				<div className="mt-2">
-					<StateBadge kind="coverage" state="none" />
-					<p className="mt-1 type-body text-ink-2">no map to collect on yet</p>
-				</div>
-			</div>
-			<Chevron />
-		</Link>
+
+			<Icon
+				name="chevron-right"
+				size={22}
+				className="col-start-3 row-start-1 shrink-0 text-ink lg:col-start-auto lg:row-start-auto"
+			/>
+		</div>
 	);
 }

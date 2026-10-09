@@ -1,6 +1,8 @@
 "use client";
 
-import { type DragEvent, useId, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { type DragEvent, useId, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { Field } from "@/components/contour/Field";
@@ -8,48 +10,47 @@ import { Icon } from "@/components/contour/Icon";
 import { InnerPanel } from "@/components/contour/InnerPanel";
 import { Island, IslandSection } from "@/components/contour/Island";
 import { Note } from "@/components/contour/Note";
-import { ScreenState } from "@/components/contour/ScreenState";
 import { Select } from "@/components/contour/Select";
 import { StateBadge } from "@/components/contour/StateBadge";
-import { TextInput } from "@/components/contour/TextInput";
 import { MapFrame } from "@/components/map/MapFrame";
-import { usePreview } from "@/features/shell/PreviewProvider";
-import { ApiError } from "@/lib/api/errors";
+import { preparePackage } from "@/lib/api/browser";
+import { apiRequestError } from "@/lib/api/errors";
+import type { PackageDetail, PackageSubmission } from "@/lib/api/types";
 import { cx } from "@/lib/cx";
+import { formatBytes, plural } from "@/lib/labels";
 import {
 	analyzeLayer,
-	apiBaseUrl,
-	type ClientCheck,
-	EXPECTED_GEOMETRY,
+	canUpload,
 	LAYER_NAMES,
 	type LayerName,
 	LayerReadError,
 	type LayerSlotState,
 	matchSlot,
-	type PackageDetail,
-	type PackageSubmission,
-	type PreparationCheck,
 	type ProjectSlotState,
 	readLayer,
 	readProjectFile,
 	REQUIRED_LAYERS,
-	resolveProjectId,
 	runClientChecks,
 	SLOT_LABELS,
 	SLOT_ORDER,
 	type SlotTarget,
-	submitPackage,
-	type UnassignedFile
+	submissionLayers,
+	type UnassignedFile,
+	unexpectedGeometry
 } from "@/lib/packages";
 
+import { packageUploaded } from "./actions";
+import { CheckBadge } from "./CheckBadge";
+import { CHECK_STEP } from "./checks";
+import type { PublishedVersion } from "./forms";
 import { previewPlan } from "./upload-preview";
 
 /**
- * The Upload step (project-10): the real package upload. Files are read in this browser as soon as they are
- * chosen, matched to their slot by name, previewed on a plan and checked; the upload itself sends one JSON
- * submission to the FieldMaps API (`POST /v1/projects/{id}/packages`, lib/packages.ts), whose own checks
- * then decide whether the package is ready. This step is the only part of the sample workspace that calls
- * a server, and it says so.
+ * The Upload step: a manager chooses the layers QGIS exported (ground, zones, and optionally paths, trees
+ * and the .qgz project), picks the published form version the map is for, and uploads. The files are read
+ * in this browser as soon as they are chosen, matched to their slot by name, drawn on a plan and checked;
+ * the upload goes from this browser to FieldMaps signed in as the manager (`preparePackage`), FieldMaps
+ * runs its own checks, and the result is shown here while the history refreshes.
  */
 
 const ACCEPT = ".json,.geojson,application/json,application/geo+json,.qgz,.qgs";
@@ -61,43 +62,12 @@ const EMPTY_SLOTS: Record<LayerName, LayerSlotState> = {
 	zones: { kind: "empty" }
 };
 
-/** The site and form codes the pilot database holds, as the earlier upload screen defaulted to. */
-const DEFAULT_SITE_CODE = "sample-garden";
-const DEFAULT_FORM_VERSION = "shell-v1";
-
-const SERVER_STEP: Record<PreparationCheck["step"], string> = {
-	"source-project": "QGIS project",
-	"layer-sources": "Layer sources",
-	"coordinate-reference": "Coordinate system",
-	"imagery-licence": "Imagery licence",
-	archive: "Package archive"
-};
-
-function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function features(count: number): string {
-	return `${count} ${count === 1 ? "feature" : "features"}`;
-}
-
-/** A check's state as the vocabulary words it: passes, fails, or a warning drawn with the fails glyph. */
-function CheckBadge({ state }: { state: ClientCheck["state"] | PreparationCheck["state"] }) {
-	if (state === "passed") return <StateBadge kind="check" state="passes" size="sm" />;
-	if (state === "warning") return <StateBadge kind="check" state="fails" label="Warning" size="sm" />;
-	if (state === "skipped") return <StateBadge kind="check" state="checking" label="Skipped" size="sm" />;
-	return <StateBadge kind="check" state="fails" size="sm" />;
-}
-
 function SlotBadge({ name, slot }: { name: LayerName; slot: LayerSlotState }) {
 	if (slot.kind === "empty") return <span className="type-small text-ink-2">Not chosen</span>;
 	if (slot.kind === "reading") return <StateBadge kind="check" state="checking" label="Reading" size="sm" />;
 	if (slot.kind === "error") return <StateBadge kind="check" state="fails" label="Unreadable" size="sm" />;
-	const mismatched = slot.analysis.geometryTypes.some(type => type !== EXPECTED_GEOMETRY[name]);
-	return mismatched ? (
-		<StateBadge kind="check" state="fails" label="Wrong geometry" size="sm" />
+	return unexpectedGeometry(name, slot.analysis).length > 0 || slot.analysis.withoutGeometry > 0 ? (
+		<StateBadge kind="check" state="fails" label="Wrong shapes" size="sm" />
 	) : (
 		<StateBadge kind="check" state="passes" label="Ready" size="sm" />
 	);
@@ -147,36 +117,54 @@ function FilePick({
 	);
 }
 
-export function UploadStep({ siteName }: { siteName: string }) {
-	const { can, offline } = usePreview();
-	const baseUrl = apiBaseUrl();
-	const projectId = resolveProjectId("");
-	const fieldId = useId();
+/** Why the upload failed, in words: a file problem, or FieldMaps' reason (its own message for a rejected package). */
+function uploadProblem(error: unknown): { message: string; formVersion?: string } {
+	if (error instanceof LayerReadError) return { message: error.message };
+	const failure = apiRequestError(error);
+	return {
+		// A rejected package carries a message that names the layer and the problem; show it.
+		message: failure.code === "validation_failed" ? (failure.detail ?? failure.message) : failure.message,
+		...(failure.fields.form_version ? { formVersion: failure.fields.form_version } : {})
+	};
+}
 
-	const [siteCode, setSiteCode] = useState(DEFAULT_SITE_CODE);
-	const [formVersion, setFormVersion] = useState(DEFAULT_FORM_VERSION);
+export function UploadStep({
+	org,
+	project,
+	projectId,
+	siteCode,
+	siteName,
+	forms,
+	defaultFormVersion,
+	packagesHref
+}: {
+	org: string;
+	project: string;
+	projectId: string;
+	siteCode: string;
+	siteName: string;
+	/** Published form versions, the most recent first. */
+	forms: PublishedVersion[];
+	defaultFormVersion: string;
+	/** The packages page, for the link to the version just prepared. */
+	packagesHref: string;
+}) {
+	const router = useRouter();
+	const fieldId = useId();
+	const nextId = useRef(0);
+
+	const [formVersion, setFormVersion] = useState(defaultFormVersion);
 	const [slots, setSlots] = useState<Record<LayerName, LayerSlotState>>(EMPTY_SLOTS);
 	const [projectSlot, setProjectSlot] = useState<ProjectSlotState>({ kind: "empty" });
 	const [unassigned, setUnassigned] = useState<readonly UnassignedFile[]>([]);
-	const [token, setToken] = useState("");
 	const [dragging, setDragging] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [notice, setNotice] = useState<string | null>(null);
+	const [formVersionProblem, setFormVersionProblem] = useState<string | null>(null);
 	const [result, setResult] = useState<PackageDetail | null>(null);
 
-	const clientChecks = useMemo(() => runClientChecks(slots), [slots]);
-	const plan = useMemo(() => previewPlan(`${siteName} upload`, slots), [siteName, slots]);
-
-	if (!can("uploadPackage"))
-		return (
-			<Island flush title="Upload a QGIS package">
-				<ScreenState
-					kind="no-access"
-					body="Your current role can view map packages, but cannot upload them. Ask a project manager to review your access."
-				/>
-			</Island>
-		);
+	const clientChecks = useMemo(() => runClientChecks(slots, projectSlot), [slots, projectSlot]);
+	const plan = useMemo(() => previewPlan(siteName, slots), [siteName, slots]);
 
 	async function assignLayer(name: LayerName, file: File) {
 		setSlots(current => ({ ...current, [name]: { kind: "reading", file } }));
@@ -196,6 +184,7 @@ export function UploadStep({ siteName }: { siteName: string }) {
 	function ingestFiles(incoming: File[]) {
 		if (incoming.length === 0) return;
 		setResult(null);
+		setError(null);
 		const claimedLayers = new Set<LayerName>(LAYER_NAMES.filter(name => slots[name].kind !== "empty"));
 		let claimedProject = projectSlot.kind !== "empty";
 		const parked: UnassignedFile[] = [];
@@ -211,7 +200,8 @@ export function UploadStep({ siteName }: { siteName: string }) {
 				void assignLayer(guess, file);
 				continue;
 			}
-			parked.push({ id: crypto.randomUUID(), file, guess });
+			nextId.current += 1;
+			parked.push({ id: `file-${nextId.current}`, file, guess });
 		}
 		if (parked.length > 0) setUnassigned(current => [...current, ...parked]);
 	}
@@ -231,94 +221,66 @@ export function UploadStep({ siteName }: { siteName: string }) {
 	}
 
 	const missing = REQUIRED_LAYERS.filter(name => slots[name].kind !== "ready");
+	const reading = LAYER_NAMES.some(name => slots[name].kind === "reading");
 	const blocked = clientChecks.some(check => check.state === "blocked");
+	const ready = canUpload(slots, clientChecks) && formVersion !== "";
 
-	async function build(): Promise<PackageSubmission> {
-		const layers: PackageSubmission["layers"] = {};
-		for (const name of LAYER_NAMES) {
-			const slot = slots[name];
-			if (slot.kind === "ready") layers[name] = slot.collection;
-		}
-		return {
-			site_code: siteCode.trim(),
-			form_version: formVersion.trim(),
-			layers,
-			...(projectSlot.kind === "ready" ? { project_file: await readProjectFile(projectSlot.file) } : {})
-		};
-	}
+	const reason = ready
+		? null
+		: missing.length > 0
+			? `The button turns on when ${missing.map(name => SLOT_LABELS[name].toLowerCase()).join(" and ")} ${missing.length === 1 ? "is" : "are"} chosen.`
+			: reading
+				? "The button turns on when your files have been read."
+				: blocked
+					? "A check below blocks this package. Fix the export in QGIS and choose the file again."
+					: "Choose a form version.";
 
 	async function send() {
 		setBusy(true);
 		setError(null);
-		setNotice(null);
+		setFormVersionProblem(null);
 		setResult(null);
 		try {
-			const submission = await build();
-			if (baseUrl === null) {
-				// No API is set for this deployment: hand over the exact document the endpoint takes instead.
-				const url = URL.createObjectURL(
-					new Blob([JSON.stringify(submission, null, 2)], { type: "application/json" })
-				);
-				const anchor = document.createElement("a");
-				anchor.href = url;
-				anchor.download = `${submission.site_code}-package-submission.json`;
-				anchor.click();
-				window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
-				setNotice(
-					`Nothing was uploaded. ${anchor.download} is the submission this step would have sent; it is in your downloads.`
-				);
-				return;
-			}
-			setResult(await submitPackage(baseUrl, projectId.id, token.trim(), submission));
+			const submission: PackageSubmission = {
+				site_code: siteCode,
+				form_version: formVersion,
+				layers: submissionLayers(slots),
+				...(projectSlot.kind === "ready" ? { project_file: await readProjectFile(projectSlot.file) } : {})
+			};
+			const prepared = await preparePackage(projectId, submission);
+			setResult(prepared);
+			// The files are uploaded: clear them so one press cannot make the same version twice.
+			setSlots(EMPTY_SLOTS);
+			setProjectSlot({ kind: "empty" });
+			setUnassigned([]);
+			// Everything that shows this site's current package refreshes, then this page does.
+			await packageUploaded({ org, project }).catch(() => undefined);
+			router.refresh();
 		} catch (raised) {
-			setError(
-				raised instanceof ApiError || raised instanceof LayerReadError
-					? raised.message
-					: "The FieldMaps API could not be reached. Check your connection and try again."
-			);
+			const problem = uploadProblem(raised);
+			setError(problem.message);
+			if (problem.formVersion) setFormVersionProblem(problem.formVersion);
 		} finally {
 			setBusy(false);
 		}
 	}
 
-	const reason = offline
-		? "You are offline. The package can be sent once the connection returns."
-		: missing.length > 0
-			? `The button turns on when ${missing.map(name => SLOT_LABELS[name].toLowerCase()).join(" and ")} ${missing.length === 1 ? "is" : "are"} chosen.`
-			: blocked
-				? "A check below blocks this package. Fix the export in QGIS and choose the file again."
-				: !siteCode.trim() || !formVersion.trim()
-					? "Enter the site code and the form version."
-					: baseUrl !== null && !projectId.valid
-						? "This deployment does not name its API project yet (NEXT_PUBLIC_FIELDMAPS_PROJECT_ID), so the API would refuse the upload."
-						: baseUrl !== null && token.trim() === ""
-							? "Paste a manager token under “Use a manager token” first."
-							: null;
-
 	return (
 		<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-			<Island flush divided title="Upload a QGIS package" meta="Ground and zones are required">
-				<IslandSection className="grid gap-5 pt-5 sm:grid-cols-2">
+			<Island flush divided title="Upload from QGIS" meta="Ground and zones are required">
+				<IslandSection className="pt-5">
 					<Field
-						label="Site code"
-						htmlFor={`${fieldId}-site`}
-						hint="The site’s code in the FieldMaps database. This preview cannot list them yet.">
-						<TextInput
-							value={siteCode}
-							autoComplete="off"
-							spellCheck={false}
-							className="type-mono-data"
-							onChange={event => setSiteCode(event.target.value)}
-						/>
-					</Field>
-					<Field label="Form version" htmlFor={`${fieldId}-form`} hint="The published form this map is for.">
-						<TextInput
-							value={formVersion}
-							autoComplete="off"
-							spellCheck={false}
-							className="type-mono-data"
-							onChange={event => setFormVersion(event.target.value)}
-						/>
+						label="Form version"
+						htmlFor={`${fieldId}-form`}
+						hint="The published form observers use with this map."
+						error={formVersionProblem}>
+						<Select value={formVersion} onChange={event => setFormVersion(event.target.value)}>
+							{forms.map(version => (
+								<option key={version.code} value={version.code}>
+									{version.formName} · {version.code}
+								</option>
+							))}
+						</Select>
 					</Field>
 				</IslandSection>
 
@@ -343,8 +305,8 @@ export function UploadStep({ siteName }: { siteName: string }) {
 								Drop the QGIS export here, or choose files
 							</p>
 							<p className="max-w-md type-small text-ink-2">
-								Ground, zones, paths and trees as GeoJSON, and the .qgz project if you have it. Files
-								are matched to their slot by name.
+								Ground, zones, paths and trees as .geojson files, and the .qgz project if you have it.
+								Files are matched to their slot by name.
 							</p>
 							<FilePick
 								id={`${fieldId}-files`}
@@ -379,7 +341,7 @@ export function UploadStep({ siteName }: { siteName: string }) {
 										{slot.kind === "empty"
 											? "No file yet"
 											: slot.kind === "ready"
-												? `${formatBytes(slot.file.size)} · ${features(slot.analysis.featureCount)} · ${slot.analysis.geometryTypes.join(", ") || "no geometry"}`
+												? `${formatBytes(slot.file.size)} · ${plural(slot.analysis.featureCount, "feature")} · ${slot.analysis.geometryTypes.join(", ") || "no shapes"}`
 												: slot.kind === "error"
 													? slot.message
 													: formatBytes(slot.file.size)}
@@ -396,7 +358,7 @@ export function UploadStep({ siteName }: { siteName: string }) {
 									</FilePick>
 									{slot.kind !== "empty" && (
 										<Button
-											variant="ghost"
+											variant="outline"
 											size="sm"
 											aria-label={`Remove the ${SLOT_LABELS[name]} file`}
 											onClick={() =>
@@ -420,7 +382,7 @@ export function UploadStep({ siteName }: { siteName: string }) {
 							</span>
 							<span className="block type-small text-ink-2">
 								{projectSlot.kind === "empty"
-									? "Without it, the source and licence checks are recorded as skipped."
+									? "Without it, the project and imagery checks are skipped."
 									: formatBytes(projectSlot.file.size)}
 							</span>
 						</span>
@@ -439,7 +401,7 @@ export function UploadStep({ siteName }: { siteName: string }) {
 							</FilePick>
 							{projectSlot.kind !== "empty" && (
 								<Button
-									variant="ghost"
+									variant="outline"
 									size="sm"
 									aria-label="Remove the QGIS project file"
 									onClick={() => setProjectSlot({ kind: "empty" })}>
@@ -490,51 +452,20 @@ export function UploadStep({ siteName }: { siteName: string }) {
 				)}
 
 				<IslandSection className="flex flex-col gap-4 pt-5 pb-island-pad">
-					<details className="group rounded-panel border border-line">
-						<summary className="flex min-h-control cursor-pointer list-none items-center justify-between gap-3 rounded-panel px-4 py-2 font-semibold text-ink hover:bg-well [&::-webkit-details-marker]:hidden">
-							<span className="flex items-center gap-2">
-								<Icon name="key-round" size={18} />
-								Use a manager token
-							</span>
-							<Icon
-								name="chevron-down"
-								size={18}
-								className="transition-transform group-open:rotate-180"
-							/>
-						</summary>
-						<div className="flex flex-col gap-3 border-t border-rule px-4 pt-3 pb-4">
-							<p className="type-small text-ink-2">
-								The FieldMaps API accepts a package only from a manager of the project, identified by an
-								access token. This workspace does not pass its sign-in to the upload yet, so paste a
-								token issued to a project manager. It is sent with this upload only and is not kept.
-							</p>
-							<Field label="Access token" htmlFor={`${fieldId}-token`}>
-								<TextInput
-									type="password"
-									autoComplete="off"
-									spellCheck={false}
-									value={token}
-									placeholder="eyJhbGciOi…"
-									onChange={event => setToken(event.target.value)}
-								/>
-							</Field>
-						</div>
-					</details>
-
 					<div className="flex flex-col items-start gap-2">
 						<Button
-							icon={baseUrl === null ? "download" : "upload"}
+							variant="primary"
+							icon="upload"
 							busy={busy}
-							busyLabel={baseUrl === null ? "Preparing…" : "Uploading…"}
+							busyLabel="Uploading…"
 							disabled={reason !== null}
 							disabledReason={reason ?? undefined}
 							onClick={() => void send()}>
-							{baseUrl === null ? "Download submission" : "Upload package"}
+							Upload package
 						</Button>
 						<p className="type-small text-ink-2">
-							{baseUrl === null
-								? "No FieldMaps API is set for this deployment (NEXT_PUBLIC_FIELDMAPS_API_URL), so this step downloads the submission instead of sending it."
-								: "Sends this package to the FieldMaps API."}
+							The package is sent to FieldMaps as you. It becomes the site&rsquo;s current map once its
+							checks pass.
 						</p>
 					</div>
 
@@ -543,26 +474,22 @@ export function UploadStep({ siteName }: { siteName: string }) {
 							{error} Your files are still chosen here.
 						</Note>
 					)}
-					{notice && (
-						<Note tone="waiting" icon="download" live="polite">
-							{notice}
-						</Note>
-					)}
 				</IslandSection>
 			</Island>
 
 			<div className="flex min-w-0 flex-col gap-6">
+				{result && <ServerResult result={result} packagesHref={packagesHref} />}
+
 				{plan && (
-					<section aria-label="Local preview" className="flex flex-col gap-3">
+					<section aria-label="Chosen files on a plan" className="flex flex-col gap-3">
 						<MapFrame
 							site={plan}
-							mapVersion="new"
-							title="Chosen files · preview"
-							subtitle="Read in this browser, not sent yet"
+							mapVersion="to upload"
+							title="Chosen files"
+							subtitle="Read in this browser, not uploaded yet"
 						/>
 						<p className="type-small text-ink-2">
-							A preview of the files you chose. Nothing is sent until you upload, and nothing on devices
-							changes until a version is activated.
+							A plan drawn from the files you chose. Nothing is sent until you upload.
 						</p>
 					</section>
 				)}
@@ -573,7 +500,7 @@ export function UploadStep({ siteName }: { siteName: string }) {
 					meta={clientChecks.length > 0 ? undefined : "Waiting for files"}>
 					{clientChecks.length === 0 ? (
 						<p className="px-island-pad pb-island-pad type-body text-ink-2">
-							Checks appear once a layer is chosen. The server runs its own checks after the upload.
+							Checks appear once a layer is chosen. FieldMaps runs its own checks after the upload.
 						</p>
 					) : (
 						<ul className="border-t border-rule">
@@ -591,47 +518,48 @@ export function UploadStep({ siteName }: { siteName: string }) {
 						</ul>
 					)}
 				</Island>
-
-				{result && (
-					<Island
-						flush
-						title="Checked by the server"
-						meta={
-							<StateBadge
-								kind="check"
-								state={result.state === "ready" ? "passes" : "fails"}
-								label={result.state === "ready" ? "Ready" : "Blocked"}
-							/>
-						}
-						aria-live="polite">
-						<p className="border-t border-rule px-island-pad py-3 type-mono-data text-ink">
-							{result.site_code} · v{result.version} · {formatBytes(result.archive_bytes)}
-						</p>
-						<ul className="border-t border-rule">
-							{result.checks.map((check, index) => (
-								<li
-									key={`${check.step}-${index}`}
-									className="flex items-start justify-between gap-4 border-b border-rule px-island-pad py-3">
-									<span className="min-w-0">
-										<span className="block type-body font-semibold text-ink">
-											{SERVER_STEP[check.step]}
-										</span>
-										<span className="block type-small break-words text-ink-2">{check.detail}</span>
-									</span>
-									<CheckBadge state={check.state} />
-								</li>
-							))}
-						</ul>
-						<IslandSection className="pb-island-pad">
-							<Note tone={result.state === "ready" ? "saved" : "attention"}>
-								{result.state === "ready"
-									? `Version ${result.version} is prepared on the server and recorded with its checks.`
-									: "The package is kept with its reasons and cannot be downloaded. Fix what blocked it and upload the next version."}
-							</Note>
-						</IslandSection>
-					</Island>
-				)}
 			</div>
 		</div>
+	);
+}
+
+/** What FieldMaps found when it prepared the package. */
+function ServerResult({ result, packagesHref }: { result: PackageDetail; packagesHref: string }) {
+	const ready = result.state === "ready";
+	return (
+		<Island
+			flush
+			title="Checked by FieldMaps"
+			meta={<StateBadge kind="check" state={ready ? "passes" : "fails"} label={ready ? "Ready" : "Blocked"} />}
+			aria-live="polite">
+			<p className="border-t border-rule px-island-pad py-3 type-mono-data text-ink">
+				{result.site_code} · v{result.version} · {formatBytes(result.archive_bytes)}
+			</p>
+			<ul className="border-t border-rule">
+				{result.checks.map((check, index) => (
+					<li
+						key={`${check.step}-${index}`}
+						className="flex items-start justify-between gap-4 border-b border-rule px-island-pad py-3">
+						<span className="min-w-0">
+							<span className="block type-body font-semibold text-ink">{CHECK_STEP[check.step]}</span>
+							<span className="block type-small break-words text-ink-2">{check.detail}</span>
+						</span>
+						<CheckBadge state={check.state} />
+					</li>
+				))}
+			</ul>
+			<IslandSection className="flex flex-col gap-3 pb-island-pad">
+				<Note tone={ready ? "saved" : "attention"}>
+					{ready
+						? `Version ${result.version} is the site's current map. Observers get it the next time they make the site ready offline in the FieldMaps app.`
+						: "FieldMaps kept this package with its reasons, but observers cannot download it. Fix what blocked it and upload the next version."}
+				</Note>
+				<Link
+					href={`${packagesHref}?package=${result.package_id}`}
+					className="font-semibold text-accent underline-offset-4 hover:underline">
+					See the checks for version {result.version}
+				</Link>
+			</IslandSection>
+		</Island>
 	);
 }

@@ -1,73 +1,101 @@
 "use client";
 
-import { ButtonLink } from "@/components/contour/Button";
 import { Island } from "@/components/contour/Island";
+import { ScreenState } from "@/components/contour/ScreenState";
 import { StateBadge } from "@/components/contour/StateBadge";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
+import { TextLink } from "@/components/contour/TextLink";
 import { RowsTable } from "@/features/sites/parts";
+import { plural } from "@/lib/labels";
 
-import { type PackageRow, sizeLabel, uploadedLabel } from "./model";
+import type { HistoryRow } from "./history";
 
-/** "Version history" (project-10): every version of the site's map, newest first, with where it stands. */
+function StateOf({ row }: { row: HistoryRow }) {
+	if (row.state === "current") return <StateBadge kind="package" state="active" />;
+	if (row.state === "archived") return <StateBadge kind="package" state="archived" />;
+	return <StateBadge kind="check" state="fails" />;
+}
+
+function Notes({ row, currentVersion }: { row: HistoryRow; currentVersion: number | null }) {
+	if (row.state === "current") return <span>Observers get this version.</span>;
+	if (row.state === "archived")
+		return (
+			<span className="text-ink-2">{currentVersion ? `Replaced by v${currentVersion}.` : "Older version."}</span>
+		);
+	return (
+		<span>
+			{row.blockedDetail ? `${row.blockedDetail} ` : ""}
+			<span className="text-ink-2">It cannot be downloaded.</span>
+		</span>
+	);
+}
+
+/**
+ * Version history: every map package prepared for the site, newest first. The newest ready one is current
+ * and Active; older ready ones are Archived; a blocked one fails, with the first reason it was blocked.
+ */
 export function VersionHistory({
 	rows,
-	selected,
-	uploadHref
+	selectedId,
+	inspectHref
 }: {
-	rows: PackageRow[];
-	/** The version in focus on this step, drawn as the selected row. */
-	selected: string | null;
-	uploadHref: string | null;
+	rows: HistoryRow[];
+	/** The package open in Inspect, drawn as the selected row. */
+	selectedId: string | null;
+	/** The address that opens one package in Inspect. */
+	inspectHref: (packageId: string) => string;
 }) {
+	const currentVersion = rows.find(row => row.state === "current")?.version ?? null;
 	return (
-		<Island flush title="Version history" meta="Every observation keeps the map version it was captured on">
-			<PreviewStateView
-				loadingLabel="Loading package versions…"
-				rows={4}
-				empty={{
-					actions: uploadHref ? (
-						<ButtonLink href={uploadHref} icon="upload">
-							Upload package
-						</ButtonLink>
-					) : undefined
-				}}>
-				{rows.length === 0 ? (
-					<p className="px-island-pad py-6 type-body text-ink-2">
-						No version yet. The first QGIS package you upload appears here.
-					</p>
-				) : (
-					<RowsTable
-						caption="Version history"
-						rows={rows}
-						rowKey={row => row.version}
-						selectedKey={selected}
-						cardTitle={row => <span className="type-mono-data font-semibold">{row.version}</span>}
-						columns={[
-							{
-								key: "version",
-								label: "Version",
-								hideInCard: true,
-								cell: row => <span className="font-semibold">{row.version}</span>,
-								mono: true
-							},
-							{
-								key: "size",
-								label: "Size",
-								mono: true,
-								nowrap: true,
-								cell: row => sizeLabel(row) ?? "—"
-							},
-							{ key: "uploaded", label: "Uploaded", cell: row => uploadedLabel(row) },
-							{
-								key: "state",
-								label: "State",
-								cell: row => <StateBadge kind="package" state={row.state} />
-							},
-							{ key: "devices", label: "On devices", cell: row => row.onDevices }
-						]}
-					/>
-				)}
-			</PreviewStateView>
+		<Island flush title="History" meta={plural(rows.length, "version")}>
+			{rows.length === 0 ? (
+				<ScreenState
+					kind="empty"
+					icon="layers"
+					headingLevel={3}
+					title="No map packages yet"
+					body="The first package you upload becomes this site's map. Each upload after it is a new version."
+				/>
+			) : (
+				<RowsTable
+					caption="Map package versions, newest first"
+					rows={rows}
+					rowKey={row => row.packageId}
+					selectedKey={selectedId}
+					cardTitle={row => (
+						<TextLink href={inspectHref(row.packageId)} tone="ink" className="type-mono-data font-semibold">
+							v{row.version}
+						</TextLink>
+					)}
+					columns={[
+						{
+							key: "version",
+							label: "Version",
+							hideInCard: true,
+							mono: true,
+							nowrap: true,
+							cell: row => (
+								<TextLink href={inspectHref(row.packageId)} tone="ink" className="font-semibold">
+									v{row.version}
+								</TextLink>
+							)
+						},
+						{ key: "state", label: "State", cell: row => <StateOf row={row} /> },
+						{ key: "prepared", label: "Prepared", nowrap: true, cell: row => row.prepared },
+						{ key: "size", label: "Size", mono: true, nowrap: true, cell: row => row.sizeLabel },
+						{
+							key: "form",
+							label: "Form version",
+							mono: true,
+							cell: row => <span className="break-all">{row.formVersion}</span>
+						},
+						{
+							key: "notes",
+							label: "Notes",
+							cell: row => <Notes row={row} currentVersion={currentVersion} />
+						}
+					]}
+				/>
+			)}
 		</Island>
 	);
 }

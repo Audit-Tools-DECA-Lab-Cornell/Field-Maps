@@ -1,225 +1,316 @@
 "use client";
 
 import { ButtonLink } from "@/components/contour/Button";
-import { CoverageDots } from "@/components/contour/CoverageDots";
 import { type Fact, FactsList } from "@/components/contour/FactsList";
-import { Island, IslandSection } from "@/components/contour/Island";
+import { Icon } from "@/components/contour/Icon";
+import { InnerPanel } from "@/components/contour/InnerPanel";
+import { Island } from "@/components/contour/Island";
 import { PageHeader } from "@/components/contour/PageHeader";
+import { ScreenState } from "@/components/contour/ScreenState";
 import { StateBadge } from "@/components/contour/StateBadge";
 import { TextLink } from "@/components/contour/TextLink";
-import { activeRow, type PackageRow, packageRows, sizeLabel } from "@/features/packages/model";
-import { useSitePackagePreview } from "@/features/packages/store";
+import { MapFrame } from "@/components/map/MapFrame";
+import { LoadFailure } from "@/components/shell/LoadFailure";
+import { NotAvailable } from "@/components/shell/NotAvailable";
+import { DownloadPackageButton } from "@/features/packages/DownloadPackageButton";
 import { projectHref } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { coverageFor, type Site, type ZoneCoverage } from "@/fixtures";
+import { plural } from "@/lib/labels";
 import type { ProjectedSite } from "@/lib/plan";
+import type { Failure } from "@/lib/workspace/types";
 
-import { DeviceReadiness } from "./DeviceReadiness";
-import { coverageZoneStyles, targetLine } from "./model";
-import { CoverageLegend, MapArea, RowsTable } from "./parts";
+import { EditSiteDialog } from "./EditSiteDialog";
+import type { SiteView, ZoneRow } from "./view";
 
 /**
- * A site (project-07): its plan with coverage dots in each zone label, the zones against the illustrative
- * target, the active map package, and each device's last report.
+ * A site: its plan from the current map package, its zones with how many observations each holds, the
+ * current package with Download and Upload a new version, and the details a manager can edit. Zones come
+ * from the zones layer in QGIS, so the page offers no way to draw them here.
  */
-export function SiteScreen({ org, site, plan }: { org: string; site: Site; plan: ProjectedSite }) {
-	const { can } = usePreview();
-	const preview = useSitePackagePreview(site.slug);
-	const rows = packageRows(site.slug, preview);
-	const active = activeRow(rows);
-	const base = projectHref(org, site.projectSlug, `sites/${site.slug}`);
-	const coverage = coverageFor(site.projectSlug, site.slug);
+export function SiteScreen({
+	org,
+	project,
+	projectId,
+	canManage,
+	site,
+	plan,
+	planFailure,
+	zoneRows,
+	countsFailure,
+	countsLimited
+}: {
+	org: string;
+	project: string;
+	projectId: string;
+	canManage: boolean;
+	site: SiteView;
+	/** The current package drawn as a plan, or null when there is none or it cannot be drawn. */
+	plan: ProjectedSite | null;
+	/** Why the current package could not be fetched, when it could not. */
+	planFailure: Failure | null;
+	zoneRows: ZoneRow[];
+	/** Why the observations could not be listed, when they could not: the zones show without counts. */
+	countsFailure: Failure | null;
+	/** The list came back at its limit, so the counts cover the newest observations only. */
+	countsLimited: boolean;
+}) {
+	const sitesHref = projectHref(org, project, "sites");
+	const base = `${sitesHref}/${site.code}`;
+	const dataHref = projectHref(org, project, "data");
+	const current = site.package;
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				breadcrumbs={[
-					{ label: "Sites", href: projectHref(org, site.projectSlug, "sites") },
-					{ label: site.name }
-				]}
+				breadcrumbs={[{ label: "Sites", href: sitesHref }, { label: site.name }]}
 				title={site.name}
-				lead="Zones, coverage, map packages and download readiness."
+				lead={`${current ? site.zonesLabel : "No map package yet"} · ${site.observationsLabel}`}
 				actions={
-					<>
-						<ButtonLink href={`${base}/packages`} variant="outline" icon="layers">
-							Map packages
-						</ButtonLink>
-						<ButtonLink
-							href={`${projectHref(org, site.projectSlug, "data")}?site=${site.slug}`}
-							iconRight="arrow-right">
-							View data
-						</ButtonLink>
-					</>
+					<ButtonLink
+						href={`${dataHref}?site=${encodeURIComponent(site.code)}`}
+						variant="outline"
+						iconRight="arrow-right">
+						See observations
+					</ButtonLink>
 				}
 			/>
 
 			<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.36fr)_minmax(0,1fr)]">
-				<div className="flex min-w-0 flex-col gap-4">
-					<MapArea
-						site={plan}
-						mapVersion={active?.state === "bundled" ? "bundled" : (active?.version ?? "v1")}
-						subtitle={coverage.length > 0 ? "Dots show rounds that met the target" : undefined}
-						zones={coverageZoneStyles(site.projectSlug, site.slug)}
-					/>
-					{coverage.length > 0 && <CoverageLegend target={targetLine(site.projectSlug)} className="px-2" />}
+				<div className="min-w-0">
+					<MapSlot site={site} plan={plan} failure={planFailure} />
 				</div>
 
 				<div className="flex min-w-0 flex-col gap-6">
 					<ZonesIsland
-						base={base}
-						coverage={coverage}
-						training={site.training}
-						siteName={site.name}
-						mayEdit={can("uploadPackage")}
+						hasPackage={current !== null}
+						rows={zoneRows}
+						failure={countsFailure}
+						limited={countsLimited}
+						zoneHref={id =>
+							`${dataHref}?site=${encodeURIComponent(site.code)}&zone=${encodeURIComponent(id)}`
+						}
 					/>
-					<ActivePackageIsland active={active} packagesHref={`${base}/packages`} />
+
+					<PackageIsland
+						projectId={projectId}
+						siteCode={site.code}
+						current={current}
+						canManage={canManage}
+						uploadHref={`${base}/packages?step=upload`}
+						historyHref={`${base}/packages`}
+					/>
+
+					<DetailsIsland org={org} project={project} site={site} canManage={canManage} />
 				</div>
 			</div>
 
-			<DeviceReadiness siteSlug={site.slug} />
+			<div className="grid gap-4 lg:grid-cols-3">
+				<NotAvailable
+					title="Editing zones on the web"
+					reason="Zones come from the zones layer in QGIS."
+					instead="To change one, edit it in QGIS and upload a new package."
+				/>
+				<NotAvailable
+					title="Device readiness"
+					reason="FieldMaps does not record which phones have downloaded this map."
+					instead="Ask observers to open the site in the FieldMaps app before they go out."
+				/>
+				<NotAvailable
+					title="Deleting a site or a map package"
+					instead="To replace what observers download, upload a new version of the map package."
+				/>
+			</div>
 		</div>
 	);
 }
 
-const STATUS: Record<ZoneCoverage["status"], "complete" | "roundBelow" | "below"> = {
-	complete: "complete",
-	roundBelow: "roundBelow",
-	below: "below"
-};
+function MapSlot({ site, plan, failure }: { site: SiteView; plan: ProjectedSite | null; failure: Failure | null }) {
+	if (failure) return <LoadFailure failure={failure} what="the map" />;
+	if (plan && site.package) return <MapFrame site={plan} mapVersion={`v${site.package.version}`} />;
+	return (
+		<InnerPanel dashed className="flex aspect-[36/25] flex-col items-center justify-center gap-3 px-6 text-center">
+			<Icon name="layers" size={24} className="text-ink-2" />
+			<p className="max-w-sm type-body text-ink-2">
+				{site.package
+					? "This map package cannot be drawn here. Its zones are listed beside it."
+					: "The map appears here once the site has a map package."}
+			</p>
+		</InnerPanel>
+	);
+}
 
 function ZonesIsland({
-	base,
-	coverage,
-	training,
-	siteName,
-	mayEdit
+	hasPackage,
+	rows,
+	failure,
+	limited,
+	zoneHref
 }: {
-	base: string;
-	coverage: ZoneCoverage[];
-	training: boolean;
-	siteName: string;
-	mayEdit: boolean;
+	hasPackage: boolean;
+	rows: ZoneRow[];
+	failure: Failure | null;
+	limited: boolean;
+	zoneHref: (id: string) => string;
 }) {
-	const first = coverage[0];
 	return (
-		<Island flush title="Zones and coverage">
-			<PreviewStateView
-				loadingLabel="Loading zones…"
-				rows={3}
-				empty={{
-					icon: "layers",
-					title: "No zones yet",
-					body: "Zones arrive with the site's first QGIS package."
-				}}>
-				{coverage.length === 0 ? (
-					<p className="px-island-pad py-6 type-body text-ink-2">
-						{training
-							? `${siteName} is training geometry. Its records are never counted toward coverage.`
-							: "Zones arrive with the site's first QGIS package."}
-					</p>
-				) : (
-					<>
-						<RowsTable
-							caption="Zones and coverage"
-							rowKey={entry => entry.zone.slug}
-							cardTitle={entry => (
-								<TextLink href={`${base}/zones/${entry.zone.slug}`} tone="ink">
-									{entry.zone.name}
-								</TextLink>
-							)}
-							rows={coverage}
-							columns={[
-								{
-									key: "zone",
-									label: "Zone",
-									hideInCard: true,
-									cell: entry => (
-										<TextLink href={`${base}/zones/${entry.zone.slug}`} tone="ink">
-											{entry.zone.name}
-										</TextLink>
-									)
-								},
-								{
-									key: "rounds",
-									label: "Rounds on target",
-									nowrap: true,
-									cell: entry => (
-										<span className="inline-flex items-center gap-3">
-											<span className="type-mono-data tnum">
-												{entry.onTarget} / {entry.met.length}
-											</span>
-											<CoverageDots values={entry.met} />
-										</span>
-									)
-								},
-								{
-									key: "status",
-									label: "Status",
-									cell: entry => <StateBadge kind="coverage" state={STATUS[entry.status]} />
-								}
-							]}
-						/>
-						<IslandSection rule className="flex flex-wrap gap-x-6 gap-y-3 py-5">
-							{first && (
-								<TextLink href={`${base}/zones/${first.zone.slug}`} icon="arrow-right" arrow={false}>
-									Open {first.zone.name}
-								</TextLink>
-							)}
-							{mayEdit && first && (
-								<TextLink
-									href={`${base}/zones/edit?zone=${first.zone.slug}`}
-									icon="pencil"
-									arrow={false}>
-									Edit zone boundaries
-								</TextLink>
-							)}
-						</IslandSection>
-					</>
-				)}
-			</PreviewStateView>
+		<Island
+			flush
+			title="Zones"
+			meta={hasPackage ? plural(rows.filter(row => row.id !== null).length, "zone") : undefined}
+			footnote={limited ? "Counts are based on the newest 500 observations of this site." : undefined}>
+			{rows.length === 0 ? (
+				<ScreenState
+					kind="empty"
+					icon="layers"
+					headingLevel={3}
+					title="No zones yet"
+					body="Zones come from the zones layer of the site's first map package."
+				/>
+			) : (
+				<ul>
+					{rows.map(row => (
+						<li
+							key={row.id ?? "none"}
+							className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 border-t border-rule px-island-pad py-3.5 first:border-t-0">
+							<div className="min-w-0">
+								{row.id !== null ? (
+									<TextLink href={zoneHref(row.id)} tone="ink" className="break-words">
+										{row.label}
+									</TextLink>
+								) : (
+									<span className="text-ink">{row.label}</span>
+								)}
+								{row.id !== null && row.id !== row.label && (
+									<p className="mt-1 type-mono-data break-all text-ink-2">Zone id {row.id}</p>
+								)}
+							</div>
+							{row.countLabel && <p className="type-body text-ink">{row.countLabel}</p>}
+						</li>
+					))}
+				</ul>
+			)}
+			{failure && <LoadFailure failure={failure} what="the observation counts" bare />}
 		</Island>
 	);
 }
 
-function ActivePackageIsland({ active, packagesHref }: { active: PackageRow | undefined; packagesHref: string }) {
-	const facts: Fact[] = [];
-	if (active) {
-		facts.push({
-			label: "Version",
-			value: active.state === "bundled" ? "Bundled with the app" : active.version,
-			mono: active.state !== "bundled"
-		});
-		const size = sizeLabel(active);
-		if (size) facts.push({ label: "Size", value: size, mono: true });
-		if (active.formAssignment) facts.push({ label: "Form assignment", value: active.formAssignment, mono: true });
-		if (active.importedFrom) facts.push({ label: "Imported from", value: active.importedFrom });
-	}
+function PackageIsland({
+	projectId,
+	siteCode,
+	current,
+	canManage,
+	uploadHref,
+	historyHref
+}: {
+	projectId: string;
+	siteCode: string;
+	current: SiteView["package"];
+	canManage: boolean;
+	uploadHref: string;
+	historyHref: string;
+}) {
+	const facts: Fact[] = current
+		? [
+				{ label: "Version", value: `v${current.version}`, mono: true },
+				{ label: "Prepared", value: current.prepared },
+				{ label: "Size", value: current.sizeLabel, mono: true },
+				{
+					label: "Form version",
+					value: current.formVersion ?? "None named",
+					mono: current.formVersion !== null
+				}
+			]
+		: [];
 
 	return (
 		<Island
 			flush
 			divided
-			title="Active map package"
-			meta={
-				active ? (
-					<StateBadge kind="package" state={active.state === "bundled" ? "bundled" : "active"} />
-				) : undefined
-			}>
-			<PreviewStateView loadingLabel="Loading the map package…" rows={3}>
-				{active ? (
-					<div className="flex flex-col gap-6 px-island-pad pt-4 pb-island-pad">
-						<FactsList items={facts} labelWidth="9.5rem" />
-						<ButtonLink href={packagesHref} variant="outline" icon="layers" fullWidth>
-							Inspect package history
-						</ButtonLink>
-					</div>
+			title="Current map package"
+			meta={current ? <StateBadge kind="package" state="active" /> : undefined}>
+			<div className="flex flex-col gap-5 px-island-pad pt-4 pb-island-pad">
+				{current ? (
+					<>
+						<FactsList items={facts} labelWidth="8.5rem" />
+						<div className="flex flex-wrap items-start gap-3">
+							<DownloadPackageButton
+								projectId={projectId}
+								packageId={current.packageId}
+								siteCode={siteCode}
+								version={current.version}
+							/>
+							{canManage && (
+								<ButtonLink href={uploadHref} variant="primary" icon="upload">
+									Upload a new version
+								</ButtonLink>
+							)}
+						</div>
+						<p className="type-small text-ink-2">
+							Observers get this version the next time they make the site ready offline in the FieldMaps
+							app.
+						</p>
+					</>
 				) : (
-					<p className="px-island-pad py-6 type-body text-ink-2">
-						No map package is active on this site yet.
-					</p>
+					<>
+						<p className="type-body text-ink-2">
+							No map package yet. Observers cannot collect on this site until one is uploaded.
+						</p>
+						{canManage ? (
+							<div>
+								<ButtonLink href={uploadHref} variant="primary" icon="upload">
+									Upload the first map package
+								</ButtonLink>
+							</div>
+						) : (
+							<p className="type-small text-ink-2">A project manager uploads map packages.</p>
+						)}
+					</>
 				)}
-			</PreviewStateView>
+				<TextLink href={historyHref}>Package history</TextLink>
+			</div>
+		</Island>
+	);
+}
+
+function DetailsIsland({
+	org,
+	project,
+	site,
+	canManage
+}: {
+	org: string;
+	project: string;
+	site: SiteView;
+	canManage: boolean;
+}) {
+	return (
+		<Island flush divided title="Details">
+			<div className="flex flex-col gap-5 px-island-pad pt-4 pb-island-pad">
+				<FactsList
+					labelWidth="8.5rem"
+					items={[
+						{ label: "Site code", value: site.code, mono: true },
+						{
+							label: "Description",
+							value: site.description ? (
+								<span className="break-words whitespace-pre-line">{site.description}</span>
+							) : (
+								<span className="text-ink-2">No description</span>
+							)
+						}
+					]}
+				/>
+				{canManage && (
+					<div>
+						<EditSiteDialog
+							org={org}
+							project={project}
+							code={site.code}
+							name={site.name}
+							description={site.description}
+						/>
+					</div>
+				)}
+			</div>
 		</Island>
 	);
 }
