@@ -57,14 +57,15 @@ function zonePaint(palette: MapPalette): LayerPaint {
 }
 
 function treePaint(palette: MapPalette, layer: LayerData): LayerPaint {
-  return shape(layer) === "area"
-    ? {
-        type: "fill",
-        color: hexWithAlpha(palette.tree.fill, palette.tree.opacity),
-        outline: palette.tree.edge,
-        dashed: false,
-      }
-    : { type: "circle", color: palette.tree.fill, radius: 9 };
+  if (shape(layer) === "area") {
+    return {
+      type: "fill",
+      color: hexWithAlpha(palette.tree.fill, palette.tree.opacity),
+      outline: palette.tree.edge,
+      dashed: false,
+    };
+  }
+  return { type: "circle", color: palette.tree.fill, radius: 9 };
 }
 
 function pathPaint(palette: MapPalette, layer: LayerData): LayerPaint {
@@ -133,7 +134,9 @@ function parts(geometry: LayerData["features"][number]["geometry"]): Coordinate[
 }
 
 function siteZone(zone: ManifestZone, layer: LayerData): SiteZone {
-  const feature = layer.features.find((entry) => String(entry.properties?.id ?? "") === zone.id);
+  const feature = layer.features.find(
+    (entry) => String(entry.properties?.["id"] ?? "") === zone.id,
+  );
   const [polygon, ...moreParts] = feature ? parts(feature.geometry) : [];
   return {
     id: zone.id,

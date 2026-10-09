@@ -197,9 +197,9 @@ describe("Making a hosted site ready offline", () => {
     );
     expect(parts).toEqual([0, 1, 2, 3]);
     expect(stored.packageId).toBe(PACKAGE);
-    expect(stored.forms.play.version).toBe("play-v1");
+    expect(stored.forms.play["version"]).toBe("play-v1");
     // Found by what it asks, not its name: the notes form is a play-event form and is passed over.
-    expect(stored.forms.inventory?.version).toBe("inventory-v2");
+    expect(stored.forms.inventory?.["version"]).toBe("inventory-v2");
   });
 
   it("refuses a download that does not match the digest the server recorded", async () => {
