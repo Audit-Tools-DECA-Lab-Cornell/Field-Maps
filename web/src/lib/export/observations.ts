@@ -1,5 +1,5 @@
 import { roundOf, shortLabel } from "../labels";
-import { allOptions, type FormQuestion, readDefinition } from "../observations/answers";
+import { allOptions, type FormOption, type FormQuestion, readDefinition } from "../observations/answers";
 import type { RoundType } from "../workspace/types";
 import { answerHeader, csvLine, RECORD_COLUMNS, repeatsRecordColumn } from "./columns";
 
@@ -58,10 +58,16 @@ export type ExportColumn = {
 	readonly formVersions: readonly string[];
 };
 
+/** Where one answer goes: the question, and the column a record with these answers writes it under. */
+type Source = {
+	readonly questionId: string;
+	readonly headerFor: (answers: Readonly<Record<string, unknown>>) => string | undefined;
+};
+
 type Plan = {
 	readonly columns: ExportColumn[];
-	/** Per form version: header → question id. */
-	readonly byVersion: Map<string, Map<string, string>>;
+	/** Per form version: the answers that fill columns. */
+	readonly byVersion: Map<string, Source[]>;
 };
 
 const TYPES: Record<FormQuestion["kind"], string> = {
@@ -72,57 +78,130 @@ const TYPES: Record<FormQuestion["kind"], string> = {
 	boolean: "yes or no"
 };
 
+const optionList = (options: readonly FormOption[]) =>
+	options.map(option => `${option.code} = ${option.label}`).join("; ");
+
+/**
+ * The key of the dynamic option set a record's earlier answer selects, when that set names its own export
+ * column (the collector writes the answer under it). Undefined for a question without sets, a controlling
+ * answer that selects none, and a set without an export name; the question's own column holds those.
+ */
+function namedSetKey(question: FormQuestion, answers: Readonly<Record<string, unknown>>): string | undefined {
+	const dynamic = question.dynamicFrom;
+	if (!dynamic) return undefined;
+	const parent = answers[dynamic.question];
+	if (typeof parent !== "string" || !Object.hasOwn(dynamic.sets, parent)) return undefined;
+	return dynamic.sets[parent].exportColumn.trim() === "" ? undefined : parent;
+}
+
+/** `header` when the form version has no such column yet; otherwise `<header>_<question id>`, numbered until free. */
+function freeHeader(header: string, questionId: string, taken: ReadonlySet<string>): string {
+	if (!taken.has(header)) return header;
+	let candidate = `${header}_${questionId}`;
+	for (let n = 2; taken.has(candidate); n++) candidate = `${header}_${questionId}_${n}`;
+	return candidate;
+}
+
 /**
  * The answer columns for these definitions and records: each definition's questions in form order (the
  * definitions in the order given), then answers no definition explains. One question keeps one column
- * across versions; two questions of one form that share an export column get `<column>_<question id>`.
+ * across versions; a column another question of the form already uses is renamed `<column>_<question id>`.
+ *
+ * A question whose options follow an earlier answer (a play subtype) is written under the export column of
+ * the option set that answer selected, as the collector does, and the codebook lists each set's column. The
+ * question's own column, named by its export column or its id, holds the answers no named set covers.
  */
 function plan(rows: readonly ExportRow[], definitions: Definitions): Plan {
 	const columns = new Map<string, { column: ExportColumn; versions: Set<string> }>();
-	const byVersion = new Map<string, Map<string, string>>();
+	const byVersion = new Map<string, Source[]>();
+	const taken = new Map<string, Set<string>>();
 	const repeated = new Map<string, Set<string>>();
+	const takenBy = (version: string) => {
+		const found = taken.get(version) ?? new Set<string>();
+		taken.set(version, found);
+		return found;
+	};
 	const add = (version: string, header: string, column: Omit<ExportColumn, "header" | "formVersions">) => {
 		const existing = columns.get(header);
 		if (existing) existing.versions.add(version);
 		else columns.set(header, { column: { ...column, header, formVersions: [] }, versions: new Set([version]) });
-		const map = byVersion.get(version) ?? new Map<string, string>();
-		map.set(header, column.questionId);
-		byVersion.set(version, map);
+		takenBy(version).add(header);
 	};
 
+	// A question with a named set for every answer needs its own column only for records no set covers.
+	const needsOwnColumn = new Set<string>();
+	for (const row of rows) {
+		if (!Object.hasOwn(definitions, row.form_version)) continue;
+		for (const question of readDefinition(definitions[row.form_version]).questions)
+			if (
+				question.dynamicFrom &&
+				Object.hasOwn(row.answers, question.id) &&
+				namedSetKey(question, row.answers) === undefined
+			)
+				needsOwnColumn.add(`${row.form_version}\0${question.id}`);
+	}
+
 	for (const [version, definition] of Object.entries(definitions)) {
-		const used = new Map<string, string>();
+		const sources: Source[] = [];
+		byVersion.set(version, sources);
 		for (const question of readDefinition(definition).questions) {
 			if (repeatsRecordColumn(question.id, question.exportColumn)) {
 				repeated.set(version, (repeated.get(version) ?? new Set()).add(question.id));
 				continue;
 			}
-			let header = answerHeader(question.id, question.exportColumn);
-			if (used.has(header)) header = `${header}_${question.id}`;
-			used.set(header, question.id);
-			add(version, header, {
+			const sets = Object.entries(question.dynamicFrom?.sets ?? {});
+			const named = sets.filter(([, set]) => set.exportColumn.trim() !== "");
+			const claimed = new Map<string, string>();
+			const claim = (natural: string, column: Omit<ExportColumn, "header" | "formVersions">) => {
+				const found = claimed.get(natural);
+				if (found !== undefined) return found;
+				const header = freeHeader(natural, question.id, takenBy(version));
+				claimed.set(natural, header);
+				add(version, header, column);
+				return header;
+			};
+			const own =
+				named.length < sets.length || sets.length === 0 || needsOwnColumn.has(`${version}\0${question.id}`)
+					? claim(answerHeader(question.id, question.exportColumn), {
+							questionId: question.id,
+							label: question.label,
+							type: TYPES[question.kind],
+							values: optionList(allOptions(question))
+						})
+					: undefined;
+			const bySet = new Map(
+				named.map(([key, set]) => [
+					key,
+					claim(answerHeader(question.id, set.exportColumn), {
+						questionId: question.id,
+						label: set.label,
+						type: TYPES[question.kind],
+						values: optionList(set.options)
+					})
+				])
+			);
+			sources.push({
 				questionId: question.id,
-				label: question.label,
-				type: TYPES[question.kind],
-				values: allOptions(question)
-					.map(option => `${option.code} = ${option.label}`)
-					.join("; ")
+				headerFor: answers => {
+					const key = namedSetKey(question, answers);
+					return (key === undefined ? undefined : bySet.get(key)) ?? own;
+				}
 			});
 		}
-		if (!byVersion.has(version)) byVersion.set(version, new Map());
 	}
 
 	for (const row of rows) {
-		let map = byVersion.get(row.form_version);
-		if (!map) {
-			map = new Map<string, string>();
-			byVersion.set(row.form_version, map);
+		let sources = byVersion.get(row.form_version);
+		if (!sources) {
+			sources = [];
+			byVersion.set(row.form_version, sources);
 		}
-		const mapped = new Set(map.values());
+		const mapped = new Set(sources.map(source => source.questionId));
 		for (const key of Object.keys(row.answers)) {
 			if (mapped.has(key) || repeated.get(row.form_version)?.has(key) || repeatsRecordColumn(key)) continue;
-			const header = map.has(answerHeader(key)) ? `${answerHeader(key)}_${key}` : answerHeader(key);
+			const header = freeHeader(answerHeader(key), key, takenBy(row.form_version));
 			add(row.form_version, header, { questionId: key, label: key, type: "unknown", values: "" });
+			sources.push({ questionId: key, headerFor: () => header });
 			mapped.add(key);
 		}
 	}
@@ -134,6 +213,18 @@ function plan(rows: readonly ExportRow[], definitions: Definitions): Plan {
 		})),
 		byVersion
 	};
+}
+
+/** The answers a record holds, by the column each is written under. A missing answer has no entry. */
+function answerCells(plan: Plan, row: ExportRow): Map<string, unknown> {
+	const cells = new Map<string, unknown>();
+	for (const source of plan.byVersion.get(row.form_version) ?? []) {
+		if (!Object.hasOwn(row.answers, source.questionId)) continue;
+		const value = row.answers[source.questionId];
+		const header = source.headerFor(row.answers);
+		if (value !== undefined && header !== undefined) cells.set(header, value);
+	}
+	return cells;
 }
 
 /** The answer columns an export of these records would have, in file order. */
@@ -186,23 +277,19 @@ export type CsvOptions = {
 
 /** The records as CSV (RFC 4180: quoted where needed, CRLF between records). */
 export function toCsv(rows: readonly ExportRow[], definitions: Definitions, options: CsvOptions = {}): string {
-	const { columns, byVersion } = plan(rows, definitions);
+	const planned = plan(rows, definitions);
+	const { columns } = planned;
 	const lines = [csvLine([...RECORD_COLUMNS.map(entry => entry.column), ...columns.map(column => column.header)])];
 	for (const row of rows) {
 		const record = recordValues(row);
-		const map = byVersion.get(row.form_version);
+		const cells = answerCells(planned, row);
 		lines.push(
 			csvLine([
 				...RECORD_COLUMNS.map(entry => {
 					const value = record[entry.column];
 					return value === null || value === undefined ? "" : String(value);
 				}),
-				...columns.map(column => {
-					const questionId = map?.get(column.header);
-					if (questionId === undefined || !Object.hasOwn(row.answers, questionId)) return "";
-					const value = row.answers[questionId];
-					return value === undefined ? "" : cellOf(value);
-				})
+				...columns.map(column => (cells.has(column.header) ? cellOf(cells.get(column.header)) : ""))
 			])
 		);
 	}
@@ -211,7 +298,7 @@ export function toCsv(rows: readonly ExportRow[], definitions: Definitions, opti
 
 /** The records as a GeoJSON FeatureCollection of points, [longitude, latitude], with every column as a property. */
 export function toGeoJson(rows: readonly ExportRow[], definitions: Definitions): string {
-	const { columns, byVersion } = plan(rows, definitions);
+	const planned = plan(rows, definitions);
 	const features = rows.map(row => {
 		const record = recordValues(row);
 		const properties: Record<string, unknown> = {};
@@ -219,13 +306,7 @@ export function toGeoJson(rows: readonly ExportRow[], definitions: Definitions):
 			if (entry.column === "longitude" || entry.column === "latitude") continue;
 			properties[entry.column] = record[entry.column] ?? null;
 		}
-		const map = byVersion.get(row.form_version);
-		for (const column of columns) {
-			const questionId = map?.get(column.header);
-			if (questionId === undefined || !Object.hasOwn(row.answers, questionId)) continue;
-			const value = row.answers[questionId];
-			if (value !== undefined) properties[column.header] = value;
-		}
+		for (const [header, value] of answerCells(planned, row)) properties[header] = value;
 		return {
 			type: "Feature",
 			id: row.observation_id,

@@ -15,8 +15,10 @@ const {
 	INVITE_STORAGE_KEY,
 	placeOf,
 	problemText,
+	readInvitationLink,
 	recalledToken,
-	rememberToken
+	rememberToken,
+	UNKEPT_COPY
 } = await load("features/auth/invitation.ts");
 const { androidAppUrl } = await load("features/auth/androidApp.ts");
 
@@ -84,6 +86,41 @@ test("storage that refuses, or is missing, never throws", () => {
 	assert.doesNotThrow(() => forgetToken(refusing));
 	assert.equal(rememberToken(SECRET, null), false);
 	assert.equal(recalledToken(null), undefined);
+});
+
+test("the address is cleared only once the secret is kept for this tab", () => {
+	const store = memory();
+	assert.deepEqual(readInvitationLink(`#t=${SECRET}`, store), {
+		token: SECRET,
+		removeFragment: true,
+		unkept: false
+	});
+	assert.equal(recalledToken(store), SECRET);
+	// Back from signing in: no fragment, the kept secret is used and nothing is in the address to clear.
+	assert.deepEqual(readInvitationLink("", store), { token: SECRET, removeFragment: false, unkept: false });
+});
+
+test("when the browser will not keep the secret, the address keeps it and the person is told", () => {
+	for (const store of [refusing, null]) {
+		assert.deepEqual(readInvitationLink(`#t=${SECRET}`, store), {
+			token: SECRET,
+			removeFragment: false,
+			unkept: true
+		});
+	}
+	assert.deepEqual(readInvitationLink("", refusing), { token: undefined, removeFragment: false, unkept: false });
+	assert.match(UNKEPT_COPY, /sign in/);
+	assert.doesNotMatch(UNKEPT_COPY, /\b(token|session|storage|cookie|fragment|URL)\b/i);
+});
+
+test("a fragment with no usable secret is cleared and offers none", () => {
+	const store = memory();
+	assert.deepEqual(readInvitationLink("#t=has space", store), {
+		token: undefined,
+		removeFragment: true,
+		unkept: false
+	});
+	assert.deepEqual(readInvitationLink("#main", store), { token: undefined, removeFragment: false, unkept: false });
 });
 
 const rejected = (code, extra = {}) => ({ code, kind: "rejected", message: `copy for ${code}`, ...extra });

@@ -14,6 +14,8 @@ const {
 	waitCopy
 } = await load("lib/api/errors.ts");
 const { settle, toFailure } = await load("lib/workspace/result.ts");
+const { failedChange: failedTeamChange } = await load("features/people/result.ts");
+const { failedChange: failedFormChange } = await load("features/forms/result.ts");
 
 const envelope = (code, message = "server text", details = {}) => ({ error: { code, message, details } });
 
@@ -105,4 +107,33 @@ test("settle returns data or the failure, and rethrows anything that is not an A
 	const redirect = Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT;replace;/sign-in;307;" });
 	await assert.rejects(settle(Promise.reject(redirect)), redirect);
 	assert.throws(() => apiRequestError(new RangeError("bug")), RangeError);
+});
+
+test("team and form changes claim nothing happened only when FieldMaps refused them", () => {
+	const refused = parseApiError(403, envelope("role_required"));
+	assert.equal(
+		failedTeamChange("Nothing was changed.", refused).message,
+		`Nothing was changed. ${errorCopy.role_required}`
+	);
+	assert.equal(
+		failedFormChange("Nothing was saved.", refused).message,
+		`Nothing was saved. ${errorCopy.role_required}`
+	);
+	const conflict = failedFormChange("Nothing was saved.", parseApiError(409, envelope("conflict")));
+	assert.equal(conflict.conflict, true);
+	assert.match(conflict.message, /^Nothing was saved\./);
+	const invalid = failedFormChange(
+		"Nothing was saved.",
+		parseApiError(422, envelope("validation_failed", "x", { fields: [{ id: "title", problem: "Required" }] }))
+	);
+	assert.deepEqual(invalid.fields, { title: "Required" });
+	assert.match(invalid.message, /^Nothing was saved\./);
+
+	for (const lost of [new TypeError("fetch failed"), parseApiError(503, envelope("storage_unavailable"))]) {
+		const team = failedTeamChange("Nothing was changed.", lost).message;
+		const form = failedFormChange("Nothing was saved.", lost).message;
+		assert.equal(team, "FieldMaps could not confirm the change. Reload the page to check before you try again.");
+		assert.equal(form, team);
+	}
+	assert.throws(() => failedTeamChange("Nothing was changed.", new RangeError("bug")), RangeError);
 });

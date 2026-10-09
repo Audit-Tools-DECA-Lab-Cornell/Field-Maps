@@ -9,6 +9,7 @@ import { Note } from "@/components/contour/Note";
 import { Textarea } from "@/components/contour/Textarea";
 import { TextInput } from "@/components/contour/TextInput";
 import { useToast } from "@/components/contour/Toast";
+import { UNCONFIRMED_CHANGE_COPY } from "@/lib/api/errors";
 
 import { type SiteField, updateSiteAction } from "./actions";
 import { SITE_DESCRIPTION_MAX, SITE_NAME_MAX, siteDescriptionProblem, siteNameProblem } from "./code";
@@ -124,11 +125,16 @@ export function EditSiteDialog({
 						onChange={event => setDescription(event.target.value)}
 					/>
 				</Field>
-				{failure && (
-					<Note tone="attention" title="The details were not saved." live="assertive">
-						{failure.replace(/^Nothing was saved\.\s*/, "")} What you typed is still here.
-					</Note>
-				)}
+				{failure &&
+					(failure === UNCONFIRMED_CHANGE_COPY ? (
+						<Note tone="attention" title="The details may not have been saved." live="assertive">
+							{failure}
+						</Note>
+					) : (
+						<Note tone="attention" title="The details were not saved." live="assertive">
+							{failure.replace(/^Nothing was saved\.\s*/, "")} What you typed is still here.
+						</Note>
+					))}
 				<div className="flex flex-wrap items-center justify-end gap-3">
 					<DialogClose asChild>
 						<Button variant="outline">Cancel</Button>

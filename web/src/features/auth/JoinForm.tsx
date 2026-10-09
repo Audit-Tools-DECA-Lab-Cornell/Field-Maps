@@ -19,15 +19,17 @@ export type JoinFormProps = {
 	/** The code as it was when the person went back to change it. */
 	code: string;
 	onCodeChange: (code: string) => void;
-	/** FieldMaps found the invitation: the screen shows it with Join. */
-	onFound: (invitation: InvitationDetails) => void;
+	/** FieldMaps found the invitation for `code`, the code that was looked up: the screen shows it with Join. */
+	onFound: (invitation: InvitationDetails, code: string) => void;
 };
 
 /**
  * Join a project by code (Org 12). The code is uppercased as it is typed and goes to FieldMaps in the body
  * of the request, never in an address. A code FieldMaps knows opens the invitation, where the person sees
  * the project before joining; nothing is joined here. A code that does not match anything is a plain
- * message beside the field; too many tries turns the button off for as long as FieldMaps says.
+ * message beside the field; too many tries turns the button off for as long as FieldMaps says. The field
+ * is locked while FieldMaps looks, and the invitation is handed on with the code it was found for, so Join
+ * can only redeem the invitation the person was shown.
  */
 export function JoinForm({ code, onCodeChange, onFound }: JoinFormProps) {
 	const [error, setError] = useState<string>();
@@ -61,7 +63,7 @@ export function JoinForm({ code, onCodeChange, onFound }: JoinFormProps) {
 			outcome = { status: "failed", problem: { kind: "unavailable", message: UNREACHABLE_COPY } };
 		}
 		if (outcome.status === "ready") {
-			onFound(outcome.invitation);
+			onFound(outcome.invitation, code);
 			return;
 		}
 		setPending(false);
@@ -95,6 +97,7 @@ export function JoinForm({ code, onCodeChange, onFound }: JoinFormProps) {
 					kind="join"
 					value={code}
 					autoFocus
+					disabled={pending}
 					invalid={error ? true : undefined}
 					onChange={value => {
 						onCodeChange(value);

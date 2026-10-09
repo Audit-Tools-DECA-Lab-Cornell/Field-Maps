@@ -1,4 +1,4 @@
-import { ApiError, apiRequestError } from "@/lib/api/errors";
+import { ApiError, apiRequestError, failedWrite } from "@/lib/api/errors";
 
 /**
  * What a form action answers. A failure says what did not happen and why, in FieldMaps' own words. A 422
@@ -23,8 +23,9 @@ export const GONE_COPY = "This version is no longer there. It may have been disc
 
 /**
  * A failed change: "Nothing was saved." then why. A conflict, a vanished version and a refused definition
- * get their own sentences; every other failure uses `errorCopy`. Anything that is not a FieldMaps or network
- * failure is rethrown.
+ * get their own sentences; every other refusal uses `errorCopy`. When FieldMaps did not answer, or failed on
+ * its side, the change may have landed and the message says so (`failedWrite`). Anything that is not a
+ * FieldMaps or network failure is rethrown.
  */
 export function failedChange(nothing: string, error: unknown): FormActionFailure {
 	const failure: ApiError = apiRequestError(error);
@@ -36,5 +37,5 @@ export function failedChange(nothing: string, error: unknown): FormActionFailure
 			message: `${nothing} The form has problems that need fixing first.`,
 			fields: failure.fields
 		};
-	return { status: "failed", message: `${nothing} ${failure.message}` };
+	return { status: "failed", message: failedWrite(nothing, failure) };
 }

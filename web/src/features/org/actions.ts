@@ -5,7 +5,7 @@ import { redirect, RedirectType } from "next/navigation";
 
 import { DONE, failedChange } from "@/features/people/result";
 import type { InviteRequest, InviteResult, PeopleActionResult } from "@/features/people/types";
-import { apiRequestError } from "@/lib/api/errors";
+import { apiRequestError, failedWrite } from "@/lib/api/errors";
 import {
 	createOrgInvitation,
 	createProject,
@@ -48,7 +48,7 @@ function refused(nothing: string, error: unknown, taken?: { field: string; messa
 	const fields = { ...failure.fields };
 	return {
 		status: "failed",
-		message: `${nothing} ${failure.message}`,
+		message: failedWrite(nothing, failure),
 		...(Object.keys(fields).length > 0 ? { fields } : {})
 	};
 }

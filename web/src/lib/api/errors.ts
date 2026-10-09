@@ -202,3 +202,24 @@ export function apiRequestError(error: unknown): ApiError {
 		return new ApiError("storage_unavailable", "retry");
 	throw error;
 }
+
+/** What a change says when FieldMaps did not answer it, or answered with a failure of its own. */
+export const UNCONFIRMED_CHANGE_COPY =
+	"FieldMaps could not confirm the change. Reload the page to check before you try again.";
+
+/**
+ * Whether FieldMaps answered a change with a refusal (any 4xx: signed out, no role, a conflict, an expired
+ * invitation, a field problem, too many tries), so nothing changed. False for no answer at all (a timeout,
+ * a lost connection, an unreadable reply) and for a failure on its side (5xx): the change may have landed.
+ */
+export function wasRefused(error: unknown): error is ApiError {
+	return error instanceof ApiError && error.status !== undefined && error.status < 500;
+}
+
+/**
+ * The message for a change that failed. A refusal says so ("Nothing was saved." then why); anything else
+ * does not claim the change did not happen. Pass what `apiRequestError` returned.
+ */
+export function failedWrite(nothing: string, error: unknown): string {
+	return wasRefused(error) ? `${nothing} ${error.message}` : UNCONFIRMED_CHANGE_COPY;
+}

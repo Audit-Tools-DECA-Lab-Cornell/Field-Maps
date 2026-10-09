@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useId, useRef, useState, useTransition } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { Dialog, DialogClose } from "@/components/contour/Dialog";
@@ -64,6 +64,15 @@ export function SettingsScreen({
 	const [failure, setFailure] = useState<string | null>(null);
 	const [pending, startSave] = useTransition();
 	const fields = useRef<Partial<Record<"name" | "slug", HTMLElement | null>>>({});
+	// The fields are locked while a save runs and cannot take focus, so focus returns once it ends.
+	const refocus = useRef<HTMLElement | null>(null);
+
+	useEffect(() => {
+		if (pending) return;
+		const target = refocus.current;
+		refocus.current = null;
+		target?.focus();
+	}, [pending]);
 
 	const changedName = name.trim() !== saved.name;
 	const changedSlug = slug !== saved.slug;
@@ -84,6 +93,8 @@ export function SettingsScreen({
 			fields.current[first]?.focus();
 			return;
 		}
+		const active = document.activeElement;
+		refocus.current = active instanceof HTMLElement && event.currentTarget.contains(active) ? active : null;
 		startSave(async () => {
 			const result = await saveOrganizationAction({
 				orgId: org.id,
@@ -98,7 +109,7 @@ export function SettingsScreen({
 				if (result.fields?.slug) named.slug = result.fields.slug;
 				setProblems(named);
 				const field = (["name", "slug"] as const).find(key => named[key]);
-				if (field) fields.current[field]?.focus();
+				if (field) refocus.current = fields.current[field] ?? refocus.current;
 				return;
 			}
 			setSaved({ name: result.name, slug: result.slug });
@@ -125,40 +136,43 @@ export function SettingsScreen({
 						dirty ? <StateBadge kind="form" state="draft" label="Unsaved changes" size="sm" /> : undefined
 					}>
 					<form noValidate onSubmit={save} className="flex flex-col gap-5">
-						<Field label="Name" htmlFor={`${ids}-name`} error={problems.name}>
-							<TextInput
-								ref={node => {
-									fields.current.name = node;
-								}}
-								id={`${ids}-name`}
-								autoComplete="off"
-								value={name}
-								onChange={event => {
-									setName(event.target.value);
-									setProblems(current => ({ ...current, name: undefined }));
-								}}
-							/>
-						</Field>
-						<Field
-							label="Web address"
-							htmlFor={`${ids}-slug`}
-							error={problems.slug}
-							hint={`Links to this organization start with /o/${slug || "…"}. Links that use the old address stop working.`}>
-							<TextInput
-								ref={node => {
-									fields.current.slug = node;
-								}}
-								id={`${ids}-slug`}
-								autoComplete="off"
-								spellCheck={false}
-								className="font-mono"
-								value={slug}
-								onChange={event => {
-									setSlug(event.target.value.toLowerCase().replace(/\s+/g, "-"));
-									setProblems(current => ({ ...current, slug: undefined }));
-								}}
-							/>
-						</Field>
+						{/* Locked while a save runs, so nothing typed meanwhile is lost when the result arrives. */}
+						<fieldset disabled={pending} className="flex min-w-0 flex-col gap-5">
+							<Field label="Name" htmlFor={`${ids}-name`} error={problems.name}>
+								<TextInput
+									ref={node => {
+										fields.current.name = node;
+									}}
+									id={`${ids}-name`}
+									autoComplete="off"
+									value={name}
+									onChange={event => {
+										setName(event.target.value);
+										setProblems(current => ({ ...current, name: undefined }));
+									}}
+								/>
+							</Field>
+							<Field
+								label="Web address"
+								htmlFor={`${ids}-slug`}
+								error={problems.slug}
+								hint={`Links to this organization start with /o/${slug || "…"}. Links that use the old address stop working.`}>
+								<TextInput
+									ref={node => {
+										fields.current.slug = node;
+									}}
+									id={`${ids}-slug`}
+									autoComplete="off"
+									spellCheck={false}
+									className="font-mono"
+									value={slug}
+									onChange={event => {
+										setSlug(event.target.value.toLowerCase().replace(/\s+/g, "-"));
+										setProblems(current => ({ ...current, slug: undefined }));
+									}}
+								/>
+							</Field>
+						</fieldset>
 						{changedSlug && !problems.slug && (
 							<Note tone="attention" title="Saving moves you to the new address.">
 								Anyone with a link, bookmark or message that uses /o/{saved.slug} will need the new

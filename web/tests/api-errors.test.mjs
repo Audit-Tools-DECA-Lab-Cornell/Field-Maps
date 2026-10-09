@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ApiError, errorCopy, parseApiError, readApiError } from "../src/lib/api/errors.ts";
+import {
+	ApiError,
+	apiRequestError,
+	errorCopy,
+	failedWrite,
+	parseApiError,
+	readApiError,
+	UNCONFIRMED_CHANGE_COPY,
+	wasRefused
+} from "../src/lib/api/errors.ts";
 
 for (const [code, message] of Object.entries(errorCopy)) {
 	test(`maps ${code} to safe copy`, () => {
@@ -61,4 +70,44 @@ test("maps an HTML 200 body to a retry error instead of leaking a JSON parse exc
 	assert.equal(error.code, "unknown");
 	assert.equal(error.kind, "retry");
 	assert.doesNotMatch(error.message, /upstream unavailable|Unexpected token/);
+});
+
+test("a refused change says nothing changed, then why", () => {
+	for (const [status, code] of [
+		[401, "token_invalid"],
+		[403, "role_required"],
+		[404, "not_found"],
+		[409, "conflict"],
+		[410, "invitation_expired"],
+		[422, "validation_failed"],
+		[429, "rate_limited"]
+	]) {
+		const error = parseApiError(status, { error: { code, message: "ignored", details: {} } });
+		assert.equal(wasRefused(error), true, String(status));
+		assert.equal(failedWrite("Nothing was saved.", error), `Nothing was saved. ${errorCopy[code]}`, String(status));
+	}
+	const throttled = parseApiError(429, null, new Headers({ "Retry-After": "42" }));
+	assert.equal(
+		failedWrite("Nothing was changed.", throttled),
+		"Nothing was changed. Too many tries. Wait 42 seconds and try again."
+	);
+});
+
+test("a change FieldMaps failed on, or did not answer, is not reported as not made", async () => {
+	const unanswered = [
+		apiRequestError(new TypeError("fetch failed")),
+		apiRequestError(new DOMException("timed out", "TimeoutError")),
+		apiRequestError(new SyntaxError("Unexpected token <")),
+		await readApiError(new Response("<html>proxy</html>", { status: 502 })),
+		await readApiError(new Response("", { status: 503 })),
+		parseApiError(500, { error: { code: "internal", message: "ignored", details: {} } }),
+		parseApiError(503, { error: { code: "storage_unavailable", message: "ignored", details: {} } }),
+		new ApiError("storage_unavailable", "retry")
+	];
+	for (const error of unanswered) {
+		assert.equal(wasRefused(error), false, error.code);
+		assert.equal(failedWrite("Nothing was saved.", error), UNCONFIRMED_CHANGE_COPY, error.code);
+	}
+	assert.equal(failedWrite("Nothing was saved.", new Error("bug")), UNCONFIRMED_CHANGE_COPY);
+	assert.doesNotMatch(UNCONFIRMED_CHANGE_COPY, /nothing|not saved|not made|\b(session|server|token|API|endpoint)\b/i);
 });

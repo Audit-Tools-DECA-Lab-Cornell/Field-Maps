@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { apiRequestError } from "@/lib/api/errors";
+import { apiRequestError, failedWrite } from "@/lib/api/errors";
 import { patchProject } from "@/lib/api/mutations";
 
 import { formOf, problemsOf, type SaveResult, type SettingsContext, type StatusResult } from "./rules";
@@ -37,7 +37,7 @@ export async function saveSettings(context: SettingsContext, patch: unknown): Pr
 		const fields = problemsOf(failure.fields);
 		return {
 			status: "failed",
-			message: `${nothing} ${failure.message}`,
+			message: failedWrite(nothing, failure),
 			...(Object.keys(fields).length > 0 ? { fields } : {})
 		};
 	}
@@ -56,7 +56,7 @@ export async function setProjectStatus(context: SettingsContext, status: string)
 	try {
 		await patchProject(where.data.projectId, { status: next.data });
 	} catch (error) {
-		return { status: "failed", message: `${nothing} ${apiRequestError(error).message}` };
+		return { status: "failed", message: failedWrite(nothing, apiRequestError(error)) };
 	}
 	revalidatePath("/o", "layout");
 	return { status: "done", projectStatus: next.data };

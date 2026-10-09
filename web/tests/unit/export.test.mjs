@@ -80,7 +80,7 @@ test("record columns come first, then each question's export column or id; the o
 	);
 	const answers = header.slice(RECORD_COLUMNS.length);
 	assert.ok(answers.includes("Child_AgeRange"));
-	assert.ok(answers.includes("play_subtype_1"), "a question without an export column uses its id");
+	assert.ok(answers.includes("wildlife_interaction"), "a question without an export column uses its id");
 	assert.ok(!answers.includes("observer") && !answers.includes("answer_observer"));
 	assert.ok(answers.includes("people") && answers.includes("notes"), "legacy fields get columns too");
 	assert.equal(new Set(header).size, header.length);
@@ -196,6 +196,93 @@ test("the codebook lists exactly the file's columns, with labels, types and opti
 	assert.match(age[4], /^age_0_2 = 0–2 yrs; age_3_5 = 3–5 yrs/);
 	assert.equal(lines.find(line => line[0] === "people")[3], "number");
 	assert.equal(exportColumns(rows, definitions).at(-1).type, "unknown");
+});
+
+test("a dynamic question is written under the export column of the set its play type selected", () => {
+	const rows = [
+		row({
+			answers: { play_type_1: "physical", play_subtype_1: "gross_motor", play_type_2: "bio", play_subtype_2: "x" }
+		}),
+		row({
+			observation_id: "3f2a1b9c-0000-4000-8000-000000000002",
+			answers: { play_type_1: "imaginative", play_subtype_1: "symbolic" }
+		})
+	];
+	const [header] = parseCsv(toCsv(rows, definitions));
+	const [physical, imaginative] = table(toCsv(rows, definitions));
+	assert.equal(physical.Phys_Subtype, "gross_motor");
+	assert.equal(physical.Imag_Subtype, "");
+	assert.equal(imaginative.Imag_Subtype, "symbolic");
+	assert.equal(imaginative.Phys_Subtype, "");
+	assert.ok(!header.includes("play_subtype_1"), "no record needs the question's own column");
+	for (const column of ["Phys_Subtype", "Expl_Subtype", "Imag_Subtype", "PwR_Subtype", "Non_Subtype"])
+		assert.ok(header.includes(column), `${column} has its own column`);
+	assert.equal(physical.play_subtype_2, "x", "a set without an export name keeps the question's own column");
+
+	const properties = JSON.parse(toGeoJson(rows, definitions)).features[0].properties;
+	assert.equal(properties.Phys_Subtype, "gross_motor");
+	assert.equal("play_subtype_1" in properties, false);
+
+	const lines = parseCsv(codebook(definitions, rows));
+	assert.deepEqual(
+		lines.slice(1).map(line => line[0]),
+		header
+	);
+	const phys = lines.find(line => line[0] === "Phys_Subtype");
+	assert.equal(phys[1], "question play_subtype_1 (janet-test-v1)");
+	assert.equal(phys[2], "Physical play — which kind?");
+	assert.equal(
+		phys[4],
+		"gross_motor = Gross motor; fine_motor = Fine motor; vestibular = Vestibular; rough_and_tumble = Rough & tumble"
+	);
+	assert.equal(lines.find(line => line[0] === "Imag_Subtype")[2], "Imaginative play — which kind?");
+});
+
+test("a dynamic answer no named set covers keeps the question's own column", () => {
+	const rows = [
+		row({ answers: { play_subtype_1: "gross_motor" } }),
+		row({ answers: { play_type_1: "mystery", play_subtype_1: "other" } }),
+		row({ answers: { play_type_1: "physical", play_subtype_1: "fine_motor" } })
+	];
+	const records = table(toCsv(rows, definitions));
+	assert.deepEqual(
+		records.map(record => [record.play_subtype_1, record.Phys_Subtype]),
+		[
+			["gross_motor", ""],
+			["other", ""],
+			["", "fine_motor"]
+		]
+	);
+	const columns = exportColumns(rows, definitions).map(column => column.header);
+	assert.ok(columns.includes("play_subtype_1"));
+	assert.ok(columns.indexOf("play_subtype_1") < columns.indexOf("Phys_Subtype"));
+	assert.ok(codebook(definitions, rows).includes("\r\nplay_subtype_1,"));
+});
+
+test("a renamed column that is taken too is renamed again, and no question loses its column", () => {
+	const question = (id, exportColumn) => ({ id, kind: "text", label: id, exportColumn });
+	const definition = {
+		questions: [question("q1", "zone"), question("q3", "answer_zone_q2"), question("q2", "answer_zone")]
+	};
+	const rows = [row({ form_version: "x", answers: { q1: "one", q2: "two", q3: "three" } })];
+	const [record] = table(toCsv(rows, { x: definition }));
+	const [header] = parseCsv(toCsv(rows, { x: definition }));
+	assert.equal(new Set(header).size, header.length, "every header is unique");
+	assert.equal(record.answer_zone, "one");
+	assert.equal(record.answer_zone_q2, "three");
+	assert.equal(record.answer_zone_q2_2, "two");
+	assert.equal(record.zone, "A");
+	const found = JSON.parse(toGeoJson(rows, { x: definition })).features[0].properties;
+	assert.deepEqual([found.answer_zone, found.answer_zone_q2, found.answer_zone_q2_2], ["one", "three", "two"]);
+});
+
+test("an answer the definition lacks cannot take a column a question already has", () => {
+	const definition = { questions: [{ id: "a", kind: "text", label: "A", exportColumn: "answer_zone_extra" }] };
+	const rows = [row({ form_version: "x", answers: { a: "kept", extra: "other", zone: "dup" } })];
+	const [record] = table(toCsv(rows, { x: definition }));
+	assert.equal(record.answer_zone_extra, "kept");
+	assert.equal(record.answer_zone, "dup");
+	assert.equal(record.extra, "other");
 });
 
 test("export file names say what they hold and when", () => {

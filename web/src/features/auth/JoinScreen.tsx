@@ -20,7 +20,8 @@ const KICKER = "Join by code";
  */
 export function JoinScreen({ viewer }: { viewer: Viewer }) {
 	const [code, setCode] = useState("");
-	const [found, setFound] = useState<InvitationDetails | null>(null);
+	// The invitation is kept with the code it was found for, which is the code Join redeems.
+	const [found, setFound] = useState<{ invitation: InvitationDetails; code: string } | null>(null);
 	const moved = useRef(false);
 
 	// Moving between the two steps puts focus on the new title, so a screen reader hears where it is.
@@ -53,17 +54,18 @@ export function JoinScreen({ viewer }: { viewer: Viewer }) {
 	}
 
 	if (found) {
-		const place = found.project ? "project" : "organization";
+		const { invitation, code: foundCode } = found;
+		const place = invitation.project ? "project" : "organization";
 		return (
 			<AuthPanel
 				kicker={KICKER}
-				title={`Join ${found.project ?? found.organization}?`}
+				title={`Join ${invitation.project ?? invitation.organization}?`}
 				lead={`Check the ${place} and role before you join.`}
 				footnote={`Nothing is shared with the ${place} until you join.`}
 				footnoteRule={false}>
 				<InvitationCard
-					invitation={found}
-					credential={{ code }}
+					invitation={invitation}
+					credential={{ code: foundCode }}
 					next="/join"
 					back={{ label: "Use a different code", onClick: () => setFound(null) }}
 				/>
@@ -76,7 +78,11 @@ export function JoinScreen({ viewer }: { viewer: Viewer }) {
 			kicker={KICKER}
 			title="Join a project"
 			lead="Enter the eight-character code your project manager gave you. You will see the project before you join.">
-			<JoinForm code={code} onCodeChange={setCode} onFound={setFound} />
+			<JoinForm
+				code={code}
+				onCodeChange={setCode}
+				onFound={(invitation, foundCode) => setFound({ invitation, code: foundCode })}
+			/>
 		</AuthPanel>
 	);
 }

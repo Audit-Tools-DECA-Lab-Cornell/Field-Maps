@@ -110,6 +110,29 @@ export function rememberToken(token: string, store: Store | null = tabStore()): 
 	}
 }
 
+/** Said beside Sign in when the browser would not keep the invitation's secret for the length of a sign-in. */
+export const UNKEPT_COPY =
+	"Your browser will not hold on to this invitation while you sign in. After you sign in, open the invitation link again.";
+
+/**
+ * What opening the invitation page finds. `token` is the secret from the address, or else the one kept
+ * earlier in this tab. `removeFragment` says whether the secret may be taken out of the address bar: only
+ * once it is kept for this tab (or when the fragment holds no usable secret), because the address is the
+ * only copy otherwise. `unkept` is true when the browser refused to keep a secret from the address.
+ */
+export function readInvitationLink(
+	hash: string,
+	store: Store | null = tabStore()
+): { token: string | undefined; removeFragment: boolean; unkept: boolean } {
+	const fragment = inviteFragment(hash);
+	const kept = fragment.token === undefined ? false : rememberToken(fragment.token, store);
+	return {
+		token: fragment.token ?? recalledToken(store),
+		removeFragment: fragment.present && (fragment.token === undefined || kept),
+		unkept: fragment.token !== undefined && !kept
+	};
+}
+
 /** The secret kept earlier in this tab, if it is still readable. */
 export function recalledToken(store: Store | null = tabStore()): string | undefined {
 	try {

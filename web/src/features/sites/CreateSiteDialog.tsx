@@ -11,6 +11,7 @@ import { Textarea } from "@/components/contour/Textarea";
 import { TextInput } from "@/components/contour/TextInput";
 import { useToast } from "@/components/contour/Toast";
 import { projectHref } from "@/features/shell/navigation";
+import { UNCONFIRMED_CHANGE_COPY } from "@/lib/api/errors";
 
 import { createSiteAction, type SiteField } from "./actions";
 import {
@@ -182,11 +183,16 @@ export function CreateSiteDialog({ org, project, canManage }: { org: string; pro
 						onChange={event => setDescription(event.target.value)}
 					/>
 				</Field>
-				{failure && (
-					<Note tone="attention" title="The site was not created." live="assertive">
-						{failure.replace(/^Nothing was created\.\s*/, "")} What you typed is still here.
-					</Note>
-				)}
+				{failure &&
+					(failure === UNCONFIRMED_CHANGE_COPY ? (
+						<Note tone="attention" title="The site may not have been created." live="assertive">
+							{failure}
+						</Note>
+					) : (
+						<Note tone="attention" title="The site was not created." live="assertive">
+							{failure.replace(/^Nothing was created\.\s*/, "")} What you typed is still here.
+						</Note>
+					))}
 				<div className="flex flex-wrap items-center justify-end gap-3">
 					<DialogClose asChild>
 						<Button variant="outline">Cancel</Button>

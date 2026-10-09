@@ -36,14 +36,15 @@ function Notes({ row, currentVersion }: { row: HistoryRow; currentVersion: numbe
 export function VersionHistory({
 	rows,
 	selectedId,
-	inspectHref
+	packagesHref
 }: {
 	rows: HistoryRow[];
 	/** The package open in Inspect, drawn as the selected row. */
 	selectedId: string | null;
-	/** The address that opens one package in Inspect. */
-	inspectHref: (packageId: string) => string;
+	/** The packages page; a version opens in Inspect at this address with `?package=<id>`. */
+	packagesHref: string;
 }) {
+	const inspectHref = (packageId: string) => `${packagesHref}?package=${packageId}`;
 	const currentVersion = rows.find(row => row.state === "current")?.version ?? null;
 	return (
 		<Island flush title="History" meta={plural(rows.length, "version")}>

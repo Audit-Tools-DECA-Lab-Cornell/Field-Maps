@@ -197,11 +197,7 @@ export default async function PackagesPage({
 			)}
 
 			{packages.ok ? (
-				<VersionHistory
-					rows={rows}
-					selectedId={inspected?.packageId ?? null}
-					inspectHref={id => `${base}?package=${id}`}
-				/>
+				<VersionHistory rows={rows} selectedId={inspected?.packageId ?? null} packagesHref={base} />
 			) : (
 				<LoadFailure failure={packages.failure} what="the map package history" />
 			)}

@@ -13,11 +13,10 @@ import { previewInvite } from "./actions";
 import {
 	forgetToken,
 	type InvitationDetails,
-	inviteFragment,
 	type InviteProblem,
 	type PreviewOutcome,
-	recalledToken,
-	rememberToken,
+	readInvitationLink,
+	UNKEPT_COPY,
 	UNREACHABLE_COPY
 } from "./invitation";
 import { InvitationCard } from "./InvitationCard";
@@ -32,7 +31,7 @@ type View =
 	/** No link is open in this tab. */
 	| { step: "none" }
 	/** There is a link, and the person has to sign in before FieldMaps will show it. */
-	| { step: "sign-in" }
+	| { step: "sign-in"; unkept: boolean }
 	| { step: "loading" }
 	| { step: "ready"; token: string; invitation: InvitationDetails }
 	| { step: "failed"; token: string; problem: InviteProblem };
@@ -48,7 +47,7 @@ export function InviteScreen({ viewer }: { viewer: Viewer }) {
 	const [view, setView] = useState<View>({ step: "reading" });
 	const cooldown = useCooldown();
 	const startWait = cooldown.start;
-	const started = useRef(false);
+	const handled = useRef(new Set<Viewer["status"]>());
 
 	const look = useCallback(
 		async (token: string) => {
@@ -71,30 +70,31 @@ export function InviteScreen({ viewer }: { viewer: Viewer }) {
 		[startWait]
 	);
 
-	// Reads the browser's address and tab storage, which the server cannot see, so it runs once on arrival.
+	// Reads the browser's address and tab storage, which the server cannot see.
 	const open = useCallback(
 		(status: Viewer["status"]) => {
 			// Keep the secret for this tab, then take it out of the address (and so out of history and copies).
-			const fragment = inviteFragment(window.location.hash);
-			if (fragment.token) rememberToken(fragment.token);
-			if (fragment.present)
+			// When the browser will not keep it, the address stays: it is the only copy there is.
+			const link = readInvitationLink(window.location.hash);
+			if (link.removeFragment)
 				window.history.replaceState(
 					window.history.state,
 					"",
 					window.location.pathname + window.location.search
 				);
-			const token = fragment.token ?? recalledToken();
-			if (!token) setView({ step: "none" });
-			else if (status === "signed-out") setView({ step: "sign-in" });
-			else if (status === "signed-in") void look(token);
-			// An unavailable viewer sees the failure state below; the secret is already put away.
+			if (!link.token) setView({ step: "none" });
+			else if (status === "signed-out") setView({ step: "sign-in", unkept: link.unkept });
+			else if (status === "signed-in") void look(link.token);
+			// An unavailable viewer sees the failure state below; the secret is put away as far as it can be.
 		},
 		[look]
 	);
 
+	// Runs once for each state the viewer is found in. A viewer who could not be checked at first and can
+	// be after Try again (signed in, now) still gets their invitation looked up.
 	useEffect(() => {
-		if (started.current) return;
-		started.current = true;
+		if (handled.current.has(viewer.status)) return;
+		handled.current.add(viewer.status);
 		open(viewer.status);
 	}, [viewer.status, open]);
 
@@ -113,7 +113,10 @@ export function InviteScreen({ viewer }: { viewer: Viewer }) {
 				title="Sign in to join"
 				lead="Sign in, or create an account, to see which project invited you. Nothing is shared with the project until you join."
 				footnoteRule={false}>
-				<InvitationSignIn next="/invite" />
+				<div className="flex flex-col gap-6">
+					{view.unkept && <Note tone="attention">{UNKEPT_COPY}</Note>}
+					<InvitationSignIn next="/invite" />
+				</div>
 			</AuthPanel>
 		);
 	}

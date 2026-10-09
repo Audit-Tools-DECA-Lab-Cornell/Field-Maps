@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useId, useRef, useState, useTransition } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { Dialog, DialogClose } from "@/components/contour/Dialog";
@@ -69,6 +69,15 @@ export function SettingsScreen({
 	const [unchanged, setUnchanged] = useState(false);
 	const [pending, startSave] = useTransition();
 	const refs = useRef<Partial<Record<SettingsField, HTMLElement | null>>>({});
+	// The fields are locked while a save runs and cannot take focus, so focus returns once it ends.
+	const refocus = useRef<HTMLElement | null>(null);
+
+	useEffect(() => {
+		if (pending) return;
+		const target = refocus.current;
+		refocus.current = null;
+		target?.focus();
+	}, [pending]);
 
 	// The page was read again (this save, or another manager's): the saved values are what it says.
 	const key = JSON.stringify(initial);
@@ -106,12 +115,15 @@ export function SettingsScreen({
 			focusFirst(found);
 			return;
 		}
+		const active = document.activeElement;
+		refocus.current = active instanceof HTMLElement && event.currentTarget.contains(active) ? active : null;
 		startSave(async () => {
 			const result = await saveSettings(context, patchOf(saved, form));
 			if (result.status === "failed") {
 				setFailure(result.message);
 				setErrors(result.fields ?? {});
-				focusFirst(result.fields ?? {});
+				const first = SETTINGS_FIELDS.find(field => result.fields?.[field]);
+				if (first) refocus.current = refs.current[first] ?? refocus.current;
 				return;
 			}
 			setSaved(result.saved);
@@ -130,58 +142,61 @@ export function SettingsScreen({
 			<div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
 				<Island title="General">
 					<form noValidate onSubmit={save} className="flex flex-col gap-6">
-						<Field
-							label="Project name"
-							htmlFor={`${id}-name`}
-							error={errors.name}
-							hint="Shown in the header and in the list of projects.">
-							<TextInput
-								id={`${id}-name`}
-								ref={node => {
-									refs.current.name = node;
-								}}
-								autoComplete="off"
-								maxLength={NAME_MAX}
-								value={form.name}
-								onChange={event => set("name", event.target.value)}
-							/>
-						</Field>
-						<Field
-							label="Description"
-							htmlFor={`${id}-description`}
-							optional
-							error={errors.description}
-							hint="What the study is about, for the people who manage it.">
-							<Textarea
-								id={`${id}-description`}
-								ref={node => {
-									refs.current.description = node;
-								}}
-								maxLength={DESCRIPTION_MAX}
-								showCount
-								value={form.description}
-								onChange={event => set("description", event.target.value)}
-							/>
-						</Field>
-						<Field
-							label="Timezone"
-							htmlFor={`${id}-timezone`}
-							error={errors.timezone}
-							hint="Observation times and days on the web are shown in this timezone.">
-							<Select
-								id={`${id}-timezone`}
-								ref={node => {
-									refs.current.timezone = node;
-								}}
-								value={form.timezone}
-								onChange={event => set("timezone", event.target.value)}>
-								{zoneList.map(zone => (
-									<option key={zone} value={zone}>
-										{zone}
-									</option>
-								))}
-							</Select>
-						</Field>
+						{/* Locked while a save runs, so nothing typed meanwhile is lost when the result arrives. */}
+						<fieldset disabled={pending} className="flex min-w-0 flex-col gap-6">
+							<Field
+								label="Project name"
+								htmlFor={`${id}-name`}
+								error={errors.name}
+								hint="Shown in the header and in the list of projects.">
+								<TextInput
+									id={`${id}-name`}
+									ref={node => {
+										refs.current.name = node;
+									}}
+									autoComplete="off"
+									maxLength={NAME_MAX}
+									value={form.name}
+									onChange={event => set("name", event.target.value)}
+								/>
+							</Field>
+							<Field
+								label="Description"
+								htmlFor={`${id}-description`}
+								optional
+								error={errors.description}
+								hint="What the study is about, for the people who manage it.">
+								<Textarea
+									id={`${id}-description`}
+									ref={node => {
+										refs.current.description = node;
+									}}
+									maxLength={DESCRIPTION_MAX}
+									showCount
+									value={form.description}
+									onChange={event => set("description", event.target.value)}
+								/>
+							</Field>
+							<Field
+								label="Timezone"
+								htmlFor={`${id}-timezone`}
+								error={errors.timezone}
+								hint="Observation times and days on the web are shown in this timezone.">
+								<Select
+									id={`${id}-timezone`}
+									ref={node => {
+										refs.current.timezone = node;
+									}}
+									value={form.timezone}
+									onChange={event => set("timezone", event.target.value)}>
+									{zoneList.map(zone => (
+										<option key={zone} value={zone}>
+											{zone}
+										</option>
+									))}
+								</Select>
+							</Field>
+						</fieldset>
 						{failure && (
 							<Note tone="attention" live="assertive">
 								{failure}

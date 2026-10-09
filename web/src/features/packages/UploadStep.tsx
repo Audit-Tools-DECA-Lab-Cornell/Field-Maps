@@ -14,7 +14,7 @@ import { Select } from "@/components/contour/Select";
 import { StateBadge } from "@/components/contour/StateBadge";
 import { MapFrame } from "@/components/map/MapFrame";
 import { preparePackage } from "@/lib/api/browser";
-import { apiRequestError } from "@/lib/api/errors";
+import { apiRequestError, wasRefused } from "@/lib/api/errors";
 import type { PackageDetail, PackageSubmission } from "@/lib/api/types";
 import { cx } from "@/lib/cx";
 import { formatBytes, plural } from "@/lib/labels";
@@ -79,6 +79,7 @@ function FilePick({
 	label,
 	accept,
 	multiple = false,
+	disabled = false,
 	onFiles,
 	children
 }: {
@@ -86,6 +87,7 @@ function FilePick({
 	label: string;
 	accept: string;
 	multiple?: boolean;
+	disabled?: boolean;
 	onFiles: (files: File[]) => void;
 	children: string;
 }) {
@@ -95,6 +97,7 @@ function FilePick({
 				id={id}
 				type="file"
 				multiple={multiple}
+				disabled={disabled}
 				accept={accept}
 				aria-label={label}
 				className="peer sr-only"
@@ -108,6 +111,7 @@ function FilePick({
 				className={cx(
 					"relative inline-flex min-h-control-sm cursor-pointer items-center justify-center gap-2 rounded-pill border-2 border-ink bg-island px-4 py-1.5 text-sm font-semibold text-ink",
 					"transition-[background-color] duration-(--ct-duration-quick) ease-standard hover:bg-well",
+					"peer-disabled:cursor-not-allowed peer-disabled:border-transparent peer-disabled:bg-well peer-disabled:text-ink-2 peer-disabled:hover:bg-well",
 					"before:absolute before:inset-x-0 before:-inset-y-1",
 					"peer-focus-visible:outline-(length:--ct-size-focus-ring) peer-focus-visible:outline-offset-(--ct-size-focus-gap) peer-focus-visible:outline-focus peer-focus-visible:outline-solid"
 				)}>
@@ -117,13 +121,22 @@ function FilePick({
 	);
 }
 
-/** Why the upload failed, in words: a file problem, or FieldMaps' reason (its own message for a rejected package). */
-function uploadProblem(error: unknown): { message: string; formVersion?: string } {
-	if (error instanceof LayerReadError) return { message: error.message };
+const UNCONFIRMED_UPLOAD_COPY =
+	"FieldMaps could not confirm the upload. Check the history below for a new version before you upload again.";
+
+/**
+ * Why the upload failed, in words: a file problem, or FieldMaps' reason (its own message for a rejected
+ * package). With no answer from FieldMaps, or a failure on its side, the package may have arrived, and
+ * `confirmed` is false so the screen does not say it was not uploaded.
+ */
+function uploadProblem(error: unknown): { message: string; confirmed: boolean; formVersion?: string } {
+	if (error instanceof LayerReadError) return { message: error.message, confirmed: true };
 	const failure = apiRequestError(error);
+	if (!wasRefused(failure)) return { message: UNCONFIRMED_UPLOAD_COPY, confirmed: false };
 	return {
 		// A rejected package carries a message that names the layer and the problem; show it.
 		message: failure.code === "validation_failed" ? (failure.detail ?? failure.message) : failure.message,
+		confirmed: true,
 		...(failure.fields.form_version ? { formVersion: failure.fields.form_version } : {})
 	};
 }
@@ -160,6 +173,7 @@ export function UploadStep({
 	const [dragging, setDragging] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [uncertain, setUncertain] = useState(false);
 	const [formVersionProblem, setFormVersionProblem] = useState<string | null>(null);
 	const [result, setResult] = useState<PackageDetail | null>(null);
 
@@ -182,7 +196,7 @@ export function UploadStep({
 
 	/** A whole drop or selection at once: files whose name matches a free slot go there; the rest wait. */
 	function ingestFiles(incoming: File[]) {
-		if (incoming.length === 0) return;
+		if (incoming.length === 0 || busy) return;
 		setResult(null);
 		setError(null);
 		const claimedLayers = new Set<LayerName>(LAYER_NAMES.filter(name => slots[name].kind !== "empty"));
@@ -217,7 +231,8 @@ export function UploadStep({
 	function onDrop(event: DragEvent<HTMLDivElement>) {
 		event.preventDefault();
 		setDragging(false);
-		ingestFiles(Array.from(event.dataTransfer.files));
+		// The files being uploaded are fixed until the upload ends; a drop is still caught so the browser does not open it.
+		if (!busy) ingestFiles(Array.from(event.dataTransfer.files));
 	}
 
 	const missing = REQUIRED_LAYERS.filter(name => slots[name].kind !== "ready");
@@ -238,6 +253,7 @@ export function UploadStep({
 	async function send() {
 		setBusy(true);
 		setError(null);
+		setUncertain(false);
 		setFormVersionProblem(null);
 		setResult(null);
 		try {
@@ -259,7 +275,13 @@ export function UploadStep({
 		} catch (raised) {
 			const problem = uploadProblem(raised);
 			setError(problem.message);
+			setUncertain(!problem.confirmed);
 			if (problem.formVersion) setFormVersionProblem(problem.formVersion);
+			if (!problem.confirmed) {
+				// It may have arrived: show the history as it is now, keeping the chosen files.
+				await packageUploaded({ org, project }).catch(() => undefined);
+				router.refresh();
+			}
 		} finally {
 			setBusy(false);
 		}
@@ -288,7 +310,7 @@ export function UploadStep({
 					<div
 						onDragOver={event => {
 							event.preventDefault();
-							setDragging(true);
+							setDragging(!busy);
 						}}
 						onDragLeave={() => setDragging(false)}
 						onDrop={onDrop}>
@@ -313,6 +335,7 @@ export function UploadStep({
 								label="Choose files from the QGIS export"
 								accept={ACCEPT}
 								multiple
+								disabled={busy}
 								onFiles={ingestFiles}>
 								Choose files
 							</FilePick>
@@ -353,6 +376,7 @@ export function UploadStep({
 										id={`${fieldId}-slot-${name}`}
 										label={`${slot.kind === "empty" ? "Choose" : "Replace"} the ${SLOT_LABELS[name]} file`}
 										accept={ACCEPT}
+										disabled={busy}
 										onFiles={([file]) => file && void assignLayer(name, file)}>
 										{slot.kind === "empty" ? "Choose" : "Replace"}
 									</FilePick>
@@ -361,6 +385,7 @@ export function UploadStep({
 											variant="outline"
 											size="sm"
 											aria-label={`Remove the ${SLOT_LABELS[name]} file`}
+											disabled={busy}
 											onClick={() =>
 												setSlots(current => ({ ...current, [name]: { kind: "empty" } }))
 											}>
@@ -396,6 +421,7 @@ export function UploadStep({
 								id={`${fieldId}-slot-project`}
 								label={`${projectSlot.kind === "empty" ? "Choose" : "Replace"} the QGIS project file`}
 								accept=".qgz,.qgs"
+								disabled={busy}
 								onFiles={([file]) => file && setProjectSlot({ kind: "ready", file })}>
 								{projectSlot.kind === "empty" ? "Choose" : "Replace"}
 							</FilePick>
@@ -404,6 +430,7 @@ export function UploadStep({
 									variant="outline"
 									size="sm"
 									aria-label="Remove the QGIS project file"
+									disabled={busy}
 									onClick={() => setProjectSlot({ kind: "empty" })}>
 									Remove
 								</Button>
@@ -423,6 +450,7 @@ export function UploadStep({
 									className="min-w-0 flex-1 basis-56">
 									<Select
 										defaultValue={entry.guess ?? ""}
+										disabled={busy}
 										onChange={event => {
 											const value = event.target.value;
 											if (value !== "") assignUnassigned(entry.id, value as SlotTarget);
@@ -441,6 +469,7 @@ export function UploadStep({
 								<Button
 									variant="outline"
 									icon="x"
+									disabled={busy}
 									onClick={() =>
 										setUnassigned(current => current.filter(item => item.id !== entry.id))
 									}>
@@ -470,7 +499,12 @@ export function UploadStep({
 					</div>
 
 					{error && (
-						<Note tone="attention" title="The package was not uploaded." live="assertive">
+						<Note
+							tone="attention"
+							title={
+								uncertain ? "The package may not have been uploaded." : "The package was not uploaded."
+							}
+							live="assertive">
 							{error} Your files are still chosen here.
 						</Note>
 					)}

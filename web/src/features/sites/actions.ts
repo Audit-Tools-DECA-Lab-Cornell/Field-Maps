@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { apiRequestError } from "@/lib/api/errors";
+import { apiRequestError, failedWrite } from "@/lib/api/errors";
 import { createSite, patchSite } from "@/lib/api/mutations";
 import { resolveProject } from "@/lib/api/workspace";
 import { projectAbilities } from "@/lib/workspace/access";
@@ -97,7 +97,7 @@ export async function createSiteAction(
 			};
 		return {
 			status: "failed",
-			message: `Nothing was created. ${failure.message}`,
+			message: failedWrite("Nothing was created.", failure),
 			fields: apiFields(failure.fields)
 		};
 	}
@@ -133,7 +133,7 @@ export async function updateSiteAction(
 		const failure = apiRequestError(error);
 		return {
 			status: "failed",
-			message: `Nothing was saved. ${failure.message}`,
+			message: failedWrite("Nothing was saved.", failure),
 			fields: apiFields(failure.fields)
 		};
 	}
