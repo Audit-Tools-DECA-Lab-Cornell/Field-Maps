@@ -133,9 +133,7 @@ function parts(geometry: LayerData["features"][number]["geometry"]): Coordinate[
 }
 
 function siteZone(zone: ManifestZone, layer: LayerData): SiteZone {
-  const feature = layer.features.find(
-    (entry) => String(entry.properties?.["id"] ?? "") === zone.id,
-  );
+  const feature = layer.features.find((entry) => String(entry.properties?.id ?? "") === zone.id);
   const [polygon, ...moreParts] = feature ? parts(feature.geometry) : [];
   return {
     id: zone.id,

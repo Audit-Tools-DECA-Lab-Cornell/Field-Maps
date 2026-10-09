@@ -13,7 +13,7 @@ export type WaitingRecords = {
 
 /**
  * The records waiting on this device for a signed-out account, which the welcome, sign-in and recovery
- * screens name (Mobile 23, 24, 27). Preview shows the designed five for p.sudhakar@example.org. On the
+ * screens name (Mobile 23, 24, 27). Preview shows the designed five for ps2245@cornell.edu. On the
  * device they show only when an account is remembered here: the queue is scoped to that account, so the
  * count and the owner always agree. Null when nothing is waiting, and for a deleted account, whose
  * records wait for nothing (useDeletedAccount).

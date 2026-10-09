@@ -103,7 +103,7 @@ describe("words", () => {
   });
 
   it("accepts addresses with a domain and refuses the rest", () => {
-    expect(isEmail(" p.sudhakar@example.org ")).toBe(true);
+    expect(isEmail(" ps2245@cornell.edu ")).toBe(true);
     expect(isEmail("p.sudhakar@example")).toBe(false);
     expect(isEmail("p sudhakar@example.org")).toBe(false);
     expect(isEmail("")).toBe(false);

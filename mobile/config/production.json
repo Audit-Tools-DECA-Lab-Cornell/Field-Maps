@@ -3,5 +3,5 @@
   "supabaseUrl": "https://lezmqhuucfwqknspgcdy.supabase.co",
   "publishableKey": "sb_publishable_Qaatm3EvnUsE-7ECeT5SjA_kYknDDCR",
   "powersyncUrl": null,
-  "bundleIdSuffix": ".productionplaceholder"
+  "bundleIdSuffix": ".dev"
 }

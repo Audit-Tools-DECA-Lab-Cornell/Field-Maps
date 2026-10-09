@@ -54,7 +54,7 @@ export type QueueRecord = {
 export const PREVIEW_ACCOUNT = {
   name: "Pratyush Sudhakar",
   initials: "PS",
-  email: "p.sudhakar@example.org",
+  email: "ps2245@cornell.edu",
 } as const;
 
 export const PREVIEW_PROJECTS: PreviewProject[] = [

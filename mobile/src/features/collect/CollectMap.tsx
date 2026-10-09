@@ -620,7 +620,7 @@ export function CollectMap({
           onPress={(event) => {
             if (aiming || mode === "zones") return;
             const feature = event.nativeEvent.features[0];
-            const id = feature?.properties?.["id"];
+            const id = feature?.properties?.id;
             if (typeof id === "string") {
               event.stopPropagation();
               setSelected(id);

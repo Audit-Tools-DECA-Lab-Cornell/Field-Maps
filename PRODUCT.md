@@ -18,13 +18,13 @@ The design system is **Contour** (D19). **Day** is the default everywhere and **
 
 ## Users
 
-| Person | Where and how | The job | Register |
-|---|---|---|---|
-| **Field observer** (research assistant, student) | Phone or tablet, standing on a playground in daylight, often in direct sun. One hand free, sometimes gloves, usually no signal. Their attention is on the children, not the screen. | Place a point, answer one question at a time, save, and repeat. Never lose a record. Type as little as possible. | **Field language** |
-| **Project manager / coordinator** | Web, at a desk on a laptop or on an iPad | Turn a QGIS project into map packages, publish form versions, invite observers, see what came back and what is blocking | **Research language** |
-| **PI / research lead** (Janet) | Web, QGIS, exports | Form versions that never reinterpret old data, coverage against the protocol, and evidence to hand on | **Research language** |
-| **Viewer / GIS analyst** | Web (read only), CSV and GeoJSON exports, QGIS | Read data and reports, export the permitted scope, and open stable typed layers | **Research language**, with exact numbers |
-| **Org owner / admin** | Web, at a desk, occasionally | Create the organization and its projects, manage members, own the data, settle deletions | Plain administrative language. Consequences come before any action that cannot be undone. |
+| Person                                           | Where and how                                                                                                                                                                       | The job                                                                                                                 | Register                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Field observer** (research assistant, student) | Phone or tablet, standing on a playground in daylight, often in direct sun. One hand free, sometimes gloves, usually no signal. Their attention is on the children, not the screen. | Place a point, answer one question at a time, save, and repeat. Never lose a record. Type as little as possible.        | **Field language**                                                                        |
+| **Project manager / coordinator**                | Web, at a desk on a laptop or on an iPad                                                                                                                                            | Turn a QGIS project into map packages, publish form versions, invite observers, see what came back and what is blocking | **Research language**                                                                     |
+| **PI / research lead** (Janet)                   | Web, QGIS, exports                                                                                                                                                                  | Form versions that never reinterpret old data, coverage against the protocol, and evidence to hand on                   | **Research language**                                                                     |
+| **Viewer / GIS analyst**                         | Web (read only), CSV and GeoJSON exports, QGIS                                                                                                                                      | Read data and reports, export the permitted scope, and open stable typed layers                                         | **Research language**, with exact numbers                                                 |
+| **Org owner / admin**                            | Web, at a desk, occasionally                                                                                                                                                        | Create the organization and its projects, manage members, own the data, settle deletions                                | Plain administrative language. Consequences come before any action that cannot be undone. |
 
 - **Field language** is short and concrete, about the place and the device: "Place a point", "Save on this device", "Ready offline", "Riverside · North meadow · Round 1".
 - **Research language** names the method precisely: coverage by zone and round, form version, protocol notes, publication, reader access, "Record abundance is not completeness". It is still plain sentences, never jargon for its own sake.
@@ -34,15 +34,15 @@ The design system is **Contour** (D19). **Day** is the default everywhere and **
 
 Authorization lives in the database and is checked on every request (D12).
 
-| Level | Role | Can |
-|---|---|---|
-| Organization | **Owner** | Everything an admin can, plus delete the org, manage admins and transfer ownership. Every org has at least one owner. |
-| Organization | **Admin** | Create projects, invite and remove members, and act as a manager on every project in the org |
-| Organization | **Member** | Belong to the org. Project access comes from project roles. |
-| Project | **Manager** | "Manage forms, maps, team and publication": sites and map packages, form versions, invitations, members, exports |
-| Project | **Observer** | "Collect observations in the native app": collect and upload, and read the project's sites, forms, map packages and their own observations |
-| Project | **Viewer** | "Read data and reports; export the permitted scope". Team and Settings are hidden. |
-| Project | GIS reader grant | A per-project read-only login for QGIS (D10). This is not a user role. |
+| Level        | Role             | Can                                                                                                                                        |
+| ------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Organization | **Owner**        | Everything an admin can, plus delete the org, manage admins and transfer ownership. Every org has at least one owner.                      |
+| Organization | **Admin**        | Create projects, invite and remove members, and act as a manager on every project in the org                                               |
+| Organization | **Member**       | Belong to the org. Project access comes from project roles.                                                                                |
+| Project      | **Manager**      | "Manage forms, maps, team and publication": sites and map packages, form versions, invitations, members, exports                           |
+| Project      | **Observer**     | "Collect observations in the native app": collect and upload, and read the project's sites, forms, map packages and their own observations |
+| Project      | **Viewer**       | "Read data and reports; export the permitted scope". Team and Settings are hidden.                                                         |
+| Project      | GIS reader grant | A per-project read-only login for QGIS (D10). This is not a user role.                                                                     |
 
 - **Training.** Every new account joins the server Training project as an observer (D4, D13). It is for practising every step offline. Training observations are visible only to their creator, purged after 30 days, and never in research exports. On mobile it is "Always available".
 - **The role is always visible.** The web header shows it in mono (MANAGER, ADMIN, OBSERVER). An observer who signs in on the web gets "You collect in the app".
@@ -61,19 +61,19 @@ Full steps are in [docs/plan/product.md](docs/plan/product.md#journeys-the-pilot
 
 One set of words in both apps, matching the database. Proper names such as "Play Study" are not glossary words.
 
-| Word | Means | Avoid |
-|---|---|---|
-| **Project** | A study inside an organization, with its own team, sites and forms | Study, Assignment, "Assigned to you" |
-| **Site** | One real place, such as Riverside or Fall Creek | Place, Places, Package (for the place) |
-| **Zone** | A named area inside a site, from the active map package | Region, polygon, bounding box |
-| **Form**, with **versions** | The questionnaire. A version (`demo-v1`, `janet-test-v1`) is a draft, then published (locked), then retired. | Instrument, questionnaire, survey, workbook |
-| **Map package** | An immutable, versioned map of a site uploaded from QGIS (`v3`). "Ready offline" needs all four parts verified. | Base map, basemap, offline map, bundle, tiles |
-| **Observation** | One collected record: a point plus site, zone, round, form version, observer code and answers (`OBS-0244`) | Entry, submission, response. "Record" only in sentences about storage and upload ("5 records not uploaded"), never as a tab or page name. |
-| **Round** | The protocol round number the observer picks. Nothing is scheduled. | Visit, shift, schedule, Today, "assigned" |
-| **Observer code** | The initials on every observation, up to ten uppercase characters. Changes apply to future observations only. | User ID, username. "Initials" only on the field where a person types them. |
-| **Training** | The practice project every account joins | Demo, sandbox, test project |
-| **Queue states** | On device · Uploading · Uploaded · Needs attention · Held ("waits on the project, not on the observer") | Synced, Pending, Sent, Failed, Error |
-| **Review states** (U5) | Not yet reviewed · Approved · Excluded | Accepted, Rejected (for a review) |
+| Word                        | Means                                                                                                           | Avoid                                                                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Project**                 | A study inside an organization, with its own team, sites and forms                                              | Study, Assignment, "Assigned to you"                                                                                                      |
+| **Site**                    | One real place, such as Riverside or Fall Creek                                                                 | Place, Places, Package (for the place)                                                                                                    |
+| **Zone**                    | A named area inside a site, from the active map package                                                         | Region, polygon, bounding box                                                                                                             |
+| **Form**, with **versions** | The questionnaire. A version (`demo-v1`, `janet-test-v1`) is a draft, then published (locked), then retired.    | Instrument, questionnaire, survey, workbook                                                                                               |
+| **Map package**             | An immutable, versioned map of a site uploaded from QGIS (`v3`). "Ready offline" needs all four parts verified. | Base map, basemap, offline map, bundle, tiles                                                                                             |
+| **Observation**             | One collected record: a point plus site, zone, round, form version, observer code and answers (`OBS-0244`)      | Entry, submission, response. "Record" only in sentences about storage and upload ("5 records not uploaded"), never as a tab or page name. |
+| **Round**                   | The protocol round number the observer picks. Nothing is scheduled.                                             | Visit, shift, schedule, Today, "assigned"                                                                                                 |
+| **Observer code**           | The initials on every observation, up to ten uppercase characters. Changes apply to future observations only.   | User ID, username. "Initials" only on the field where a person types them.                                                                |
+| **Training**                | The practice project every account joins                                                                        | Demo, sandbox, test project                                                                                                               |
+| **Queue states**            | On device · Uploading · Uploaded · Needs attention · Held ("waits on the project, not on the observer")         | Synced, Pending, Sent, Failed, Error                                                                                                      |
+| **Review states** (U5)      | Not yet reviewed · Approved · Excluded                                                                          | Accepted, Rejected (for a review)                                                                                                         |
 
 ## Honesty
 
@@ -113,25 +113,25 @@ Plain, exact and calm. FieldMaps sounds like a careful colleague who is precise 
 
 The "instead of" column is wording from the earlier apps or a common default. The "write" column is the designed Contour copy.
 
-| Instead of | Write |
-|---|---|
-| "Assigned to you" (collector home) | "Projects · Research spaces you have joined." with "This list does not imply scheduled assignments." |
-| "Synced" | "Uploaded", only once the server has acknowledged the record |
-| "A draft survived the crash" | "Unfinished observation · Point placed, 3 of 8 answered. Kept on this device." with **Resume** and **Discard draft** |
-| "Save" / "Submit" | "Save on this device", under the line "Saves on this device. Upload is a separate step." |
-| "Saved successfully!" | "Saved on this device · OBS-0249 · Upload waiting · offline" |
-| "Upload failed (422)" | "Needs attention. The observer code is missing from this record. Add it, then send it again. The record keeps the same number." with **Correct and send again** |
-| "Something went wrong. Please try again." | "We could not load this page. Nothing was removed. Check your connection and try again." |
-| "Error loading screen" (collector) | "Your draft is still on this device. The screen could not load, but the point and answers you entered are kept." |
-| "No results" | "No observations match this view. Change your filters to see more observations. Your underlying records are unchanged." |
-| "You don't have permission." | "You do not have access to this page. Your current role can view project observations, but cannot change this area. Ask a project manager to review your access." |
-| "No internet connection" | Collector: "Offline. Records remain on this device and upload later." Web: "You are offline. Showing what loaded at 11:36. Changes cannot be saved." |
-| "Are you sure you want to sign out?" | "Sign out? Your unsent work needs a clear owner. 5 observations have not been uploaded. They remain on this device for p.sudhakar@example.org. Another account cannot upload them." with **Upload eligible records first** · **Sign out and keep local records** · **Stay signed in** |
-| "Passwords don't match!" (on every keystroke) | "Does not match yet", shown after the field loses focus, and under the disabled button "The button turns on when both passwords match." |
-| "Publish form" + "Are you sure?" | "Publishing creates demo-v2. It never changes demo-v1." with "I understand that a published version cannot be edited." then **Publish demo-v2** |
-| "Download complete. Offline ready." | "60 of 126 MB" while each part moves Waiting → Downloading → Verified. "Ready offline" appears once all four verify, and "Set up this session" turns on then. |
-| "All devices ready" | "Device readiness is not available yet.", with what to do instead |
-| "These screens read local fixtures, not the database" on every section | Nothing: the web is live (D30, see Honesty) |
+| Instead of                                                             | Write                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Assigned to you" (collector home)                                     | "Projects · Research spaces you have joined." with "This list does not imply scheduled assignments."                                                                                                                                                                              |
+| "Synced"                                                               | "Uploaded", only once the server has acknowledged the record                                                                                                                                                                                                                      |
+| "A draft survived the crash"                                           | "Unfinished observation · Point placed, 3 of 8 answered. Kept on this device." with **Resume** and **Discard draft**                                                                                                                                                              |
+| "Save" / "Submit"                                                      | "Save on this device", under the line "Saves on this device. Upload is a separate step."                                                                                                                                                                                          |
+| "Saved successfully!"                                                  | "Saved on this device · OBS-0249 · Upload waiting · offline"                                                                                                                                                                                                                      |
+| "Upload failed (422)"                                                  | "Needs attention. The observer code is missing from this record. Add it, then send it again. The record keeps the same number." with **Correct and send again**                                                                                                                   |
+| "Something went wrong. Please try again."                              | "We could not load this page. Nothing was removed. Check your connection and try again."                                                                                                                                                                                          |
+| "Error loading screen" (collector)                                     | "Your draft is still on this device. The screen could not load, but the point and answers you entered are kept."                                                                                                                                                                  |
+| "No results"                                                           | "No observations match this view. Change your filters to see more observations. Your underlying records are unchanged."                                                                                                                                                           |
+| "You don't have permission."                                           | "You do not have access to this page. Your current role can view project observations, but cannot change this area. Ask a project manager to review your access."                                                                                                                 |
+| "No internet connection"                                               | Collector: "Offline. Records remain on this device and upload later." Web: "You are offline. Showing what loaded at 11:36. Changes cannot be saved."                                                                                                                              |
+| "Are you sure you want to sign out?"                                   | "Sign out? Your unsent work needs a clear owner. 5 observations have not been uploaded. They remain on this device for ps2245@cornell.edu. Another account cannot upload them." with **Upload eligible records first** · **Sign out and keep local records** · **Stay signed in** |
+| "Passwords don't match!" (on every keystroke)                          | "Does not match yet", shown after the field loses focus, and under the disabled button "The button turns on when both passwords match."                                                                                                                                           |
+| "Publish form" + "Are you sure?"                                       | "Publishing creates demo-v2. It never changes demo-v1." with "I understand that a published version cannot be edited." then **Publish demo-v2**                                                                                                                                   |
+| "Download complete. Offline ready."                                    | "60 of 126 MB" while each part moves Waiting → Downloading → Verified. "Ready offline" appears once all four verify, and "Set up this session" turns on then.                                                                                                                     |
+| "All devices ready"                                                    | "Device readiness is not available yet.", with what to do instead                                                                                                                                                                                                                 |
+| "These screens read local fixtures, not the database" on every section | Nothing: the web is live (D30, see Honesty)                                                                                                                                                                                                                                       |
 
 ## Brand personality
 
