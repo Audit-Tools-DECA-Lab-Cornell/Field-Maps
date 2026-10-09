@@ -11,8 +11,8 @@ import { DeleteAccount } from "@/features/account/DeleteAccount";
 import { ProfileForm } from "@/features/account/ProfileForm";
 import { SecurityIsland } from "@/features/account/SecurityIsland";
 import { avatarInitials, type Identity, personName, possibleBlockers } from "@/features/account/view";
-import { getIdentity } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
+import { getMe } from "@/lib/api/workspace";
 import { stateOf } from "@/lib/contour";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -31,15 +31,14 @@ function memberships(identity: Identity) {
 }
 
 /**
- * The account page (org-05), on real data: the signed-in user from Supabase Auth and their profile and
- * memberships from GET /v1/me. Edit profile saves with PATCH /v1/me; Delete account calls DELETE /v1/me.
- * It reads nothing from the fixtures, so it carries no Preview data marker or footer line (D24). The
- * header names this account and leaves out the sample organization's switchers.
+ * The account page (org-05): the signed-in user from Supabase Auth and their profile and memberships from
+ * GET /v1/me (the same read the workspace header uses). Edit profile saves with PATCH /v1/me; Delete
+ * account calls DELETE /v1/me. Outside an organization, the header has no switchers.
  */
 export default async function AccountPage() {
 	const { claims } = await requireUser();
 	const email = typeof claims.email === "string" && claims.email ? claims.email : undefined;
-	const { identity, error } = await getIdentity().then(
+	const { identity, error } = await getMe().then(
 		identity => ({ identity, error: null }),
 		(error: unknown) => {
 			if (!(error instanceof ApiError)) throw error;
@@ -51,7 +50,7 @@ export default async function AccountPage() {
 
 	return (
 		<>
-			<AppHeader account={{ name, email, initials }} />
+			<AppHeader />
 			<ShellMain>
 				<header className="flex items-center gap-5">
 					<span

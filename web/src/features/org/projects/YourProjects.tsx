@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, ButtonLink } from "@/components/contour/Button";
+import { Button } from "@/components/contour/Button";
 import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
 import { usePreview } from "@/features/shell/PreviewProvider";
@@ -18,11 +18,7 @@ export function YourProjects({ org }: { org: string }) {
 	const mayCreate = canOrg("createProject");
 
 	const action =
-		mayCreate && !offline ? (
-			<ButtonLink href="/onboarding/project" icon="plus">
-				Create project
-			</ButtonLink>
-		) : (
+		mayCreate && !offline ? undefined : (
 			<Button
 				icon="plus"
 				disabled

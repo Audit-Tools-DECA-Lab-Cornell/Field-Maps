@@ -1,21 +1,16 @@
 "use client";
 
-import { useParams, usePathname } from "next/navigation";
-
 import { Icon } from "@/components/contour/Icon";
 import { IconButton } from "@/components/contour/IconButton";
 import { ShortcutHint } from "@/components/contour/Kbd";
 import { RoleLabel } from "@/components/contour/RoleLabel";
-import { orgHref, scopeOf, showsSampleData } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
 import { useShell } from "@/features/shell/ShellProvider";
-import { DEFAULT_ORG, getOrg, getProject } from "@/fixtures";
+import { useWorkspace } from "@/features/shell/WorkspaceProvider";
 import { stateOf } from "@/lib/contour";
 import { cx } from "@/lib/cx";
 
-import { AccountMenu, type HeaderAccount } from "./AccountMenu";
+import { AccountMenu } from "./AccountMenu";
 import { Brand } from "./Brand";
-import { PreviewMarker } from "./PreviewMarker";
 import { MergedSwitcher, OrgSwitcher, ProjectSwitcher } from "./Switchers";
 
 /**
@@ -53,52 +48,38 @@ function SearchControl() {
 	);
 }
 
-export type AppHeaderProps = {
-	/**
-	 * The signed-in account, on a page that shows real data (the account page). The header then names
-	 * that account, and leaves out the sample organization's switchers and role, which are not the
-	 * reader's (D24).
-	 */
-	account?: HeaderAccount;
-};
-
 /**
  * The workspace header (system-10, project-01): the brand and the organization and project switchers on
- * the left; the Preview data marker, search, the reader's role and the account menu on the right. It
- * scrolls away with the page. The organization and project come from the address. The marker shows only
- * on pages that read sample data.
+ * the left; search, the person's role here and the account menu on the right. It scrolls away with the
+ * page. The organization and project come from the address, checked against the person's memberships
+ * (`useWorkspace()`); outside an organization (the account page) there are no switchers and no role.
  */
-export function AppHeader({ account }: AppHeaderProps = {}) {
-	const params = useParams<{ org?: string; project?: string }>();
-	const pathname = usePathname();
-	const { role } = usePreview();
-	const sample = showsSampleData(scopeOf(pathname));
-	const org = params.org && getOrg(params.org) ? params.org : DEFAULT_ORG;
-	const project = params.project && getProject(org, params.project) ? params.project : undefined;
-	const brandHref = account ? "/account" : orgHref(org);
+export function AppHeader() {
+	const { org, project } = useWorkspace();
+	const role = project?.role ?? org?.role;
 
 	return (
 		<header className="mx-auto w-full max-w-page px-4 md:px-gutter">
 			<div className="flex min-h-header flex-wrap items-center gap-x-3 gap-y-2 py-3 md:flex-nowrap md:py-0">
 				{/* The wordmark needs the room the two switchers take below 1024 px. */}
-				<span className={account ? "sm:hidden" : "lg:hidden"}>
-					<Brand href={brandHref} markOnly />
+				<span className={org ? "lg:hidden" : "sm:hidden"}>
+					<Brand href="/o" markOnly />
 				</span>
-				<span className={account ? "hidden sm:inline-flex" : "hidden lg:inline-flex"}>
-					<Brand href={brandHref} />
+				<span className={org ? "hidden lg:inline-flex" : "hidden sm:inline-flex"}>
+					<Brand href="/o" />
 				</span>
 
-				{!account && (
+				{org && (
 					<>
-						<MergedSwitcher org={org} project={project} className="md:hidden" />
+						<MergedSwitcher className="md:hidden" />
 						<div className="hidden min-w-0 items-center gap-3 md:flex">
-							<OrgSwitcher org={org} />
+							<OrgSwitcher />
 							{project && (
 								<>
 									<span aria-hidden="true" className="type-lead text-ink-2">
 										/
 									</span>
-									<ProjectSwitcher org={org} project={project} />
+									<ProjectSwitcher />
 								</>
 							)}
 						</div>
@@ -106,22 +87,10 @@ export function AppHeader({ account }: AppHeaderProps = {}) {
 				)}
 
 				<div className="ml-auto flex shrink-0 items-center gap-3 lg:gap-2 xl:gap-3">
-					{sample && (
-						<span className="hidden md:inline-flex">
-							<PreviewMarker />
-						</span>
-					)}
 					<SearchControl />
-					{!account && <RoleLabel className="hidden lg:inline">{stateOf("role", role).label}</RoleLabel>}
-					<AccountMenu account={account} />
+					{role && <RoleLabel className="hidden lg:inline">{stateOf("role", role).label}</RoleLabel>}
+					<AccountMenu />
 				</div>
-
-				{/* On phones the marker takes its own line under the brand, so nothing in the row is cut. */}
-				{sample && (
-					<div className="w-full md:hidden">
-						<PreviewMarker />
-					</div>
-				)}
 			</div>
 		</header>
 	);

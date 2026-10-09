@@ -1,13 +1,17 @@
 import { ButtonLink } from "@/components/contour/Button";
 import { Note } from "@/components/contour/Note";
-import { TextLink } from "@/components/contour/TextLink";
-import { previewBypassAllowed } from "@/lib/auth/preview";
 import { supabaseConfig } from "@/lib/supabase/config";
 
 import { type AuthPreviewState, previewState } from "./params";
 
-/** Where a development or review build without Supabase opens the sample workspace (D23). */
-const SAMPLE_WORKSPACE = "/o/deca";
+/**
+ * `?preview-state=` demos of the auth pages: only in development and review builds without Supabase, where
+ * no real sign-in can happen. Production and any build with Supabase configured ignore them.
+ */
+function demosAllowed(): boolean {
+	if (supabaseConfig()) return false;
+	return process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_PREVIEW_TOOLS === "1";
+}
 
 /**
  * How a signed-out auth page renders. `form` is false when this server has no Supabase configuration
@@ -16,25 +20,16 @@ const SAMPLE_WORKSPACE = "/o/deca";
  * review builds without Supabase.
  */
 export function authPageMode(value: string | string[] | undefined): { form: boolean; preview: AuthPreviewState } {
-	const preview = previewBypassAllowed() ? previewState(value) : "normal";
+	const preview = demosAllowed() ? previewState(value) : "normal";
 	return { form: supabaseConfig() !== null || preview !== "normal", preview };
 }
 
 /** What an auth page shows when sign-in cannot work on this server. */
 export function NotConfigured() {
 	return (
-		<div className="flex flex-col gap-5">
-			<Note tone="attention" title="Sign-in is not configured on this server.">
-				Ask the operator to set the public Supabase URL and publishable key.
-			</Note>
-			{previewBypassAllowed() && (
-				<p className="type-body">
-					<TextLink href={SAMPLE_WORKSPACE} className="inline-flex min-h-touch items-center">
-						Open the sample workspace
-					</TextLink>
-				</p>
-			)}
-		</div>
+		<Note tone="attention" title="Sign-in is not configured on this server.">
+			Ask the operator to set the public Supabase URL and publishable key.
+		</Note>
 	);
 }
 

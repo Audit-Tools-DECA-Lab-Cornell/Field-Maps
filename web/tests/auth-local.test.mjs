@@ -131,6 +131,6 @@ test(
 			password: nextPassword,
 			next: "https://evil.example"
 		});
-		assert.match(signedIn.response.headers.get("x-action-redirect") ?? "", /^\/onboarding/);
+		assert.match(signedIn.response.headers.get("x-action-redirect") ?? "", /^\/o(\?|$)/);
 	}
 );

@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 
 import { ShellMain, ShellTabsRow } from "@/components/shell/ShellMain";
 import { OrgTabs } from "@/components/shell/WorkspaceTabs";
-import { AccessGate } from "@/features/shell/AccessGate";
 
-/** The organization pages: Projects · Members · Form library · Settings. */
+/**
+ * The organization pages: Projects · Members · Settings (Members and Settings for owners and admins). Each
+ * page checks the role itself and shows its own no-access state; this layout never reads them.
+ */
 export default async function OrgPagesLayout({
 	children,
 	params
@@ -15,9 +17,7 @@ export default async function OrgPagesLayout({
 			<ShellTabsRow>
 				<OrgTabs org={org} />
 			</ShellTabsRow>
-			<ShellMain afterTabs>
-				<AccessGate>{children}</AccessGate>
-			</ShellMain>
+			<ShellMain afterTabs>{children}</ShellMain>
 		</>
 	);
 }

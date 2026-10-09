@@ -4,12 +4,12 @@ import { type KeyboardEvent, type ReactNode, useRef, useState } from "react";
 
 import { Icon } from "@/components/contour/Icon";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/contour/Menu";
-import { StateBadge } from "@/components/contour/StateBadge";
-import { orgHref, projectHref } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
-import { getOrg, ORGANIZATIONS, type Project, projectsIn } from "@/fixtures";
+import { orgHref } from "@/features/shell/navigation";
+import { useWorkspace } from "@/features/shell/WorkspaceProvider";
 import { stateOf } from "@/lib/contour";
 import { cx } from "@/lib/cx";
+import { projectPath } from "@/lib/workspace/home";
+import type { ProjectRef } from "@/lib/workspace/types";
 
 /** The header pill that opens a switcher: island fill, fine edge, the name at 600 and a chevron. */
 const PILL = cx(
@@ -45,17 +45,16 @@ function Check({ on }: { on: boolean }) {
 	);
 }
 
-function OrgItems({ current, onNavigate }: { current: string; onNavigate: () => void }) {
-	const { orgRole } = usePreview();
-	const roleWord = stateOf("role", orgRole).label;
+function OrgItems({ current, onNavigate }: { current?: string; onNavigate: () => void }) {
+	const { index } = useWorkspace();
 	return (
 		<>
 			<MenuLabel>Organizations</MenuLabel>
-			{ORGANIZATIONS.map(org => (
-				<MenuItem key={org.slug} icon="building-2" href={orgHref(org.slug)} onSelect={onNavigate}>
+			{index.orgs.map(org => (
+				<MenuItem key={org.id} icon="building-2" href={orgHref(org.slug)} onSelect={onNavigate}>
 					<span className="flex items-center gap-3">
 						<span className="min-w-0 flex-1 font-semibold">{org.name}</span>
-						<span className="type-mono-label text-ink-2">{roleWord}</span>
+						<span className="type-mono-label text-ink-2">{stateOf("role", org.role).label}</span>
 						<Check on={org.slug === current} />
 					</span>
 				</MenuItem>
@@ -65,28 +64,20 @@ function OrgItems({ current, onNavigate }: { current: string; onNavigate: () => 
 }
 
 function ProjectItem({
-	org,
 	project,
 	current,
 	onNavigate
 }: {
-	org: string;
-	project: Project;
+	project: ProjectRef;
 	current: boolean;
 	onNavigate: () => void;
 }) {
-	const { role } = usePreview();
-	const roleWord = project.state === "practice" ? "Everyone" : stateOf("role", role).label;
 	return (
-		<MenuItem href={projectHref(org, project.slug)} onSelect={onNavigate}>
+		<MenuItem href={projectPath(project)} onSelect={onNavigate}>
 			<span className="flex items-center gap-3">
 				<span className="flex min-w-0 flex-1 flex-col">
 					<span className="font-semibold">{project.name}</span>
-					<span className="flex flex-wrap items-baseline gap-x-2 type-small text-ink-2">
-						<StateBadge kind="project" state={project.state} size="sm" />
-						<span aria-hidden="true">·</span>
-						<span>{roleWord}</span>
-					</span>
+					<span className="type-small text-ink-2">{stateOf("role", project.role).label}</span>
 				</span>
 				<Check on={current} />
 			</span>
@@ -95,18 +86,12 @@ function ProjectItem({
 }
 
 function TailItems({ org, onNavigate }: { org: string; onNavigate: () => void }) {
-	const { canOrg } = usePreview();
 	return (
 		<>
 			<MenuSeparator />
 			<MenuItem icon="folder" href={orgHref(org)} onSelect={onNavigate}>
 				All projects
 			</MenuItem>
-			{canOrg("createProject") && (
-				<MenuItem icon="plus" href="/onboarding/project" onSelect={onNavigate}>
-					Create project
-				</MenuItem>
-			)}
 		</>
 	);
 }
@@ -150,38 +135,36 @@ function ProjectFilter({ value, onChange }: { value: string; onChange: (value: s
 	);
 }
 
-function useProjectFilter(org: string) {
+function useProjectFilter() {
+	const { orgProjects } = useWorkspace();
 	const [query, setQuery] = useState("");
-	const projects = projectsIn(org);
 	const needle = query.trim().toLowerCase();
-	const shown = needle ? projects.filter(project => project.name.toLowerCase().includes(needle)) : projects;
+	const shown = needle ? orgProjects.filter(project => project.name.toLowerCase().includes(needle)) : orgProjects;
 	return { query, setQuery, shown };
 }
 
 function ProjectList({
-	org,
+	orgName,
 	current,
 	shown,
 	onNavigate
 }: {
-	org: string;
+	orgName: string;
 	current?: string;
-	shown: Project[];
+	shown: ProjectRef[];
 	onNavigate: () => void;
 }) {
-	const orgName = getOrg(org)?.name ?? org;
 	return (
 		<>
-			<MenuLabel>Projects in {orgName}</MenuLabel>
+			<MenuLabel>Your projects in {orgName}</MenuLabel>
 			{shown.length === 0 ? (
 				<p className="px-3 py-2 type-small text-ink-2">No project has that name.</p>
 			) : (
 				shown.map(project => (
 					<ProjectItem
-						key={project.slug}
-						org={org}
+						key={project.id}
 						project={project}
-						current={project.slug === current}
+						current={project.id === current}
 						onNavigate={onNavigate}
 					/>
 				))
@@ -199,36 +182,43 @@ function SwitcherPill({ children, label }: { children: ReactNode; label: string 
 	);
 }
 
-/** "DECA Lab ⌄": the organizations the reader belongs to, then All projects and Create project. */
-export function OrgSwitcher({ org, className }: { org: string; className?: string }) {
+/** "DECA Lab ⌄": the organizations the person belongs to, then All projects. */
+export function OrgSwitcher({ className }: { className?: string }) {
 	const menu = useNavigatingMenu();
-	const name = getOrg(org)?.name ?? org;
+	const { org } = useWorkspace();
+	if (!org) return null;
 	return (
 		<div className={className}>
 			<Menu>
-				<SwitcherPill label={`Organization: ${name}`}>{name}</SwitcherPill>
+				<SwitcherPill label={`Organization: ${org.name}`}>{org.name}</SwitcherPill>
 				<MenuContent align="start" className="w-72" onCloseAutoFocus={menu.onCloseAutoFocus}>
-					<OrgItems current={org} onNavigate={menu.markNavigating} />
-					<TailItems org={org} onNavigate={menu.markNavigating} />
+					<OrgItems current={org.slug} onNavigate={menu.markNavigating} />
+					<TailItems org={org.slug} onNavigate={menu.markNavigating} />
 				</MenuContent>
 			</Menu>
 		</div>
 	);
 }
 
-/** "Play Study ⌄": the organization's projects with their state and the reader's role, filtered by typing. */
-export function ProjectSwitcher({ org, project, className }: { org: string; project: string; className?: string }) {
+/** "Play Study ⌄": the person's projects in the organization with their role, filtered by typing. */
+export function ProjectSwitcher({ className }: { className?: string }) {
 	const menu = useNavigatingMenu();
-	const filter = useProjectFilter(org);
-	const name = projectsIn(org).find(entry => entry.slug === project)?.name ?? project;
+	const { org, project } = useWorkspace();
+	const filter = useProjectFilter();
+	if (!org || !project) return null;
 	return (
 		<div className={className}>
 			<Menu onOpenChange={open => !open && filter.setQuery("")}>
-				<SwitcherPill label={`Project: ${name}`}>{name}</SwitcherPill>
+				<SwitcherPill label={`Project: ${project.name}`}>{project.name}</SwitcherPill>
 				<MenuContent align="start" className="w-80" onCloseAutoFocus={menu.onCloseAutoFocus}>
 					<ProjectFilter value={filter.query} onChange={filter.setQuery} />
-					<ProjectList org={org} current={project} shown={filter.shown} onNavigate={menu.markNavigating} />
-					<TailItems org={org} onNavigate={menu.markNavigating} />
+					<ProjectList
+						orgName={org.name}
+						current={project.id}
+						shown={filter.shown}
+						onNavigate={menu.markNavigating}
+					/>
+					<TailItems org={org.slug} onNavigate={menu.markNavigating} />
 				</MenuContent>
 			</Menu>
 		</div>
@@ -236,23 +226,28 @@ export function ProjectSwitcher({ org, project, className }: { org: string; proj
 }
 
 /** Below 768 px the two switchers merge into one pill: the project's name, or the organization's outside one. */
-export function MergedSwitcher({ org, project, className }: { org: string; project?: string; className?: string }) {
+export function MergedSwitcher({ className }: { className?: string }) {
 	const menu = useNavigatingMenu();
-	const filter = useProjectFilter(org);
-	const orgName = getOrg(org)?.name ?? org;
-	const projectName = project ? projectsIn(org).find(entry => entry.slug === project)?.name : undefined;
+	const { org, project } = useWorkspace();
+	const filter = useProjectFilter();
+	if (!org) return null;
 	return (
 		<div className={cx("min-w-0", className)}>
 			<Menu onOpenChange={open => !open && filter.setQuery("")}>
-				<SwitcherPill label={projectName ? `${orgName}, project: ${projectName}` : `Organization: ${orgName}`}>
-					{projectName ?? orgName}
+				<SwitcherPill label={project ? `${org.name}, project: ${project.name}` : `Organization: ${org.name}`}>
+					{project?.name ?? org.name}
 				</SwitcherPill>
 				<MenuContent align="start" className="w-80" onCloseAutoFocus={menu.onCloseAutoFocus}>
-					<OrgItems current={org} onNavigate={menu.markNavigating} />
+					<OrgItems current={org.slug} onNavigate={menu.markNavigating} />
 					<MenuSeparator />
 					<ProjectFilter value={filter.query} onChange={filter.setQuery} />
-					<ProjectList org={org} current={project} shown={filter.shown} onNavigate={menu.markNavigating} />
-					<TailItems org={org} onNavigate={menu.markNavigating} />
+					<ProjectList
+						orgName={org.name}
+						current={project?.id}
+						shown={filter.shown}
+						onNavigate={menu.markNavigating}
+					/>
+					<TailItems org={org.slug} onNavigate={menu.markNavigating} />
 				</MenuContent>
 			</Menu>
 		</div>

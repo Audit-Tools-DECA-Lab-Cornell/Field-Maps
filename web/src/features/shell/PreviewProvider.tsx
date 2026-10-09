@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo } from "react";
 
+import { ORG_MEMBERSHIPS, VIEWER_ID } from "@/fixtures";
 import {
 	applyPreviewParams,
 	can as roleCan,
@@ -12,8 +13,20 @@ import {
 	previewStore
 } from "@/lib/preview";
 
-import { defaultRoleFor, type Scope, scopeOf } from "./navigation";
+import { type Scope, scopeOf } from "./navigation";
 import { useSessionStore } from "./useSessionStore";
+
+/**
+ * Temporary: the screens not yet moved to live data still read their role from here. The shell no longer
+ * does (it reads `useWorkspace()`); this file goes when the last of those screens does.
+ */
+function defaultRoleFor(scope: Scope): PreviewRole {
+	if (scope.kind === "collect") return "observer";
+	// An admin acts as a manager on every project in the organization (PRODUCT.md § Roles).
+	if (scope.kind === "project") return "manager";
+	const membership = ORG_MEMBERSHIPS.find(entry => entry.personId === VIEWER_ID && entry.orgSlug === scope.org);
+	return membership?.role === "owner" ? "owner" : "admin";
+}
 
 /** Takes `?as=` and `?preview-state=` from the address whenever it changes. */
 function PreviewUrlSync() {

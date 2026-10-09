@@ -1,5 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
+
+import { BrandMark } from "@/components/shell/Brand";
 
 import styles from "./legal.module.css";
 import { policy } from "./policy";
@@ -11,7 +12,7 @@ export default function LegalLayout({ children }: Readonly<{ children: React.Rea
 			<header className={styles.header}>
 				<div className={`${styles.inner} ${styles.headerRow}`}>
 					<Link href="/privacy" className={styles.brand}>
-						<Image src="/fieldmaps-app-icon.svg" alt="" width={36} height={36} unoptimized />
+						<BrandMark />
 						{policy.appName}
 					</Link>
 					<nav aria-label="Policy pages" className={styles.nav}>

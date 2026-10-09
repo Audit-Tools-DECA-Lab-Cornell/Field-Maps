@@ -11,20 +11,33 @@ import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from "next/constants
 // turbopack.root to match it.
 const repositoryRoot = path.join(__dirname, "..");
 
-/** The Nocturne workspace's addresses, now pages of Play Study under its organization (D21). */
-const PLAY_STUDY = "/o/deca/p/play-study";
+/**
+ * Addresses that no longer exist: the Nocturne workspace's pages, the set-up flow, and workspace pages
+ * that were removed with the sample data. Each goes to the nearest page that does exist; `/o` opens the
+ * person's own project.
+ */
 const OLD_ROUTES: [string, string][] = [
-	["/overview", PLAY_STUDY],
-	["/observations", `${PLAY_STUDY}/data`],
-	["/places", `${PLAY_STUDY}/sites`],
-	["/basemaps", `${PLAY_STUDY}/sites/riverside/packages`],
-	["/instrument", `${PLAY_STUDY}/forms`],
-	["/qgis", `${PLAY_STUDY}/qgis`]
+	["/overview", "/o"],
+	["/observations", "/o"],
+	["/places", "/o"],
+	["/basemaps", "/o"],
+	["/instrument", "/o"],
+	["/qgis", "/o"],
+	["/onboarding", "/o"],
+	["/onboarding/:path*", "/o"],
+	["/o/:org/library", "/o/:org"],
+	["/o/:org/p/:project/sites/:site/zones", "/o/:org/p/:project/sites/:site"],
+	["/o/:org/p/:project/sites/:site/zones/:path*", "/o/:org/p/:project/sites/:site"],
+	["/o/:org/p/:project/reports/views", "/o/:org/p/:project/reports"],
+	["/o/:org/p/:project/settings/rounds", "/o/:org/p/:project/settings"]
 ];
 
 const nextConfig: NextConfig = {
 	turbopack: { root: repositoryRoot },
 	outputFileTracingRoot: repositoryRoot,
+	// Form definitions and other edits travel through Server Actions; 1 MB is too tight for a long form.
+	// Map packages (up to 24 MiB) go from the browser straight to the API instead (lib/api/browser.ts).
+	experimental: { serverActions: { bodySizeLimit: "2mb" } },
 	// Temporary (307) redirects: the query string is carried over.
 	async redirects() {
 		return OLD_ROUTES.map(([source, destination]) => ({ source, destination, permanent: false }));

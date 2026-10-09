@@ -29,7 +29,6 @@ export const PROJECT_GO_KEYS: Record<string, string> = {
 export const ORG_GO_KEYS: Record<string, string> = {
 	p: "",
 	m: "members",
-	l: "library",
 	",": "settings"
 };
 
@@ -64,7 +63,6 @@ export const ORG_SHORTCUTS: ShortcutGroup = {
 	rows: [
 		{ keys: ["g", "p"], sequence: true, label: "Go to Projects" },
 		{ keys: ["g", "m"], sequence: true, label: "Go to Members" },
-		{ keys: ["g", "l"], sequence: true, label: "Go to Form library" },
 		{ keys: ["g", ","], sequence: true, label: "Go to Settings" }
 	]
 };

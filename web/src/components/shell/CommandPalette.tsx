@@ -1,7 +1,7 @@
 "use client";
 
 import { Command } from "cmdk";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useRef, useState } from "react";
 
@@ -15,9 +15,8 @@ import {
 	readRecent,
 	rememberRecent
 } from "@/features/shell/palette";
-import { usePreview } from "@/features/shell/PreviewProvider";
 import { useShell } from "@/features/shell/ShellProvider";
-import { DEFAULT_ORG, DEFAULT_PROJECT, getOrg, getProject } from "@/fixtures";
+import { useWorkspace } from "@/features/shell/WorkspaceProvider";
 import { cx } from "@/lib/cx";
 import { useMapPalette } from "@/lib/map-palette-store";
 import { useTheme } from "@/lib/theme";
@@ -62,48 +61,47 @@ function EntryRow({ entry }: { entry: PaletteEntry }) {
 
 /** The palette's contents. Mounted only while open, so the recent list is read fresh each time. */
 function PaletteBody({ onNavigate, onClose }: { onNavigate: (href: string) => void; onClose: () => void }) {
-	const params = useParams<{ org?: string; project?: string }>();
-	const { can, canOrg } = usePreview();
+	const workspace = useWorkspace();
+	const { org, project, projectAbilities } = workspace;
 	const { setShortcutsOpen } = useShell();
 	const [theme, setTheme] = useTheme();
 	const [mapPalette, setMapPalette] = useMapPalette();
 	const [query, setQuery] = useState("");
-	const [recent] = useState(readRecent);
-
-	const org = params.org && getOrg(params.org) ? params.org : DEFAULT_ORG;
-	const project = params.project && getProject(org, params.project) ? params.project : undefined;
-	const searchProject = project ?? DEFAULT_PROJECT;
-	const orgName = getOrg(org)?.name ?? org;
-	const groups: PaletteGroup[] = placeGroups({ org, orgName, project, searchProject, can, canOrg }, query);
+	const groups: PaletteGroup[] = placeGroups({
+		index: workspace.index,
+		org,
+		project,
+		managesOrg: workspace.orgAbilities.manage,
+		managesProject: projectAbilities.manage
+	});
+	// Only places the person can still open: a project they left, or one from before, drops out.
+	const known = new Set(groups.flatMap(group => group.entries.map(entry => entry.href)));
+	const [recent] = useState(() => readRecent().filter(entry => entry.href && known.has(entry.href)));
 
 	const actions: ActionEntry[] = [];
-	const base = projectHref(org, searchProject);
 	const go = (href: string) => () => onNavigate(href);
-	if (can("export"))
+	if (org && project && projectAbilities.read) {
+		const data = projectHref(org.slug, project.code, "data");
 		actions.push({
 			id: "action-export",
-			label: "Export current scope",
+			label: "Export observations",
+			meta: project.name,
 			icon: "download",
-			href: `${base}/data?export=1`,
-			run: go(`${base}/data?export=1`)
+			href: data,
+			run: go(data)
 		});
-	if (can("inviteMembers"))
+	}
+	if (org && project && projectAbilities.manage) {
+		const team = projectHref(org.slug, project.code, "team");
 		actions.push({
 			id: "action-invite",
-			label: "Invite member",
+			label: "Invite someone to the project",
+			meta: project.name,
 			icon: "plus",
-			href: `${base}/team?invite=1`,
-			run: go(`${base}/team?invite=1`)
+			href: team,
+			run: go(team)
 		});
-	if (can("uploadPackage"))
-		actions.push({
-			id: "action-upload",
-			label: "Upload package",
-			meta: "Riverside",
-			icon: "upload",
-			href: `${base}/sites/riverside/packages?step=upload`,
-			run: go(`${base}/sites/riverside/packages?step=upload`)
-		});
+	}
 	actions.push(
 		theme === "dusk"
 			? { id: "action-day", label: "Switch to Day", meta: "Screen", icon: "sun", run: () => setTheme("day") }
@@ -143,8 +141,7 @@ function PaletteBody({ onNavigate, onClose }: { onNavigate: (href: string) => vo
 			</div>
 			<Command.List className="min-h-0 flex-1 overflow-y-auto p-2">
 				<Command.Empty className="px-3 py-6 type-body text-ink-2">
-					No matches for “{query}”. Try an observation ID like{" "}
-					<span className="type-mono-data">OBS-0244</span>, a site, or a person.
+					No matches for “{query}”. Try a project, an organization, or a page such as Data or Sites.
 				</Command.Empty>
 				{recent.length > 0 && !query && (
 					<Command.Group heading="Recent" className={GROUP}>
@@ -199,8 +196,8 @@ function PaletteBody({ onNavigate, onClose }: { onNavigate: (href: string) => vo
 
 /**
  * "Search or jump to" (DESIGN §5, §8): ⌘K or Ctrl K anywhere, or the header's search pill. It jumps to
- * tabs, projects, sites, zones, form versions, people and OBS- IDs, and runs a few actions. Mounted once,
- * in the workspace layout.
+ * the tabs on screen, the person's projects and organizations and their account, and runs a few actions.
+ * Mounted once, in the workspace layout.
  */
 export function CommandPalette() {
 	const router = useRouter();

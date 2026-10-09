@@ -16,8 +16,8 @@ for (const destination of [
 	null
 ]) {
 	test(`redirects safely when next is ${destination}`, () => {
-		// Given an untrusted destination; when parsed; then remain in onboarding.
-		assert.equal(safeNext(destination), "/onboarding");
+		// Given an untrusted destination; when parsed; then land on the workspace home.
+		assert.equal(safeNext(destination), "/o");
 	});
 }
 test("preserves an internal destination when it is valid", () => {

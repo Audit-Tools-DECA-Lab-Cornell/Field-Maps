@@ -42,6 +42,8 @@ export async function saveProfile(_state: ProfileState, form: FormData): Promise
 			locale: values.locale.trim() || null
 		});
 		revalidatePath("/account");
+		// The header's name and initials come from the workspace read in the /o layouts.
+		revalidatePath("/o", "layout");
 		return {
 			status: "saved",
 			saved: {

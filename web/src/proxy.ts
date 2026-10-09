@@ -1,13 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-import { isSampleRoute, previewBypassAllowed } from "@/lib/auth/preview";
 import { supabaseConfig } from "@/lib/supabase/config";
 
+/**
+ * Refreshes the Supabase sign-in on every matched request and keeps the workspace behind it: a signed-out
+ * request for `/o/…` or `/account` goes to sign in and comes back afterwards (`next`). A signed-in person
+ * who opens the home page goes straight to their workspace (`/o` picks the project). Without Supabase
+ * configured nobody is signed in, so the workspace stays closed.
+ */
 export async function proxy(request: NextRequest) {
 	let response = NextResponse.next({ request });
 	const config = supabaseConfig();
-	const protectedRoute = /^\/(o|account|onboarding)(\/|$)/.test(request.nextUrl.pathname);
+	const { pathname } = request.nextUrl;
+	const protectedRoute = /^\/(o|account)(\/|$)/.test(pathname);
 	let authenticated = false;
 	if (config) {
 		const supabase = createServerClient(config.url, config.key, {
@@ -23,24 +29,44 @@ export async function proxy(request: NextRequest) {
 		const { data, error } = await supabase.auth.getClaims();
 		authenticated = !error && Boolean(data?.claims.sub);
 	}
-	const preview = !authenticated && previewBypassAllowed() && isSampleRoute(request.nextUrl.pathname);
-	if (protectedRoute && !authenticated && !preview) {
-		const url = request.nextUrl.clone();
-		url.pathname = "/sign-in";
-		url.search = "";
-		url.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
-		const redirected = NextResponse.redirect(url);
+	const destination =
+		protectedRoute && !authenticated
+			? signIn(request)
+			: pathname === "/" && authenticated
+				? workspace(request)
+				: null;
+	if (destination) {
+		const redirected = NextResponse.redirect(destination);
 		response.cookies.getAll().forEach(cookie => redirected.cookies.set(cookie));
 		response = redirected;
 	}
+	// The public home page stays cacheable for people who are not signed in (and whose sign-in cookies
+	// did not change); everything else is private.
+	if (pathname === "/" && !destination && response.cookies.getAll().length === 0) return response;
 	response.headers.set("Cache-Control", "private, no-store");
 	response.headers.set("Referrer-Policy", "no-referrer");
 	return response;
 }
+
+function signIn(request: NextRequest): URL {
+	const url = request.nextUrl.clone();
+	url.pathname = "/sign-in";
+	url.search = "";
+	url.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+	return url;
+}
+
+function workspace(request: NextRequest): URL {
+	const url = request.nextUrl.clone();
+	url.pathname = "/o";
+	url.search = "";
+	return url;
+}
+
 export const config = {
 	matcher: [
+		"/",
 		"/o/:path*",
-		"/onboarding/:path*",
 		"/account/:path*",
 		"/sign-in",
 		"/sign-up",

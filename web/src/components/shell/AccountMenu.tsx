@@ -14,9 +14,8 @@ import {
 	MenuTrigger
 } from "@/components/contour/Menu";
 import { orgHref, projectHref } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
 import { useShell } from "@/features/shell/ShellProvider";
-import { getOrg, getProject, VIEWER } from "@/fixtures";
+import { useWorkspace } from "@/features/shell/WorkspaceProvider";
 import { signOut } from "@/lib/auth/actions";
 import { stateOf, type ThemeName } from "@/lib/contour";
 import { supabaseConfig } from "@/lib/supabase/config";
@@ -24,32 +23,23 @@ import { useTheme } from "@/lib/theme";
 
 import { useNavigatingMenu } from "./Switchers";
 
-/** The signed-in account as the header names it, on a page that shows real data. */
-export type HeaderAccount = {
-	/** The display name, or the email address when there is none. */
-	name: string;
-	email?: string;
-	/** One to three letters for the avatar. */
-	initials: string;
-};
-
 /**
- * The account button (the header's last item) and its menu: who is signed in and in what role, the
- * settings the role reaches, the screen theme, the shortcuts and Sign out. On a page that shows real data
- * the menu names the signed-in `account`; elsewhere it names the sample workspace's viewer.
+ * The account button (the header's last item) and its menu: who is signed in (name, email and initials
+ * from their profile and sign-in), their role in the organization or project on screen, the settings that
+ * role reaches, the screen theme, the shortcuts and Sign out.
  *
- * Sign out submits a form to the `signOut` Server Action, which ends the Supabase session and lands on
- * sign in. A preview build without Supabase has no session to end, so there it simply leads to sign in.
+ * Sign out submits a form to the `signOut` Server Action, which ends the Supabase sign-in and lands on the
+ * sign-in page. A build without Supabase has nobody signed in, so there it simply leads to sign in.
  */
-export function AccountMenu({ account }: { account?: HeaderAccount }) {
+export function AccountMenu() {
 	const menu = useNavigatingMenu();
 	const shortcutsPending = useRef(false);
 	const signOutForm = useRef<HTMLFormElement>(null);
-	const { role, can, canOrg, scope } = usePreview();
+	const { account: person, org, project, orgAbilities, projectAbilities } = useWorkspace();
 	const { setShortcutsOpen } = useShell();
 	const [theme, setTheme] = useTheme();
-	const place = scope.project ? getProject(scope.org, scope.project)?.name : (getOrg(scope.org)?.name ?? scope.org);
-	const person = account ?? { name: VIEWER.name, email: VIEWER.email, initials: VIEWER.initials };
+	const role = project?.role ?? org?.role;
+	const place = project?.name ?? org?.name;
 	const signedIn = supabaseConfig() !== null;
 
 	return (
@@ -78,7 +68,7 @@ export function AccountMenu({ account }: { account?: HeaderAccount }) {
 							{person.email && person.email !== person.name && (
 								<p className="type-small text-ink-2 wrap-anywhere">{person.email}</p>
 							)}
-							{!account && (
+							{role && place && (
 								<p className="mt-1 type-small text-ink-2">
 									<span className="type-mono-label">{stateOf("role", role).label}</span> · {place}
 								</p>
@@ -89,18 +79,15 @@ export function AccountMenu({ account }: { account?: HeaderAccount }) {
 					<MenuItem icon="user" href="/account" onSelect={menu.markNavigating}>
 						Account
 					</MenuItem>
-					{!account && canOrg("viewOrgSettings") && (
-						<MenuItem
-							icon="building-2"
-							href={orgHref(scope.org, "settings")}
-							onSelect={menu.markNavigating}>
+					{org && orgAbilities.manage && (
+						<MenuItem icon="building-2" href={orgHref(org.slug, "settings")} onSelect={menu.markNavigating}>
 							Organization settings
 						</MenuItem>
 					)}
-					{!account && scope.kind === "project" && scope.project && can("viewProjectSettings") && (
+					{org && project && projectAbilities.manage && (
 						<MenuItem
 							icon="settings"
-							href={projectHref(scope.org, scope.project, "settings")}
+							href={projectHref(org.slug, project.code, "settings")}
 							onSelect={menu.markNavigating}>
 							Project settings
 						</MenuItem>

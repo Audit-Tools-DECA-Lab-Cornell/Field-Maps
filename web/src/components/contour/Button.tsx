@@ -157,6 +157,7 @@ export function Button({
 		<button
 			{...rest}
 			type={type}
+			data-variant={variant}
 			disabled={disabled}
 			aria-busy={busy || undefined}
 			aria-disabled={busy || undefined}
@@ -194,7 +195,7 @@ export function ButtonLink({
 	...rest
 }: ButtonLinkProps) {
 	return (
-		<Link {...rest} className={cx(buttonClasses({ variant, size, fullWidth }), className)}>
+		<Link {...rest} data-variant={variant} className={cx(buttonClasses({ variant, size, fullWidth }), className)}>
 			<ButtonContent icon={icon} iconRight={iconRight} size={size}>
 				{children}
 			</ButtonContent>

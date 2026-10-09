@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { Chip, FadeRule, PrimaryAction, SecondaryAction } from "@/components/nocturne/chrome";
+import { BrandMark } from "@/components/shell/Brand";
 import { ORGANIZATION } from "@/data/project";
 
 export const metadata = {
@@ -20,7 +20,7 @@ export default function LandingPage() {
 		<div className="min-h-dvh bg-bg">
 			<header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-loose px-gutter py-loose">
 				<span className="flex items-center gap-snug">
-					<Image src="/icons/icon.svg" alt="" width={28} height={28} unoptimized className="rounded-[22%]" />
+					<BrandMark size={28} />
 					<span className="text-body font-medium text-text" translate="no">
 						FieldMaps
 					</span>
@@ -50,7 +50,6 @@ export default function LandingPage() {
 					<div className="mt-wide flex flex-wrap items-center gap-snug">
 						<PrimaryAction href="/overview">Open the workspace</PrimaryAction>
 						<SecondaryAction href="/qgis">See the QGIS connection</SecondaryAction>
-						<SecondaryAction href="/onboarding">See the set-up flow</SecondaryAction>
 					</div>
 				</section>
 
