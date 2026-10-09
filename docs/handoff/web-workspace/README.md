@@ -50,6 +50,10 @@ Known issues found so far:
 - `/o/web-acceptance/collect` still shows the old sample page (WP7).
 - The local API allows browser origins on port 3000 only, so the harness runs the web app on `127.0.0.1:3000`.
 - Switchers no longer offer "Create project"; WP6 adds it to the org projects page.
+- **Open Codex findings on PR #20.** Fix these with the screens, and reply on each thread when fixed. Merging before then is unsafe.
+  - P1 (`app/(app)/layout.tsx`): the sample-data disclosure (PreviewFooter and PreviewMarker) was removed while screens still show sample data. Fix: rewrite the screens on live data.
+  - P1 (`app/(app)/o/page.tsx`): `/o` sends members to real org and project addresses that the sample pages 404 on. Fix: rewrite the screens on live data.
+  - P2 (`p/[project]/layout.tsx`): a viewer who opens `/team` or `/settings` directly gets manager screens. The PreviewProvider shim treats everyone as a manager. Fix: check `projectAbilities(role).manage` in the team and settings pages and render the no-access state.
 
 ## Next steps, in order
 
