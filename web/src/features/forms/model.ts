@@ -1,125 +1,136 @@
-import { nextVersion, type RawDefinition, type RawQuestion } from "@/components/studio/model";
-import {
-	DEMO_V2_CHANGES,
-	FORM_DEFINITION,
-	FORM_VERSIONS,
-	type FormVersion,
-	OBSERVATIONS,
-	PROJECT_FORMS,
-	type ProjectForm,
-	PROTOCOL_NOTES,
-	TEMPLATES
-} from "@/fixtures";
+import type { FormSummary, Site, VersionState } from "@/lib/api/types";
 import type { Condition, FormDefinition, Question } from "@/lib/forms";
 
-import type { CreatedVersion, FormsPreview } from "./store";
+import type { RawDefinition, RawQuestion } from "./raw";
 
 /**
- * The Forms screens' view of the preview: the fixture versions, with this tab's session changes laid over
- * them (drafts edited, created, published or retired). Plain functions, so a server page can read the
- * fixture side too. Every count here is derived from the definitions and the observation fixtures.
+ * The Forms screens' reading of what the API holds: forms with their versions and the sites whose current
+ * map package names each one, and the differences between a draft and the version before it. Plain
+ * functions over plain data, so a server page can call them and a client screen can receive the result.
  */
 
-export type VersionState = "draft" | "published" | "retired";
+/* ── Forms, versions and the sites that use them ──────────────────────────── */
 
-export type VersionView = {
-	id: string;
-	formSlug: string;
-	formTitle: string;
-	state: VersionState;
-	/** The published version this one is compared with, "demo-v1"; null for a first version. */
-	base: string | null;
-	/** Observations collected with this version. */
-	observations: number;
-	/** Protocol decisions still open on this version. Publishing waits for all of them. */
-	protocolNotesOpen: number;
-	/** Made in this preview. */
-	created: boolean;
+/** A site, as the Forms screens name it. */
+export type SiteRef = { readonly code: string; readonly name: string };
+
+export type VersionRow = {
+	readonly code: string;
+	readonly version: number;
+	readonly state: VersionState;
+	readonly title: string | null;
+	readonly questionCount: number;
+	/** ISO time, or null for a version that is not published. */
+	readonly publishedAt: string | null;
+	readonly createdAt: string;
+	/** The sites whose current map package was prepared with this version. */
+	readonly sites: readonly SiteRef[];
+	/**
+	 * True for a version from before the form editor, which holds a field list rather than questions. The
+	 * API counts no questions in it; it can be read, but not copied or changed.
+	 */
+	readonly legacy: boolean;
 };
 
-export type FormView = {
-	slug: string;
-	title: string;
-	summary: string;
-	/** A file path shown under the summary, in mono. */
-	source?: string;
-	questions: { total: number; conditional: number };
-	assignedTo: string | null;
-	versions: VersionView[];
-	created: boolean;
+export type FormRow = {
+	readonly code: string;
+	readonly name: string;
+	readonly createdAt: string;
+	/** Newest first. */
+	readonly versions: readonly VersionRow[];
+	/** The newest published version. */
+	readonly published: VersionRow | null;
+	/** Every draft, newest first. Only a manager is sent any. */
+	readonly drafts: readonly VersionRow[];
+	/** The newest version in any state: the one "Start new draft" copies. */
+	readonly newest: VersionRow | null;
+	/** Every site whose current package uses any version of this form. */
+	readonly sites: readonly SiteRef[];
 };
 
-/* ── Definitions ──────────────────────────────────────────────────────────── */
-
-/** The canonical definition file, as the studio edits it (authored JSON). */
-const JANET = FORM_DEFINITION as unknown as RawDefinition;
-
-const DEMO_V1: RawDefinition = {
-	...JANET,
-	version: "demo-v1",
-	title: "Demonstration form",
-	summary: "One published example and an editable draft. Used for training and for the pilot sessions.",
-	status: "published"
-};
-
-/** demo-v2 as the fixtures describe it: demo-v1 with exactly the two designed changes. */
-const DEMO_V2: RawDefinition = {
-	...DEMO_V1,
-	version: "demo-v2",
-	status: "draft",
-	questions: DEMO_V1.questions.map(question => {
-		let next: RawQuestion = question;
-		for (const change of DEMO_V2_CHANGES) {
-			if (change.questionId !== question.id) continue;
-			next = change.field === "Guidance" ? { ...next, hint: change.now } : { ...next, label: change.now };
-		}
-		return next;
-	})
-};
-
-const SEEDS: Record<string, RawDefinition> = {
-	"demo-v1": DEMO_V1,
-	"demo-v2": DEMO_V2,
-	"janet-test-v1": JANET
-};
-
-const FIXTURE_BASE: Record<string, string | null> = {
-	"demo-v1": null,
-	"demo-v2": "demo-v1",
-	"janet-test-v1": null
-};
-
-/** The one template with a definition behind it (proposal U4): it copies Janet's draft. */
-export const STARTER_TEMPLATE = TEMPLATES.find(template => template.id === "behavior-mapping-starter") ?? TEMPLATES[0];
-
-export function templateDefinition(version: string, title: string): RawDefinition {
-	return { ...JANET, version, title, status: "draft" };
+/** The sites whose current map package names this form version. */
+export function sitesUsing(code: string, sites: readonly Site[]): SiteRef[] {
+	return sites
+		.filter(site => site.package?.form_version === code)
+		.map(site => ({ code: site.code, name: site.name }));
 }
 
-export function emptyDefinition(version: string, title: string): RawDefinition {
-	return {
-		...JANET,
-		version,
-		title,
-		summary: "A form started empty in this preview.",
-		status: "draft",
-		protocolNotes: [],
-		questions: []
-	};
-}
-
-export function copyDefinition(from: RawDefinition, version: string): RawDefinition {
-	return { ...from, version, status: "draft" };
-}
-
-/** The definition a version shows: its saved draft in this preview, or the shipped one. */
-export function definitionOf(id: string, preview: FormsPreview): RawDefinition | undefined {
-	return preview.drafts[id] ?? SEEDS[id];
+export function formRows(forms: readonly FormSummary[], sites: readonly Site[]): FormRow[] {
+	return forms.map(form => {
+		const versions = [...form.versions]
+			.sort((a, b) => b.version - a.version)
+			.map(
+				(version): VersionRow => ({
+					code: version.code,
+					version: version.version,
+					state: version.state,
+					title: version.title,
+					questionCount: version.question_count,
+					publishedAt: version.published_at,
+					createdAt: version.created_at,
+					sites: sitesUsing(version.code, sites),
+					legacy: version.question_count === 0
+				})
+			);
+		const seen = new Set<string>();
+		const used: SiteRef[] = [];
+		for (const version of versions)
+			for (const site of version.sites)
+				if (!seen.has(site.code)) {
+					seen.add(site.code);
+					used.push(site);
+				}
+		return {
+			code: form.code,
+			name: form.name,
+			createdAt: form.created_at,
+			versions,
+			published: versions.find(version => version.state === "published") ?? null,
+			drafts: versions.filter(version => version.state === "draft"),
+			newest: versions[0] ?? null,
+			sites: used
+		};
+	});
 }
 
 /**
- * The authored JSON as the engine reads it, with the schema's defaults filled in. Lenient on purpose: a
- * label being retyped can be empty for a moment, and the live preview should keep running through it.
+ * The version a draft or a published version is compared with: the nearest frozen (published or retired)
+ * version before it in the same form. Null for the first version, and for one whose earlier version is
+ * from before the form editor, which has no questions to compare.
+ */
+export function baseVersionOf(form: Pick<FormRow, "versions">, code: string): VersionRow | null {
+	const at = form.versions.find(version => version.code === code);
+	if (!at) return null;
+	const base = form.versions.find(version => version.version < at.version && version.state !== "draft");
+	return base && !base.legacy ? base : null;
+}
+
+/** The form a version code belongs to, by the version lists. */
+export function formOfVersion<T extends Pick<FormRow, "versions">>(forms: readonly T[], code: string): T | undefined {
+	return forms.find(form => form.versions.some(version => version.code === code));
+}
+
+/* ── What observers receive ───────────────────────────────────────────────── */
+
+const ZONE_ACTS: ReadonlySet<string> = new Set(["Climate", "Inventory"]);
+const SHARED_ACTS: ReadonlySet<string> = new Set(["Record"]);
+
+/**
+ * Whether the form asks only about a zone (its climate, the loose parts available) and nothing about a
+ * play event. The collector finds such a form by its content, as this does (`isInventoryForm` in
+ * `mobile/src/packages/hosted/archive.ts`): the Inventory round uses the newest published one of these.
+ * Every other form is a play form, which a site uses only when its current map package names it.
+ */
+export function isZoneForm(definition: Pick<RawDefinition, "questions">): boolean {
+	const acts = definition.questions.map(question => question.act);
+	return acts.some(act => ZONE_ACTS.has(act)) && acts.every(act => ZONE_ACTS.has(act) || SHARED_ACTS.has(act));
+}
+
+/* ── The definition as the collector's engine reads it ────────────────────── */
+
+/**
+ * The authored definition as the engine reads it, with the schema's defaults filled in. Lenient on purpose:
+ * a label being retyped can be empty for a moment, and the collector view should keep running through it.
  */
 export function toForm(raw: RawDefinition): FormDefinition {
 	return {
@@ -144,146 +155,25 @@ export function toForm(raw: RawDefinition): FormDefinition {
 	};
 }
 
-/* ── Versions and forms ───────────────────────────────────────────────────── */
-
-const DEMONSTRATION_FORM_VERSIONS = new Set(["demo-v1", "demo-v2"]);
-
-export function countObservations(version: string): number {
-	return OBSERVATIONS.filter(observation => observation.formVersion === version).length;
+/** Questions that carry an unresolved note from the study, or are waiting for an option list. */
+export function flaggedQuestions(raw: Pick<RawDefinition, "questions">): { id: string; label: string; note: string }[] {
+	return raw.questions.flatMap(question => {
+		const note = question.protocolFlag || question.optionsPending;
+		return note ? [{ id: question.id, label: question.label, note }] : [];
+	});
 }
 
-function stateOf(fixture: VersionState, id: string, preview: FormsPreview): VersionState {
-	if (preview.retired.includes(id)) return "retired";
-	if (preview.published.includes(id)) return "published";
-	return fixture;
-}
-
-function fixtureView(version: FormVersion, preview: FormsPreview): VersionView {
-	const form = PROJECT_FORMS.find(entry => entry.slug === version.formSlug);
-	return {
-		id: version.id,
-		formSlug: version.formSlug,
-		formTitle: form?.title ?? version.formSlug,
-		state: stateOf(version.state, version.id, preview),
-		base: FIXTURE_BASE[version.id] ?? null,
-		observations: countObservations(version.id),
-		protocolNotesOpen: version.protocolNotesOpen,
-		created: false
-	};
-}
-
-function createdView(entry: CreatedVersion, preview: FormsPreview): VersionView {
-	const raw = preview.drafts[entry.id];
-	return {
-		id: entry.id,
-		formSlug: entry.formSlug,
-		formTitle: entry.formTitle,
-		state: stateOf("draft", entry.id, preview),
-		base: entry.origin === "copy" ? entry.from : null,
-		observations: 0,
-		protocolNotesOpen: entry.origin === "template" ? (raw?.protocolNotes?.length ?? PROTOCOL_NOTES.length) : 0,
-		created: true
-	};
-}
-
-/** Every version in this preview, the fixtures first, then those made here, in the order they were made. */
-export function allVersions(preview: FormsPreview): VersionView[] {
-	return [
-		...FORM_VERSIONS.map(version => fixtureView(version, preview)),
-		...preview.created.map(entry => createdView(entry, preview))
-	];
-}
-
-export function findVersion(id: string, preview: FormsPreview): VersionView | undefined {
-	return allVersions(preview).find(version => version.id === id);
-}
-
-/** Whether a version ships with the fixtures, so a server page can tell it from one made in this tab. */
-export function isFixtureVersion(id: string): boolean {
-	return FORM_VERSIONS.some(version => version.id === id);
-}
-
-function counts(raw: RawDefinition | undefined): FormView["questions"] {
-	const questions = raw?.questions ?? [];
-	return { total: questions.length, conditional: questions.filter(question => question.dependsOn).length };
-}
-
-function fixtureForm(form: ProjectForm, versions: VersionView[], preview: FormsPreview): FormView {
-	const own = versions.filter(version => version.formSlug === form.slug);
-	const latest = own[own.length - 1];
-	return {
-		slug: form.slug,
-		title: form.title,
-		summary: form.slug === "janet-test" ? `${form.summary.replace(/\.$/, "")}. Source:` : form.summary,
-		source: form.note,
-		questions: counts(latest ? definitionOf(latest.id, preview) : undefined),
-		assignedTo: form.slug === "janet-test" ? null : form.assignedTo,
-		versions: own,
-		created: false
-	};
-}
-
-/** The project's forms with their versions, the fixture forms first. */
-export function allForms(project: string, preview: FormsPreview): FormView[] {
-	const versions = allVersions(preview);
-	const forms = PROJECT_FORMS.filter(form => form.projectSlug === project).map(form =>
-		fixtureForm(form, versions, preview)
-	);
-	const fixtureSlugs = new Set(forms.map(form => form.slug));
-	const extra = new Map<string, FormView>();
-	for (const entry of preview.created) {
-		if (fixtureSlugs.has(entry.formSlug) || extra.has(entry.formSlug)) continue;
-		const own = versions.filter(version => version.formSlug === entry.formSlug);
-		const latest = own[own.length - 1];
-		extra.set(entry.formSlug, {
-			slug: entry.formSlug,
-			title: entry.formTitle,
-			summary: entry.formSummary,
-			questions: counts(latest ? definitionOf(latest.id, preview) : undefined),
-			assignedTo: "Not assigned",
-			versions: own,
-			created: true
-		});
-	}
-	return [...forms, ...extra.values()];
-}
-
-/** Every version id in use, so a new one never takes a taken name. */
-export function takenIds(preview: FormsPreview): Set<string> {
-	return new Set(allVersions(preview).map(version => version.id));
-}
-
-export function nextVersionId(from: string, preview: FormsPreview): string {
-	return nextVersion(from, takenIds(preview));
-}
-
-/** The draft to open for a form: the first one still a draft, in order. */
-export function openDraftOf(formSlug: string, preview: FormsPreview): VersionView | undefined {
-	return allVersions(preview).find(version => version.formSlug === formSlug && version.state === "draft");
-}
-
-/** The latest published version of a form, which a new draft copies. */
-export function latestPublishedOf(formSlug: string, preview: FormsPreview): VersionView | undefined {
-	return allVersions(preview)
-		.filter(version => version.formSlug === formSlug && version.state === "published")
-		.at(-1);
-}
-
-export function isDemonstrationVersion(id: string): boolean {
-	return DEMONSTRATION_FORM_VERSIONS.has(id);
-}
-
-/* ── Changes against the base version ─────────────────────────────────────── */
+/* ── Changes against the version before ───────────────────────────────────── */
 
 export type ChangeField = "Question label" | "Guidance" | "Required" | "Answer format" | "Options" | "New question";
 
 export type QuestionChange = {
-	questionId: string;
-	field: ChangeField;
-	was: string;
-	now: string;
+	readonly questionId: string;
+	readonly field: ChangeField;
+	readonly was: string;
+	readonly now: string;
 	/** "Required: yes · Single choice · options unchanged" */
-	detail: string;
+	readonly detail: string;
 };
 
 /** Answer formats in the words the forms screens use. */
@@ -319,7 +209,7 @@ export function questionChanges(question: RawQuestion, base: RawQuestion | undef
 		changes.push({ questionId: question.id, field, was, now, detail });
 	if (base.label !== question.label) add("Question label", base.label, question.label);
 	if ((base.hint ?? "") !== (question.hint ?? ""))
-		add("Guidance", base.hint ?? "No guidance", question.hint || "No guidance");
+		add("Guidance", base.hint || "No guidance", question.hint || "No guidance");
 	if ((base.required ?? false) !== (question.required ?? false))
 		add(
 			"Required",
@@ -348,11 +238,59 @@ export function changedIds(draft: RawDefinition, base: RawDefinition | undefined
 	return new Set(draftChanges(draft, base).map(change => change.questionId));
 }
 
+/** Questions of the base that the draft no longer has. */
+export function removedQuestions(draft: RawDefinition, base: RawDefinition | undefined): RawQuestion[] {
+	if (!base) return [];
+	const kept = new Set(draft.questions.map(question => question.id));
+	return base.questions.filter(question => !kept.has(question.id));
+}
+
 /** Two digits, as the editor numbers questions: 01 … 12. */
 export function questionNumber(index: number): string {
 	return String(index + 1).padStart(2, "0");
 }
 
-export function plural(count: number, one: string, many = `${one}s`): string {
-	return `${count} ${count === 1 ? one : many}`;
+/** Whether two definitions are the same as stored: key order does not matter, nothing else does. */
+export function sameDefinition(a: unknown, b: unknown): boolean {
+	return canonical(a) === canonical(b);
+}
+
+function canonical(value: unknown): string {
+	return JSON.stringify(value, (_key, entry: unknown) => {
+		if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+			return Object.fromEntries(Object.entries(entry).sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0)));
+		}
+		return entry;
+	});
+}
+
+/* ── What publishing does for observers ───────────────────────────────────── */
+
+export type Delivery = {
+	readonly kind: "play" | "zone";
+	/** What happens after publishing, for the page. */
+	readonly text: string;
+	/** The confirmation the manager ticks. */
+	readonly confirm: string;
+};
+
+/**
+ * How observers come to collect with a published version, as the collector does it
+ * (`mobile/src/packages/hosted/prepare.ts`). A play form reaches a device only through a site's map package,
+ * which names the form version it was prepared with; publishing a new version changes nothing for a site
+ * until a package that names it is prepared and downloaded. A zone-only form is found by its content when a
+ * site is downloaded, so it arrives with the next download.
+ */
+export function deliveryOf(definition: Pick<RawDefinition, "questions">, code: string): Delivery {
+	if (isZoneForm(definition))
+		return {
+			kind: "zone",
+			text: `${code} asks only about a zone, so the app uses it for the Inventory round. Observers get it the next time they download a site in the app. If more than one published form asks only about a zone, the app uses the first by name.`,
+			confirm: `I understand that ${code} cannot be edited once it is published, and that observers get it the next time they download a site.`
+		};
+	return {
+		kind: "play",
+		text: `Observers collect with ${code} only through a map package that names it. A site keeps the version its current map package names until you prepare a new package with ${code} and observers download the site again in the app.`,
+		confirm: `I understand that ${code} cannot be edited once it is published, and that observers get it only through a new map package.`
+	};
 }

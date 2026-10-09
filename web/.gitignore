@@ -13,3 +13,9 @@ next-env.d.ts
 .DS_Store
 
 /public/sw.js
+
+# Playwright E2E (scripts/e2e-local.sh): screenshots, run output and saved local sign-ins
+/e2e/screenshots/
+/e2e/.auth/
+/test-results/
+/playwright-report/

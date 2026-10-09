@@ -28,12 +28,11 @@ const PROJECT_TABS: InkTab[] = [
 	{ href: `${GALLERY}?tab=settings`, label: "Settings" }
 ];
 
-const ONBOARDING = [
-	{ key: "organization", label: "Organization", href: "#navigation" },
-	{ key: "project", label: "Project", href: "#navigation" },
-	{ key: "site", label: "Site" },
-	{ key: "form", label: "Form" },
-	{ key: "team", label: "Team" }
+const PACKAGE_STEPS = [
+	{ key: "file", label: "File", href: "#navigation" },
+	{ key: "checks", label: "Checks", href: "#navigation" },
+	{ key: "upload", label: "Upload" },
+	{ key: "done", label: "Done" }
 ];
 
 /**
@@ -77,9 +76,9 @@ export function NavigationDemo() {
 
 			<div className="grid gap-10 lg:grid-cols-2">
 				<Specimen
-					title="Step bar · onboarding"
+					title="Step bar · map package"
 					caption="Done steps show a check and stay clickable; the current step is an ink pill; later steps are not links.">
-					<StepBar label="Onboarding steps" steps={ONBOARDING} current="project" done={["organization"]} />
+					<StepBar label="Map package steps" steps={PACKAGE_STEPS} current="checks" done={["file"]} />
 				</Specimen>
 
 				<Specimen

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { answerColumns, codebookFor, RECORD_COLUMNS } from "../src/features/data/exportColumns.ts";
+import { answerColumns, codebookFor, RECORD_COLUMNS } from "../src/lib/export/columns.ts";
 
 const answers = [
-	{ questionId: "observer_initials", label: "Observer initials", value: "JL" },
-	{ questionId: "age_range", label: "Age range", value: "6-8" },
-	{ questionId: "round", label: "Which round, as the observer recalls", value: "2" },
+	{ questionId: "observer_initials", label: "Observer initials", value: "JL", exportColumn: "observer" },
+	{ questionId: "age_range", label: "Age range", value: "6-8", exportColumn: "Child_AgeRange" },
+	{ questionId: "zone", label: "Which zone, as the observer recalls", value: "A" },
 	{ questionId: "notes", label: 'Notes, "if any"', value: null }
 ];
 
@@ -18,14 +18,14 @@ test("leaves out the observer answer, which the record column already carries", 
 	);
 });
 
-test("renames an answer whose id matches a record column, so every header is unique", () => {
+test("renames an answer whose column matches a record column, so every header is unique", () => {
 	const headers = [
 		...RECORD_COLUMNS.map(entry => entry.column),
 		...answerColumns(answers).map(column => column.exportColumn)
 	];
 	assert.equal(new Set(headers).size, headers.length);
-	assert.ok(headers.includes("answer_round"));
-	assert.ok(headers.includes("age_range"));
+	assert.ok(headers.includes("answer_zone"));
+	assert.ok(headers.includes("Child_AgeRange"));
 });
 
 test("the codebook lists exactly the file's columns, each once, with the question label", () => {
@@ -33,7 +33,7 @@ test("the codebook lists exactly the file's columns, each once, with the questio
 	const lines = codebookFor(rows).split("\n");
 	assert.equal(lines[0], "export_column,source,label");
 	const columns = lines.slice(1).map(line => line.split(",")[0]);
-	assert.deepEqual(columns, [...RECORD_COLUMNS.map(entry => entry.column), "age_range", "answer_round", "notes"]);
+	assert.deepEqual(columns, [...RECORD_COLUMNS.map(entry => entry.column), "Child_AgeRange", "answer_zone", "notes"]);
 	assert.ok(lines.includes('notes,question notes,"Notes, ""if any"""'));
-	assert.ok(lines.includes("age_range,question age_range,Age range"));
+	assert.ok(lines.includes("Child_AgeRange,question age_range,Age range"));
 });

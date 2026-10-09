@@ -80,88 +80,6 @@
 	mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
 }
 
-/* ── Nocturne aliases (temporary) ──────────────────────────────────────────────
-   Screens not yet rebuilt still use the old token names. These map them onto
-   Contour so those screens stay legible until they are replaced. Phase 5 (WEB-26)
-   deletes this block; new code must not use these names.
-   ─────────────────────────────────────────────────────────────────────────── */
-@theme inline {
-	--color-bg: var(--ct-ground);
-	--color-surface: var(--ct-island);
-	--color-raised: var(--ct-well);
-	--color-map: var(--ct-well);
-	--color-glass: var(--ct-island);
-	--color-text: var(--ct-ink);
-	--color-accent-100: var(--ct-accent);
-	--color-accent-200: var(--ct-accent);
-	--color-accent-300: var(--ct-accent);
-	--color-accent-400: var(--ct-accent);
-	--color-accent-500: var(--ct-accent);
-	--color-accent-600: var(--ct-accent);
-	--color-accent-700: var(--ct-accent-soft);
-	--color-accent-800: var(--ct-accent-soft);
-	--color-accent-900: var(--ct-accent-soft);
-	--color-neutral-100: var(--ct-ink);
-	--color-neutral-200: var(--ct-ink);
-	--color-neutral-300: var(--ct-ink);
-	--color-neutral-400: var(--ct-ink-2);
-	--color-neutral-500: var(--ct-ink-2);
-	--color-neutral-600: var(--ct-edge);
-	--color-neutral-700: var(--ct-line);
-	--color-neutral-800: var(--ct-rule);
-	--color-neutral-900: var(--ct-well);
-	--color-accent-tint: var(--ct-accent-soft);
-	--color-accent-tint-strong: var(--ct-accent-soft);
-	--color-ink-tint: var(--ct-well);
-	--color-ink-tint-strong: var(--ct-well);
-	--color-rule-faint: var(--ct-rule);
-	--color-attention-text: var(--ct-attention);
-	--color-attention-ground: var(--ct-attention-soft);
-	--color-live: var(--ct-uploaded);
-	--color-live-ground: var(--ct-uploaded-soft);
-	--text-display: 28px;
-	--text-display--line-height: 32px;
-	--text-title: 25px;
-	--text-title--line-height: 29px;
-	--text-question: 22px;
-	--text-question--line-height: 27px;
-	--text-heading: 20px;
-	--text-heading--line-height: 25px;
-	--text-body: 16px;
-	--text-body--line-height: 24px;
-	--text-detail: 14px;
-	--text-detail--line-height: 21px;
-	--text-meta: 13px;
-	--text-meta--line-height: 20px;
-	--text-caption: 12.5px;
-	--text-caption--line-height: 19px;
-	--text-micro: 12px;
-	--text-micro--line-height: 17px;
-	--spacing-hair: 4px;
-	--spacing-tight: 8px;
-	--spacing-snug: 8px;
-	--spacing-base: 12px;
-	--spacing-loose: 16px;
-	--spacing-wide: 24px;
-	/* No --spacing-page: it would shadow Contour's max-w-page (the 1440 px container). Old screens use the
-	   40 px step, -10, instead. */
-	--radius-sm: 6px;
-	--radius-md: 12px;
-	--radius-lg: 16px;
-	--shadow-sm: 0 0 0 1px var(--ct-line);
-	--shadow-md: 0 0 0 1px var(--ct-line), 0 6px 0 0 var(--ct-ledge);
-	--shadow-lg: 0 0 0 1px var(--ct-line), 0 6px 0 0 var(--ct-ledge);
-}
-
-/* The Nocturne fade rule, kept as a plain Contour hairline for the screens not yet rebuilt (FadeRule renders
-   <hr class="rule">). Phase 5 (WEB-26) removes it with the last caller. */
-.rule {
-	height: 1px;
-	border: 0;
-	margin: 0;
-	background: var(--ct-rule);
-}
-
 /* ── Base ─────────────────────────────────────────────────────────────────── */
 
 html,
@@ -231,48 +149,6 @@ p {
    the client always render the same markup. */
 [data-platform="mac"] .kbd-other,
 :root:not([data-platform="mac"]) .kbd-mac {
-	display: none;
-}
-
-/* ── Leaflet (temporary) ───────────────────────────────────────────────────────
-   Only the screens not yet rebuilt still draw with Leaflet. The SVG site plan
-   replaces it; Phase 5 (WEB-26) removes these rules with the dependency.
-   ─────────────────────────────────────────────────────────────────────────── */
-.leaflet-container {
-	background: var(--ct-well);
-	font-family: var(--font-sans);
-	font-size: 12px;
-	outline: none;
-}
-
-.leaflet-container .leaflet-bar,
-.leaflet-container .leaflet-control-attribution {
-	background: var(--ct-island);
-	border: 1px solid var(--ct-line);
-	border-radius: 12px;
-	box-shadow: none;
-	color: var(--ct-ink-2);
-	overflow: hidden;
-}
-
-.leaflet-container .leaflet-bar a,
-.leaflet-container .leaflet-bar a:hover {
-	background: transparent;
-	color: var(--ct-ink);
-	border-bottom-color: var(--ct-rule);
-}
-
-.leaflet-container .leaflet-tooltip.zone-label {
-	background: transparent;
-	border: 0;
-	box-shadow: none;
-	padding: 0;
-	color: var(--zone-label-color, var(--ct-ink-2));
-	font-size: 12px;
-	font-weight: 600;
-}
-
-.leaflet-container .leaflet-tooltip.zone-label::before {
 	display: none;
 }
 

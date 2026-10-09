@@ -7,8 +7,7 @@ import { Field } from "@/components/contour/Field";
 import { TextInput } from "@/components/contour/TextInput";
 import { TextLink } from "@/components/contour/TextLink";
 
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, isEmail, withQuery } from "./params";
+import { isEmail, withQuery } from "./params";
 import { ServerMessage, useAuthAction } from "./useAuthAction";
 import { formatCountdown, useCooldown } from "./useCooldown";
 
@@ -20,7 +19,6 @@ export type ForgotPasswordFormProps = {
 	next: string;
 	/** True when the address carried `next`. */
 	carryNext: boolean;
-	state: AuthPreviewState;
 };
 
 /**
@@ -28,17 +26,16 @@ export type ForgotPasswordFormProps = {
  * Auth for a recovery code, keeps the address in an httpOnly cookie and continues to the code screen. The
  * same thing happens whether or not the address has an account, so the form cannot be used to look one up.
  */
-export function ForgotPasswordForm({ next, carryNext, state: preview }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({ next, carryNext }: ForgotPasswordFormProps) {
 	const [email, setEmail] = useState("");
 	const [error, setError] = useState<string>();
 	const emailRef = useRef<HTMLInputElement>(null);
 	const cooldown = useCooldown();
 	const auth = useAuthAction({ fields: { email: emailRef }, onRetryAfter: cooldown.start });
-	const offline = preview === "offline";
 	const waiting = cooldown.remaining > 0;
 
 	function submit(event: FormEvent<HTMLFormElement>) {
-		if (auth.pending || offline || waiting) return event.preventDefault();
+		if (auth.pending || waiting) return event.preventDefault();
 		if (!isEmail(email)) {
 			event.preventDefault();
 			setError("Enter the email address you signed up with.");
@@ -55,7 +52,6 @@ export function ForgotPasswordForm({ next, carryNext, state: preview }: ForgotPa
 			aria-busy={auth.pending || undefined}>
 			<input type="hidden" name="intent" value="forgot-password" />
 			<input type="hidden" name="next" value={next} />
-			{offline && <OfflineNote />}
 			<ServerMessage {...auth.note} />
 			<Field label="Email address" htmlFor="forgot-email" error={error}>
 				<TextInput
@@ -85,12 +81,8 @@ export function ForgotPasswordForm({ next, carryNext, state: preview }: ForgotPa
 				icon="mail"
 				busy={auth.pending}
 				busyLabel="Sending recovery code…"
-				disabled={offline || waiting}
-				disabledReason={
-					offline
-						? "Sending a recovery code needs a connection."
-						: `Wait ${formatCountdown(cooldown.remaining)} before trying again.`
-				}>
+				disabled={waiting}
+				disabledReason={`Wait ${formatCountdown(cooldown.remaining)} before trying again.`}>
 				Send recovery code
 			</Button>
 			<p className="-mt-2.5 type-body">

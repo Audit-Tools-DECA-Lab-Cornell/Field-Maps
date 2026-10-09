@@ -1,170 +1,206 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
-import { FactsList } from "@/components/contour/FactsList";
 import { Island } from "@/components/contour/Island";
+import { Note } from "@/components/contour/Note";
 import { ScreenState } from "@/components/contour/ScreenState";
-import { StateBadge } from "@/components/contour/StateBadge";
-import { useToast } from "@/components/contour/Toast";
 import { AuthPanel } from "@/components/shell/AuthSplit";
+import { LoadFailure } from "@/components/shell/LoadFailure";
 
-import { leaveFlash } from "./flash";
-import { invitationFor } from "./invitation";
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, PREVIEW_HOME, withQuery } from "./params";
-
-export type InviteScreenProps = {
-	/** A join code from /join. Without one, the page shows the invitation its link opened (`/invite#t=…`). */
-	code?: string;
-	state: AuthPreviewState;
-};
+import { previewInvite } from "./actions";
+import {
+	forgetToken,
+	type InvitationDetails,
+	type InviteProblem,
+	type PreviewOutcome,
+	readInvitationLink,
+	UNKEPT_COPY,
+	UNREACHABLE_COPY
+} from "./invitation";
+import { InvitationCard } from "./InvitationCard";
+import { InvitationSignIn } from "./InvitationSignIn";
+import { formatCountdown, useCooldown } from "./useCooldown";
+import type { Viewer } from "./viewer";
 
 const KICKER = "Invitation";
-const LEAD = "Check the project and role before accepting this invitation.";
-const FOOTNOTE = "Nothing is shared with the project until you join. You can leave it later from your account.";
+
+type View =
+	| { step: "reading" }
+	/** No link is open in this tab. */
+	| { step: "none" }
+	/** There is a link, and the person has to sign in before FieldMaps will show it. */
+	| { step: "sign-in"; unkept: boolean }
+	| { step: "loading" }
+	| { step: "ready"; token: string; invitation: InvitationDetails }
+	| { step: "failed"; token: string; problem: InviteProblem };
 
 /**
- * Join Play Study? (Org 11). Opening an invitation never enrols anyone: the person reads the organization,
- * project, role and inviter, then decides. The link's token stays in the URL fragment, which never
- * reaches a server; this preview does not read it. Joining here sends nothing: a toast says so and the page
- * moves on to the observer's next step.
+ * Join a project from an invitation link (Org 11). The link is `/invite#t=…`: the secret after the `#`
+ * never reaches FieldMaps in a request, so this screen reads it, keeps it in this tab's sessionStorage
+ * (`fm-invite`) so signing in or creating an account on the way does not lose it, and takes it out of the
+ * address bar. Signed in, it asks FieldMaps what the invitation is (that uses nothing up) and shows the
+ * organization, project, role and expiry; Join then adds the account.
  */
-export function InviteScreen({ code, state }: InviteScreenProps) {
-	const router = useRouter();
-	const { toast } = useToast();
-	const [pending, startTransition] = useTransition();
-	const [joined, setJoined] = useState(false);
-	const invitation = invitationFor(code);
-	const differentCode = withQuery("/join", { code });
+export function InviteScreen({ viewer }: { viewer: Viewer }) {
+	const [view, setView] = useState<View>({ step: "reading" });
+	const cooldown = useCooldown();
+	const startWait = cooldown.start;
+	const handled = useRef(new Set<Viewer["status"]>());
 
-	if (state === "loading" || state === "error" || state === "no-access" || !invitation) {
+	const look = useCallback(
+		async (token: string) => {
+			setView({ step: "loading" });
+			let outcome: PreviewOutcome;
+			try {
+				outcome = await previewInvite({ token });
+			} catch {
+				outcome = { status: "failed", problem: { kind: "unavailable", message: UNREACHABLE_COPY } };
+			}
+			if (outcome.status === "ready") {
+				setView({ step: "ready", token, invitation: outcome.invitation });
+				return;
+			}
+			const { problem } = outcome;
+			if (problem.kind === "expired" || problem.kind === "invalid") forgetToken();
+			if (problem.kind === "wait") startWait(problem.retryAfter ?? 60);
+			setView({ step: "failed", token, problem });
+		},
+		[startWait]
+	);
+
+	// Reads the browser's address and tab storage, which the server cannot see.
+	const open = useCallback(
+		(status: Viewer["status"]) => {
+			// Keep the secret for this tab, then take it out of the address (and so out of history and copies).
+			// When the browser will not keep it, the address stays: it is the only copy there is.
+			const link = readInvitationLink(window.location.hash);
+			if (link.removeFragment)
+				window.history.replaceState(
+					window.history.state,
+					"",
+					window.location.pathname + window.location.search
+				);
+			if (!link.token) setView({ step: "none" });
+			else if (status === "signed-out") setView({ step: "sign-in", unkept: link.unkept });
+			else if (status === "signed-in") void look(link.token);
+			// An unavailable viewer sees the failure state below; the secret is put away as far as it can be.
+		},
+		[look]
+	);
+
+	// Runs once for each state the viewer is found in. A viewer who could not be checked at first and can
+	// be after Try again (signed in, now) still gets their invitation looked up.
+	useEffect(() => {
+		if (handled.current.has(viewer.status)) return;
+		handled.current.add(viewer.status);
+		open(viewer.status);
+	}, [viewer.status, open]);
+
+	if (viewer.status === "unavailable") {
 		return (
-			<AuthPanel kicker={KICKER} title="Your invitation" lead={LEAD} footnote={FOOTNOTE} footnoteRule={false}>
-				<Island flush>
-					{state === "loading" ? (
-						<ScreenState kind="loading" rows={5} loadingLabel="Loading the invitation…" />
-					) : state === "error" ? (
-						<ScreenState
-							kind="error"
-							headingLevel={2}
-							title="We could not load this invitation"
-							body="Nothing was shared, and you have not joined anything. Check your connection and try again."
-							actions={
-								<>
-									<ButtonLink variant="ink" icon="rotate-cw" href={withQuery("/invite", { code })}>
-										Try again
-									</ButtonLink>
-									<ButtonLink variant="outline" href={differentCode}>
-										Use a different code
-									</ButtonLink>
-								</>
-							}
-						/>
-					) : state === "no-access" ? (
-						<ScreenState
-							kind="no-access"
-							headingLevel={2}
-							title="This invitation is no longer open"
-							body="It was withdrawn or has already been used. Nothing was shared. Ask your coordinator for a new invitation or a join code."
-							actions={
-								<ButtonLink variant="ink" href={differentCode}>
-									Enter a join code
-								</ButtonLink>
-							}
-						/>
-					) : (
-						<ScreenState
-							kind="empty"
-							icon="search"
-							headingLevel={2}
-							title="We could not find that project"
-							body="We could not find a project for that code. Check it with your coordinator."
-							actions={
-								<ButtonLink variant="ink" icon="arrow-left" href={differentCode}>
-									Use a different code
-								</ButtonLink>
-							}
-						/>
-					)}
-				</Island>
-				{state === "loading" && (
-					<div className="mt-6">
-						<Button
-							size="lg"
-							fullWidth
-							icon="check"
-							disabled
-							disabledReason="The button turns on once the invitation has loaded.">
-							Join project
-						</Button>
-					</div>
-				)}
+			<AuthPanel kicker={KICKER} title="Your invitation" lead="Opening an invitation needs FieldMaps.">
+				<LoadFailure failure={viewer.failure} what="the invitation" />
 			</AuthPanel>
 		);
 	}
 
-	const offline = state === "offline";
-
-	function join() {
-		if (pending || offline || !invitation) return;
-		const message = {
-			title: "Preview · Nothing was sent",
-			description: `You have not joined ${invitation.project}.`
-		};
-		setJoined(true);
-		toast(message);
-		leaveFlash(message);
-		startTransition(() => router.push(`${PREVIEW_HOME}/collect`));
+	if (view.step === "sign-in") {
+		return (
+			<AuthPanel
+				kicker={KICKER}
+				title="Sign in to join"
+				lead="Sign in, or create an account, to see which project invited you. Nothing is shared with the project until you join."
+				footnoteRule={false}>
+				<div className="flex flex-col gap-6">
+					{view.unkept && <Note tone="attention">{UNKEPT_COPY}</Note>}
+					<InvitationSignIn next="/invite" />
+				</div>
+			</AuthPanel>
+		);
 	}
 
+	if (view.step === "reading" || view.step === "loading") {
+		return (
+			<AuthPanel kicker={KICKER} title="Your invitation" lead="Opening the invitation…">
+				<Island flush>
+					<ScreenState kind="loading" rows={4} loadingLabel="Opening the invitation…" />
+				</Island>
+			</AuthPanel>
+		);
+	}
+
+	if (view.step === "none") {
+		return (
+			<AuthPanel kicker={KICKER} title="Your invitation">
+				<Island flush>
+					<ScreenState
+						kind="empty"
+						icon="link"
+						headingLevel={2}
+						title="There is no invitation to open"
+						body="Open the invitation link your project manager sent you. If they gave you a join code instead, enter it."
+						actions={
+							<ButtonLink variant="primary" href="/join">
+								Enter a join code
+							</ButtonLink>
+						}
+					/>
+				</Island>
+			</AuthPanel>
+		);
+	}
+
+	if (view.step === "failed") {
+		const { problem, token } = view;
+		const retry = problem.kind === "wait" || problem.kind === "unavailable";
+		return (
+			<AuthPanel kicker={KICKER} title="Your invitation" lead="Nothing was shared, and you have not joined.">
+				<div className="flex flex-col gap-6">
+					<Note tone={problem.kind === "wait" ? "waiting" : "attention"} live="assertive">
+						{problem.message}
+					</Note>
+					<div className="flex flex-col gap-3">
+						{problem.kind === "signed-out" && <InvitationSignIn next="/invite" />}
+						{retry && (
+							<Button
+								variant="primary"
+								size="lg"
+								fullWidth
+								icon="rotate-cw"
+								onClick={() => void look(token)}
+								disabled={cooldown.remaining > 0}
+								disabledReason={`Wait ${formatCountdown(cooldown.remaining)} before trying again.`}>
+								Try again
+							</Button>
+						)}
+						{problem.kind !== "signed-out" && (
+							<ButtonLink variant="outline" size="lg" fullWidth href="/o">
+								Back to your projects
+							</ButtonLink>
+						)}
+					</div>
+				</div>
+			</AuthPanel>
+		);
+	}
+
+	const { invitation, token } = view;
+	const place = invitation.project ?? invitation.organization;
 	return (
 		<AuthPanel
 			kicker={KICKER}
-			title={`Join ${invitation.project}?`}
-			lead={LEAD}
-			footnote={FOOTNOTE}
+			title={`Join ${place}?`}
+			lead={`Check the ${invitation.project ? "project" : "organization"} and role before you join.`}
+			footnote={`Nothing is shared with the ${invitation.project ? "project" : "organization"} until you join.`}
 			footnoteRule={false}>
-			<div className="flex flex-col gap-6">
-				{offline && (
-					<OfflineNote>
-						This is the invitation as it last loaded. Nothing has been shared with the project.
-					</OfflineNote>
-				)}
-				<Island flush aria-label="Invitation details">
-					<FactsList
-						labelWidth="7.5rem"
-						className="px-5 py-4"
-						items={[
-							{ label: "Organization", value: invitation.organization },
-							{
-								label: "Project",
-								value: <strong className="font-semibold">{invitation.project}</strong>
-							},
-							{ label: "Your role", value: <StateBadge kind="role" state={invitation.role} /> },
-							{ label: "Invited by", value: invitation.invitedBy },
-							{ label: "Access", value: invitation.access }
-						]}
-					/>
-				</Island>
-				<div className="flex flex-col gap-3">
-					<Button
-						size="lg"
-						fullWidth
-						icon="check"
-						onClick={join}
-						busy={pending || joined}
-						disabled={offline}
-						disabledReason="Joining needs a connection.">
-						Join project
-					</Button>
-					<ButtonLink variant="outline" size="lg" fullWidth href={differentCode}>
-						Use a different code
-					</ButtonLink>
-				</div>
-			</div>
+			<InvitationCard
+				invitation={invitation}
+				credential={{ token }}
+				next="/invite"
+				back={{ label: "Not now", href: "/o" }}
+			/>
 		</AuthPanel>
 	);
 }

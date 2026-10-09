@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { cx } from "@/lib/cx";
@@ -5,33 +6,29 @@ import { cx } from "@/lib/cx";
 export type BrandMarkProps = {
 	/** Name the mark only when it stands alone, without the wordmark beside it. */
 	label?: string;
+	/** Drawn size in CSS pixels. The header uses 36 (DESIGN.md, Navigation). */
+	size?: number;
 	className?: string;
 };
 
 /**
- * The FieldMaps mark: an ink rounded square holding two contour rings around the observation point
- * (the collector draws the same mark in mobile/src/ui/Logo.tsx). The point takes the accent as it reads
- * on the ink square, which is the other theme's accent: light magenta on Day's dark square, deep magenta
- * on Dusk's light one. Each point carries the other theme's scope, so its colour still comes from tokens.
+ * The FieldMaps mark: the purple app icon, the same artwork the installed app, the favicon and the store
+ * listing use (D29; `web/public/icons/icon.svg`, drawn from `mobile/assets/icon-source/generate.py`). The
+ * file clips itself to its rounded square, so no rounding is added here, and it is artwork, not tokens: it
+ * looks the same in Day and Dusk.
  */
-export function BrandMark({ label, className }: BrandMarkProps) {
-	const a11y = label
-		? { role: "img", "aria-label": label }
-		: { "aria-hidden": true as const, focusable: "false" as const };
+export function BrandMark({ label, size = 36, className }: BrandMarkProps) {
 	return (
-		<svg viewBox="0 0 72 72" className={cx("size-9 shrink-0", className)} {...a11y}>
-			<rect width="72" height="72" rx="17" className="fill-ink" />
-			<g transform="rotate(-24 36 36)" fill="none" strokeWidth="3" className="stroke-on-ink">
-				<ellipse cx="36" cy="36" rx="23" ry="16.5" />
-				<ellipse cx="36" cy="36" rx="13" ry="9.5" />
-			</g>
-			<g className="dusk:hidden">
-				<circle data-theme="dusk" cx="36" cy="36" r="5.5" className="fill-accent" />
-			</g>
-			<g className="hidden dusk:inline">
-				<circle data-theme="day" cx="36" cy="36" r="5.5" className="fill-accent" />
-			</g>
-		</svg>
+		<Image
+			src="/icons/icon.svg"
+			alt={label ?? ""}
+			aria-hidden={label ? undefined : true}
+			width={size}
+			height={size}
+			unoptimized
+			draggable={false}
+			className={cx("shrink-0", className)}
+		/>
 	);
 }
 

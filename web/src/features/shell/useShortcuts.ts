@@ -1,9 +1,8 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { DEFAULT_ORG, getProject } from "@/fixtures";
 import {
 	CHORD_TIMEOUT,
 	isOverlayOpen,
@@ -14,8 +13,8 @@ import {
 } from "@/lib/shortcuts";
 
 import { ORG_SECTIONS, orgHref, PROJECT_SECTIONS, projectHref } from "./navigation";
-import { usePreview } from "./PreviewProvider";
 import { useShell } from "./ShellProvider";
+import { useWorkspace } from "./WorkspaceProvider";
 
 /**
  * The workspace keys (DESIGN §8): ⌘K or Ctrl K opens the palette anywhere; `g` then a key goes to a tab;
@@ -24,13 +23,15 @@ import { useShell } from "./ShellProvider";
  */
 export function useShortcuts() {
 	const router = useRouter();
-	const params = useParams<{ org?: string; project?: string }>();
 	const { paletteOpen, setPaletteOpen, setShortcutsOpen } = useShell();
-	const { can } = usePreview();
+	const workspace = useWorkspace();
 	const chordUntil = useRef(0);
 
-	const org = params.org ?? DEFAULT_ORG;
-	const project = params.project && getProject(org, params.project) ? params.project : undefined;
+	// `g` chords reach the tabs of the organization and project on screen, when the person belongs there.
+	const org = workspace.org?.slug;
+	const project = workspace.project && workspace.project.role !== "observer" ? workspace.project.code : undefined;
+	const managesOrg = workspace.orgAbilities.manage;
+	const managesProject = workspace.projectAbilities.manage;
 
 	useEffect(() => {
 		function onKeyDown(event: KeyboardEvent) {
@@ -51,10 +52,11 @@ export function useShortcuts() {
 
 			if (Date.now() < chordUntil.current) {
 				chordUntil.current = 0;
+				if (!org) return;
 				const segment = project ? PROJECT_GO_KEYS[key] : ORG_GO_KEYS[key];
 				if (segment === undefined) return;
 				const section = (project ? PROJECT_SECTIONS : ORG_SECTIONS).find(entry => entry.segment === segment);
-				if (section?.requires && !can(section.requires)) return;
+				if (!section || (section.managersOnly && !(project ? managesProject : managesOrg))) return;
 				event.preventDefault();
 				router.push(project ? projectHref(org, project, segment) : orgHref(org, segment));
 				return;
@@ -79,7 +81,7 @@ export function useShortcuts() {
 
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [can, org, paletteOpen, project, router, setPaletteOpen, setShortcutsOpen]);
+	}, [managesOrg, managesProject, org, paletteOpen, project, router, setPaletteOpen, setShortcutsOpen]);
 }
 
 /** Mounts the workspace keys. */

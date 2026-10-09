@@ -29,8 +29,9 @@ export function FactsList({ items, labelWidth = "10rem", className, style, ...re
 			className={cx("grid gap-x-4 divide-y divide-rule type-body", className)}>
 			{items.map((fact, index) => (
 				<div key={index} className="col-span-2 grid grid-cols-subgrid items-baseline py-2 first:pt-0 last:pb-0">
-					<dt className="min-w-0 text-ink-2">{fact.label}</dt>
-					<dd className={cx("min-w-0 text-ink", fact.mono && "type-mono-data")}>{fact.value}</dd>
+					{/* Plain spaces keep a label and its value, and one row and the next, apart when read as text. */}
+					<dt className="min-w-0 text-ink-2">{fact.label}</dt>{" "}
+					<dd className={cx("min-w-0 text-ink", fact.mono && "type-mono-data")}>{fact.value}</dd>{" "}
 				</div>
 			))}
 		</dl>

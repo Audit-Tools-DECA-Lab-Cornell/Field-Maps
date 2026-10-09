@@ -43,11 +43,11 @@ Contour is one light system for the collector and the workspace. It has a pale l
 | `web/src/styles/contour.css` | Generated and checked in. Never edited by hand. |
 | `mobile/src/ui/tokens.ts` | The collector reads `contour.json` here. |
 | `contracts/map-palettes.json` | Map canvas palettes. Not part of the UI theme. |
-| `web/src/components/contour/*` | Web primitives (WEB-20). Shell parts such as the header, switchers, the Preview data marker and the auth split live in `web/src/components/shell/*`. |
+| `web/src/components/contour/*` | Web primitives (WEB-20). Shell parts such as the header, switchers, `LoadFailure`, `NotAvailable` and the auth split live in `web/src/components/shell/*`. |
 | `mobile/src/ui/*` | Mobile primitives (MOB-23). |
 | Web `/dev/contour`, mobile `app/(dev)/gallery` | Galleries showing every primitive in Day and Dusk. The web gallery is `noindex` and exists only in dev and preview builds. |
 
-**Token names.** Keys are camelCase in `contour.json` and in mobile code. On the web each key becomes a custom property `--ct-` plus kebab case, and a digit becomes its own segment: `accentSoft` → `--ct-accent-soft`, `ink2` → `--ct-ink-2`. The Tailwind utilities from `@theme inline` drop the prefix, giving `bg-island`, `text-ink-2`, `bg-saved-soft`, `border-line` and `shadow-ledge`. No hex value appears outside `contour.css`, `tokens.ts` and `map-palettes.json`.
+**Token names.** Keys are camelCase in `contour.json` and in mobile code. On the web each key becomes a custom property `--ct-` plus kebab case, and a digit becomes its own segment: `accentSoft` → `--ct-accent-soft`, `ink2` → `--ct-ink-2`. The Tailwind utilities from `@theme inline` drop the prefix, giving `bg-island`, `text-ink-2`, `bg-saved-soft`, `border-line` and `shadow-ledge`. No hex value appears outside `contour.css`, `tokens.ts` and `map-palettes.json`, except in the brand mark's artwork: the app icon files and `mobile/src/ui/brand-artwork.ts` (D29).
 
 **Themes.**
 
@@ -64,7 +64,7 @@ Contour is one light system for the collector and the workspace. It has a pale l
 |---|---|---|---|
 | 01 | **One filled magenta button per screen** | The thing to do now. In the collector the chosen answer is magenta too. Table selection, focus and navigation use ink. | `primary` once. `ink` for the strong second action, `outline` for the rest. On an answer step the chosen tile is the magenta, so the step's own action ("Review") is ink. Accent text links may appear beside it. On a screen whose one action is destructive, `danger-filled` takes the magenta's place. A dev-only check warns when two primary buttons are mounted. |
 | 02 | **State is a glyph, a word and a colour** | Never colour alone. The five queue states keep the same glyph everywhere. | Render every state through `StateText` or `StateBadge` from the generated vocabulary (§6). Never hand-write a state, and never show a coloured dot without its word. |
-| 03 | **Map colours stay on the map** | Zones and observations are violet. Interface state colours never appear on the plan. | No saved, waiting, uploaded, attention or held colour inside a map canvas. Violet appears outside a map only in a legend that describes the map. |
+| 03 | **Map colours stay on the map** | Zones and observations are violet. Interface state colours never appear on the plan. | No saved, waiting, uploaded, attention or held colour inside a map canvas. Violet appears outside a map only in a legend that describes the map, and in the brand mark, which is the purple app icon (D29). |
 | 04 | **Mono for things you might read aloud** | IDs, versions, counts and codes. Sentences stay in Geologica. | `OBS-0248`, `v3`, `demo-v1`, `DECA2026`, `84 MB`, "4 of 6", "2 / 3". A count inside a sentence or heading stays in Geologica: "14 observations across three zones." |
 | 05 | **Labels wrap** | Long answer labels grow the tile. Nothing truncates with an ellipsis. | No `text-overflow: ellipsis`, no `line-clamp`, no `numberOfLines`. Rows and tiles grow. Tab bars and chip rows scroll sideways instead of cutting a label. |
 | 06 | **Day first** | The collector opens in Day. Dusk is a choice in Preferences, and the map palette switches on its own setting. | Day everywhere by default, on both apps. Dusk is reviewed screen by screen, but nothing is designed Dusk-first. |
@@ -143,7 +143,7 @@ Each state has a strong colour for its glyph and word, and a soft fill for notes
 |---|---|---|---|---|---|
 | `display` | 72 / 70 | 600 | −0.025 | Geologica | The landing headline: "The observation. The place. The evidence." |
 | `hero` | 56 / 58 | 600 | −0.022 | Geologica | Whole-page states: "This page is not on the map.", "Something went wrong." |
-| `auth` | 44 / 48 | 600 | −0.02 | Geologica | Sign-in, account and onboarding titles: "Welcome back", "Name the first project" |
+| `auth` | 44 / 48 | 600 | −0.02 | Geologica | Sign-in, account and collector onboarding titles: "Welcome back" |
 | `page` | 36 / 42 | 600 | −0.018 | Geologica | Workspace page titles: "What came back from the field" |
 | `section` | 26 / 32 | 600 | −0.012 | Geologica | A statement heading inside an island: "14 observations across three zones." |
 | `question` | 26 / 32 | 600 | −0.012 | Geologica | Form questions in the collector preview |
@@ -214,7 +214,7 @@ Spacing steps are **4, 8, 12, 16, 20, 24, 32, 40 and 56**, and only these. Tailw
 | Control | Web | Mobile |
 |---|---|---|
 | Button, segmented control, switcher, search | 46 (`control`) | 56 (`control`). The collect flow's main actions are 60 (`collector`). |
-| Small pill: StateBadge, tag, Preview data marker | 36 (`controlSm`), with a 44 hit area | — |
+| Small pill: StateBadge, tag | 36 (`controlSm`), with a 44 hit area | — |
 | Text input, select | 46 | 54 (`input`) |
 | Answer tile | 60 in the preview | 60 or taller (`answerTile`) |
 | Radio row | 48 or taller | 48 or taller |
@@ -238,7 +238,7 @@ Names are the same in both apps unless the table says otherwise. Every primitive
 | Group | Primitives | Web only | Mobile only |
 |---|---|---|---|
 | Actions | `Button`, `IconButton`, `TextLink`, `Icon` (with `HeldGlyph`) | | |
-| Containers | `Island` (+ `Header`, `Body`, `Table`, `Footnote`), `InnerPanel`, `Note`, `ProposalNote`, `FactsList` | | |
+| Containers | `Island` (+ `Header`, `Body`, `Table`, `Footnote`), `InnerPanel`, `Note`, `FactsList` | | `ProposalNote` |
 | State | `StateText`, `StateBadge`, `CoverageDots`, `TypeBars`, `Timeline`, `ProgressBar` | | |
 | Inputs | `Field`, `TextInput`, `PasswordInput`, `Textarea`, `CodeInput`, `Checkbox`, `Switch`, `Segmented`, `RadioRow`, `AnswerTile`, `NumberStepper` | `Select` (native) | |
 | Navigation | `ModeStrip`, `StepBar`, `RoleLabel` | `InkTabs`, `Breadcrumbs`, `Switcher`, `CommandPalette`, `Kbd` | `TabDock` |
@@ -373,7 +373,8 @@ A pill with a verb + object label (`body` at 600 on the web, `answer` at 600 in 
   Notes are not dismissible and not clickable. A note that appears in response to an action is a `role="status"` live region.
 - **`ProposalNote`.** `waitingSoft` fill and a `flag` icon. "PROPOSAL U5" is set in `monoLabel` at 600 in `waiting`, followed by the body in `ink`: "The Approved-only gate is optional and not decided."
   - It also has a one-line form for a page header: "PROPOSAL U2 · QGIS remains the pilot's geometry authority. …"
-  - Every screen that shows a U2–U7 concept carries one. The concepts are U2 zone editing, U3 web join and observer handoff, U4 form templates, U5 review and publication scope, U6 rounds, and U7 reports and saved views.
+  - On mobile, every screen that shows a U2–U7 concept carries one. The concepts are U2 zone editing, U3 web join and observer handoff, U4 form templates, U5 review and publication scope, U6 rounds, and U7 reports and saved views.
+  - The web has no such primitive since D30. A concept it does not build is a `NotAvailable` note, never a proposal flag.
   - Inside tabs and rows the flag shrinks to `StateText` "Proposal U6".
 
 ### FactsList
@@ -456,16 +457,17 @@ A pill with a verb + object label (`body` at 600 on the web, `answer` at 600 in 
 
 ### Navigation
 
+- **The brand mark** is the purple FieldMaps app icon, everywhere: the web header, favicon and install icon, the collector's headers, Welcome and loading screens, the phone's launcher and the store listing (D29). It is drawn as a rounded square, the shape a launcher gives the icon. It is artwork, not tokens, so it is the same in Day and Dusk. The web draws `web/public/icons/icon.svg`; the collector's `Logo` draws `mobile/src/ui/brand-artwork.ts`, which a test holds to `mobile/assets/icon-source/icon.svg`. Change the icon in `generate.py` first. There is no second mark.
 - **Web header.** 72 tall.
-  - Left: the brand mark (a 36 px `ink` rounded square holding the ring mark) and "FieldMaps", then the org `Switcher`, "/" in `ink2`, and the project `Switcher`.
-  - Right: the Preview data marker, the `CommandPalette` field, the `RoleLabel` ("MANAGER") and the `Avatar`, which opens the account menu with Day / Dusk.
+  - Left: the brand mark (the purple app icon, 36 px) and "FieldMaps", then the org `Switcher`, "/" in `ink2`, and the project `Switcher`.
+  - Right: the `CommandPalette` field, the `RoleLabel` ("MANAGER") and the `Avatar`, which opens the account menu with Day / Dusk.
   - The 404, error and observer-handoff pages show the org header without tabs.
 - **`InkTabs`** (web).
   - **The bar.** A `nav` pill about 56 tall with 6 px padding. Each tab is a 44 px pill with an `onNav` label in `body` at 600. The current tab is a `navCurrent` pill with an `onNavCurrent` label.
   - **The pill moves.** It slides over `slide` (200 ms). Its position is written to CSS variables, and it does not slide on first paint.
   - **Markup.** Links with `aria-current="page"`.
   - **Project tabs:** Overview, Data, Sites, Forms, Team, QGIS, Reports, Settings. Their URLs (D21) are the project root, then `data`, `sites`, `forms`, `team`, `qgis`, `reports`, `settings`.
-  - **Org tabs:** Projects, Members, Form library, Settings, at `/o/[org]`, `members`, `library`, `settings`.
+  - **Org tabs:** Projects, Members, Settings, at `/o/[org]`, `members`, `settings`. Members and Settings are for owners and admins.
   - The Viewer role hides Team and Settings.
 - **`TabDock`** (mobile).
   - **The dock.** A floating `nav` pill, 68 tall, at most 420 wide and centred, above the safe area.
@@ -474,18 +476,14 @@ A pill with a verb + object label (`body` at 600 on the web, `answer` at 600 in 
   - The dock hides only while collecting.
 - **`ModeStrip`.** An `island` pill with a 1 px `line` border, holding "1 · Place", "2 · Answer" and "3 · Review". The current step is an `ink` pill that slides over `base`. A finished step can be tapped to go back. It is announced as "Step 2 of 3, Answer".
 - **`StepBar`.**
-  - **Web** (onboarding, map packages): the ModeStrip's shape on a wide track. A done step shows a `check` and its label, and stays clickable. The current step is an `ink` pill ("2 Project"). Upcoming steps show their number and label in `ink2`.
+  - **Web** (no screen uses it since the set-up flow went, D30; it stays in the gallery): the ModeStrip's shape on a wide track. A done step shows a `check` and its label, and stays clickable. The current step is an `ink` pill ("2 Project"). Upcoming steps show their number and label in `ink2`.
   - **Mobile** (onboarding): "STEP 1 OF 2" in `monoLabel` over segment bars, `ink` for done and current, `line` for upcoming.
-- **`Breadcrumbs`** (web). `small` text: underlined `ink2` ancestors, `chevron-right` separators, and the current page as plain text with `aria-current`. They follow the URL nesting: "Sites › Riverside › Map packages", "Reports › Saved views", "Settings › Rounds", "Forms › Form versions › Draft › Publish".
-- **`Switcher`** (web). A 46 px header pill: `island` fill, 1 px `line`, the name at 600 and a `chevron-down`. It opens a menu with typeahead, showing each item's role and state, with "Create project" last. At 390 the two switchers merge into one.
+- **`Breadcrumbs`** (web). `small` text: underlined `ink2` ancestors, `chevron-right` separators, and the current page as plain text with `aria-current`. They follow the URL nesting: "Sites › Riverside › Map packages", "Forms › Form versions › Draft › Publish".
+- **`Switcher`** (web). A 46 px header pill: `island` fill, 1 px `line`, the name at 600 and a `chevron-down`. It opens a menu with typeahead, showing each item's role and state. Creating a project is on the organization's Projects page. At 390 the two switchers merge into one.
 - **`CommandPalette`** (web). A "Search or jump to" pill in the header with `search` and a `Kbd` showing "⌘K", or "Ctrl K" on other platforms. It opens as a `Dialog`. The palette's contents are in §8.
 - **`RoleLabel`.** In the header, `monoLabel` in `ink2` ("MANAGER", "ADMIN", "OBSERVER"). In tables, an icon and a word in `ink`: Owner `key-round`, Admin and Manager `shield-check`, Member `user`, Observer `crosshair`, Viewer `eye`.
 - **`Kbd`.** Mono text in a small chip: 1 px `line`, r 6, `ink2` text. "Or press ⌘K to search and jump anywhere."
-- **The Preview data marker** (web shell, D20). A quiet 36 px pill reading "Preview data" in `monoLabel` (so it shows as PREVIEW DATA): `edge` border, `ink2` text, no state colour.
-  - It is a button with a 44 px hit area. It opens a popover reading exactly: "Everything here is sample data. Nothing is read from or written to the FieldMaps database."
-  - In dev and preview builds the popover also offers View as, Show state and Theme.
-  - One footer line on the app, auth and onboarding layouts repeats the sentence.
-  - It replaces every per-section fixture notice. Proposal flags are separate and stay.
+- **`NotAvailable`** (web shell, D30). A neutral `Note` with the `info` icon, standing where a button would have been. The title is "<Feature> is not available yet." The body is one sentence on why and one on what to do instead. It never sits beside a disabled or fake button. The web has no Preview data marker and no sample data: every page is live.
 
 ### Data
 
@@ -753,9 +751,9 @@ Motion conveys state, never decoration. Tokens are in `contour.json` → `motion
 
 - **Navigation.**
   - The white current-tab pill slides inside the ink bar. Its position is in CSS variables, with no slide on first paint. On narrow screens the tabs scroll with edge fades.
-  - The org and project switchers are menus with typeahead, role and state, and "Create project" last.
+  - The org and project switchers are menus with typeahead, role and state.
 - **⌘K "Search or jump to".**
-  - It jumps to tabs, projects, sites, zones, form versions, people, and an `OBS-` ID.
+  - It jumps to tabs, organizations, projects and the account. It does not search sites, zones, form versions, people or `OBS-` IDs yet.
   - Its actions are Day/Dusk, the map palette, "Export current view" and "Invite member".
   - It also lists recent items.
 - **Shortcuts.** `g` then `o` / `d` / `s` / `f` / `t` / `q` / `r` for the tabs. `?` lists the shortcuts, and `/` focuses search.
@@ -763,29 +761,24 @@ Motion conveys state, never decoration. Tokens are in `contour.json` → `motion
   - Selecting a map marker selects its table row, and the reverse. The row scrolls into view. The map eases (`camera`) only when the marker is off screen.
   - The selected marker scales from 1 to 1.15 with a ring.
   - The selection survives a filter change if the record still matches. Otherwise it clears, with the announcement "OBS-0244 is not in this view".
-- **Review on Data.**
-  - `j` / `k` or ↑ / ↓ move the selection. Enter opens the record, `a` approves and `x` excludes.
-  - The toast reads "OBS-0244 approved · Undo" (6 s), and ⌘Z also undoes. Focus stays on the row.
+- **Review on Data (not built, D30).** Reviewing or excluding observations is not available yet. A record page says so in a `NotAvailable` note, and every uploaded observation is in the exports.
 - **Filters** update instantly. "14 of 14 shown" sits in a live region, and "Clear filters" returns focus to the first filter.
-- **Join code.**
-  - "Copy code" turns into "Copied ✓" for `copied`.
-  - "Download code" saves a `.txt` file.
-  - "Dismiss" asks for confirmation first. The island then collapses to "Code dismissed · Rotate code".
+- **New invitation.**
+  - The link (`/invite#t=…`) and the 8-character code appear once, each with a Copy button. Copy turns into "Copied ✓" for `copied`.
+  - The note reads "FieldMaps does not send email. Send the link or the code yourself. It is shown only once."
 - **Publishing.** The confirm checkbox enables "Publish demo-v2", and the reason shows until it is ticked. Afterwards the version history updates.
 - **Map packages.**
   - The step lives in `?step=`, so Back works.
-  - Inspection rows support a "Checking" state; the fixtures show the final state.
-  - "Activate v4" turns v3 into Archived.
-  - The real upload says "Sends this package to the FieldMaps API."
-- **Zone editor (PROPOSAL U2).**
+  - The newest ready package is current; older ready ones show as Archived. Nothing is activated by hand.
+- **Zone editor (not built, D30; zones come from QGIS). These rules are for a future editor.**
   - Handles are focusable buttons. Arrows nudge 1 map unit, and Shift + arrow nudges 10.
   - Delete removes a vertex but keeps at least three.
   - Edits sync both ways with the vertex table. ⌘Z undoes, and "Discard changes" asks for confirmation first.
 - **Settings.**
   - Unsaved changes swap "Last saved yesterday by JL" for "Unsaved changes", and leaving the page asks first.
-  - Danger zones list every affected resource before the type-to-confirm button.
+  - Deleting a project is not available yet. Archive and Unarchive only mark the project finished.
 - **Auth.** Covered under `CodeInput` and `PasswordInput` in §5. A disabled button always carries its reason.
-- **Preview actions** (approve, exclude, save view, dismiss code, publish, activate, vertex edits, settings) change session-only state. They take effect visibly, reset on reload, and never claim a server round trip.
+- **No preview actions (D30).** Every control does what its label says, and a missing feature is a `NotAvailable` note. Nothing changes session-only state.
 
 ### Signature interactions: collector
 
@@ -873,10 +866,10 @@ Each surface also has an `edge` colour in the file. The values above are copied 
 ### Formatting
 
 - **Separator:** " · " (a middle dot with spaces) between facts: "North meadow · Round 1 · 11:34", "DECA Lab · 2 sites · observer access". Steps use it too: "1 · Place".
-- **Flows** use "→": "QGIS → upload → inspect → activate → download." Breadcrumbs use the `chevron-right` icon, not a character.
+- **Flows** use "→": "QGIS → upload → inspect → download." Breadcrumbs use the `chevron-right` icon, not a character.
 - **Ranges** use an en dash: "0–25 m", "6–8 yrs", "rounds 1–3".
 - **Counts.** "X of Y" for progress and filters: "4 of 6", "14 of 14 shown", "60 of 126 MB", "3 of 8 answered". "X / Y" for a fraction in a table cell and for a character counter: "2 / 3", "69 / 1000".
-- **Times** use the 24-hour clock in the project's timezone (America/New_York in the fixtures): "11:34", "Oct 02 · 11:32", "Today 11:25", "Yesterday", "Sep 30".
+- **Times** use the 24-hour clock in the project's timezone (America/New_York for Play Study): "11:34", "Oct 02 · 11:32", "Today 11:25", "Yesterday", "Sep 30".
   - A time in its own column or in the timeline gutter is mono.
   - A time inside a sentence or a meta line stays in Geologica: "Showing what loaded at 11:36."
 - **Loading text** ends with one ellipsis character: "Loading observations…". Nothing else uses an ellipsis.
@@ -904,10 +897,9 @@ One set of words in both apps (U1). The full glossary, with the words to avoid, 
 
 **Honesty copy is fixed too.**
 
-- The marker reads "Preview data".
-- Its popover reads "Everything here is sample data. Nothing is read from or written to the FieldMaps database."
-- The real package upload says "Sends this package to the FieldMaps API."
-- Proposal flags read "PROPOSAL U2" to "PROPOSAL U7", followed by one plain sentence about what is undecided.
+- A feature with no backend reads "X is not available yet."
+- A count or export taken from a capped list reads "Based on the newest 500 observations."
+- On mobile, proposal flags read "PROPOSAL U2" to "PROPOSAL U7", followed by one plain sentence about what is undecided.
 
 ## 11. Accessibility and anti-patterns
 
@@ -927,8 +919,8 @@ Every screen passes these in Day and in Dusk before it is done.
 - [ ] Web: a "Skip to content" link comes first. Focus moves to the page heading on navigation.
 - [ ] Tables use roving focus as one tab stop, with ↑ / ↓ / `j` / `k` and Enter.
 - [ ] Dialogs trap focus, close on Esc and return focus to their trigger.
-- [ ] The map, zoom and zone editor are fully keyboard operable, and every map has a table or list beside it.
-- [ ] The tabs, ⌘K, the menus, the switchers and the Preview data popover are reachable and usable by keyboard. Shortcuts never fire while typing in a field.
+- [ ] The map and zoom are fully keyboard operable, and every map has a table or list beside it.
+- [ ] The tabs, ⌘K, the menus and the switchers are reachable and usable by keyboard. Shortcuts never fire while typing in a field.
 
 **Touch and text**
 
@@ -956,7 +948,7 @@ Every screen passes these in Day and in Dusk before it is done.
 | Refuse | Because | Instead |
 |---|---|---|
 | Side-stripe accents (a coloured border on one side of a card, note or row) | Decoration that reads as a state with no word | The only side stripe is the 4 px `ink` bar on a selected table row |
-| Gradients, including gradient text and gradient buttons | Contour is flat colour. A gradient is not a token and fails contrast checks unpredictably. | A token fill. The only exception is the edge-fade mask on scrolling tabs, which signals scrolling. |
+| Gradients, including gradient text and gradient buttons | Contour is flat colour. A gradient is not a token and fails contrast checks unpredictably. | A token fill. The exceptions are the edge-fade mask on scrolling tabs, which signals scrolling, and the brand mark, which keeps the app icon's own gradient ground (D29). |
 | Glass: backdrop blur, translucent panels over the map | Left for later. It fails in sun and is costly in React Native. | `island` surfaces with a ledge |
 | Soft or stacked shadows, elevation ramps | Depth comes from the ledge alone | The 6 px solid ledge, on islands and map overlays only |
 | Hero metrics: rows of big-number KPI tiles | Record abundance is not completeness, and numbers without context overclaim | A sentence ("14 observations across three zones.") with its caveat, plus `TypeBars` and coverage tables |
@@ -966,10 +958,10 @@ Every screen passes these in Day and in Dusk before it is done.
 | Accent for selection, focus or navigation | Magenta means "do this now" | `ink` for table selection, focus, tabs and settings choices. The only selections shown in magenta are the collector's chosen answer and the session's zone. |
 | Colour-only state: dots, chips or row tints with no word | Rule 02 | `StateText` or `StateBadge` from the vocabulary |
 | Truncation: ellipses, line clamps, `numberOfLines` | Rule 05: labels wrap | Rows and tiles grow; tab and chip rows scroll |
-| UI state colours inside a map, or violet in the UI chrome | Rule 03 | Palette colours on the map; state in the table, label and record |
+| UI state colours inside a map, or violet in the UI chrome | Rule 03 | Palette colours on the map; state in the table, label and record. The one violet in the chrome is the brand mark, the purple app icon (D29). |
 | Spinners and indeterminate progress | A spinner cannot tell stalled from working | A determinate `ProgressBar`, a count, or a busy label |
 | Illustrated empty states | Plain words, one action, no illustrations | `ScreenState` with an icon disc |
 | A disabled control with no reason | The person cannot tell what to do | A visible reason line under it |
-| Per-section "fixture" notices | Replaced by one marker (D20) | The Preview data marker and one footer line. Proposal flags stay. |
+| Sample data, fixtures, or a marker that says so | The web is live (D30) | Real data, or one `NotAvailable` note where there is no backend |
 | Dark by default, or following the OS dark mode | Rule 06: a dark screen turns into a mirror in direct sun | Day by default; Dusk only by choice |
 | Hex values in components | Two sources of truth drift | Tokens from `contour.json`, and `map-palettes.json` for maps |

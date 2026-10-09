@@ -1,278 +1,370 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+
 import { Button, ButtonLink } from "@/components/contour/Button";
-import { FactsList } from "@/components/contour/FactsList";
 import { Island } from "@/components/contour/Island";
+import { Mono } from "@/components/contour/Mono";
+import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
+import { ScreenState } from "@/components/contour/ScreenState";
+import { StateBadge } from "@/components/contour/StateBadge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/contour/Table";
+import { useToast } from "@/components/contour/Toast";
 import { projectHref } from "@/features/shell/navigation";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
+import { plural } from "@/lib/labels";
+import { clock } from "@/lib/time";
 
-import { useCreateDraft, useFormWriteBlock } from "./CreateDraftDialog";
-import {
-	allVersions,
-	changedIds,
-	definitionOf,
-	latestPublishedOf,
-	openDraftOf,
-	plural,
-	type VersionView
-} from "./model";
-import { Eyebrow, versionQualifier, VersionStateText } from "./parts";
-import { NOTES_ID, ProtocolNotesIsland } from "./ProtocolNotes";
+import { ActionNote } from "./ActionNote";
+import { startDraftAction } from "./actions";
+import { DiscardDialog } from "./DiscardDialog";
+import type { FormRow, VersionRow } from "./model";
+import type { FormActionFailure } from "./result";
 import { RetireDialog } from "./RetireDialog";
-import { type FormsPreview, useFormsPreview } from "./store";
 
-/** Moves to the protocol notes and puts focus on them, so a screen reader starts reading there. */
-export function readNotes() {
-	const notes = document.getElementById(NOTES_ID);
-	if (!notes) return;
-	const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	notes.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-	notes.focus({ preventScroll: true });
+const LINK = "text-ink underline decoration-1 underline-offset-4 hover:decoration-2";
+
+/** Why a form cannot be copied into a new draft, or null when it can. */
+function copyBlock(form: FormRow): string | null {
+	if (!form.newest) return "This form has no version to copy.";
+	if (form.newest.legacy)
+		return "This form is from before the form editor, so it cannot be copied. Create a new form instead.";
+	return null;
+}
+
+/** Start new draft. The label stays as it is while the draft is made, so the button keeps its name. */
+function StartButton({
+	form,
+	variant,
+	busy,
+	onStart
+}: {
+	form: FormRow;
+	variant: "primary" | "outline";
+	busy: boolean;
+	onStart: () => void;
+}) {
+	const block = copyBlock(form);
+	return (
+		<Button
+			variant={variant}
+			size={variant === "primary" ? "md" : "sm"}
+			icon="pencil"
+			disabled={block !== null}
+			disabledReason={block ?? undefined}
+			busy={busy}
+			onClick={onStart}>
+			Start new draft
+		</Button>
+	);
 }
 
 /**
- * Form versions (project-12): the version history with one action per version, the immutability
- * contract, and Janet's open protocol notes.
+ * Form versions: every version of a form with its state, the sites that use it and what a manager can do
+ * with it. Start new draft copies the newest version; Discard removes a draft; Retire stops a published
+ * version being used for new map packages. Readers see the same table without the actions.
  */
-export function FormVersionsScreen({ org, project }: { org: string; project: string }) {
-	const preview = useFormsPreview();
-	const blocked = useFormWriteBlock();
-	const create = useCreateDraft(org, project);
-	const versions = allVersions(preview);
-	const editor = (id: string) => projectHref(org, project, `forms/versions/${id}`);
-	const draft = openDraftOf("demonstration", preview);
-	const published = latestPublishedOf("demonstration", preview);
+export function FormVersionsScreen({
+	org,
+	project,
+	forms,
+	requested,
+	timeZone,
+	canManage,
+	sitesProblem
+}: {
+	org: string;
+	project: string;
+	/** The forms to show: the requested one, or all of them. */
+	forms: readonly FormRow[];
+	/** The form code in the address, when there is one. */
+	requested: string | null;
+	timeZone: string;
+	canManage: boolean;
+	sitesProblem: string | null;
+}) {
+	const router = useRouter();
+	const toast = useToast();
+	const [failure, setFailure] = useState<FormActionFailure | null>(null);
+	const [pending, start] = useTransition();
+	const [starting, setStarting] = useState<string | null>(null);
+	const formsHref = projectHref(org, project, "forms");
+	const editor = (code: string) => projectHref(org, project, `forms/versions/${code}`);
+	const single = requested !== null ? (forms[0] ?? null) : null;
 
-	const primary = draft ? (
-		<ButtonLink href={editor(draft.id)} icon="pencil">
-			Open draft
-		</ButtonLink>
-	) : published ? (
-		<Button
-			icon="pencil"
-			disabled={blocked !== null}
-			disabledReason={blocked ?? undefined}
-			onClick={() => create("copy", published.id)}>
-			Start a new draft
-		</Button>
-	) : null;
+	function startDraft(form: FormRow) {
+		setFailure(null);
+		setStarting(form.code);
+		start(async () => {
+			const result = await startDraftAction({ org, project, form: form.code });
+			setStarting(null);
+			if (result.status === "failed") return setFailure(result);
+			toast({
+				title: `${result.version} is a new draft`,
+				description: `Copied from ${form.newest?.code ?? "the newest version"}, which stays as it is.`,
+				tone: "saved"
+			});
+			router.push(editor(result.version));
+		});
+	}
+
+	if (requested !== null && !single)
+		return (
+			<div className="flex flex-col gap-6">
+				<PageHeader
+					breadcrumbs={[{ label: "Forms", href: formsHref }, { label: "Form versions" }]}
+					title="Form versions"
+				/>
+				<Island flush>
+					<ScreenState
+						kind="empty"
+						icon="file-text"
+						headingLevel={2}
+						title="This form is not in the project"
+						body={`No form has the code ${requested}. It may have been misspelled in the address.`}
+						actions={
+							<ButtonLink href={formsHref} variant="ink" icon="arrow-left">
+								Back to forms
+							</ButtonLink>
+						}
+					/>
+				</Island>
+			</div>
+		);
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				breadcrumbs={[{ label: "Forms", href: projectHref(org, project, "forms") }, { label: "Form versions" }]}
-				title="Form versions"
-				lead="The demonstration form and Janet’s candidate draft."
-				actions={primary}
+				breadcrumbs={[{ label: "Forms", href: formsHref }, { label: single ? single.name : "Form versions" }]}
+				title={single ? single.name : "Form versions"}
+				lead={
+					single ? (
+						<>
+							<Mono>{single.code}</Mono> · A draft can change. A published version never does.
+						</>
+					) : (
+						"Every version of every form in this project. A draft can change; a published version never does."
+					)
+				}
+				actions={
+					canManage && single ? (
+						<StartButton
+							form={single}
+							variant="primary"
+							busy={pending && starting === single.code}
+							onStart={() => startDraft(single)}
+						/>
+					) : undefined
+				}
 			/>
 
-			<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-				<Island title="Version history" flush>
-					<PreviewStateView
-						loadingLabel="Loading form versions…"
-						rows={3}
-						headingLevel={3}
-						empty={{
-							icon: "file-text",
-							title: "No form versions yet",
-							body: "Create a form draft on Project forms. Its versions appear here."
-						}}
-						filtered={{
-							title: "No versions match this view",
-							body: "Change your filters to see more versions. Every version is unchanged."
-						}}>
-						<HistoryTable
-							versions={versions}
-							preview={preview}
-							selected={draft?.id}
-							editor={editor}
-							blocked={blocked}
-							onStart={id => create("copy", id)}
-						/>
-					</PreviewStateView>
-				</Island>
+			{sitesProblem && (
+				<Note tone="attention" title="Which sites use each version could not be checked.">
+					{sitesProblem}
+				</Note>
+			)}
+			<ActionNote failure={failure} />
 
-				<Island>
-					<Eyebrow>Immutability contract</Eyebrow>
-					<h2 className="mt-2 type-section text-ink">Old answers keep their meaning.</h2>
-					<p className="mt-3 type-body text-ink-2">
-						Editing a published version starts a new draft. Publishing creates another immutable version; it
-						does not reinterpret old observations.
-					</p>
-					<FactsList
-						className="mt-6 border-t border-rule pt-4"
-						labelWidth="minmax(8rem, 40%)"
-						items={[
-							{ label: "Existing observations", value: "Retain the capture-time form version" },
-							{ label: "Active sessions", value: "Keep their locked version" },
-							{ label: "Retired versions", value: "Readable for historical records" },
-							{ label: "GIS fields", value: "Stable IDs and version-specific definitions" }
-						]}
+			{forms.length === 0 ? (
+				<Island flush>
+					<ScreenState
+						kind="empty"
+						icon="file-text"
+						headingLevel={2}
+						title="No forms yet"
+						body={
+							canManage
+								? "Create a form on Forms. Its versions appear here."
+								: "A project manager creates forms and publishes them."
+						}
+						actions={
+							<ButtonLink href={formsHref} variant="ink" icon="arrow-left">
+								Back to forms
+							</ButtonLink>
+						}
 					/>
-					<div className="mt-6">
-						<RetireDialog />
-					</div>
 				</Island>
-			</div>
-
-			<ProtocolNotesIsland />
+			) : (
+				forms.map(form => (
+					<Island
+						key={form.code}
+						title={form.name}
+						meta={
+							<>
+								<Mono>{form.code}</Mono> · {plural(form.versions.length, "version")}
+							</>
+						}
+						actions={
+							canManage && !single ? (
+								<StartButton
+									form={form}
+									variant="outline"
+									busy={pending && starting === form.code}
+									onStart={() => startDraft(form)}
+								/>
+							) : undefined
+						}
+						flush>
+						{form.versions.length === 0 ? (
+							<ScreenState
+								kind="empty"
+								icon="file-text"
+								headingLevel={3}
+								title="Nothing is published yet"
+								body="This form has no published version. A project manager publishes one."
+							/>
+						) : (
+							<VersionsTable
+								org={org}
+								project={project}
+								form={form}
+								timeZone={timeZone}
+								canManage={canManage}
+								sitesChecked={sitesProblem === null}
+							/>
+						)}
+					</Island>
+				))
+			)}
 		</div>
 	);
 }
 
-function HistoryTable({
-	versions,
-	preview,
-	selected,
-	editor,
-	blocked,
-	onStart
+function VersionActions({
+	org,
+	project,
+	version,
+	canManage
 }: {
-	versions: VersionView[];
-	preview: FormsPreview;
-	selected: string | undefined;
-	editor: (id: string) => string;
-	blocked: string | null;
-	onStart: (id: string) => void;
+	org: string;
+	project: string;
+	version: VersionRow;
+	canManage: boolean;
 }) {
-	const rows = versions.map(version => {
-		const raw = definitionOf(version.id, preview);
-		const base = version.base ? definitionOf(version.base, preview) : undefined;
-		return { version, changes: raw ? changedIds(raw, base).size : 0 };
-	});
+	if (!canManage) return null;
+	if (version.state === "draft")
+		return (
+			<div className="flex flex-wrap items-center gap-2">
+				<ButtonLink
+					href={projectHref(org, project, `forms/versions/${version.code}`)}
+					variant="outline"
+					size="sm"
+					icon="pencil"
+					aria-label={`Edit draft ${version.code}`}>
+					Edit draft
+				</ButtonLink>
+				<DiscardDialog org={org} project={project} version={version} />
+			</div>
+		);
+	if (version.state === "published") return <RetireDialog org={org} project={project} version={version} />;
+	return null;
+}
+
+const STATE_WORD = { draft: "Draft", published: "Published", retired: "Retired" } as const;
+
+function stateLabel(version: VersionRow): string {
+	return `${STATE_WORD[version.state]} · v${version.version}`;
+}
+
+function VersionsTable({
+	org,
+	project,
+	form,
+	timeZone,
+	canManage,
+	sitesChecked
+}: {
+	org: string;
+	project: string;
+	form: FormRow;
+	timeZone: string;
+	canManage: boolean;
+	sitesChecked: boolean;
+}) {
+	const day = clock(timeZone).day;
+	const editor = (code: string) => projectHref(org, project, `forms/versions/${code}`);
+	const when = (version: VersionRow) =>
+		version.state === "draft"
+			? `Started ${day(version.createdAt)}`
+			: version.publishedAt
+				? `Published ${day(version.publishedAt)}`
+				: "Not published";
+	const used = (version: VersionRow) =>
+		!sitesChecked
+			? "Not checked"
+			: version.sites.length > 0
+				? version.sites.map(site => site.name).join(", ")
+				: "No site";
+	const questions = (version: VersionRow) =>
+		version.legacy ? "From before the form editor" : plural(version.questionCount, "question");
+
 	return (
 		<>
-			{/* Below 640 px each version is a card: the id and state on top, then its use and its action. */}
+			{/* Below 640 px each version is a card: the code and state on top, then its facts, then its actions. */}
 			<ul className="divide-y divide-rule sm:hidden">
-				{rows.map(({ version, changes }) => (
-					<li
-						key={version.id}
-						className={
-							version.id === selected ? "bg-well px-island-pad py-4 selected-bar" : "px-island-pad py-4"
-						}>
-						<p className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-							<span className="type-mono-data text-ink">{version.id}</span>
-							<VersionStateText
-								state={version.state}
-								qualifier={versionQualifier(version, changes, "row")}
-							/>
-						</p>
-						<p className="mt-1 type-small text-ink-2">
-							{version.observations > 0 ? plural(version.observations, "observation") : "Not in use"}
-						</p>
-						<div className="mt-3">
-							<VersionAction
-								version={version}
-								editor={editor}
-								blocked={blocked}
-								onStart={() => onStart(version.id)}
-							/>
+				{form.versions.map(version => (
+					<li key={version.code} className="flex flex-col gap-2 px-island-pad py-4">
+						<div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+							<Link href={editor(version.code)} className={LINK}>
+								<Mono>{version.code}</Mono>
+							</Link>
+							<StateBadge kind="form" state={version.state} label={stateLabel(version)} />
 						</div>
+						<p className="type-small text-ink-2">
+							{questions(version)} · {when(version)}
+						</p>
+						<p className="type-small text-ink-2">Used by: {used(version)}</p>
+						<VersionActions org={org} project={project} version={version} canManage={canManage} />
 					</li>
 				))}
 			</ul>
 			<div className="hidden sm:block">
-				<Table caption="Form version history">
+				<Table caption={`Versions of ${form.name}`}>
 					<THead>
 						<tr>
 							<Th>Version</Th>
 							<Th>State</Th>
-							<Th>In use</Th>
-							<Th>
-								<span className="sr-only">Action</span>
-							</Th>
+							<Th>Questions</Th>
+							<Th>When</Th>
+							<Th>Used by</Th>
+							{canManage && (
+								<Th>
+									<span className="sr-only">Actions</span>
+								</Th>
+							)}
 						</tr>
 					</THead>
 					<TBody>
-						{versions.map(version => {
-							const raw = definitionOf(version.id, preview);
-							const base = version.base ? definitionOf(version.base, preview) : undefined;
-							const changes = raw ? changedIds(raw, base).size : 0;
-							return (
-								<Tr key={version.id} selected={version.id === selected}>
-									<Td mono className="text-ink">
-										{version.id}
-									</Td>
+						{form.versions.map(version => (
+							<Tr key={version.code}>
+								<Td nowrap>
+									<Link href={editor(version.code)} className={LINK}>
+										<Mono>{version.code}</Mono>
+									</Link>
+								</Td>
+								<Td nowrap>
+									<StateBadge kind="form" state={version.state} label={stateLabel(version)} />
+								</Td>
+								<Td>{questions(version)}</Td>
+								<Td>{when(version)}</Td>
+								<Td>{used(version)}</Td>
+								{canManage && (
 									<Td>
-										<VersionStateText
-											state={version.state}
-											qualifier={versionQualifier(version, changes, "row")}
-										/>
-									</Td>
-									<Td>
-										{version.observations > 0
-											? plural(version.observations, "observation")
-											: "Not in use"}
-									</Td>
-									<Td className="text-right">
-										<VersionAction
+										<VersionActions
+											org={org}
+											project={project}
 											version={version}
-											editor={editor}
-											blocked={blocked}
-											onStart={() => onStart(version.id)}
+											canManage={canManage}
 										/>
 									</Td>
-								</Tr>
-							);
-						})}
+								)}
+							</Tr>
+						))}
 					</TBody>
 				</Table>
 			</div>
 		</>
-	);
-}
-
-function VersionAction({
-	version,
-	editor,
-	blocked,
-	onStart
-}: {
-	version: VersionView;
-	editor: (id: string) => string;
-	blocked: string | null;
-	onStart: () => void;
-}) {
-	if (version.state === "published")
-		return (
-			<Button
-				variant="outline"
-				icon="pencil"
-				disabled={blocked !== null}
-				disabledReason={blocked ?? undefined}
-				aria-label={`Start a new draft from ${version.id}`}
-				onClick={onStart}
-				className="whitespace-nowrap sm:w-48">
-				Start a new draft
-			</Button>
-		);
-	if (version.state === "retired")
-		return (
-			<ButtonLink
-				href={editor(version.id)}
-				variant="outline"
-				icon="eye"
-				aria-label={`Read ${version.id}`}
-				className="whitespace-nowrap sm:w-48">
-				Read version
-			</ButtonLink>
-		);
-	if (version.id === "janet-test-v1")
-		return (
-			<Button variant="outline" icon="book-open" onClick={readNotes} className="whitespace-nowrap sm:w-48">
-				Read notes
-			</Button>
-		);
-	return (
-		<ButtonLink
-			href={editor(version.id)}
-			variant="outline"
-			icon="pencil"
-			aria-label={`Edit draft ${version.id}`}
-			className="whitespace-nowrap sm:w-48">
-			Edit draft
-		</ButtonLink>
 	);
 }

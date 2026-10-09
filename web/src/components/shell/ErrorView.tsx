@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
@@ -10,7 +10,8 @@ import { Island } from "@/components/contour/Island";
 import { PAGE_TITLE_ID } from "@/components/contour/PageHeader";
 import { StateBadge } from "@/components/contour/StateBadge";
 import { orgHref, pageNameOf } from "@/features/shell/navigation";
-import { DEFAULT_ORG, formatDayTime, getOrg } from "@/fixtures";
+import { useWorkspace } from "@/features/shell/WorkspaceProvider";
+import { clock } from "@/lib/time";
 
 /**
  * A reference the reader can send on: "REQ-" and the first six characters of the error's digest, which
@@ -39,10 +40,11 @@ export type ErrorViewProps = {
  */
 export function ErrorView({ error, retry }: ErrorViewProps) {
 	const pathname = usePathname();
-	const params = useParams<{ org?: string }>();
-	const org = params?.org && getOrg(params.org) ? params.org : DEFAULT_ORG;
-	// The moment the error was shown, fixed for the life of this view.
-	const [when] = useState(() => formatDayTime(new Date()));
+	const { org } = useWorkspace();
+	// The moment the error was shown, in this browser's timezone, fixed for the life of this view.
+	const [when] = useState(() =>
+		clock(Intl.DateTimeFormat().resolvedOptions().timeZone).dayTime(new Date().toISOString())
+	);
 
 	return (
 		<div className="mx-auto grid max-w-6xl gap-10 py-8 lg:grid-cols-2 lg:gap-14 lg:py-14">
@@ -58,10 +60,10 @@ export function ErrorView({ error, retry }: ErrorViewProps) {
 					Your records remain available. Try again or return to the workspace.
 				</p>
 				<div className="mt-8 flex flex-wrap gap-3">
-					<Button icon="rotate-cw" onClick={retry}>
+					<Button variant="primary" icon="rotate-cw" onClick={retry}>
 						Try again
 					</Button>
-					<ButtonLink href={orgHref(org)} variant="outline" icon="arrow-left">
+					<ButtonLink href={org ? orgHref(org.slug) : "/o"} variant="outline" icon="arrow-left">
 						Return to projects
 					</ButtonLink>
 				</div>

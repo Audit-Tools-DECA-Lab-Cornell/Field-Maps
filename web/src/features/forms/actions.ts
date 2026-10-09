@@ -1,0 +1,152 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+import { createDraft, createForm, discardDraft, publishVersion, retireVersion, saveDraft } from "@/lib/api/mutations";
+import { getFormVersion, resolveProject } from "@/lib/api/workspace";
+import { projectAbilities } from "@/lib/workspace/access";
+
+import { failedChange, type FormActionFailure, type FormActionResult } from "./result";
+import { FORM_CODE_PATTERN, isTemplateId, NAME_LIMIT, type TemplateId } from "./starter";
+import { templateDefinition } from "./templates";
+
+/**
+ * Form changes. Each action finds the project from its web address, stops a person who is not a manager
+ * before anything is sent (the API refuses them too), makes one change and refreshes the project's pages.
+ * A failure says what did not happen and why; nothing here turns an API failure into success.
+ */
+
+const place = { org: z.string().min(1).max(200), project: z.string().min(1).max(200) };
+const versionCode = z.string().min(1).max(100);
+const definition = z.record(z.string(), z.unknown());
+
+const NOT_MANAGER = "Only project managers can change forms.";
+
+/** Runs `work` for the project at this address, for a manager only, and refreshes the project's pages. */
+async function asManager<T extends object>(
+	org: string,
+	project: string,
+	nothing: string,
+	work: (projectId: string) => Promise<T>
+): Promise<FormActionResult<T>> {
+	try {
+		const ref = await resolveProject(org, project);
+		if (!ref) return { status: "failed", message: `${nothing} This project is no longer there.` };
+		if (!projectAbilities(ref.role).manage) return { status: "failed", message: `${nothing} ${NOT_MANAGER}` };
+		const done = await work(ref.id);
+		revalidatePath(`/o/${org}/p/${project}`, "layout");
+		return { status: "done", ...done };
+	} catch (error) {
+		// Anything that is not a FieldMaps or network failure is rethrown there.
+		return failedChange(nothing, error);
+	}
+}
+
+function refused(nothing: string): FormActionFailure {
+	return { status: "failed", message: `${nothing} The request was not understood. Reload the page and try again.` };
+}
+
+/* ── New form ─────────────────────────────────────────────────────────────── */
+
+const newFormInput = z.object({
+	...place,
+	template: z.custom<TemplateId>(isTemplateId),
+	code: z.string().regex(FORM_CODE_PATTERN),
+	name: z.string().trim().min(1).max(NAME_LIMIT)
+});
+
+/** A new form from a template; the answer is its first draft, which the screen opens. */
+export async function createFormAction(
+	input: z.input<typeof newFormInput>
+): Promise<FormActionResult<{ version: string }>> {
+	const nothing = "Nothing was created.";
+	const parsed = newFormInput.safeParse(input);
+	if (!parsed.success) return refused(nothing);
+	const { org, project, template, code, name } = parsed.data;
+	const result = await asManager(org, project, nothing, async projectId => {
+		const draft = await createForm(projectId, { code, name, definition: templateDefinition(template, code, name) });
+		return { version: draft.code };
+	});
+	// A code already in use is the one conflict a new form can meet: say so next to the code.
+	if (result.status === "failed" && result.conflict)
+		return {
+			status: "failed",
+			message: `${nothing} This project already has a form with the code ${code}.`,
+			fields: { code: "This project already has a form with this code." }
+		};
+	return result;
+}
+
+/* ── Versions ─────────────────────────────────────────────────────────────── */
+
+const startDraftInput = z.object({
+	...place,
+	form: z.string().min(1).max(100),
+	/** Copy this version instead of the form's newest. */
+	from: versionCode.optional()
+});
+
+/** The form's next version as a draft: a copy of its newest version, or of `from`. */
+export async function startDraftAction(
+	input: z.input<typeof startDraftInput>
+): Promise<FormActionResult<{ version: string }>> {
+	const nothing = "Nothing was started.";
+	const parsed = startDraftInput.safeParse(input);
+	if (!parsed.success) return refused(nothing);
+	const { org, project, form, from } = parsed.data;
+	return asManager(org, project, nothing, async projectId => {
+		const source = from ? (await getFormVersion(projectId, from)).definition : undefined;
+		const draft = await createDraft(projectId, form, source);
+		return { version: draft.code };
+	});
+}
+
+const saveDraftInput = z.object({ ...place, version: versionCode, definition });
+
+/** Replaces the draft's definition with the editor's. A refused definition comes back with its problems. */
+export async function saveDraftAction(input: z.input<typeof saveDraftInput>): Promise<FormActionResult> {
+	const nothing = "Nothing was saved.";
+	const parsed = saveDraftInput.safeParse(input);
+	if (!parsed.success) return refused(nothing);
+	const { org, project, version, definition: body } = parsed.data;
+	return asManager(org, project, nothing, async projectId => {
+		await saveDraft(projectId, version, body);
+		return {};
+	});
+}
+
+const versionInput = z.object({ ...place, version: versionCode });
+
+export async function discardDraftAction(input: z.input<typeof versionInput>): Promise<FormActionResult> {
+	const nothing = "Nothing was discarded.";
+	const parsed = versionInput.safeParse(input);
+	if (!parsed.success) return refused(nothing);
+	const { org, project, version } = parsed.data;
+	return asManager(org, project, nothing, async projectId => {
+		await discardDraft(projectId, version);
+		return {};
+	});
+}
+
+export async function publishVersionAction(input: z.input<typeof versionInput>): Promise<FormActionResult> {
+	const nothing = "Nothing was published.";
+	const parsed = versionInput.safeParse(input);
+	if (!parsed.success) return refused(nothing);
+	const { org, project, version } = parsed.data;
+	return asManager(org, project, nothing, async projectId => {
+		await publishVersion(projectId, version);
+		return {};
+	});
+}
+
+export async function retireVersionAction(input: z.input<typeof versionInput>): Promise<FormActionResult> {
+	const nothing = "Nothing was retired.";
+	const parsed = versionInput.safeParse(input);
+	if (!parsed.success) return refused(nothing);
+	const { org, project, version } = parsed.data;
+	return asManager(org, project, nothing, async projectId => {
+		await retireVersion(projectId, version);
+		return {};
+	});
+}

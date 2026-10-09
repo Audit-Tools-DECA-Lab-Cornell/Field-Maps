@@ -1,14 +1,13 @@
 "use client";
 
-import { useParams } from "next/navigation";
-
 import { ButtonLink } from "@/components/contour/Button";
 import { Icon } from "@/components/contour/Icon";
 import { Island } from "@/components/contour/Island";
 import { ShortcutHint } from "@/components/contour/Kbd";
 import { PAGE_TITLE_ID } from "@/components/contour/PageHeader";
 import { orgHref, projectHref } from "@/features/shell/navigation";
-import { DEFAULT_ORG, getOrg, getProject, projectsIn } from "@/fixtures";
+import { useWorkspace } from "@/features/shell/WorkspaceProvider";
+import type { ProjectRef } from "@/lib/workspace/types";
 
 import { PlaceRows } from "./PlaceRows";
 
@@ -19,14 +18,19 @@ export type NotFoundViewProps = {
 
 /**
  * "This page is not on the map." (org-18): what happened, the way back, and the places that do exist.
- * The organization and project come from the address when they exist.
+ * The organization and project come from the address when the person belongs there; otherwise from their
+ * first project.
  */
 export function NotFoundView({ inShell = false }: NotFoundViewProps) {
-	const params = useParams<{ org?: string; project?: string }>();
-	const org = params?.org && getOrg(params.org) ? params.org : DEFAULT_ORG;
+	const { index, org, project: current } = useWorkspace();
+	const readable = (entry: ProjectRef) => entry.role !== "observer";
 	const project =
-		params?.project && getProject(org, params.project) ? getProject(org, params.project) : projectsIn(org)[0];
-	const base = project ? projectHref(org, project.slug) : orgHref(org);
+		current && readable(current)
+			? current
+			: (index.projects.find(entry => entry.orgId === org?.id && readable(entry)) ??
+				(org ? undefined : index.projects.find(readable)));
+	const back = org ? orgHref(org.slug) : "/o";
+	const base = project ? projectHref(project.orgSlug, project.code) : null;
 
 	return (
 		<div className="mx-auto grid max-w-6xl gap-10 py-8 lg:grid-cols-2 lg:gap-14 lg:py-14">
@@ -34,14 +38,14 @@ export function NotFoundView({ inShell = false }: NotFoundViewProps) {
 				<span className="grid size-20 place-items-center rounded-pill border border-line bg-island text-ink shadow-ledge">
 					<Icon name="map" size={32} />
 				</span>
-				<p className="mt-8 type-mono-label text-ink-2">404 · Page not found</p>
+				<p className="mt-8 type-mono-label text-ink-2">Page not found</p>
 				<h1 id={PAGE_TITLE_ID} tabIndex={-1} className="mt-2 type-page text-ink md:type-hero">
 					This page is not on the map.
 				</h1>
 				<p className="mt-4 max-w-xl type-lead text-ink-2">
 					The link may be outdated or the page may have moved. Return to your projects to continue.
 				</p>
-				<ButtonLink href={orgHref(org)} icon="arrow-left" className="mt-8">
+				<ButtonLink href={back} variant="primary" icon="arrow-left" className="mt-8">
 					Return to projects
 				</ButtonLink>
 				{inShell && (
@@ -50,7 +54,7 @@ export function NotFoundView({ inShell = false }: NotFoundViewProps) {
 					</p>
 				)}
 			</div>
-			{project && (
+			{project && base && (
 				<Island flush title="Places that do exist" className="self-start lg:mt-14">
 					<PlaceRows
 						rows={[

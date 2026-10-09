@@ -18,13 +18,11 @@ export type CodeFormKind = "verify" | "reset-password";
 export function ResendCodeForm({
 	kind,
 	cooldownSeconds,
-	offline,
 	codeRef,
 	startAgainHref
 }: {
 	kind: CodeFormKind;
 	cooldownSeconds: number;
-	offline: boolean;
 	codeRef: RefObject<HTMLInputElement | null>;
 	/** Where the person enters their address again, if the server no longer holds it. */
 	startAgainHref: string;
@@ -49,7 +47,7 @@ export function ResendCodeForm({
 		<form
 			action={action}
 			onSubmit={event => {
-				if (pending || waiting || offline) event.preventDefault();
+				if (pending || waiting) event.preventDefault();
 			}}
 			className="flex flex-col gap-5"
 			aria-busy={pending || undefined}>
@@ -62,10 +60,8 @@ export function ResendCodeForm({
 				icon="rotate-cw"
 				busy={pending}
 				busyLabel="Sending a new code…"
-				disabled={waiting || offline}
-				disabledReason={
-					offline ? "Sending a new code needs a connection." : "A new code can be sent once a minute."
-				}>
+				disabled={waiting}
+				disabledReason="A new code can be sent once a minute.">
 				{waiting ? (
 					<>
 						Resend in <span className="font-mono tnum">{formatCountdown(cooldown.remaining)}</span>

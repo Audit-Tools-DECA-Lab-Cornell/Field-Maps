@@ -9,9 +9,8 @@ import mapPalettesContract from "../../../contracts/map-palettes.json";
  * is the single source for this: the mobile collector reads the same file, so a site looks the same to
  * the observer and the manager regardless of which app drew it.
  *
- * The site plan (`components/map/SitePlan`) and the remaining Leaflet screens hand these colours to SVG
- * attributes and path options in JavaScript, so map colour stays literal hex from here on down, never a
- * Contour token. This module holds no React state, so server components can read the palettes too; the
+ * The site plan (`components/map/SitePlan`) hands these colours to SVG attributes in JavaScript, so map
+ * colour stays literal hex from here on down, never a Contour token. This module holds no React state, so server components can read the palettes too; the
  * reader's choice lives in `map-palette-store.ts`.
  */
 

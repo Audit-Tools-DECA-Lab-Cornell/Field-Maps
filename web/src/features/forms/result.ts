@@ -1,0 +1,41 @@
+import { ApiError, apiRequestError, failedWrite } from "@/lib/api/errors";
+
+/**
+ * What a form action answers. A failure says what did not happen and why, in FieldMaps' own words. A 422
+ * also carries the API's field problems; a 409 says the form changed under the person, and the screen
+ * offers a reload.
+ */
+export type FormActionFailure = {
+	readonly status: "failed";
+	readonly message: string;
+	/** Field id → problem, from a refused definition. */
+	readonly fields?: Readonly<Record<string, string>>;
+	/** Someone else changed the form at the same time. */
+	readonly conflict?: boolean;
+};
+
+export type FormActionResult<T extends object = Record<never, never>> =
+	| ({ readonly status: "done" } & T)
+	| FormActionFailure;
+
+export const CONFLICT_COPY = "Someone else changed this form. Reload to see the latest.";
+export const GONE_COPY = "This version is no longer there. It may have been discarded.";
+
+/**
+ * A failed change: "Nothing was saved." then why. A conflict, a vanished version and a refused definition
+ * get their own sentences; every other refusal uses `errorCopy`. When FieldMaps did not answer, or failed on
+ * its side, the change may have landed and the message says so (`failedWrite`). Anything that is not a
+ * FieldMaps or network failure is rethrown.
+ */
+export function failedChange(nothing: string, error: unknown): FormActionFailure {
+	const failure: ApiError = apiRequestError(error);
+	if (failure.status === 409) return { status: "failed", message: `${nothing} ${CONFLICT_COPY}`, conflict: true };
+	if (failure.status === 404) return { status: "failed", message: `${nothing} ${GONE_COPY}` };
+	if (failure.code === "validation_failed")
+		return {
+			status: "failed",
+			message: `${nothing} The form has problems that need fixing first.`,
+			fields: failure.fields
+		};
+	return { status: "failed", message: failedWrite(nothing, failure) };
+}

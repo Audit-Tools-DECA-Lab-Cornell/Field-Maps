@@ -4,9 +4,9 @@ This file is part of the [FieldMaps production plan](../docs/plan/README.md) and
 - **API shapes:** [contracts.md](../docs/plan/contracts.md).
 - **The API side:** [backend/PLAN.md](../backend/PLAN.md).
 - **User journeys:** J1, J3 and J4 in [product.md](../docs/plan/product.md#journeys-the-pilot-must-support).
-- **Fixture list:** [architecture.md](../docs/plan/architecture.md#fixture-inventory).
+- **Fixture list:** [architecture.md](../docs/plan/architecture.md#fixture-inventory) records the fixtures that D30 removed from the web.
 - **Local rules:** `web/AGENTS.md` still applies. In particular:
-  - one **Preview data** marker in the header and one footer line say that the screens read fixtures (D20). They come off only when no screen reads fixtures;
+  - every workspace page is live (D30): no fixtures, no Preview data marker, and a feature with no backend says "X is not available yet." (the Honesty section of `web/AGENTS.md`);
   - Contour tokens change only in `contracts/contour.json`; `pnpm tokens` regenerates `src/styles/contour.css`, and the collector reads the same file (D19).
 
 **Skills to load** when working here: `vercel-plugin:nextjs`, `frontend-dashboard-polish`, `responsive-design`, `site-architecture`.
@@ -28,40 +28,44 @@ Current changes verified 2026-10-04: WEB-01 package uploads use a real selected 
 
 ## Target route tree
 
+This is the tree in `web/src/app` today (WEB-27). The route group `(auth)/(signed-in)` is now `(auth)/(join)`, because `/invite` and `/join` also serve signed-out visitors.
+
 ```
 src/app/
-  (public)/…                                 /, /privacy, /privacy/delete-data
+  (marketing)/page.tsx                       /
+  (legal)/…                                  /privacy, /privacy/delete-data
   (auth)/(signed-out)/…                      /sign-in, /sign-up, /verify, /forgot-password, /reset-password
-  (auth)/(signed-in)/…                       /invite (token in the URL fragment), /join (U3)
-  (onboarding)/onboarding/[step]             organization, project, site, form, team
+  (auth)/(join)/…                            /invite (token in the URL fragment), /join (type a code)
   (app)/account/page.tsx                     profile, password, sign out, delete account
-  (app)/o/[org]/…                            header, no tabs: collect (observer handoff, U3), not-found, error
-  (app)/o/[org]/(org)/…                      projects (org root), members, library (U4), settings
-  (app)/o/[org]/p/[project]/(project)/…      overview (project root), data, data/[observation],
-                                             sites, sites/[site], sites/[site]/zones/[zone],
-                                             sites/[site]/zones/edit (U2), sites/[site]/packages?step=,
+  (app)/o/page.tsx                           opens the remembered project, the only project, or the first organization
+  (app)/o/[org]/…                            header, no tabs: collect (observer handoff), [...missing], not-found, error
+  (app)/o/[org]/(org)/…                      projects (org root), members, settings
+  (app)/o/[org]/p/[project]/…                overview (project root), data, data/[observation],
+                                             sites, sites/[site], sites/[site]/packages (?package=, ?step=upload),
                                              forms, forms/versions, forms/versions/[version],
-                                             forms/versions/[version]/publish, team, qgis,
-                                             reports (U7), reports/views, reports/[report],
-                                             settings, settings/rounds (U6)
+                                             forms/versions/[version]/publish, team, qgis, reports, settings
   dev/contour/                               every primitive in Day and Dusk (dev and preview builds only)
 src/proxy.ts                                 session refresh + auth redirects
 src/lib/supabase/{server,client}.ts
-src/lib/api/{client.ts,schema.d.ts,errors.ts}   server-only
+src/lib/api/{client,workspace,mutations}.ts  server-only: cached reads, one function per write
+src/lib/api/browser.ts                       browser to API: package upload and archive download only
+src/lib/workspace/…                          roles, the /o resolver, results (pure, unit-tested)
 src/components/contour/…                     primitives, same names as mobile/src/ui/
-src/components/shell/…                       header, switchers, tabs, ⌘K, Preview data marker
+src/components/shell/…                       header, switchers, tabs, ⌘K, LoadFailure, NotAvailable
 src/features/<area>/…
-src/fixtures/…                               preview data, until each screen is wired
 ```
 
-A project has eight tabs: Overview, Data, Sites, Forms, Team, QGIS, Reports, Settings. An organization has four: Projects, Members, Form library, Settings. The header holds the org and project switchers, "Search or jump to" (⌘K), the Preview data marker and the account menu (with Day · Dusk). Viewers do not see Team or Settings. The Team page, publishing, and uploading to Sites are for managers only. The old paths (`/overview`, `/observations`, `/places`, `/basemaps`, `/instrument`, `/qgis`) redirect with a 307 and keep the query string (D21). Every route under `(auth)`, `(onboarding)` and `(app)`, and `/dev/contour`, is `noindex`.
+Removed in WEB-27: `(onboarding)`, `(org)/library`, `sites/[site]/zones/**`, `reports/views`, `reports/[report]` and `settings/rounds`. `/o/deca` is an ordinary address now, not a sample.
 
-**Contour screens first.** WEB-20 to WEB-26 build every page above in Contour, on fixtures (D19–D22). The wiring tasks WEB-04 to WEB-13 then connect real data to those screens without changing their layout. Since 2026-10-04 (D24) there are two workspaces: a signed-in user's organization at `/o/<slug>` reads the API wherever an endpoint exists and shows a "Not connected yet" state where none does, and the sample workspace at `/o/deca` keeps every screen on fixtures under the Preview data marker. Without Supabase configuration, development and review builds open the sample workspace without signing in (D23); configured and production builds keep the proxy fail-closed. Where a wiring task names something WEB-26 retires (`src/data/*`, `LeafletCanvas`, `ZonePlan`, the `(legal)` and `(marketing)` groups), read its successor (`src/fixtures/*`, `SitePlan` and `MapFrame`, `(public)`). The design pages named under `Read first` come from the four Contour design sets, which are not committed ([docs/ux/README.md](../docs/ux/README.md)); root `DESIGN.md` is the committed reference.
+A project has eight tabs: Overview, Data, Sites, Forms, Team, QGIS, Reports, Settings. An organization has three: Projects, Members, Settings. The header holds the organization and project switchers, "Search or jump to" (⌘K) and the account menu (with Day · Dusk). Team and Settings are for project managers. Members and the organization's Settings are for owners and admins, who also act as managers of every project in the organization. Nobody else sees those tabs, and those pages check the role themselves and show a no-access note. An observer who opens a project is sent to `/o/<org>/collect`. `/o` opens the project the person was last in (cookie `fm-place`), the only project, or the first organization. The old paths (`/overview`, `/observations`, `/places`, `/basemaps`, `/instrument`, `/qgis`, `/onboarding`) redirect with a 307 to `/o`. `library`, `sites/<site>/zones/**`, `reports/views` and `settings/rounds` redirect to the page that replaced them. Every route under `(auth)` and `(app)`, and `/dev/contour`, is `noindex`.
+
+**Contour screens, then live data.** WEB-20 to WEB-26 built every page above in Contour on fixtures (D19–D22), and the wiring tasks WEB-04 to WEB-13 were to connect real data to them. WEB-27 (D30) wired all of it at once and removed the fixtures. There is one workspace now: every page under `/o/<org>/p/<project>` reads and writes the API for the signed-in person. The sample workspace at `/o/deca`, the Preview data marker, the set-up flow and the preview sign-in bypass (D20, D23, D24) are gone. A feature with no backend shows one "X is not available yet." note. Where a task below names something WEB-27 retired (`src/data/*`, `src/fixtures/*`, `LeafletCanvas`, `ZonePlan`, `(onboarding)`), read the WEB-27 note at the top of that task. The design pages named under `Read first` come from the four Contour design sets, which are not committed ([docs/ux/README.md](../docs/ux/README.md)); root `DESIGN.md` is the committed reference.
 
 ## Tasks
 
 ### WEB-01: Quick fix so the package upload reaches a real project
 Status: doing (code in place 2026-10-01; the staging upload is not verified) · Phase 0 · Size S · Depends: DB-01 · Blocks: WEB-08
+WEB-27 (2026-10-09, D30): retired. The project comes from the route and the token from the signed-in person. The `NEXT_PUBLIC_FIELDMAPS_PROJECT_ID` variable, the site-code stopgap and the pasted token are gone.
 Progress 2026-10-01: `NEXT_PUBLIC_FIELDMAPS_PROJECT_ID` with a UUID check, a site-code input, a multi-file drop zone with an instant layer map and browser checks. `qgis/fall-creek/upload-sample/` passes the browser checks and the API's `prepare()` run directly; no upload against staging has been made.
 Superseded later by WEB-08, which takes the project and site from the route.
 Read first: `src/components/basemaps/PackageUpload.tsx`, `src/lib/packages.ts`, `src/data/project.ts`.
@@ -121,7 +125,8 @@ After sign-in, go to `next`, the last project, or `/onboarding`.
 Done when: every flow works against the local stack, with codes read from Mailpit.
 
 ### WEB-05: Server-side API client
-Status: done · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, WEB-03 · Blocks: WEB-06, WEB-12
+Status: done · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, WEB-03 · Blocks: WEB-06, WEB-12, WEB-27
+WEB-27 (2026-10-09, D30): kept. `NEXT_PUBLIC_FIELDMAPS_API_URL` is not removed: the browser uses it to send map packages (up to 24 MiB) and fetch their archives straight from the API, as step 3 allowed. Server components and Server Actions use `FIELDMAPS_API_URL`. The client also gained cached reads (`lib/api/workspace.ts`), one function per write (`lib/api/mutations.ts`) and a 15-second timeout for each request.
 Verified 2026-10-04: authenticated `/account` renders real `/v1/me` profile and membership counts from the local API, in both browser and automated HTTP acceptance. Generated endpoint types, runtime identity parsing, no-store requests and a 15-second timeout are in place. Large package uploads remain direct browser-to-API, retaining CORS and the public API origin to avoid introducing a web proxy body-size limit. `pnpm --dir web check`, `build`, `test:auth` (11 tests) and `test:api-errors` (31 tests including HTML 200 response handling) passed.
 
 Do:
@@ -134,6 +139,7 @@ Done when: one server component renders `/v1/me` data, and the typecheck passes 
 
 ### WEB-06: Onboarding, organization and project routes, account page
 Status: todo · Phase 1 · Size L · Depends: BE-06, BE-07, BE-08, WEB-04, WEB-05 · Blocks: WEB-07, WEB-08, WEB-09, WEB-10, WEB-11, WEB-14, WEB-15
+WEB-27 (2026-10-09, D30): delivered, except the set-up. `/o` opens the person's last project, their only project or their first organization. The organization and project routes and switchers come from `/v1/me`. Owners and admins create projects from the organization's Projects page. `/invite` and `/join` preview and redeem real invitations. The organization and the project have `loading.tsx`, `error.tsx` and not-found pages. `/account` was already live. Retired: `/onboarding` and creating an organization on the web (the bootstrap script does that).
 Do:
 1. `/onboarding`:
    - create an org (name, auto slug) and the first project (name, code, timezone) through `POST /v1/orgs`;
@@ -159,6 +165,7 @@ Done when: J1 steps 1–2 work end to end against the local stack, and the old U
 
 ### WEB-07: Team page (members, invitations, join codes)
 Status: todo · Phase 1 · Size M · Depends: BE-07, WEB-06 · Blocks: WEB-15
+WEB-27 (2026-10-09, D30): delivered on live data for a project (Team) and for an organization (Members): the list, role change, remove, an invitation by link or by an 8-character code (shown once, with "FieldMaps does not send email"), pending invitations and revoke. Not built: the QR code (dropped), devices (DB-10) and resending an invitation ("not available yet"). Nobody becomes an owner by a role change; ownership moves only by Transfer ownership in the organization's Settings.
 Do:
 1. List members with their role, and let a manager change a role or remove someone.
    - The UI blocks removing the last manager, and the API enforces it too.
@@ -173,6 +180,7 @@ Done when: a manager creates a code on the web and an observer redeems it on mob
 
 ### WEB-08: Sites and packages on real data
 Status: todo · Phase 3 · Size M · Depends: BE-13, WEB-01, WEB-06 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered. Sites lists and creates sites (code, name, description). A site draws its plan from the current package. Map packages show the history, the server's checks, an upload from QGIS layers and a download. The browser sends the package straight to the API. The pasted token, the project ID variable and the fixture packages are gone. "Activate" is dropped: the newest ready package is current. Deleting a site or a package is "not available yet".
 Do:
 1. `sites`:
    - list from the API;
@@ -189,6 +197,7 @@ Done when: J1 step 3 works, and no fixture remains on these routes.
 
 ### WEB-09: Instrument on real data
 Status: todo · Phase 3 · Size M · Depends: BE-11, WEB-06, WEB-10 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered. Forms lists forms and starts a new one from a template (Behaviour mapping, Zone inventory, Blank). Form versions starts a draft, discards it or retires a version. The draft editor saves to the server and shows the server's validation message. Publish shows the protocol notes and says how observers receive the form. Not built: importing a draft by pasting or uploading JSON (templates replace it).
 Cut option: if the schedule slips, keep this screen read-only and seed Janet's version with a migration.
 Do:
 1. Forms, then versions, each with its state. Show a version's questions and display rules, read from the definition.
@@ -201,6 +210,7 @@ Done when: Janet's definition from `contracts/forms/` imports and publishes loca
 
 ### WEB-10: Observations on real data
 Status: todo · Phase 3 · Size L · Depends: BE-14, WEB-02, WEB-06 · Blocks: WEB-09, WEB-13
+WEB-27 (2026-10-09, D30): delivered on the newest 500 observations. The API has no cursor, so there is no paging, viewport query or clustering. Site and round filters ask the server. Zone, observer, day and search filters work on the loaded rows and live in the URL. The page has a table, a site plan with markers when one site is chosen, a record page worded from the form version the record used, and Export. `LeafletCanvas`, `FilterRail` and the fixture observations are gone. Dates use the project's timezone.
 Read first: `src/components/observations/*`, `src/lib/filters.ts`.
 Do:
 1. Keep the filters in the URL, now project-scoped. Load one page at a time with a cursor.
@@ -221,6 +231,7 @@ Done when: 10,000 synthetic observations on the local stack scroll and filter sm
 
 ### WEB-11: Overview on real data
 Status: todo · Phase 3 · Size M · Depends: BE-14, WEB-06 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered without a summary endpoint. The overview works out the field return, the coverage of zones by Standard, Reliability and Inventory rounds, what needs attention and the recent activity in the web app, from the site list and the newest 500 observations. At the cap it says "Based on the newest 500 observations." No completion target is claimed.
 Cut option: show counts only, without charts.
 Do: fill WEB-23's overview (counts, `TypeBars` and the coverage matrix) from `GET …/summary`, keeping its layout; `DESIGN.md` rules out KPI tiles. Delete client-side aggregation over fixtures (`src/lib/analysis.ts`) that nothing uses anymore.
 
@@ -228,6 +239,7 @@ Done when: the overview matches SQL counts on the local stack.
 
 ### WEB-12: GIS page and exports
 Status: todo · Phase 3 · Size S · Depends: BE-14, BE-15, GIS-01, GIS-04, WEB-05 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered in the browser. CSV, GeoJSON and the codebook are built by `lib/export` from the loaded observations, follow the site and round filters, and say "Based on the newest 500 observations." at the cap. The QGIS page lists each site's current package with a download. Not built: server-side exports and the connection panel. "Connecting QGIS directly to the database" says it is not available yet and points to exporting a file.
 Do:
 1. Export buttons (CSV, GeoJSON) that apply the current filters and call BE-14's server exports.
    - Delete the client-side generation over fixtures (`src/lib/exports.ts`).
@@ -238,6 +250,7 @@ Done when: the exported CSV opens with the codebook columns, and the panel shows
 
 ### WEB-13: Tablet layout and touch targets
 Status: todo · Phase 3 · Size M · Depends: WEB-10 · Blocks: none
+WEB-27 (2026-10-09, D30): not part of this task. WEB-27's screens are built to fit 390 px, and the Playwright honesty scan in `web/e2e` screenshots every route at 1440, 1024, 768 and 390 in Day and Dusk. The audit of 44 px targets at 768×1024, 1024×768 and 1280×800 is still open.
 Do:
 1. Observations: two panes (map and table) from `md`, with detail as a sheet. Three panes at `xl`.
 2. Every control is at least 44 px tall (`RailNav.tsx:31`, `chrome.tsx:171,423`, `ObservationsWorkspace.tsx:102`, `PackageUpload.tsx:145`).
@@ -247,6 +260,7 @@ Done when: there is no horizontal scroll and no clipped pane at those three size
 
 ### WEB-14: Legal pages for public sign-up
 Status: todo · Phase 1 · Size S · Depends: WEB-06 · Blocks: OPS-11
+WEB-27 (2026-10-09, D30): not changed. The legal layout only takes the new header mark (D29).
 Read first: `src/app/(legal)/privacy/page.tsx` (`:78-80` and `:281` say administrators create accounts); `src/app/(legal)/policy.ts`.
 Do:
 1. Describe public sign-up, email-code verification, and what data an account holds.
@@ -259,6 +273,7 @@ Done when: nothing on the page contradicts public sign-up, and the deletion path
 
 ### WEB-15: End-to-end tests with Playwright
 Status: todo · Phase 4 · Size M · Depends: DB-02, WEB-04, WEB-06, WEB-07 · Blocks: QA-04
+WEB-27 (2026-10-09, D30): partly delivered. `web/e2e` and `scripts/e2e-local.sh` run Playwright against local Supabase, the local API and the seed in `database/seed-web-workspace.mjs`. Specs: sign-in, sites, packages, forms, data, overview, QGIS and reports, settings, team, organization pages, an invitation redeemed by a viewer, an observer joining by code, the removed routes, and a scan of every route for sample words, jargon, more than one primary button and axe findings in Day and Dusk. Not covered: sign-up with Mailpit codes, password reset and account deletion. There is no onboarding to test.
 Do: add `web/e2e/`, running against the local stack and reading codes from the Mailpit API. Cover:
 - sign-up, verify, onboarding, then the org and project exist;
 - sign in and reset password;
@@ -270,6 +285,7 @@ Done when: the suite passes locally and in CI (OPS-06).
 
 ### WEB-16: Web error reporting
 Status: todo · Phase 4 · Size S · Depends: OPS-07, WEB-03 · Blocks: QA-06
+WEB-27 (2026-10-09, D30): not changed.
 Do:
 1. Add `@sentry/nextjs` for server, edge and browser.
    - Server and edge read `SENTRY_DSN`.
@@ -286,6 +302,7 @@ Done when: a server-side and a browser-side test error from the preview deployme
 
 ### WEB-17: Form Studio: the canonical form, a live collector preview, and local drafts
 Status: done (2026-10-01) · Phase 1 · Size M · Depends: CON-02 · Blocks: none
+WEB-27 (2026-10-09, D30): drafts moved to the server. The browser-only drafts, the change list, the `.json` download and the `/instrument` studio (`components/studio/*`) are retired. A draft is saved to the API, published and retired from Forms. Kept: the parser and engine in `src/lib/forms/` (`pnpm forms:parity`) and the collector view in the draft editor, which runs the same engine.
 Added 2026-10-01 to show Janet her form as the collector asks it, before the instrument API exists. WEB-09 later swaps the source from `contracts/forms/` to the API and adds publishing; the studio's UI stays.
 Read first: `contracts/README.md`; `mobile/src/forms/{definition,engine}.ts`; `mobile/src/components/question-panel.tsx`.
 Do:
@@ -303,6 +320,7 @@ Verified 2026-10-01: the web copy matches mobile byte for byte and replays all 3
 
 ### WEB-18: Set-up flow preview (organization, project, site, form, invitation)
 Status: done (2026-10-01) · Phase 1 · Size S · Depends: none · Blocks: none
+WEB-27 (2026-10-09, D30): retired. `/onboarding`, `features/onboarding` and `components/onboarding` are deleted, with every link to them. Organizations come from `scripts/bootstrap-study.mjs`. Owners create projects on the organization's Projects page. Sites, forms and the team are created in their own tabs.
 Added 2026-10-01 for the J1 walkthrough with Janet. A clickable preview at `/onboarding` that saves nothing and says so; WEB-06 and WEB-07 replace its "Continue" steps with the real calls once BE-07 exists.
 Do: five steps (organization and slug, first project and timezone, site and the QGIS layers it needs, starting form, observer join code), a live "what this creates" panel, links into `/basemaps` and `/instrument`, and a phone mock of the collector's join screen. No control is labelled as creating anything.
 
@@ -312,11 +330,13 @@ Verified 2026-10-01: all five steps walked in the browser (slug and project code
 
 ### WEB-19: Map palettes on the web maps (Day, Night)
 Status: done (2026-10-01) · Phase 1 · Size S · Depends: none · Blocks: none
+WEB-27 (2026-10-09, D30): the Leaflet maps are retired: the observations map, the package-upload preview and the tile layers. `leaflet` and `react-leaflet` are removed. Plans are the SVG `SitePlan` and `MapFrame`, which keep the Day and Night palettes from `contracts/map-palettes.json`.
 Added 2026-10-01 with MOB-22 (decision D18). The observations map and the package-upload preview read `contracts/map-palettes.json` through `src/lib/map-palette.ts`; a Day · Night switch on the observations map is shared by both maps and remembered in the browser. Light or dark CARTO tiles follow the palette.
 Verified 2026-10-01: `pnpm --dir web check` passes; in the browser the switch flips the site fill between the Day and Night colours and the choice survives a reload. The ground repaint around the site on a palette change was not seen in a browser (the pane was hidden).
 
 ### WEB-20: Contour foundation (web)
 Status: todo · Phase 1 · Size L · Depends: none · Blocks: WEB-21, WEB-22
+WEB-27 (2026-10-09, D30): the temporary parts are gone: the fixture scaffold (`src/fixtures`, `lib/preview.ts`), the Nocturne alias block in `globals.css`, `components/nocturne` and `src/data`. The ESLint rule now bans `@/fixtures`, `@/data` and `@/lib/preview` in place of the Nocturne-era modules. The tokens and `/dev/contour` are unchanged.
 Added 2026-10-03 (D19, D22). It builds no product screen. The screens built on it (WEB-21 to WEB-26) run on fixtures; the wiring tasks WEB-04 to WEB-13 later connect real data to them without changing their layout.
 Read first: `DESIGN.md`, `PRODUCT.md`, `web/AGENTS.md`, `contracts/contour.json`, `contracts/map-palettes.json`; designs: Contour system pp. 1–12.
 Do:
@@ -335,6 +355,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 
 ### WEB-21: Identity screens on Contour (web)
 Status: todo · Phase 1 · Size L · Depends: WEB-20 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered. `/invite` and `/join` preview and redeem real invitations. The token stays in the URL fragment and the code never goes in the URL. The group `(auth)/(signed-in)` is now `(auth)/(join)`, because the pages also serve signed-out visitors. Joining again as an existing member is answered 404 by the API, and the join page says the person may already be a member. Retired: the `(onboarding)` frame and `/onboarding/[step]`, the Preview data footer line and the `?preview-state` demo screens.
 Added 2026-10-03. WEB-04 (sign-up, sign-in, codes, passwords) connects them to the Supabase Server Actions at the same URLs, and WEB-06 (onboarding, invitation) connects them to the API, without changing their layout.
 Read first: `DESIGN.md`, `PRODUCT.md`; designs: Contour system p. 12, Organization, auth and public pp. 6–13; `src/components/onboarding/*` (WEB-18).
 Do:
@@ -349,7 +370,8 @@ Done when: each screen matches its design page at 1440 and 390 in Day and Dusk; 
 Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of each route against its design page, with axe failing on serious or critical findings.
 
 ### WEB-22: Workspace shell and navigation
-Status: todo · Phase 1 · Size L · Depends: WEB-20 · Blocks: WEB-23, WEB-24, WEB-25, WEB-26
+Status: todo · Phase 1 · Size L · Depends: WEB-20 · Blocks: WEB-23, WEB-24, WEB-25, WEB-26, WEB-27
+WEB-27 (2026-10-09, D30): delivered on live data. The switchers, the account menu (real name, email and initials), the tabs by role, ⌘K and the shortcuts read `/v1/me` through `WorkspaceProvider`. ⌘K covers tabs, organizations, projects and the account, not sites, people or `OBS-` ids. Retired: the Preview data marker and footer, View as and Show state, the session-only store, the Form library tab, and Create project in the switcher (it is on the organization's Projects page). The old paths redirect to `/o`.
 Added 2026-10-03 (D20, D21). WEB-03's proxy now guards it (with the D23 preview bypass), and WEB-06 (switchers and account menu from `/v1/me`) connects it to real organizations and projects without changing its layout.
 Read first: `DESIGN.md`, `PRODUCT.md`, `web/AGENTS.md`; designs: Contour system pp. 5, 6 and 10, Organization, auth and public pp. 1, 18 and 19.
 Do:
@@ -367,6 +389,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 
 ### WEB-23: Project screens: field return (overview, data, observation)
 Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered on live data (the overview as in WEB-11, the data page and record as in WEB-10). Retired: approve and exclude with undo ("Reviewing or excluding observations is not available yet"; every uploaded observation is in the exports), the session-only Save view ("Copy link to this view" replaces it) and the record's history, which has no audit log behind it.
 Added 2026-10-03. These screens run on fixtures. WEB-10 (data), WEB-11 (overview) and WEB-12 (exports) later connect real data to them without changing their layout.
 Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 1–3, Contour system p. 8; `src/lib/filters.ts`, `src/lib/analysis.ts`, `src/lib/exports.ts`.
 Do:
@@ -383,6 +406,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 
 ### WEB-24: Project screens: places (sites, site, zone, zone editor, map packages)
 Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered on live data: Sites, Site and Map packages (history, inspect, upload, download). Retired: the Zone page and the zone editor (U2; "Editing zones on the web is not available yet": edit zones in QGIS and upload a new package, and zone rows link to Data filtered by zone), Device readiness (not available yet) and "Activate" (the newest ready package is current).
 Added 2026-10-03. These screens run on fixtures. WEB-08 (sites and packages) and WEB-10 (zone data) later connect real data to them without changing their layout. The package upload stays real: it keeps `lib/packages.ts` and says "Sends this package to the FieldMaps API."
 Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 6–10; `src/components/basemaps/PackageUpload.tsx`, `src/lib/packages.ts`.
 Do:
@@ -397,6 +421,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 
 ### WEB-25: Project screens: forms, team, QGIS, reports, settings
 Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered on live data: Forms, Form versions, the draft editor, Publish, Team, QGIS, Reports and Settings. Reports is one page with Print. Retired: saved views (`reports/views`), the separate printable report (`reports/[report]`), Rounds (`settings/rounds`, U6), the join-code island, QGIS reader grants and the type-to-confirm danger zone. "Saved report views", "Planning rounds", "Deleting a project" and "Connecting QGIS directly to the database" say they are not available yet. Archive and Unarchive remain.
 Added 2026-10-03. These screens run on fixtures. WEB-09 (forms), WEB-07 (team) and WEB-12 (QGIS) later connect real data to them without changing their layout. Reports (U7) and rounds (U6) are proposals and always show their flags.
 Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 4, 5 and 11–19; `src/components/studio/PhonePreview.tsx`, `src/lib/forms/*`.
 Do:
@@ -413,6 +438,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 
 ### WEB-26: Organization, account and public pages, and retiring Nocturne and Leaflet
 Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
+WEB-27 (2026-10-09, D30): delivered: the organization's Projects, Members and Settings on live data (Transfer ownership for owners; "Deleting an organization" is not available yet), the observer handoff at `/o/[org]/collect` (the person's own observer projects, with the Android link when `NEXT_PUBLIC_ANDROID_APP_URL` is set), the home page and the not-found page. `/account` was already live. Retired: the Form library (U4; `/o/[org]/library` redirects to the organization), the join QR code, `src/data/*`, `components/nocturne`, the Nocturne CSS aliases, `leaflet` and `react-leaflet`. The route groups are `(marketing)` and `(legal)`, not `(public)`.
 Added 2026-10-03. These screens run on fixtures. WEB-06 (org pages, account), WEB-07 (members) and WEB-14 (privacy wording) later connect them without changing their layout.
 Read first: `DESIGN.md`, `PRODUCT.md`, `web/AGENTS.md`; designs: Organization, auth and public pp. 1–5 and 14–19.
 Do:
@@ -425,3 +451,37 @@ Do:
 Done when: no import of `@/data` or `nocturne` remains; no hex outside the generated tokens and the map palette; the build passes.
 
 Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pnpm forms:parity`, and the Playwright screenshot comparison of every route × preview state × role against its design page.
+
+### WEB-27: One live workspace
+Status: done (2026-10-09) · Phase 1 · Size L · Depends: WEB-05, WEB-22 · Blocks: none
+Added 2026-10-09 (D30), as Janet started using FieldMaps. Her organization, `/o/deca-lab`, returned 404, while every page under `/o/deca` showed made-up data and a made-up person. This task makes every workspace page read and write the API for the signed-in person. It removes the sample workspace, the fixtures, the Preview data marker, the set-up flow and the session-only sample actions, and it puts the real name, email and initials in the header. The notes at the top of WEB-01 and WEB-05 to WEB-26 say which parts of them this task delivered or retired.
+Read first: D30 in `docs/plan/decisions.md`; the Honesty section of `web/AGENTS.md`; `contracts/openapi.json`; `backend/WEB-FLOW-HANDOFF.md`.
+Do:
+1. Data layer.
+   - `lib/api/client.ts` (server-only): reads the signed-in person's token once per request, and gives every request its own 15-second timeout.
+   - `lib/api/workspace.ts` (server-only): cached reads with plain arguments. They are `getMe`, `getWorkspace` (never throws), `resolveOrg`, `resolveProject`, the organization, its projects, members and invitations, the project, its members and invitations, sites, packages, `getSitePlan`, forms, form versions, `listObservations` (the newest 500, with a `limited` flag) and `getObservation`.
+   - `lib/api/mutations.ts` (server-only): one function per write endpoint. `lib/api/browser.ts` (browser): package upload and archive download straight to the API.
+   - Pure modules with unit tests: `lib/workspace/*` (roles, the `/o` resolver, invitations, results), `lib/time.ts` (the project's timezone), `lib/labels.ts` (`OBS-3F2A1B`), `lib/observations/{answers,summary}.ts`, `lib/export/*` and `lib/sites/archive.ts` (reads a package archive with `fflate@0.8.2`).
+2. Shell.
+   - `/o` opens the person's last project, their only project or their first organization, or says "You are not in a project yet". Observers go to `/o/<org>/collect`.
+   - `WorkspaceProvider` feeds the header, switchers, tabs, account menu, ⌘K and the shortcuts from `/v1/me`.
+   - `LoadFailure` (sign in again, no access, or try again), `NotAvailable`, and `loading.tsx` and `error.tsx` for the organization and the project. `features/people` holds the member and invitation tables and dialogs that Team and Members share.
+3. Screens, as work packages WP1 to WP7.
+   - WP1 sites and map packages, with an upload from QGIS layers.
+   - WP2 forms: list, new form, versions, the draft editor and publish.
+   - WP3 data and the record page.
+   - WP4 overview, reports and QGIS.
+   - WP5 project team and settings.
+   - WP6 the organization's projects, members and settings.
+   - WP7 invite, join, the home page, the collect page and the auth pages.
+4. Cleanup.
+   - Delete `src/fixtures`, `src/data`, `lib/preview.ts`, the Preview data marker and footer, the session stores, the web `ProposalNote` (mobile keeps its own) and the legacy components (`observations`, `basemaps`, `places`, `instrument`, `metrics`, `maps`, `qgis`, `studio`, `nocturne`), the Nocturne CSS aliases and the leaflet dependencies.
+   - Add a lint rule that bans `@/fixtures`, `@/data` and `@/lib/preview`.
+   - Write D30, the Honesty section of `web/AGENTS.md`, this file, the sitemap and the launch runbook.
+5. Not available, as one short note each: saved named views (links replace them), the rounds plan, the zone editor (edit zones in QGIS), reviewing or excluding records, device readiness, live QGIS database access, deleting projects, organizations, sites or packages, and resending invitations.
+
+Done when: no page under `/o` reads a fixture, and no code imports `@/fixtures`, `@/data` or `@/lib/preview`; a failed read shows `LoadFailure` and never an empty list; a viewer who opens Team or Settings sees the no-access note, and the page calls no manager-only endpoint for them; an upload from QGIS layers makes the new version current; every aggregate or export built from 500 observations says "Based on the newest 500 observations."
+
+Verify: `pnpm --dir web check`, `format:check`, `build`, `test:unit`, `test:auth`, `test:api-errors` and `test:account`; from the root `pnpm tokens:check`, `pnpm forms:parity`, `pnpm plan:check`, `pnpm mobile:check` and `pnpm mobile:test`; a grep showing no `@/fixtures`, `/o/deca` or `onboarding` in `web/src`; and `sh scripts/e2e-local.sh` on the local stack (its header lists the options; the seed is `database/seed-web-workspace.mjs`, and nothing targets hosted services).
+
+Verified 2026-10-09 (Node 22.22.0, pnpm 10.17.1): `test:unit` 229 of 229, `test:auth` 34 of 34, `test:api-errors` 31 of 31, `test:account` 12 of 12, `pnpm forms:parity` and `pnpm tokens:check`. The full local-stack Playwright run is not recorded here.

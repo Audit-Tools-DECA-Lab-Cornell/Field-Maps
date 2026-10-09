@@ -1,6 +1,6 @@
 /*
- * Public policy pages for the FieldMaps mobile collector. They use the collector's Nocturne
- * palette rather than the operations console themes, so the pages match the app a Play Store
+ * Public policy pages for the FieldMaps mobile collector. They use the collector's own
+ * palette rather than the workspace themes, so the pages match the app a Play Store
  * visitor installs. Light mode follows the visitor's system setting.
  */
 
@@ -167,8 +167,10 @@
 	margin-top: 0.4rem;
 }
 
+/* Links sit inside sentences, so an underline tells them apart from the words around them, not colour alone. */
 .main a {
 	color: var(--legal-accent);
+	text-decoration: underline;
 	text-underline-offset: 0.2em;
 }
 

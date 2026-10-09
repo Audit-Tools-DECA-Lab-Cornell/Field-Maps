@@ -1,97 +1,84 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { Dialog, DialogClose } from "@/components/contour/Dialog";
-import { RadioRows } from "@/components/contour/RadioRows";
+import { Note } from "@/components/contour/Note";
 import { useToast } from "@/components/contour/Toast";
+import { plural } from "@/lib/labels";
 
-import { useFormWriteBlock } from "./CreateDraftDialog";
-import { allVersions, plural } from "./model";
-import { markRetired, unmarkRetired, useFormsPreview } from "./store";
+import { ActionNote } from "./ActionNote";
+import { retireVersionAction } from "./actions";
+import type { VersionRow } from "./model";
+import type { FormActionFailure } from "./result";
 
 /**
- * "Retire a version" (project-12): stops new sessions on a published version. Every consequence is listed
- * before the confirm; the version stays readable for the observations that used it.
+ * Retire: stops a published version being used for new map packages. The sites whose current package names
+ * it are listed first, because the app refuses to download a site whose package names a retired form.
  */
-export function RetireDialog() {
-	const preview = useFormsPreview();
-	const blocked = useFormWriteBlock();
+export function RetireDialog({
+	org,
+	project,
+	version
+}: {
+	org: string;
+	project: string;
+	version: Pick<VersionRow, "code" | "sites">;
+}) {
+	const router = useRouter();
 	const toast = useToast();
-	const published = allVersions(preview).filter(version => version.state === "published");
 	const [open, setOpen] = useState(false);
-	const [choice, setChoice] = useState("");
-	const chosen = published.find(version => version.id === choice) ?? published[0];
+	const [failure, setFailure] = useState<FormActionFailure | null>(null);
+	const [pending, start] = useTransition();
 
-	const reason =
-		blocked ?? (published.length === 0 ? "No version is published, so there is nothing to retire." : null);
-	if (reason || !chosen)
-		return (
-			<Button variant="outline" icon="held" disabled disabledReason={reason ?? undefined}>
-				Retire a version
-			</Button>
-		);
-
-	function submit(event: FormEvent) {
-		event.preventDefault();
-		if (!chosen) return;
-		const id = chosen.id;
-		markRetired(id);
-		setOpen(false);
-		toast({
-			title: `${id} is retired in this preview`,
-			description: "No new sessions start on it. Its observations keep it.",
-			action: { label: "Undo", onClick: () => unmarkRetired(id) }
+	function retire() {
+		start(async () => {
+			const result = await retireVersionAction({ org, project, version: version.code });
+			if (result.status === "failed") return setFailure(result);
+			setOpen(false);
+			toast({ title: `${version.code} is retired`, description: "It can still be read.", tone: "saved" });
+			router.refresh();
 		});
 	}
 
 	return (
 		<Dialog
 			open={open}
-			onOpenChange={setOpen}
-			title="Retire a version"
-			description="A retired version takes no new sessions. Nothing it collected changes."
+			onOpenChange={next => {
+				setOpen(next);
+				if (!next) setFailure(null);
+			}}
+			title={`Retire ${version.code}?`}
+			description="A retired version cannot be named by a new map package. It stays readable, and records already collected with it still upload."
 			trigger={
-				<Button variant="outline" icon="held">
-					Retire a version
+				<Button variant="danger" size="sm" icon="held" aria-label={`Retire ${version.code}`}>
+					Retire
 				</Button>
-			}>
-			<form onSubmit={submit} className="flex flex-col gap-6">
-				<RadioRows
-					label="Published version to retire"
-					value={chosen.id}
-					onValueChange={setChoice}
-					options={published.map(version => ({
-						value: version.id,
-						label: <span className="type-mono-data">{version.id}</span>,
-						description: `${version.formTitle} · ${
-							version.observations > 0 ? `${plural(version.observations, "observation")}` : "not in use"
-						}`
-					}))}
-				/>
-				<div>
-					<p className="type-body font-semibold text-ink">What retiring {chosen.id} does</p>
-					<ul className="mt-2 flex list-disc flex-col gap-1 pl-5 type-body text-ink-2">
-						<li>No new collection session starts on it.</li>
-						<li>Sessions already running on it keep it until they end.</li>
-						<li>
-							{chosen.observations > 0
-								? `Its ${plural(chosen.observations, "observation")} keep ${chosen.id} and stay readable.`
-								: "It collected no observations, so no record is affected."}
-						</li>
-						<li>Its GIS fields keep their stable IDs and definitions.</li>
-					</ul>
-				</div>
-				<div className="flex flex-wrap items-center justify-end gap-3">
+			}
+			footer={
+				<>
 					<DialogClose asChild>
-						<Button variant="outline">Cancel</Button>
+						<Button variant="outline">Keep it published</Button>
 					</DialogClose>
-					<Button type="submit" icon="held">
-						Retire {chosen.id}
+					<Button variant="danger-solid" icon="held" busy={pending} busyLabel="Retiring…" onClick={retire}>
+						Retire version
 					</Button>
-				</div>
-			</form>
+				</>
+			}>
+			{version.sites.length > 0 ? (
+				<Note
+					tone="attention"
+					title={`${plural(version.sites.length, "site")} use${version.sites.length === 1 ? "s" : ""} ${version.code} now.`}>
+					Observers cannot download {version.sites.map(site => site.name).join(", ")} until{" "}
+					{version.sites.length === 1 ? "a new map package is" : "new map packages are"} prepared with a
+					published form version. A phone that has already downloaded a site keeps working.
+				</Note>
+			) : (
+				<p className="type-body text-ink">No site&apos;s current map package names {version.code}.</p>
+			)}
+			<ActionNote failure={failure} className="mt-4" />
 		</Dialog>
 	);
 }

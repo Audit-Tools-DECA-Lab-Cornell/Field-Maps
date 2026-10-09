@@ -42,8 +42,6 @@ export function StartAgainLink({ href }: { href: string }) {
 }
 
 export type AuthActionOptions = {
-	/** What the form shows before any answer: a preview state's sample message, or nothing. */
-	initial?: AuthState;
 	/** The fields a message can send focus to. A field the form does not have is left out. */
 	fields?: Partial<Record<AuthField, RefObject<HTMLInputElement | null>>>;
 	/** Called with the server's `retryAfter`, so the form's cooldown starts from the server. */
@@ -56,16 +54,16 @@ export type AuthActionOptions = {
  * focus to what the answer is about: the field it names (a wrong code is reselected), or else the message.
  * A successful answer is a redirect, so it never comes back here.
  */
-export function useAuthAction({ initial = NO_MESSAGE, fields, onRetryAfter }: AuthActionOptions = {}) {
+export function useAuthAction({ fields, onRetryAfter }: AuthActionOptions = {}) {
 	const [state, action, pending] = useActionState<AuthState, FormData>(async (previous, form) => {
 		const result = await authenticate(previous, form);
 		if (!result) return previous;
 		if (result.retryAfter) onRetryAfter?.(result.retryAfter);
 		return result;
-	}, initial);
+	}, NO_MESSAGE);
 	const noteId = useId();
 	const noteRef = useRef<HTMLDivElement>(null);
-	const handled = useRef(initial);
+	const handled = useRef(NO_MESSAGE);
 	// The answer the person has since edited a field after, which clears that field's attention edge.
 	const [editedAfter, setEditedAfter] = useState<AuthState | null>(null);
 	const field = state.message ? fieldOf(state.message) : undefined;

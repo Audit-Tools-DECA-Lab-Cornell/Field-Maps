@@ -1,69 +1,55 @@
-"use client";
-
-import { useEffect } from "react";
-
+import { Icon } from "@/components/contour/Icon";
 import { Island } from "@/components/contour/Island";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { PROTOCOL_NOTES } from "@/fixtures";
+import { plural } from "@/lib/labels";
 
-import { plural } from "./model";
-import { FlagGlyph } from "./parts";
+export type ProtocolNoteView = { id: string; title: string; detail: string };
+export type FlaggedQuestionView = { id: string; label: string; note: string };
 
-/** The heading the "Read notes" button and the publication review's link move focus to. */
-export const NOTES_ID = "notes";
+function FlagGlyph() {
+	return <Icon name="flag" size={18} className="mt-0.5 shrink-0 text-waiting" />;
+}
 
 /**
- * "Janet draft · protocol notes" (project-12): the decisions the study has not made yet. Each one holds
- * janet-test-v1 as a draft; nothing is filled in on the study's behalf.
+ * The decisions the study has not made yet, as the form carries them: its protocol notes, and the questions
+ * that wait on a note or on an option list. Publishing does not need them settled and does not settle them;
+ * they stay on the form, so this says so.
  */
-export function ProtocolNotesIsland() {
-	// Arriving from "Read every protocol note" (…/versions#notes): start reading at the notes.
-	useEffect(() => {
-		if (window.location.hash === `#${NOTES_ID}`) document.getElementById(NOTES_ID)?.focus({ preventScroll: true });
-	}, []);
-
+export function ProtocolNotes({
+	notes,
+	flagged
+}: {
+	notes: readonly ProtocolNoteView[];
+	flagged: readonly FlaggedQuestionView[];
+}) {
+	if (notes.length === 0 && flagged.length === 0) return null;
 	return (
 		<Island
-			id={NOTES_ID}
-			tabIndex={-1}
-			title="Janet draft · protocol notes"
-			meta={
-				<span className="inline-flex items-baseline gap-2 font-semibold text-waiting">
-					<FlagGlyph className="self-center" />
-					{plural(PROTOCOL_NOTES.length, "open decision")}
-				</span>
-			}
-			className="scroll-mt-6">
-			<PreviewStateView
-				loadingLabel="Loading protocol notes…"
-				rows={4}
-				headingLevel={3}
-				empty={{
-					icon: "flag",
-					title: "No protocol notes",
-					body: "Every decision on this draft has been made. Nothing holds it back from review."
-				}}
-				filtered={{
-					title: "No protocol notes match this view",
-					body: "Change your filters to see more notes. The notes themselves are unchanged."
-				}}>
-				<p className="max-w-[72ch] type-body text-ink-2">
-					Each note is a decision the study has not made yet. The draft cannot be published while any of them
-					is open; nothing is filled in on the study’s behalf.
-				</p>
-				<ul className="mt-6 grid gap-x-10 md:grid-cols-2">
-					{PROTOCOL_NOTES.map(note => (
-						<li key={note.id} className="flex gap-4 border-t border-rule py-5">
-							<FlagGlyph className="mt-0.5" />
-							<div className="min-w-0">
-								<h3 className="type-body font-semibold text-ink">{note.title}</h3>
-								<p className="mt-1 type-body text-ink-2">{note.detail}</p>
-								<p className="mt-2 type-mono-data text-ink">{note.source}</p>
-							</div>
-						</li>
-					))}
-				</ul>
-			</PreviewStateView>
+			title="Open protocol notes"
+			meta={plural(notes.length + flagged.length, "open decision")}
+			divided={false}>
+			<p className="max-w-[72ch] type-body text-ink-2">
+				These are decisions the study has not made yet. They stay on the form. Publishing does not settle them.
+			</p>
+			<ul className="mt-4 divide-y divide-rule border-y border-rule">
+				{notes.map(note => (
+					<li key={`note-${note.id}`} className="flex gap-3 py-4">
+						<FlagGlyph />
+						<div className="min-w-0">
+							<p className="type-body font-semibold text-ink">{note.title}</p>
+							<p className="mt-1 type-body text-ink-2">{note.detail}</p>
+						</div>
+					</li>
+				))}
+				{flagged.map(question => (
+					<li key={`question-${question.id}`} className="flex gap-3 py-4">
+						<FlagGlyph />
+						<div className="min-w-0">
+							<p className="type-body font-semibold text-ink">Question: {question.label}</p>
+							<p className="mt-1 type-body text-ink-2">{question.note}</p>
+						</div>
+					</li>
+				))}
+			</ul>
 		</Island>
 	);
 }

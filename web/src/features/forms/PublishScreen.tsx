@@ -1,294 +1,229 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
 import { Checkbox } from "@/components/contour/Checkbox";
-import { FactsList } from "@/components/contour/FactsList";
-import { Icon } from "@/components/contour/Icon";
 import { Island } from "@/components/contour/Island";
 import { Mono } from "@/components/contour/Mono";
 import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
-import { ScreenState } from "@/components/contour/ScreenState";
 import { TextLink } from "@/components/contour/TextLink";
 import { useToast } from "@/components/contour/Toast";
 import { projectHref } from "@/features/shell/navigation";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { PROTOCOL_NOTES } from "@/fixtures";
+import { plural } from "@/lib/labels";
 
-import { useFormWriteBlock } from "./CreateDraftDialog";
-import { definitionOf, draftChanges, findVersion, plural, type QuestionChange, questionNumber } from "./model";
-import { FlagGlyph } from "./parts";
-import { NOTES_ID } from "./ProtocolNotes";
-import { markPublished, useFormsPreview } from "./store";
+import { ActionNote } from "./ActionNote";
+import { publishVersionAction } from "./actions";
+import type { EditorVersion } from "./DraftEditorScreen";
+import type { Delivery, QuestionChange, SiteRef } from "./model";
+import { type FlaggedQuestionView, ProtocolNotes, type ProtocolNoteView } from "./ProtocolNotes";
+import type { FormActionFailure } from "./result";
 
-/** How many protocol notes the blockers island names before "and 4 more". */
-const NOTES_SHOWN = 4;
+export type PublishReview = {
+	questions: { id: string; label: string; required: boolean }[];
+	/** The version the draft is compared with, when there is one. */
+	base: string | null;
+	changes: QuestionChange[];
+	/** Labels of the questions the version before had and this one does not. */
+	removed: string[];
+	notes: ProtocolNoteView[];
+	flagged: FlaggedQuestionView[];
+	delivery: Delivery;
+	/** Other versions of this form that are published now. */
+	olderPublished: string[];
+	/** Sites whose current map package names another version of this form. */
+	otherVersionSites: SiteRef[];
+	/** What the form checker still finds wrong. Publishing waits until there is none. */
+	problems: string[];
+};
 
 /**
- * Review publication (project-14): every difference from the published version, what changes in the
- * field, and the protocol notes that still block Janet's form. Publishing needs the confirmation ticked;
- * in this preview it marks the version published for this tab and nothing is sent.
+ * Publish: what the version asks, what changed since the version before, the decisions still open, and what
+ * publishing does and does not do for observers. Publishing needs the box ticked. It freezes this version,
+ * leaves older ones published and sends nothing to a device by itself.
  */
-export function PublishScreen({ org, project, versionId }: { org: string; project: string; versionId: string }) {
+export function PublishScreen({
+	org,
+	project,
+	version,
+	review
+}: {
+	org: string;
+	project: string;
+	version: EditorVersion;
+	review: PublishReview;
+}) {
 	const router = useRouter();
 	const toast = useToast();
 	const confirmId = useId();
-	const preview = useFormsPreview();
-	const writeBlock = useFormWriteBlock();
 	const [confirmed, setConfirmed] = useState(false);
-	const [busy, setBusy] = useState(false);
+	const [failure, setFailure] = useState<FormActionFailure | null>(null);
+	const [pending, start] = useTransition();
 
-	const version = findVersion(versionId, preview);
-	const draft = definitionOf(versionId, preview);
-	const base = version?.base ? definitionOf(version.base, preview) : undefined;
-	const forms = projectHref(org, project, "forms");
-	const versions = projectHref(org, project, "forms/versions");
-	const editor = projectHref(org, project, `forms/versions/${versionId}`);
-
-	if (!version || !draft)
-		return (
-			<div className="flex flex-col gap-6">
-				<PageHeader
-					breadcrumbs={[
-						{ label: "Forms", href: forms },
-						{ label: "Form versions", href: versions },
-						{ label: "Publish" }
-					]}
-					title="Review publication"
-				/>
-				<Island flush>
-					<ScreenState
-						kind="empty"
-						icon="file-text"
-						headingLevel={2}
-						title={`${versionId} is not in this preview`}
-						body="A draft made in the preview lasts only as long as the tab it was made in. Every version this project has is on Form versions."
-						actions={
-							<ButtonLink href={versions} variant="ink" icon="arrow-left">
-								Return to form versions
-							</ButtonLink>
-						}
-					/>
-				</Island>
-			</div>
-		);
-
-	const changes = draftChanges(draft, base);
-	const changedQuestions = new Set(changes.map(change => change.questionId)).size;
-	const unchanged = draft.questions.length - changedQuestions;
-	const unlabelled = draft.questions.findIndex(question => question.label.trim() === "");
-	const published = version.state !== "draft";
-	const blockingNotes = version.protocolNotesOpen;
-	const janetBlocked = findVersion("janet-test-v1", preview);
-	const notesFor = blockingNotes > 0 ? version.id : (janetBlocked?.id ?? "janet-test-v1");
-	const baseObservations = version.base ? (findVersion(version.base, preview)?.observations ?? 0) : 0;
-
-	const reason =
-		writeBlock ??
-		(published
-			? `${versionId} is already ${version.state}. A published version cannot be edited or published again.`
-			: blockingNotes > 0
-				? `${plural(blockingNotes, "protocol note is", "protocol notes are")} open. ${versionId} cannot be published until each one is decided.`
-				: draft.questions.length === 0
-					? "This draft has no questions. Add at least one in the editor."
-					: unlabelled >= 0
-						? `Question ${questionNumber(unlabelled)} has no label. Word it in the editor first.`
-						: !confirmed
-							? "The button turns on when you tick the box above."
-							: null);
+	const editor = projectHref(org, project, `forms/versions/${version.code}`);
+	const versions = projectHref(org, project, `forms/versions?form=${encodeURIComponent(version.formCode)}`);
+	const changedQuestions = new Set(review.changes.map(change => change.questionId)).size;
+	const blocked =
+		review.problems.length > 0
+			? "The form still has problems. Fix them in the editor first."
+			: !confirmed
+				? "Tick the box above to publish."
+				: undefined;
 
 	function publish() {
-		if (reason) return;
-		setBusy(true);
-		markPublished(versionId);
-		toast({
-			title: `${versionId} is published. Devices use it once they download it.`,
-			description: "In this preview only. Nothing was sent to the FieldMaps database."
+		if (blocked) return;
+		setFailure(null);
+		start(async () => {
+			const result = await publishVersionAction({ org, project, version: version.code });
+			if (result.status === "failed") return setFailure(result);
+			toast({
+				title: `${version.code} is published`,
+				description:
+					review.olderPublished.length > 0
+						? "Older versions stay published until you retire them."
+						: "It is now fixed and cannot be edited.",
+				tone: "saved"
+			});
+			router.push(versions);
 		});
-		router.push(versions);
 	}
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				breadcrumbs={[
-					{ label: "Forms", href: forms },
-					{ label: "Form versions", href: versions },
-					{ label: published ? versionId : "Draft", href: editor },
+					{ label: "Forms", href: projectHref(org, project, "forms") },
+					{ label: version.formName, href: versions },
+					{ label: version.code, href: editor },
 					{ label: "Publish" }
 				]}
-				title="Review publication"
+				title="Review before publishing"
 				lead={
-					version.base ? (
-						<>
-							Publishing creates <Mono>{versionId}</Mono>. It never changes <Mono>{version.base}</Mono>.
-						</>
-					) : (
-						<>
-							Publishing creates <Mono>{versionId}</Mono>. No earlier version exists to change.
-						</>
-					)
+					<>
+						Publishing freezes <Mono>{version.code}</Mono> with its{" "}
+						{plural(review.questions.length, "question")}. It cannot be edited afterwards.
+					</>
 				}
 				actions={
 					<ButtonLink href={editor} variant="outline" icon="arrow-left">
-						Return to editor
+						Back to the editor
 					</ButtonLink>
 				}
 			/>
 
 			<div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.27fr)_minmax(0,1fr)]">
 				<Island
-					title="Draft differences"
+					title={review.base ? `Changes since ${review.base}` : "Questions"}
 					meta={
-						version.base
-							? `${plural(changedQuestions, "question")} changed · ${unchanged} unchanged`
-							: `First version · ${plural(draft.questions.length, "question")}`
+						review.base
+							? `${plural(changedQuestions, "question")} changed · ${review.questions.length - changedQuestions} unchanged`
+							: `First version · ${plural(review.questions.length, "question")}`
 					}
 					flush>
-					<PreviewStateView
-						loadingLabel="Comparing the draft…"
-						rows={3}
-						headingLevel={3}
-						empty={{
-							icon: "file-text",
-							title: "No differences to review",
-							body: "This draft matches the published version. Nothing would change."
-						}}
-						filtered={{
-							title: "No differences match this view",
-							body: "Change your filters to see more differences. The draft is unchanged."
-						}}>
-						{!version.base ? (
-							<p className="px-island-pad py-5 type-body text-ink-2">
-								There is no earlier version to compare with. Every question is new in{" "}
-								<Mono>{versionId}</Mono>.
-							</p>
-						) : changes.length === 0 ? (
-							<p className="px-island-pad py-5 type-body text-ink-2">
-								No question differs from <Mono>{version.base}</Mono> yet. Publishing now would create a
-								version with the same wording.
-							</p>
-						) : (
-							<ul className="divide-y divide-rule">
-								{changes.map(change => (
-									<li key={`${change.questionId}:${change.field}`} className="px-island-pad py-5">
-										<Difference change={change} />
-									</li>
-								))}
-							</ul>
-						)}
-						<div className="flex flex-col gap-5 border-t border-rule px-island-pad py-5">
-							<Note tone="saved">
-								{version.base ? (
-									<>
-										Existing observations retain {version.base}. Active collection sessions do not
-										change mid-round.
-									</>
-								) : (
-									"No observation uses this form yet. Active collection sessions do not change mid-round."
-								)}
-							</Note>
-							<Checkbox
-								id={confirmId}
-								checked={confirmed}
-								disabled={published || writeBlock !== null || blockingNotes > 0}
-								onCheckedChange={setConfirmed}>
-								I understand that a published version cannot be edited.
-							</Checkbox>
-							<Button
-								icon="lock"
-								fullWidth
-								disabled={reason !== null}
-								disabledReason={reason ?? undefined}
-								busy={busy}
-								busyLabel="Publishing…"
-								onClick={publish}>
-								Publish {versionId}
-							</Button>
-						</div>
-					</PreviewStateView>
+					{review.base ? (
+						<>
+							{review.changes.length === 0 && review.removed.length === 0 ? (
+								<p className="px-island-pad py-5 type-body text-ink-2">
+									No question differs from <Mono>{review.base}</Mono>. Publishing now makes a new
+									version with the same wording.
+								</p>
+							) : (
+								<ul className="divide-y divide-rule">
+									{review.changes.map(change => (
+										<li key={`${change.questionId}:${change.field}`} className="px-island-pad py-5">
+											<Difference change={change} />
+										</li>
+									))}
+									{review.removed.map(label => (
+										<li key={`removed:${label}`} className="px-island-pad py-5">
+											<p className="type-small text-ink-2">Removed since {review.base}</p>
+											<p className="mt-1 type-body font-semibold text-ink">{label}</p>
+										</li>
+									))}
+								</ul>
+							)}
+						</>
+					) : (
+						<ol className="divide-y divide-rule">
+							{review.questions.map((question, index) => (
+								<li
+									key={question.id}
+									className="grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 px-island-pad py-3">
+									<span className="type-mono-data text-ink-2">
+										{String(index + 1).padStart(2, "0")}
+									</span>
+									<span className="type-body text-ink">
+										{question.label}
+										<span className="block type-small text-ink-2">
+											{question.required ? "Required" : "Optional"}
+										</span>
+									</span>
+								</li>
+							))}
+						</ol>
+					)}
 				</Island>
 
 				<div className="flex flex-col gap-6">
-					<Island title="What changes in the field" divided>
-						<PreviewStateView loadingLabel="Loading field effects…" rows={4} headingLevel={3}>
-							<FactsList
-								labelWidth="minmax(8rem, 40%)"
-								items={[
-									{
-										label: "New sessions",
-										value: `Use ${versionId} once the device has downloaded it`
-									},
-									{
-										label: "Sessions in progress",
-										value: version.base
-											? `Stay on ${version.base} until they end`
-											: "Keep the version they started with"
-									},
-									{
-										label:
-											baseObservations > 0
-												? `${plural(baseObservations, "existing observation")}`
-												: "Existing observations",
-										value: version.base
-											? `Keep ${version.base} and its wording`
-											: "None are collected with this form yet"
-									},
-									{
-										label: "QGIS layer",
-										value: (
-											<>
-												<Mono>form_version</Mono> tells the {version.base ? "two" : "versions"}{" "}
-												apart
-											</>
-										)
-									}
-								]}
-							/>
-						</PreviewStateView>
-					</Island>
-
-					<Island
-						title="Research-form blockers"
-						meta={
-							<span className="inline-flex items-baseline gap-1.5 font-semibold text-attention">
-								<Icon name="triangle-alert" size={16} className="shrink-0 self-center" />
-								Cannot be published yet
-							</span>
-						}
-						divided={false}>
-						<PreviewStateView loadingLabel="Loading protocol notes…" rows={4} headingLevel={3}>
-							<p className="type-body text-ink">
-								Publishing <Mono>{notesFor}</Mono> needs the protocol decisions below.{" "}
-								{blockingNotes > 0
-									? "None of them is filled in on the study’s behalf."
-									: "Publishing the demonstration form does not resolve or bypass them."}
+					<Island title="What happens for observers" divided={false}>
+						<p className="type-body text-ink">{review.delivery.text}</p>
+						{review.delivery.kind === "play" && review.otherVersionSites.length > 0 && (
+							<p className="mt-3 type-body text-ink-2">
+								Using another version of this form now:{" "}
+								{review.otherVersionSites.map(site => site.name).join(", ")}.
 							</p>
-							<ul className="mt-4 divide-y divide-rule border-y border-rule">
-								{PROTOCOL_NOTES.slice(0, NOTES_SHOWN).map(note => (
-									<li key={note.id} className="flex items-start gap-3 py-3">
-										<FlagGlyph className="mt-0.5" />
-										<span className="type-body text-ink">{note.title}</span>
-									</li>
-								))}
-							</ul>
-							<div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
-								<p className="type-body text-ink-2">
-									{PROTOCOL_NOTES.length > NOTES_SHOWN
-										? `and ${PROTOCOL_NOTES.length - NOTES_SHOWN} more`
-										: ""}
-								</p>
-								<TextLink href={`${versions}#${NOTES_ID}`} icon="book-open" arrow={false}>
-									Read every protocol note
+						)}
+						<p className="mt-3 type-body text-ink-2">
+							{review.olderPublished.length > 0
+								? `Publishing does not retire older versions. ${review.olderPublished.join(", ")} ${review.olderPublished.length === 1 ? "stays" : "stay"} published until you retire ${review.olderPublished.length === 1 ? "it" : "them"}.`
+								: "No other version of this form is published."}
+						</p>
+						{review.delivery.kind === "play" && (
+							<p className="mt-3">
+								<TextLink href={projectHref(org, project, "sites")}>
+									Go to Sites to prepare a map package
 								</TextLink>
-							</div>
-						</PreviewStateView>
+							</p>
+						)}
 					</Island>
+					<ProtocolNotes notes={review.notes} flagged={review.flagged} />
 				</div>
 			</div>
+
+			<Island title="Publish" divided={false}>
+				<div className="flex flex-col gap-5">
+					{review.problems.length > 0 && (
+						<Note tone="attention" title="The form checker found problems.">
+							{review.problems.map(problem => (
+								<span key={problem} className="block">
+									{problem}
+								</span>
+							))}
+						</Note>
+					)}
+					<Checkbox
+						id={confirmId}
+						checked={confirmed}
+						disabled={review.problems.length > 0}
+						onCheckedChange={setConfirmed}>
+						{review.delivery.confirm}
+					</Checkbox>
+					<ActionNote failure={failure} />
+					<div>
+						<Button
+							variant="primary"
+							icon="lock"
+							disabled={blocked !== undefined}
+							disabledReason={blocked}
+							busy={pending}
+							onClick={publish}>
+							Publish {version.code}
+						</Button>
+					</div>
+				</div>
+			</Island>
 		</div>
 	);
 }
@@ -301,8 +236,12 @@ function Difference({ change }: { change: QuestionChange }) {
 				<span className="type-small text-ink-2">{change.field}</span>
 			</div>
 			<dl className="mt-3 grid grid-cols-[3.5rem_minmax(0,1fr)] gap-x-3 gap-y-2">
-				<dt className="type-mono-label text-ink-2">Was</dt>
-				<dd className="type-body text-ink-2">{change.was}</dd>
+				{change.field !== "New question" && (
+					<>
+						<dt className="type-mono-label text-ink-2">Was</dt>
+						<dd className="type-body text-ink-2">{change.was}</dd>
+					</>
+				)}
 				<dt className="type-mono-label text-ink">Now</dt>
 				<dd className="type-body font-semibold text-ink">{change.now}</dd>
 			</dl>

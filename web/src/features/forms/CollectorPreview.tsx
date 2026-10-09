@@ -29,12 +29,12 @@ import { boundsOf, type ProjectedSite } from "@/lib/plan";
 
 /**
  * The collector as an observer would see this form, driven by the engine the device runs:
- * `visibleQuestions`, `pruneAnswers`, `reviewProblems`, `missingRequired` and `exportAnswers`. The session
- * logic follows the Form Studio's PhonePreview (answers, auto-advance after a single choice, review, the
- * next observation carrying the observer code); the look is the Contour collector, always in Day.
+ * `visibleQuestions`, `pruneAnswers`, `reviewProblems`, `missingRequired` and `exportAnswers`. Answers,
+ * the move on after a single choice, the review and the next observation (which carries the observer code)
+ * follow the collector; the look is the Contour collector, always in Day.
  *
- * Answers live only in this component. Editing the draft prunes them to the new shape and keeps the
- * observer on the question they were answering.
+ * Answers live only in this component and are never sent. Editing the draft prunes them to the new shape
+ * and keeps the observer on the question they were answering.
  */
 
 export type PreviewDevice = "phone" | "tablet";
@@ -47,16 +47,20 @@ const AUTO_ADVANCE_MS = 160;
 
 export type CollectorPreviewProps = {
 	form: FormDefinition;
-	/** "demo-v2 draft", under MAP v3 in the header. */
+	/** "workspace-check-v2 draft", under the map version in the header. */
 	versionLabel: string;
 	device: PreviewDevice;
-	/** The session's site plan, for the strip above the question. */
-	plan: ProjectedSite;
-	/** The zone the session collects in, hatched on the strip. */
-	zoneId: string;
+	/** The site's plan, for the strip above the question. Null when no site has a map package yet. */
+	plan: ProjectedSite | null;
+	/** The zone observers collect in, hatched on the strip. */
+	zoneId: string | null;
 	siteName: string;
-	sessionLine: string;
-	mapVersion: string;
+	/** The zone the point is in, "Zone A"; null when the site has no zones yet. */
+	zoneName: string | null;
+	/** "Standard round", or "Inventory round" for a form that asks only about a zone. */
+	round: string;
+	/** "v3"; null when there is no map package. */
+	mapVersion: string | null;
 	/** The question selected in the editor. The preview jumps to it when it is currently asked. */
 	focusQuestionId?: string | null;
 };
@@ -68,7 +72,8 @@ export function CollectorPreview({
 	plan,
 	zoneId,
 	siteName,
-	sessionLine,
+	zoneName,
+	round,
 	mapVersion,
 	focusQuestionId = null
 }: CollectorPreviewProps) {
@@ -200,7 +205,7 @@ export function CollectorPreview({
 		<div
 			data-theme="day"
 			role="region"
-			aria-label={`Collector preview, ${tablet ? "tablet" : "phone"}`}
+			aria-label={`Collector view, ${tablet ? "tablet" : "phone"}`}
 			className={cx(
 				"mx-auto w-full rounded-[2.75rem] bg-ink p-2.5 text-ink dusk:ring-1 dusk:ring-edge",
 				"transition-[max-width] duration-(--ct-duration-base) ease-standard",
@@ -214,10 +219,13 @@ export function CollectorPreview({
 				<header className="flex shrink-0 items-start justify-between gap-3 px-4 pt-4">
 					<div className="min-w-0">
 						<p className="type-small font-semibold text-ink">{siteName}</p>
-						<p className="text-xs leading-4 text-ink-2">{sessionLine}</p>
+						<p className="text-xs leading-4 text-ink-2">
+							{zoneName ? `${zoneName} · ` : ""}
+							{round}
+						</p>
 					</div>
 					<div className="shrink-0 text-right font-mono text-xs leading-4 text-ink-2">
-						<p>MAP {mapVersion}</p>
+						<p>{mapVersion ? `MAP ${mapVersion}` : "NO MAP YET"}</p>
 						<p>{versionLabel}</p>
 					</div>
 				</header>
@@ -225,7 +233,7 @@ export function CollectorPreview({
 					steps={["Place", "Answer", "Review"]}
 					current={step}
 					onSelect={index => (index === 0 ? setScreen("place") : jumpTo(safeIndex))}
-					label="Collection steps in the preview"
+					label="Collection steps"
 					className="mx-3 mt-3 shrink-0"
 				/>
 				<div className={cx("mt-3 flex min-h-0 flex-1", tablet ? "flex-row gap-3 px-4 pb-4" : "flex-col")}>
@@ -244,7 +252,7 @@ export function CollectorPreview({
 								: "mt-3 rounded-t-[1.375rem] border-t border-line"
 						)}>
 						{screen === "place" ? (
-							<PlacePanel zoneName={sessionLine.split(" · ")[0]} onAnswer={() => setScreen("asking")} />
+							<PlacePanel zoneName={zoneName} onAnswer={() => setScreen("asking")} />
 						) : screen === "asking" ? (
 							current ? (
 								<AskingPanel
@@ -292,7 +300,23 @@ export function CollectorPreview({
 
 /* ── The plan strip ───────────────────────────────────────────────────────── */
 
-function PlanStrip({ plan, zoneId, className }: { plan: ProjectedSite; zoneId: string; className?: string }) {
+function PlanStrip({
+	plan,
+	zoneId,
+	className
+}: {
+	plan: ProjectedSite | null;
+	zoneId: string | null;
+	className?: string;
+}) {
+	if (!plan)
+		return (
+			<div className={cx("flex items-center justify-center border border-line bg-well px-4", className)}>
+				<p className="text-center type-small text-ink-2">
+					The map is not shown here. Observers see their site&apos;s map in the app.
+				</p>
+			</div>
+		);
 	const zone = plan.zones.find(candidate => candidate.id === zoneId) ?? plan.zones[0];
 	const observation = MAP_PALETTES.day.observation;
 	const box = zone ? boundsOf(zone.points) : plan.bounds;
@@ -339,15 +363,17 @@ function PlanStrip({ plan, zoneId, className }: { plan: ProjectedSite; zoneId: s
 
 /* ── Place ────────────────────────────────────────────────────────────────── */
 
-function PlacePanel({ zoneName, onAnswer }: { zoneName: string; onAnswer: () => void }) {
+function PlacePanel({ zoneName, onAnswer }: { zoneName: string | null; onAnswer: () => void }) {
 	return (
 		<>
 			<div className="min-h-0 flex-1 animate-fade-in overflow-y-auto px-4 pt-4 pb-4">
 				<p className="type-mono-label text-ink-2">Place · point placed</p>
-				<h3 className="mt-2 type-island text-ink">The point is in {zoneName}.</h3>
+				<h3 className="mt-2 type-island text-ink">
+					{zoneName ? `The point is in ${zoneName}.` : "The point is placed."}
+				</h3>
 				<p className="mt-2 type-small text-ink-2">
-					In the app the observer places a point on the map first. The preview keeps this one where it is, so
-					you can try the questions.
+					In the app the observer places a point on the map first. Here the point stays where it is, so you
+					can try the questions.
 				</p>
 			</div>
 			<div className="flex shrink-0 items-center gap-3 border-t border-rule px-4 py-3">
@@ -570,7 +596,7 @@ function ReviewPanel({
 				</Button>
 				<span className="flex-1" />
 				<Button variant="ink" size="sm" icon="check" onClick={onFinish}>
-					Finish preview
+					Finish
 				</Button>
 			</div>
 		</>
@@ -590,7 +616,7 @@ function FinishedPanel({ form, answers, onNext }: { form: FormDefinition; answer
 	return (
 		<>
 			<div className="min-h-0 flex-1 animate-fade-in overflow-y-auto px-4 pt-4 pb-4">
-				<Note tone="saved" live="polite" title="Preview finished." className="type-small">
+				<Note tone="saved" live="polite" title="Finished." className="type-small">
 					Nothing was stored. In the app, this is where the observation is saved on the device.
 				</Note>
 				<p className="mt-4 type-mono-label text-ink-2">What lands in the export</p>

@@ -1,151 +1,102 @@
-"use client";
-
-import Link from "next/link";
-
+import { FactsList } from "@/components/contour/FactsList";
 import { Island } from "@/components/contour/Island";
-import { StateBadge } from "@/components/contour/StateBadge";
-import { countWord, plural } from "@/features/data/filters";
-import { useReviews } from "@/features/data/review";
-import { projectHref } from "@/features/shell/navigation";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { countBy, DEVICE_RECORDS, observationsFor, type Project, ZONES } from "@/fixtures";
+import { Note } from "@/components/contour/Note";
+import { LoadFailure } from "@/components/shell/LoadFailure";
+import { CountBars } from "@/features/reports/CountBars";
+import type { ObservationRow, Site } from "@/lib/api/types";
+import { formatCount, plural } from "@/lib/labels";
+import { fieldReturn, OBSERVATION_LIMIT } from "@/lib/observations/summary";
+import type { Clock } from "@/lib/time";
+import type { Result } from "@/lib/workspace/types";
 
-/** A state that is also a way in: its words link to the records it counts. */
-const STATE_LINK = "group rounded-pill";
-const STATE_WORDS = "underline-offset-4 group-hover:underline";
+export type FieldReturnIslandProps = {
+	sites: Result<readonly Site[]>;
+	observations: Result<{ rows: readonly ObservationRow[]; limited: boolean }>;
+	nowIso: string;
+	clock: Clock;
+	/** The Data page's address; each site's bar opens its records. */
+	dataHref: string;
+};
 
 /**
- * The field return (project-01): what the server holds, as a sentence with its caveat, the review and
- * upload states as links into Data, and the records by primary play type. Every number is derived from the
- * observation rows and the session's review decisions.
+ * The field return: what the project's sites hold, as one sentence with its caveat. The total adds up each
+ * site's own exact count. Today, the last 7 days and the last time something arrived come from the
+ * observation list, which stops at 500, and the island says so when it does.
  */
-export function FieldReturnIsland({ org, project }: { org: string; project: Project }) {
-	const { reviewOf } = useReviews();
-	const records = observationsFor(project.slug);
-	const zoneSlugs = new Set(records.map(record => record.zoneSlug));
-	const projectZones = new Set(
-		ZONES.filter(zone => records.some(record => record.siteSlug === zone.siteSlug)).map(zone => zone.slug)
-	);
-	const corrections = DEVICE_RECORDS.filter(
-		record => record.state === "attention" && projectZones.has(record.zoneSlug)
-	).length;
-	const counts = { notReviewed: 0, approved: 0, excluded: 0 };
-	for (const record of records) counts[reviewOf(record)] += 1;
-	const types = countBy(records, record => record.playType).map(entry => ({
-		code: entry.key,
-		label: records.find(record => record.playType === entry.key)?.playTypeLabel ?? entry.key,
-		count: entry.count
-	}));
-	const max = Math.max(0, ...types.map(type => type.count));
-	const data = projectHref(org, project.slug, "data");
-	const { roundsPerZone } = project.target;
+export function FieldReturnIsland({ sites, observations, nowIso, clock, dataHref }: FieldReturnIslandProps) {
+	if (!sites.ok) return <LoadFailure failure={sites.failure} what="the field return" />;
 
-	const sentence =
-		records.length === 0
-			? "No observations have come back yet."
-			: `${records.length} ${plural(records.length, "observation")} across ${countWord(zoneSlugs.size)} ${plural(zoneSlugs.size, "zone")}.`;
+	const listed = observations.ok ? observations.data.rows : [];
+	const summary = fieldReturn(sites.data, listed, nowIso, clock);
+	const limited = observations.ok && observations.data.limited;
+	const withRecords = summary.bySite.filter(site => site.count > 0);
+
+	let sentence = "No observations have come back yet.";
+	if (summary.total > 0)
+		sentence =
+			withRecords.length === 1
+				? `${plural(summary.total, "observation")} at ${withRecords[0]!.name}.`
+				: `${plural(summary.total, "observation")} across ${plural(withRecords.length, "site")}.`;
+
+	const last7 = summary.recentIsExact ? formatCount(summary.last7Days) : `At least ${formatCount(summary.last7Days)}`;
 
 	return (
 		<Island flush aria-labelledby="field-return-title">
-			<PreviewStateView
-				loadingLabel="Loading the field return…"
-				rows={3}
-				headingLevel={2}
-				empty={{
-					icon: "list",
-					title: "Nothing has come back from the field yet",
-					body: "Observations appear here once observers upload them from the app. Records still on devices are not counted here."
-				}}>
-				<div className="grid gap-x-14 gap-y-8 p-island-pad lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-					<div className="flex min-w-0 flex-col">
-						<p className="type-mono-label text-ink-2">Field return</p>
-						<h2 id="field-return-title" className="mt-2 type-section text-ink">
-							{sentence}
-						</h2>
-						<p className="mt-3 max-w-prose type-body text-ink-2">
-							Coverage is compared with an illustrative target of {roundsPerZone} rounds per zone. Record
-							abundance is not completeness.
-						</p>
-						<ul className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
-							{corrections > 0 && (
-								<li>
-									<a href="#blocking" className={STATE_LINK}>
-										<StateBadge
-											kind="queue"
-											className={STATE_WORDS}
-											state="attention"
-											label={`${corrections} ${plural(corrections, "upload needs", "uploads need")} a correction`}
-										/>
-									</a>
-								</li>
-							)}
-							<li>
-								<Link href={`${data}?review=notReviewed`} className={STATE_LINK}>
-									<StateBadge
-										kind="review"
-										className={STATE_WORDS}
-										state="notReviewed"
-										label={`${counts.notReviewed} not yet reviewed`}
-									/>
-								</Link>
-							</li>
-							<li>
-								<Link href={`${data}?review=approved`} className={STATE_LINK}>
-									<StateBadge
-										kind="review"
-										className={STATE_WORDS}
-										state="approved"
-										label={`${counts.approved} approved`}
-									/>
-								</Link>
-							</li>
-							{counts.excluded > 0 && (
-								<li>
-									<Link href={`${data}?review=excluded`} className={STATE_LINK}>
-										<StateBadge
-											kind="review"
-											className={STATE_WORDS}
-											state="excluded"
-											label={`${counts.excluded} excluded`}
-										/>
-									</Link>
-								</li>
-							)}
-						</ul>
+			<div className="grid gap-x-14 gap-y-8 p-island-pad lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+				<div className="flex min-w-0 flex-col">
+					<p className="type-mono-label text-ink-2">Field return</p>
+					{/* Plain spaces between the parts keep the count a word of its own when the text is read. */}{" "}
+					<h2 id="field-return-title" className="mt-2 type-section text-ink">
+						{sentence}
+					</h2>{" "}
+					<p className="mt-3 max-w-prose type-body text-ink-2">
+						The total adds up every site&apos;s own count. Records still on devices are not counted here.
+					</p>
+					<div className="mt-6">
+						{observations.ok ? (
+							<FactsList
+								labelWidth="minmax(8rem, 40%)"
+								items={[
+									{
+										label: "Last received",
+										value: summary.lastReceivedAt
+											? clock.relativeDayTime(summary.lastReceivedAt, nowIso)
+											: "Nothing received yet"
+									},
+									{ label: "Observed today", value: formatCount(summary.today) },
+									{ label: "Observed in the last 7 days", value: last7 }
+								]}
+							/>
+						) : (
+							<LoadFailure failure={observations.failure} what="recent observations" bare />
+						)}
 					</div>
-
-					{types.length > 0 && (
-						<div className="flex min-w-0 flex-col gap-3">
-							<p id="field-return-types" className="type-mono-label text-ink-2">
-								By primary play type
-							</p>
-							{/* TypeBars' own markup, with each label a link into Data filtered to that type. */}
-							<dl
-								aria-labelledby="field-return-types"
-								className="grid grid-cols-[fit-content(40%)_minmax(0,1fr)_auto] items-center gap-x-8 gap-y-2 type-body text-ink">
-								{types.map(type => (
-									<div key={type.code} className="col-span-3 grid grid-cols-subgrid items-center">
-										<dt className="min-w-0">
-											<Link
-												href={`${data}?type=${type.code}`}
-												className="underline-offset-4 hover:underline">
-												{type.label}
-											</Link>
-										</dt>
-										<dd aria-hidden="true" className="h-2.5 rounded-pill bg-well">
-											<span
-												className="block h-full rounded-pill bg-ink"
-												style={{ width: `${max > 0 ? (type.count / max) * 100 : 0}%` }}
-											/>
-										</dd>
-										<dd className="tnum text-right type-mono-data">{type.count}</dd>
-									</div>
-								))}
-							</dl>
-						</div>
+					{limited && (
+						<Note className="mt-4" title={`Based on the newest ${OBSERVATION_LIMIT} observations.`}>
+							Last received, today and the last 7 days come from them. The total above counts every
+							observation.
+						</Note>
 					)}
+					<p className="mt-4 type-small text-ink-2">
+						Days and times use the project&apos;s time zone, {clock.timeZone}.
+					</p>
 				</div>
-			</PreviewStateView>
+
+				{summary.bySite.length > 1 && (
+					<div className="flex min-w-0 flex-col gap-3">
+						<h3 className="type-mono-label text-ink-2">By site</h3>
+						<CountBars
+							label="Observations by site"
+							rows={summary.bySite.map(site => ({
+								key: site.code,
+								label: site.name,
+								value: site.count,
+								href: `${dataHref}?site=${encodeURIComponent(site.code)}`
+							}))}
+						/>
+					</div>
+				)}
+			</div>
 		</Island>
 	);
 }

@@ -1,62 +1,91 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState, useTransition } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { CodeCounter } from "@/components/contour/CodeCounter";
 import { CodeInput } from "@/components/contour/CodeInput";
 import { Field } from "@/components/contour/Field";
+import { Note } from "@/components/contour/Note";
 import { TextLink } from "@/components/contour/TextLink";
 
-import { isKnownJoinCode } from "./invitation";
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, PREVIEW_HOME, withQuery } from "./params";
+import { previewInvite } from "./actions";
+import { type InvitationDetails, type InviteProblem, type PreviewOutcome, UNREACHABLE_COPY } from "./invitation";
+import { formatCountdown, useCooldown } from "./useCooldown";
 
 const CODE_LENGTH = 8;
 
 export type JoinFormProps = {
-	initialCode?: string;
-	state: AuthPreviewState;
+	/** The code as it was when the person went back to change it. */
+	code: string;
+	onCodeChange: (code: string) => void;
+	/** FieldMaps found the invitation for `code`, the code that was looked up: the screen shows it with Join. */
+	onFound: (invitation: InvitationDetails, code: string) => void;
 };
 
 /**
- * Join a project by code (Org 12, PROPOSAL U3). The code is uppercased as it is typed. A known code opens
- * the invitation screen, where the person sees the project before joining; nothing is joined here.
+ * Join a project by code (Org 12). The code is uppercased as it is typed and goes to FieldMaps in the body
+ * of the request, never in an address. A code FieldMaps knows opens the invitation, where the person sees
+ * the project before joining; nothing is joined here. A code that does not match anything is a plain
+ * message beside the field; too many tries turns the button off for as long as FieldMaps says. The field
+ * is locked while FieldMaps looks, and the invitation is handed on with the code it was found for, so Join
+ * can only redeem the invitation the person was shown.
  */
-export function JoinForm({ initialCode = "", state }: JoinFormProps) {
-	const router = useRouter();
-	const [code, setCode] = useState(initialCode);
+export function JoinForm({ code, onCodeChange, onFound }: JoinFormProps) {
 	const [error, setError] = useState<string>();
-	const [pending, startTransition] = useTransition();
+	const [note, setNote] = useState<InviteProblem>();
+	const [pending, setPending] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const offline = state === "offline";
+	const cooldown = useCooldown();
+	const waiting = cooldown.remaining > 0;
 
-	function submit(event: FormEvent<HTMLFormElement>) {
+	function refocus() {
+		requestAnimationFrame(() => {
+			inputRef.current?.focus();
+			inputRef.current?.select();
+		});
+	}
+
+	async function submit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (pending || offline) return;
-		const message =
-			code.length < CODE_LENGTH
-				? "Enter all eight characters of the code."
-				: !isKnownJoinCode(code)
-					? "We could not find a project for that code. Check it with your coordinator."
-					: undefined;
-		if (message) {
-			setError(message);
-			requestAnimationFrame(() => {
-				inputRef.current?.focus();
-				inputRef.current?.select();
-			});
+		if (pending || waiting) return;
+		setNote(undefined);
+		if (code.length < CODE_LENGTH) {
+			setError("Enter all eight characters of the code.");
+			refocus();
 			return;
 		}
-		startTransition(() => router.push(withQuery("/invite", { code })));
+		setPending(true);
+		let outcome: PreviewOutcome;
+		try {
+			outcome = await previewInvite({ code });
+		} catch {
+			outcome = { status: "failed", problem: { kind: "unavailable", message: UNREACHABLE_COPY } };
+		}
+		if (outcome.status === "ready") {
+			onFound(outcome.invitation, code);
+			return;
+		}
+		setPending(false);
+		const { problem } = outcome;
+		if (problem.kind === "invalid" || problem.kind === "expired") {
+			setError(problem.message);
+			refocus();
+		} else {
+			if (problem.kind === "wait") cooldown.start(problem.retryAfter ?? 60);
+			setNote(problem);
+		}
 	}
 
 	return (
 		<form noValidate onSubmit={submit} className="flex flex-col gap-5" aria-busy={pending || undefined}>
-			{offline && <OfflineNote />}
+			{note && (
+				<Note tone={note.kind === "wait" ? "waiting" : "attention"} live="assertive">
+					{note.message}
+				</Note>
+			)}
 			<Field
-				label="Project join code"
+				label="Join code"
 				htmlFor="join-code"
 				hint="Letters and numbers, no spaces."
 				error={error}
@@ -64,30 +93,33 @@ export function JoinForm({ initialCode = "", state }: JoinFormProps) {
 				<CodeInput
 					ref={inputRef}
 					id="join-code"
-					name="code"
 					length={CODE_LENGTH}
 					kind="join"
 					value={code}
 					autoFocus
+					disabled={pending}
+					invalid={error ? true : undefined}
 					onChange={value => {
-						setCode(value);
+						onCodeChange(value);
 						setError(undefined);
 					}}
 				/>
 			</Field>
 			<Button
 				type="submit"
+				variant="primary"
 				size="lg"
 				fullWidth
 				iconRight="arrow-right"
 				busy={pending}
-				disabled={offline}
-				disabledReason="Finding a project needs a connection.">
-				Preview project
+				busyLabel="Finding the project…"
+				disabled={waiting}
+				disabledReason={`Wait ${formatCountdown(cooldown.remaining)} before trying again.`}>
+				Find the project
 			</Button>
 			<p className="-mt-2.5 type-body">
-				<TextLink href={PREVIEW_HOME} arrow={false} className="inline-flex min-h-touch items-center">
-					Skip for now
+				<TextLink href="/o" arrow={false} className="inline-flex min-h-touch items-center">
+					Back to your projects
 				</TextLink>
 			</p>
 		</form>

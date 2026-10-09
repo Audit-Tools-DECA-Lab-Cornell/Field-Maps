@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { type AccountDeletion, deleteAccount, updateProfile } from "@/lib/api/client";
-import { ApiError, errorCopy } from "@/lib/api/errors";
+import { ApiError, errorCopy, failedWrite } from "@/lib/api/errors";
 import { createClient } from "@/lib/supabase/server";
 
 import { checkProfile, type ProfileErrors, type ProfileValues, profileValues } from "./rules";
@@ -17,14 +17,6 @@ export type ProfileState = {
 	/** What the server saved, as the fields show it (an empty field is a cleared value). */
 	readonly saved?: ProfileValues;
 };
-
-/**
- * What an API failure means for a change: a refused request changed nothing, said before what to do
- * (DESIGN.md: what happened, what is safe, then what to do); a lost one may not say.
- */
-function failureMessage(error: ApiError, nothing: string): string {
-	return error.kind === "rejected" ? `${nothing} ${error.message}` : error.message;
-}
 
 /**
  * Edit profile: checks the fields again, then PATCH /v1/me. An empty field clears that part of the
@@ -42,6 +34,8 @@ export async function saveProfile(_state: ProfileState, form: FormData): Promise
 			locale: values.locale.trim() || null
 		});
 		revalidatePath("/account");
+		// The header's name and initials come from the workspace read in the /o layouts.
+		revalidatePath("/o", "layout");
 		return {
 			status: "saved",
 			saved: {
@@ -52,7 +46,7 @@ export async function saveProfile(_state: ProfileState, form: FormData): Promise
 		};
 	} catch (error) {
 		if (!(error instanceof ApiError)) throw error;
-		return { status: "failed", message: failureMessage(error, "Nothing was saved.") };
+		return { status: "failed", message: failedWrite("Nothing was saved.", error) };
 	}
 }
 
@@ -71,7 +65,7 @@ const AUTH_FLOW_COOKIES = ["fm-verify-email", "fm-recovery-email", "fm-recovery-
 /**
  * Delete account: DELETE /v1/me, after the person typed DELETE. 204 ends the session here and lands on
  * sign in (the page leaves a flash for it). 202 says the sign-in is still being removed. 409 sole_owner,
- * 503 and every other refusal say that nothing was deleted, and why.
+ * and every other refusal say that nothing was deleted, and why; a lost answer or a 5xx says the deletion could not be confirmed.
  */
 export async function requestAccountDeletion(_state: DeletionState, form: FormData): Promise<DeletionState> {
 	const confirm = form.get("confirm");
@@ -86,14 +80,14 @@ export async function requestAccountDeletion(_state: DeletionState, form: FormDa
 			return { status: "failed", blocked: true, message: `Nothing was deleted. ${errorCopy.sole_owner}` };
 		return {
 			status: "failed",
-			message: failureMessage(error, "Nothing was deleted."),
+			message: failedWrite("Nothing was deleted.", error),
 			signIn: error.kind === "sign-in"
 		};
 	}
 	if (outcome === "unavailable")
 		return {
 			status: "failed",
-			message: "Account deletion is not available on this server yet. Nothing was deleted."
+			message: "Deleting accounts is not available yet. Nothing was deleted."
 		};
 	if (outcome === "pending") return { status: "pending" };
 	// The sign-in no longer exists, so end the session here only; the server has nothing left to revoke.

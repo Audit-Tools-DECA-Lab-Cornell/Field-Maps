@@ -1,27 +1,17 @@
 import type { IconName } from "@/components/contour/Icon";
-import {
-	FORM_VERSIONS,
-	OBSERVATIONS,
-	ORG_MEMBERSHIPS,
-	PEOPLE,
-	PROJECT_FORMS,
-	PROJECT_MEMBERSHIPS,
-	projectsIn,
-	sitesIn,
-	ZONES
-} from "@/fixtures";
 import { stateOf } from "@/lib/contour";
-import type { PreviewAction } from "@/lib/preview";
+import { projectPath } from "@/lib/workspace/home";
+import type { OrgRef, ProjectRef, WorkspaceIndex } from "@/lib/workspace/types";
 
-import { ORG_SECTIONS, orgHref, PROJECT_SECTIONS, projectHref } from "./navigation";
+import { ORG_SECTIONS, orgHref, PROJECT_SECTIONS, projectHref, visibleSections } from "./navigation";
 
 /** One row in the ⌘K palette: a place to go, or an action. */
 export type PaletteEntry = {
 	id: string;
 	label: string;
-	/** Set the label in mono: OBS-0244, demo-v1. */
+	/** Set the label in mono: a code such as play-study. */
 	labelMono?: boolean;
-	/** Secondary words after the label: "Woodland edge · Round 3". */
+	/** Secondary words after the label: "DECA Lab · Manager". */
 	meta?: string;
 	metaMono?: boolean;
 	icon: IconName;
@@ -33,9 +23,6 @@ export type PaletteEntry = {
 };
 
 export type PaletteGroup = { heading: string; entries: PaletteEntry[] };
-
-/** An observation ID as people type it: "obs-0244", "OBS0244", "obs 24". */
-export const OBSERVATION_QUERY = /obs[-\s]?\d+/i;
 
 const RECENT_KEY = "fm.palette.recent";
 const RECENT_LIMIT = 5;
@@ -77,138 +64,77 @@ export function rememberRecent(entry: PaletteEntry) {
 	}
 }
 
-type Context = {
-	org: string;
-	orgName: string;
-	/** The project on screen, if any. */
-	project?: string;
-	/** The project whose sites, forms and observations are searched: the one on screen, or the first. */
-	searchProject: string;
-	can: (action: PreviewAction) => boolean;
-	/** Organization actions go by the organization role (an admin is a manager on a project page). */
-	canOrg: (action: PreviewAction) => boolean;
+export type PaletteContext = {
+	index: WorkspaceIndex;
+	/** The organization on screen, when the person belongs to it. */
+	org: OrgRef | null;
+	/** The project on screen, when the person belongs to it. */
+	project: ProjectRef | null;
+	/** Whether the person manages the organization on screen (owner or admin). */
+	managesOrg: boolean;
+	/** Whether the person manages the project on screen (manager). */
+	managesProject: boolean;
 };
 
-/** The places the palette jumps to (DESIGN §8): tabs, projects, sites, zones, form versions, people, OBS- IDs. */
-export function placeGroups(context: Context, query: string): PaletteGroup[] {
-	const { org, orgName, project, searchProject, can, canOrg } = context;
-	const visible = <T extends { requires?: PreviewAction }>(list: T[], check = can) =>
-		list.filter(item => !item.requires || check(item.requires));
-	const projects = projectsIn(org);
-	const searchName = projects.find(entry => entry.slug === searchProject)?.name ?? searchProject;
+/**
+ * The places the palette jumps to (DESIGN §8): the tabs of the project and organization on screen, every
+ * project and organization the person belongs to, and their account. Only places they can open are listed.
+ */
+export function placeGroups(context: PaletteContext): PaletteGroup[] {
+	const { index, org, project, managesOrg, managesProject } = context;
 	const groups: PaletteGroup[] = [];
 
 	const goTo: PaletteEntry[] = [];
-	if (project) {
-		const name = projects.find(entry => entry.slug === project)?.name ?? project;
-		for (const section of visible(PROJECT_SECTIONS))
+	if (org && project && project.role !== "observer") {
+		for (const section of visibleSections(PROJECT_SECTIONS, managesProject))
 			goTo.push({
 				id: `go-project-${section.segment || "overview"}`,
 				label: section.label,
-				meta: name,
+				meta: project.name,
 				icon: section.icon,
-				href: projectHref(org, project, section.segment),
+				href: projectHref(org.slug, project.code, section.segment),
 				keywords: [section.pageName],
 				shortcut: ["g", section.go]
 			});
 	}
-	for (const section of visible(ORG_SECTIONS, canOrg))
-		goTo.push({
-			id: `go-org-${section.segment || "projects"}`,
-			label: section.segment ? section.pageName : "All projects",
-			meta: orgName,
-			icon: section.icon,
-			href: orgHref(org, section.segment),
-			keywords: [section.label],
-			shortcut: project ? undefined : ["g", section.go]
-		});
-	goTo.push({ id: "go-account", label: "Account", icon: "user", href: "/account", keywords: ["profile"] });
+	if (org) {
+		for (const section of visibleSections(ORG_SECTIONS, managesOrg))
+			goTo.push({
+				id: `go-org-${section.segment || "projects"}`,
+				label: section.segment ? section.pageName : "All projects",
+				meta: org.name,
+				icon: section.icon,
+				href: orgHref(org.slug, section.segment),
+				keywords: [section.label],
+				shortcut: project ? undefined : ["g", section.go]
+			});
+	}
+	goTo.push({ id: "go-account", label: "Account", icon: "user", href: "/account", keywords: ["profile", "name"] });
 	groups.push({ heading: "Go to", entries: goTo });
 
+	const orgName = new Map(index.orgs.map(entry => [entry.id, entry.name]));
 	groups.push({
 		heading: "Projects",
-		entries: projects.map(entry => ({
-			id: `project-${entry.slug}`,
+		entries: index.projects.map(entry => ({
+			id: `project-${entry.id}`,
 			label: entry.name,
-			meta: stateOf("project", entry.state).label,
+			meta: [orgName.get(entry.orgId), stateOf("role", entry.role).label].filter(Boolean).join(" · "),
 			icon: "folder",
-			href: projectHref(org, entry.slug),
+			href: projectPath(entry),
 			keywords: [entry.code]
 		}))
 	});
 
-	if (OBSERVATION_QUERY.test(query)) {
-		const digits = query.replace(/\D/g, "");
-		const zoneName = (slug: string) => ZONES.find(zone => zone.slug === slug)?.name ?? slug;
-		groups.push({
-			heading: "Observations",
-			entries: OBSERVATIONS.filter(
-				obs => obs.projectSlug === searchProject && obs.id.replace(/\D/g, "").includes(digits)
-			).map(obs => ({
-				id: `obs-${obs.id}`,
-				label: obs.id,
-				labelMono: true,
-				meta: `${zoneName(obs.zoneSlug)} · Round ${obs.round}`,
-				icon: "map-pin",
-				href: projectHref(org, searchProject, `data/${obs.id}`),
-				keywords: [obs.id.replace("-", ""), obs.id.replace("-", " ")]
-			}))
-		});
-	}
-
-	const sites = sitesIn(searchProject);
 	groups.push({
-		heading: "Sites",
-		entries: sites.map(site => ({
-			id: `site-${site.slug}`,
-			label: site.name,
-			meta: `Site · ${searchName}`,
-			icon: "map",
-			href: projectHref(org, searchProject, `sites/${site.slug}`)
+		heading: "Organizations",
+		entries: index.orgs.map(entry => ({
+			id: `org-${entry.id}`,
+			label: entry.name,
+			meta: stateOf("role", entry.role).label,
+			icon: "building-2",
+			href: orgHref(entry.slug),
+			keywords: [entry.slug]
 		}))
-	});
-	groups.push({
-		heading: "Zones",
-		entries: ZONES.filter(zone => sites.some(site => site.slug === zone.siteSlug)).map(zone => ({
-			id: `zone-${zone.siteSlug}-${zone.slug}`,
-			label: zone.name,
-			meta: `Zone ${zone.code} · ${sites.find(site => site.slug === zone.siteSlug)?.name ?? zone.siteSlug}`,
-			icon: "map-pinned",
-			href: projectHref(org, searchProject, `sites/${zone.siteSlug}/zones/${zone.slug}`)
-		}))
-	});
-
-	const forms = PROJECT_FORMS.filter(form => form.projectSlug === searchProject);
-	groups.push({
-		heading: "Forms",
-		entries: FORM_VERSIONS.filter(version => forms.some(form => form.slug === version.formSlug)).map(version => ({
-			id: `form-${version.id}`,
-			label: version.id,
-			labelMono: true,
-			meta: `${stateOf("form", version.state).label} · ${forms.find(form => form.slug === version.formSlug)?.title ?? ""}`,
-			icon: "file-text",
-			href: projectHref(org, searchProject, `forms/versions/${version.id}`)
-		}))
-	});
-
-	const peopleHref = can("viewTeam") ? projectHref(org, searchProject, "team") : orgHref(org, "members");
-	groups.push({
-		heading: "People",
-		entries: Object.values(PEOPLE).map(person => {
-			const projectRole = PROJECT_MEMBERSHIPS.find(
-				entry => entry.personId === person.id && entry.projectSlug === searchProject
-			)?.role;
-			const orgRole = ORG_MEMBERSHIPS.find(entry => entry.personId === person.id && entry.orgSlug === org)?.role;
-			const role = projectRole ?? orgRole;
-			return {
-				id: `person-${person.id}`,
-				label: person.name,
-				meta: role ? `${person.initials} · ${stateOf("role", role).label}` : person.initials,
-				icon: "user" as const,
-				href: peopleHref,
-				keywords: [person.initials, person.email]
-			};
-		})
 	});
 
 	return groups.filter(group => group.entries.length > 0);

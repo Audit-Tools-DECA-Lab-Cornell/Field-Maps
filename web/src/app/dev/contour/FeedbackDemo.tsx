@@ -155,16 +155,16 @@ export function FeedbackDemo() {
 				</div>
 			</Specimen>
 
-			<Specimen title="Popover" caption="Free content on the menu surface: the Preview data note.">
+			<Specimen title="Popover" caption="Free content on the menu surface: a short note beside a control.">
 				<div>
 					<Popover>
 						<PopoverTrigger asChild>
 							<Button variant="outline" size="sm" icon="info">
-								Preview data
+								About this count
 							</Button>
 						</PopoverTrigger>
 						<PopoverContent align="start">
-							Everything here is sample data. Nothing is read from or written to the FieldMaps database.
+							The count covers every observation uploaded so far.
 						</PopoverContent>
 					</Popover>
 				</div>

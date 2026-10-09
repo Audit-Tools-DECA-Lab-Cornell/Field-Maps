@@ -1,7 +1,8 @@
 /**
  * Reading the auth pages' URLs, and the rules their forms share. The signed-out forms post to the real
  * `authenticate` Server Action (src/lib/auth/actions.ts); where to go next is `safeNext` in
- * src/lib/auth/navigation.ts. The invitation and join screens still run on preview data until WEB-06.
+ * src/lib/auth/navigation.ts. The invitation and join screens call FieldMaps through their own actions
+ * (./actions.ts).
  */
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -9,22 +10,12 @@ export type SearchParams = Promise<Record<string, string | string[] | undefined>
 /** The eyebrow over the sign-in and account titles, typed in sentence case (the mono label sets capitals). */
 export const AUTH_KICKER = "FieldMaps · Research in place";
 
-/** The screen states a page can be shown in with `?preview-state=` (DESIGN.md §7). */
-export type AuthPreviewState = "normal" | "loading" | "error" | "offline" | "no-access";
-
-const PREVIEW_STATES: readonly AuthPreviewState[] = ["normal", "loading", "error", "offline", "no-access"];
-
 /** The first value of a query parameter. */
 export function param(value: string | string[] | undefined): string | undefined {
 	return Array.isArray(value) ? value[0] : value;
 }
 
-export function previewState(value: string | string[] | undefined): AuthPreviewState {
-	const state = param(value);
-	return PREVIEW_STATES.includes(state as AuthPreviewState) ? (state as AuthPreviewState) : "normal";
-}
-
-/** A query string from the values that are set, for links that carry `next` or a code from page to page. */
+/** A query string from the values that are set, for links that carry `next` from page to page. */
 export function withQuery(path: string, query: Record<string, string | undefined>): string {
 	const search = new URLSearchParams();
 	for (const [key, value] of Object.entries(query)) if (value) search.set(key, value);
@@ -55,8 +46,8 @@ export function isEmail(value: string): boolean {
 }
 
 /**
- * A join code as the join field keeps it: capital letters and digits, eight at most. The field itself does
- * the same as it is typed; this is for a code that arrives in the URL.
+ * A join code as the join field keeps it: capital letters and digits, eight at most. The field cleans the
+ * code as it is typed; the join action cleans it again, so a code pasted with spaces or hyphens works.
  */
 export function cleanJoinCode(raw: string): string {
 	return raw
@@ -65,6 +56,3 @@ export function cleanJoinCode(raw: string): string {
 		.replace(/[^A-Z0-9]/g, "")
 		.slice(0, 8);
 }
-
-/** Where the signed-in preview lands. The fixtures' one organization. */
-export const PREVIEW_HOME = "/o/deca";

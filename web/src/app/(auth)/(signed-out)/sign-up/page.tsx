@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { AuthPanel } from "@/components/shell/AuthSplit";
-import { authPageMode, NotConfigured } from "@/features/auth/AuthUnavailable";
+import { NotConfigured, signInAvailable } from "@/features/auth/AuthUnavailable";
+import { isInvitationPath } from "@/features/auth/invitation";
 import { AUTH_KICKER, param, type SearchParams } from "@/features/auth/params";
 import { SignUpForm } from "@/features/auth/SignUpForm";
 import { safeNext } from "@/lib/auth/navigation";
@@ -15,17 +16,17 @@ export const metadata: Metadata = {
 export default async function SignUpPage({ searchParams }: { searchParams: SearchParams }) {
 	const query = await searchParams;
 	const nextParam = param(query.next);
-	const mode = authPageMode(query["preview-state"]);
+	const next = safeNext(nextParam);
 	return (
 		<AuthPanel
 			kicker={AUTH_KICKER}
 			title="Create your account"
-			lead="Your account can join multiple research projects.">
-			{mode.form ? (
-				<SignUpForm next={safeNext(nextParam)} carryNext={nextParam !== undefined} state={mode.preview} />
-			) : (
-				<NotConfigured />
-			)}
+			lead={
+				isInvitationPath(next)
+					? "Create an account to continue with your invitation."
+					: "Your account can join multiple research projects."
+			}>
+			{signInAvailable() ? <SignUpForm next={next} carryNext={nextParam !== undefined} /> : <NotConfigured />}
 		</AuthPanel>
 	);
 }

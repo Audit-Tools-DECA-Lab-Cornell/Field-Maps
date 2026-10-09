@@ -44,6 +44,12 @@ Run long-lived services in separate terminals. There is no command that silently
 
 For the full integration suite, first run `pnpm db:start`, then `pnpm test`. These operations create/migrate the local test databases. They do not apply hosted migrations or change deployed Supabase settings.
 
+### Web browser tests
+
+`sh scripts/e2e-local.sh` runs the Playwright specs in `web/e2e` against the local stack only: Docker, local Supabase, the API on `127.0.0.1:8001` (`backend/config.auth-local.json`), the seed `database/seed-web-workspace.mjs`, and the web app on `127.0.0.1:3000`. It starts whatever is not running and leaves it running. The web app must use port 3000, because map packages go from the browser straight to the API and that is the only browser origin the local API allows. The script header lists its options: `--prod` builds and serves instead of `next dev`, `--skip-seed` skips the seed when its manifest exists (local Auth allows 30 sign-ins in 5 minutes), and `--stop` stops the web app it started. Arguments after the options go to `playwright test`, for example `sh scripts/e2e-local.sh --skip-seed --project=desktop-1440 e2e/sign-in.spec.ts`.
+
+The seed creates the project `/o/web-acceptance/p/play-study` and the accounts `{owner,admin,manager,observer,viewer,outsider,joiner,other-owner}@fieldmaps.test`, all with the public local password `FieldMaps-local-only-42!`. Its manifest is `database/.local/web-workspace.json`. Screenshots of every route in Day and Dusk go to `web/e2e/screenshots/`, and the HTML report to `database/.local/e2e/playwright-report`. Never point the seed or the specs at hosted services.
+
 The existing short aliases `pnpm lint`, `pnpm lint:fix`, `pnpm typecheck`, `pnpm format`, and `pnpm format:check` target only web. `pnpm check` is the product-wide static check. Formatting never sweeps the backend, spreadsheets, GIS files, or native projects.
 
 ## API and database targets

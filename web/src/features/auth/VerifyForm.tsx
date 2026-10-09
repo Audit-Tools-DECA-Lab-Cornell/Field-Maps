@@ -7,18 +7,13 @@ import { CodeCounter } from "@/components/contour/CodeCounter";
 import { CodeInput } from "@/components/contour/CodeInput";
 import { Field } from "@/components/contour/Field";
 import { TextLink } from "@/components/contour/TextLink";
-import type { AuthState } from "@/lib/auth/actions";
 
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, withQuery } from "./params";
+import { withQuery } from "./params";
 import { ResendCodeForm } from "./ResendCodeForm";
-import { asksToStartAgain, NO_MESSAGE, ServerMessage, StartAgainLink, useAuthAction } from "./useAuthAction";
+import { asksToStartAgain, ServerMessage, StartAgainLink, useAuthAction } from "./useAuthAction";
 import { formatCountdown, useCooldown } from "./useCooldown";
 
 const CODE_LENGTH = 6;
-
-/** The preview's sample answer for `?preview-state=error`, word for word what the server says. */
-const PREVIEW_ERROR: AuthState = { message: "That code is invalid or expired. Request a new code." };
 
 export type VerifyFormProps = {
 	/** Where a verified account goes next, already made safe by `safeNext`. */
@@ -27,7 +22,6 @@ export type VerifyFormProps = {
 	carryNext: boolean;
 	/** Seconds until another code may be sent, from the `fm-email-sent` cookie. */
 	cooldownSeconds: number;
-	state: AuthPreviewState;
 };
 
 /**
@@ -35,19 +29,14 @@ export type VerifyFormProps = {
  * typed or pasted; the address it checks against is the one the server keeps in an httpOnly cookie. A
  * wrong or expired code reselects the field. Resending waits as long as the server says.
  */
-export function VerifyForm({ next, carryNext, cooldownSeconds, state: preview }: VerifyFormProps) {
+export function VerifyForm({ next, carryNext, cooldownSeconds }: VerifyFormProps) {
 	const [code, setCode] = useState("");
 	const [error, setError] = useState<string>();
 	const formRef = useRef<HTMLFormElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const submitWhenFilled = useRef(false);
 	const cooldown = useCooldown();
-	const auth = useAuthAction({
-		initial: preview === "error" ? PREVIEW_ERROR : NO_MESSAGE,
-		fields: { code: inputRef },
-		onRetryAfter: cooldown.start
-	});
-	const offline = preview === "offline";
+	const auth = useAuthAction({ fields: { code: inputRef }, onRetryAfter: cooldown.start });
 	const waiting = cooldown.remaining > 0;
 	const startAgainHref = withQuery("/sign-up", { next: carryNext ? next : undefined });
 
@@ -59,7 +48,7 @@ export function VerifyForm({ next, carryNext, cooldownSeconds, state: preview }:
 	}, [code]);
 
 	function submit(event: FormEvent<HTMLFormElement>) {
-		if (auth.pending || offline || waiting) return event.preventDefault();
+		if (auth.pending || waiting) return event.preventDefault();
 		if (code.length < CODE_LENGTH) {
 			event.preventDefault();
 			setError("Enter all six digits from the email.");
@@ -78,7 +67,6 @@ export function VerifyForm({ next, carryNext, cooldownSeconds, state: preview }:
 				aria-busy={auth.pending || undefined}>
 				<input type="hidden" name="intent" value="verify" />
 				<input type="hidden" name="next" value={next} />
-				{offline && <OfflineNote />}
 				<ServerMessage {...auth.note}>
 					{asksToStartAgain(auth.state) && <StartAgainLink href={startAgainHref} />}
 				</ServerMessage>
@@ -114,19 +102,14 @@ export function VerifyForm({ next, carryNext, cooldownSeconds, state: preview }:
 					fullWidth
 					icon="check"
 					busy={auth.pending}
-					disabled={offline || waiting}
-					disabledReason={
-						offline
-							? "Checking the code needs a connection."
-							: `Wait ${formatCountdown(cooldown.remaining)} before trying again.`
-					}>
+					disabled={waiting}
+					disabledReason={`Wait ${formatCountdown(cooldown.remaining)} before trying again.`}>
 					{auth.pending ? "Verifying email…" : "Verify email"}
 				</Button>
 			</form>
 			<ResendCodeForm
 				kind="verify"
 				cooldownSeconds={cooldownSeconds}
-				offline={offline}
 				codeRef={inputRef}
 				startAgainHref={startAgainHref}
 			/>
