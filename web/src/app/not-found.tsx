@@ -24,7 +24,7 @@ export default function NotFound() {
 			<main
 				id="main"
 				tabIndex={-1}
-				className="mx-auto w-full max-w-page flex-1 px-4 pt-10 pb-14 md:px-gutter md:pt-16">
+				className="mx-auto w-full max-w-(--container-page) flex-1 px-4 pt-10 pb-14 md:px-gutter md:pt-16 xl:px-23">
 				<div className="flex max-w-2xl flex-col items-start">
 					<span className="grid size-20 place-items-center rounded-pill border border-line bg-island text-ink shadow-ledge">
 						<Icon name="map" size={32} />

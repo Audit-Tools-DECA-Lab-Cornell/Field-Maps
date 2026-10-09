@@ -59,7 +59,8 @@ export function InvitationsTable<R extends PeopleRole>({
 					{pending.map(invitation => (
 						<li key={invitation.id} className="border-t border-rule px-island-pad py-3 first:border-t-0">
 							<div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:grid md:grid-cols-[minmax(0,1fr)_8rem_8rem_auto]">
-								<div className="min-w-0 flex-1">
+								{/* Below md, the invitation takes the first line and the rest share the second. */}
+								<div className="min-w-0 basis-full md:basis-auto">
 									<p className="type-body font-semibold wrap-anywhere text-ink">
 										{invitation.email ?? "Join code"}
 									</p>
@@ -69,7 +70,7 @@ export function InvitationsTable<R extends PeopleRole>({
 									{stateOf("role", invitation.role).label}
 								</span>
 								<span className="type-small text-ink-2">Used {usesLabel(invitation)}</span>
-								<div className="flex justify-end">
+								<div className="ml-auto flex justify-end md:ml-0">
 									{onRevoke && (
 										<Button variant="outline" size="sm" onClick={() => setRevoking(invitation)}>
 											Revoke

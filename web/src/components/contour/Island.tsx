@@ -85,15 +85,15 @@ export function Island({
 							<span className="min-w-0">{title}</span>
 						</Heading>
 					)}
+					{/* Plain spaces between the parts keep a title, a count and a link apart when read as text. */}{" "}
 					{(meta != null || actions != null) && (
 						<div
 							className={cx("flex flex-wrap items-baseline gap-x-4 gap-y-2", title == null && "ml-auto")}>
-							{meta != null && <div className="type-small text-ink-2">{meta}</div>}
-							{actions}
+							{meta != null && <div className="type-small text-ink-2">{meta}</div>} {actions}
 						</div>
 					)}
 				</div>
-			)}
+			)}{" "}
 			{hasBody && (
 				<div
 					className={cx(
@@ -102,7 +102,7 @@ export function Island({
 					)}>
 					{children}
 				</div>
-			)}
+			)}{" "}
 			{footnote != null && (
 				<div className="border-t border-rule px-island-pad py-4 type-small text-ink-2">{footnote}</div>
 			)}

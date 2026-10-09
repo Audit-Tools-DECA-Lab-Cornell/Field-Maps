@@ -123,7 +123,7 @@ export default async function OverviewPage({
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				title="What came back from the field"
-				lead={`${ref.name}. Records still on devices are not counted here.`}
+				lead={ref.name}
 				actions={
 					<ButtonLink variant="primary" href={`${base}/data`} iconRight="arrow-right">
 						Open observations

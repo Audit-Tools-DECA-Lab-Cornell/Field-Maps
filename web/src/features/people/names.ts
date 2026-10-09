@@ -1,8 +1,8 @@
 import type { MemberLike, PeopleRole } from "./types";
 
-export const NO_NAME = "No name set";
+export const NO_NAME = "No name available";
 
-/** The name a member set in their profile, or "No name set". */
+/** The name a member set in their profile, or "No name available" (they set none, or it is not visible to you). */
 export function memberName(member: Pick<MemberLike<PeopleRole>, "display_name">): string {
 	return member.display_name?.trim() || NO_NAME;
 }

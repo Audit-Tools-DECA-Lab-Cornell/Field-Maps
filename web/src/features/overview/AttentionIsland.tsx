@@ -39,9 +39,9 @@ export function AttentionIsland({ items, unchecked }: AttentionIslandProps) {
 								className={`mt-0.5 shrink-0 ${TONE_TEXT[item.tone]}`}
 							/>
 							<div className="min-w-0">
-								<p className="font-semibold text-ink">{item.title}</p>
+								<p className="font-semibold text-ink">{item.title}</p>{" "}
 								<p className="type-small text-ink-2">{item.detail}</p>
-							</div>
+							</div>{" "}
 							{item.action && (
 								<div className="col-start-2 sm:col-start-3 sm:row-start-1 sm:text-right">
 									<TextLink href={item.action.href}>{item.action.label}</TextLink>

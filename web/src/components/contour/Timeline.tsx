@@ -42,10 +42,12 @@ export function Timeline({ items, className, ...rest }: TimelineProps) {
 								!last && "pb-4"
 							)}>
 							<div className="min-w-0">
-								<div className="font-semibold text-ink">{item.title}</div>
+								<div className="font-semibold text-ink">{item.title}</div>{" "}
 								{item.detail != null && <div className="type-small text-ink-2">{item.detail}</div>}
-							</div>
-							{item.time != null && <div className="shrink-0 type-mono-data text-ink-2">{item.time}</div>}
+							</div>{" "}
+							{item.time != null && (
+								<div className="shrink-0 type-mono-data text-ink-2">{item.time}</div>
+							)}{" "}
 						</div>
 					</li>
 				);

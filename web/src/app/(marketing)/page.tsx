@@ -17,7 +17,7 @@ export default function HomePage() {
 			<main
 				id="main"
 				tabIndex={-1}
-				className="mx-auto w-full max-w-page flex-1 px-4 pt-10 pb-14 md:px-gutter md:pt-16">
+				className="mx-auto w-full max-w-(--container-page) flex-1 px-4 pt-10 pb-14 md:px-gutter md:pt-16 xl:px-23">
 				<div className="flex max-w-2xl flex-col items-start gap-6">
 					<h1 className="type-page text-ink md:type-hero">FieldMaps</h1>
 					<p className="type-lead text-ink">

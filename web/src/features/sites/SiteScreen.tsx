@@ -171,6 +171,7 @@ function ZonesIsland({
 						<li
 							key={row.id ?? "none"}
 							className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 border-t border-rule px-island-pad py-3.5 first:border-t-0">
+							{/* Plain spaces keep a zone, its count and the next zone apart when the row is read as text. */}
 							<div className="min-w-0">
 								{row.id !== null ? (
 									<TextLink href={zoneHref(row.id)} tone="ink" className="break-words">
@@ -178,12 +179,12 @@ function ZonesIsland({
 									</TextLink>
 								) : (
 									<span className="text-ink">{row.label}</span>
-								)}
+								)}{" "}
 								{row.id !== null && row.id !== row.label && (
 									<p className="mt-1 type-mono-data break-all text-ink-2">Zone id {row.id}</p>
 								)}
-							</div>
-							{row.countLabel && <p className="type-body text-ink">{row.countLabel}</p>}
+							</div>{" "}
+							{row.countLabel && <p className="type-body text-ink">{row.countLabel}</p>}{" "}
 						</li>
 					))}
 				</ul>

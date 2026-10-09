@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { ComponentPropsWithRef, MouseEvent, ReactNode } from "react";
+import { type ComponentPropsWithRef, type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { cx } from "@/lib/cx";
 
@@ -14,11 +14,30 @@ export type TableProps = {
 /**
  * An island table (system-05, project-02): mono column labels, ruled rows at least 54 px tall, and first
  * and last cells aligned with the island padding. Place it in a flush Island. A table too wide for the
- * screen scrolls sideways inside its island.
+ * screen scrolls sideways inside its island, and then it takes keyboard focus, so the arrow keys can scroll it.
  */
 export function Table({ caption, className, children, ...rest }: TableProps) {
+	const scroller = useRef<HTMLDivElement>(null);
+	const [scrolls, setScrolls] = useState(false);
+
+	// Only a table that overflows becomes a tab stop; one that fits is not, and the stop would lead nowhere.
+	useEffect(() => {
+		const element = scroller.current;
+		if (!element || typeof ResizeObserver === "undefined") return;
+		const observer = new ResizeObserver(() => setScrolls(element.scrollWidth > element.clientWidth));
+		observer.observe(element);
+		if (element.firstElementChild) observer.observe(element.firstElementChild);
+		return () => observer.disconnect();
+	}, []);
+
 	return (
-		<div className="overflow-x-auto">
+		<div
+			ref={scroller}
+			tabIndex={scrolls ? 0 : undefined}
+			role={scrolls && caption ? "region" : undefined}
+			aria-label={scrolls ? caption : undefined}
+			// The island clips an outside ring, so a focused scroller draws it 3 px inside its edges.
+			className="overflow-x-auto focus-visible:[--ct-size-focus-gap:calc(var(--ct-size-focus-ring)*-2)]">
 			{/* Without a header row, the island's own rule sits above the first row, so that row drops its rule. */}
 			<table
 				{...rest}

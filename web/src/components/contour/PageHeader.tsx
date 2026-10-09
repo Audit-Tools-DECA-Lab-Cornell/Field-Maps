@@ -36,7 +36,7 @@ export function PageHeader({
 }: PageHeaderProps) {
 	return (
 		<header className={cx("flex flex-col gap-2", className)}>
-			{breadcrumbs && breadcrumbs.length > 0 && <Breadcrumbs items={breadcrumbs} />}
+			{breadcrumbs && breadcrumbs.length > 0 && <Breadcrumbs items={breadcrumbs} />}{" "}
 			<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-8">
 				<div className="min-w-0">
 					<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -46,12 +46,13 @@ export function PageHeader({
 							className={cx("min-w-0 text-ink", titleMono ? "type-mono-title" : "type-page")}>
 							{title}
 						</h1>
+						{/* Plain spaces between the parts keep the title, the lead and the actions apart when read as text. */}{" "}
 						{titleAddon != null && (
 							<div className="flex flex-wrap items-center gap-x-4 gap-y-1">{titleAddon}</div>
 						)}
-					</div>
+					</div>{" "}
 					{lead != null && <div className="mt-2 type-body text-ink-2 lg:type-lead">{lead}</div>}
-				</div>
+				</div>{" "}
 				{actions != null && <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>}
 			</div>
 		</header>

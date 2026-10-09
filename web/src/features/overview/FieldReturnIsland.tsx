@@ -45,9 +45,10 @@ export function FieldReturnIsland({ sites, observations, nowIso, clock, dataHref
 			<div className="grid gap-x-14 gap-y-8 p-island-pad lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
 				<div className="flex min-w-0 flex-col">
 					<p className="type-mono-label text-ink-2">Field return</p>
+					{/* Plain spaces between the parts keep the count a word of its own when the text is read. */}{" "}
 					<h2 id="field-return-title" className="mt-2 type-section text-ink">
 						{sentence}
-					</h2>
+					</h2>{" "}
 					<p className="mt-3 max-w-prose type-body text-ink-2">
 						The total adds up every site&apos;s own count. Records still on devices are not counted here.
 					</p>

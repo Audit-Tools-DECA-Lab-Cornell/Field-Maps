@@ -46,7 +46,7 @@ function roleWord(role: PeopleRole): string {
 }
 
 /**
- * The people in a project or organization (project-08, org-02): name (or "No name set"), initials, when
+ * The people in a project or organization (project-08, org-02): name (or "No name available"), initials, when
  * they were added and their role. Where the signed-in person may manage someone, the role is a select
  * and Remove asks first. A ruled list, so it reads at 390 px without sideways scrolling.
  */
@@ -146,7 +146,8 @@ function MemberRow<R extends PeopleRole>({
 	return (
 		<li className="border-t border-rule px-island-pad py-3 first:border-t-0">
 			<div className="flex flex-wrap items-center gap-x-4 gap-y-3 md:grid md:grid-cols-[minmax(0,1fr)_13rem_auto]">
-				<div className="flex min-w-0 flex-1 items-center gap-3">
+				{/* Below md, the person takes the first line and the role and Remove share the second. */}
+				<div className="flex min-w-0 basis-full items-center gap-3 md:basis-auto">
 					<Avatar initials={memberInitials(member)} size="sm" />
 					<div className="min-w-0">
 						<p className={name === NO_NAME ? "type-body text-ink-2" : "type-body font-semibold text-ink"}>
@@ -156,7 +157,7 @@ function MemberRow<R extends PeopleRole>({
 						<p className="type-small text-ink-2">Added {added}</p>
 					</div>
 				</div>
-				<div className="min-w-0">
+				<div className="min-w-0 flex-1 sm:max-w-52">
 					{canChange ? (
 						<Select
 							id={selectId}
@@ -174,7 +175,7 @@ function MemberRow<R extends PeopleRole>({
 						<span className="type-mono-label text-ink-2">{roleWord(member.role)}</span>
 					)}
 				</div>
-				<div className="flex justify-end">
+				<div className="ml-auto flex justify-end md:ml-0">
 					{onRemove && manageable && (
 						<Button variant="outline" size="sm" icon="trash-2" onClick={onRemove}>
 							{you ? "Leave" : "Remove"}
