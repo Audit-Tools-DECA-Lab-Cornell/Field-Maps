@@ -1,498 +1,377 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
-import { Dialog, DialogClose } from "@/components/contour/Dialog";
-import { Icon } from "@/components/contour/Icon";
-import { InnerPanel } from "@/components/contour/InnerPanel";
 import { Island } from "@/components/contour/Island";
+import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
 import { ScreenState } from "@/components/contour/ScreenState";
+import { TextLink } from "@/components/contour/TextLink";
 import { useToast } from "@/components/contour/Toast";
 import { MapFrame } from "@/components/map/MapFrame";
 import type { PlanObservation, ZonePlanStyle } from "@/components/map/SitePlan";
 import { projectHref } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { type Observation, observationsFor } from "@/fixtures";
-import { MAP_PALETTES, useMapPalette } from "@/lib/map-palette";
+import type { ObservationRow, RawDefinition } from "@/lib/api/types";
+import { formatCount, plural } from "@/lib/labels";
 import type { ProjectedSite } from "@/lib/plan";
-import { isOverlayOpen, isTypingTarget } from "@/lib/shortcuts";
+import { clock as makeClock } from "@/lib/time";
 
-import { ExportDialog } from "./ExportDialog";
-import { FilterRow } from "./FilterRow";
+import { DataTable } from "./DataTable";
+import { ExportObservations } from "./ExportObservations";
+import { FilterBar } from "./FilterBar";
 import {
 	applyFilters,
-	clearFilters,
-	type DataFilters,
+	type ClientFilters,
+	type DataRecord,
+	EMPTY_CLIENT_FILTERS,
+	EMPTY_SCOPE,
+	exactTotal,
 	filterOptions,
-	plural,
-	scopeParts,
-	suggestedViewName
-} from "./filters";
-import { markerLabel, type MarkerPosition, zoneIdOf } from "./markers";
-import { ObservationTable, type ObservationTableHandle } from "./ObservationTable";
-import { REVIEW_VERB, reviewOf as reviewWith, reviewStore, useReviews } from "./review";
-import { SaveViewDialog } from "./SaveViewDialog";
-import { type ReviewAccess, SelectedRecord } from "./SelectedRecord";
-import { useDataFilters, useMediaQuery } from "./useDataFilters";
+	hasClientFilters,
+	NO_ZONE_KEY,
+	prepareRecords,
+	type ServerScope,
+	type SiteZones,
+	viewQuery
+} from "./view";
+
+export type DataSite = SiteZones & {
+	/** The exact number of observations at the site. */
+	readonly observationCount: number;
+	/** Whether the site has a ready map package. */
+	readonly hasPackage: boolean;
+};
+
+export type DataPlan = {
+	site: ProjectedSite;
+	siteCode: string;
+	siteName: string;
+	/** The version of the package the plan is drawn from. */
+	version: number;
+};
 
 export type DataScreenProps = {
 	org: string;
 	project: string;
-	/** The site the observations sit on, projected for the map; null when the project has no site yet. */
-	site: ProjectedSite | null;
-	siteName: string;
-	positions: Record<string, MarkerPosition>;
-	/** The active map package version, "v3". */
-	mapVersion: string;
-	/** The export's file name without its extension. */
-	fileStem: string;
+	timeZone: string;
+	rows: ObservationRow[];
+	/** The list holds exactly 500 rows, so older observations may be missing. */
+	limited: boolean;
+	/** The site and round type the rows were loaded for. */
+	scope: ServerScope;
+	/** The browser-side filters in the address when the page loaded. */
+	initialFilters: ClientFilters;
+	sites: DataSite[];
+	/** Each form version in the rows, as it was published. */
+	definitions: Record<string, RawDefinition>;
+	missingVersions: string[];
+	plan: DataPlan | null;
+	/** Why there is no plan, when a plan was expected. */
+	planNote: string | null;
 };
 
-type Decision = { record: Observation; previous: Observation["review"]; toastId: string };
-
-const OFFLINE_REASON = "You are offline. Changes cannot be saved.";
-const VIEWER_REASON = "Your role can read observations. A project manager approves or excludes them.";
-
-/** Why the header actions are off in a previewed screen state, if they are. */
-const STATE_REASON: Partial<Record<string, string>> = {
-	loading: "Observations are still loading.",
-	error: "The observations did not load. Try again first.",
-	empty: "There are no observations to export or save yet.",
-	"no-access": "Your role cannot open this data."
-};
+/** A marker's accessible name. Inventory points are zone centres, not places where play happened. */
+function markerLabel(record: DataRecord): string {
+	const base = `${record.label}, ${record.zoneLabel}, ${record.roundName}`;
+	return record.round === "inventory" ? `${base}, zone inventory` : base;
+}
 
 /**
- * Observation data (project-02): one filter set for the map, the table, the selected record and the export.
- * Selection is linked both ways between the map and the table, j / k / a / x review from the keyboard with
- * Undo, and every change is a session-only preview.
+ * Observation data: the observations observers uploaded, in one table that the map, the count and the
+ * export all follow. Site and round type load a different list from FieldMaps; zone, observer, days and
+ * search narrow the list that loaded. The address always holds the view, so a copied link opens it again.
  */
-export function DataScreen({ org, project, site, siteName, positions, mapVersion, fileStem }: DataScreenProps) {
+export function DataScreen({
+	org,
+	project,
+	timeZone,
+	rows,
+	limited,
+	scope: loadedScope,
+	initialFilters,
+	sites,
+	definitions,
+	missingVersions,
+	plan,
+	planNote
+}: DataScreenProps) {
 	const router = useRouter();
-	const { toast, dismiss } = useToast();
-	const { screenState, setScreenState, offline, can } = usePreview();
-	const [filters, setFilters] = useDataFilters();
-	const reviews = useReviews();
-	const [paletteName] = useMapPalette();
-	const wide = useMediaQuery("(min-width: 1280px)");
-
-	const records = useMemo(() => observationsFor(project), [project]);
-	const shown = useMemo(() => applyFilters(records, filters, reviews.reviewOf), [records, filters, reviews.reviewOf]);
-	const options = useMemo(() => filterOptions(records), [records]);
-	const selected = shown.find(record => record.id === filters.record) ?? null;
-
-	const [announcement, setAnnouncement] = useState("");
-	const [panelOpen, setPanelOpen] = useState(false);
-	const [saveOpen, setSaveOpen] = useState(false);
+	const { toast } = useToast();
+	const [pending, startTransition] = useTransition();
+	const [scope, setScope] = useOptimistic(loadedScope);
+	const [filters, setFilters] = useState(initialFilters);
+	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [exportOpen, setExportOpen] = useState(false);
-	const tableRef = useRef<ObservationTableHandle>(null);
 	const firstFilterRef = useRef<HTMLSelectElement>(null);
-	const lastDecision = useRef<Decision | null>(null);
+	const listRef = useRef<HTMLDivElement>(null);
 
-	const base = projectHref(org, project);
-	const viewsHref = `${base}/reports/views`;
-	const hrefOf = useCallback((id: string) => `${base}/data/${id}`, [base]);
-	const access: ReviewAccess = offline
-		? { allowed: false, reason: OFFLINE_REASON }
-		: can("editProject")
-			? { allowed: true }
-			: { allowed: false, reason: VIEWER_REASON };
+	const clock = useMemo(() => makeClock(timeZone), [timeZone]);
+	const records = useMemo(() => prepareRecords(rows, definitions, sites, clock), [rows, definitions, sites, clock]);
+	const shown = useMemo(() => applyFilters(records, filters), [records, filters]);
+	const options = useMemo(() => filterOptions(records, filters, sites), [records, filters, sites]);
+	const selected = shown.find(record => record.id === selectedId) ?? null;
 
-	// The latest values for handlers that outlive a render: the toast's Undo and the page keys.
-	const latest = useRef({ filters, shown, selected });
-	useEffect(() => {
-		latest.current = { filters, shown, selected };
-	});
+	const base = projectHref(org, project, "data");
+	const hrefOf = (record: DataRecord) => `${base}/${record.id}`;
+	const canClear = Boolean(scope.site || scope.round) || hasClientFilters(filters);
+	const noneYet = records.length === 0 && !canClear;
 
-	/* ── Filters and selection ─────────────────────────────────────────── */
+	/* ── The address ───────────────────────────────────────────────────── */
 
-	const updateFilters = useCallback(
-		(patch: Partial<DataFilters>) => {
-			const next = { ...latest.current.filters, ...patch };
-			const nextShown = applyFilters(records, next, record => reviewWith(record, reviewStore.get()));
-			const messages = [`${nextShown.length} of ${records.length} shown`];
-			if (next.record && !nextShown.some(record => record.id === next.record)) {
-				messages.push(`${next.record} is not in this view`);
-				next.record = null;
-			}
-			setFilters(next);
-			setAnnouncement(messages.join(". "));
-		},
-		[records, setFilters]
-	);
+	function writeAddress(nextScope: ServerScope, nextFilters: ClientFilters) {
+		const { pathname, hash } = window.location;
+		window.history.replaceState(null, "", `${pathname}${viewQuery({ ...nextScope, ...nextFilters })}${hash}`);
+	}
 
-	const clearAll = useCallback(() => {
-		updateFilters(clearFilters(latest.current.filters));
+	/** Loads a different list: the page is asked for again, and the old rows stay until the new ones arrive. */
+	function loadScope(nextScope: ServerScope, nextFilters: ClientFilters) {
+		startTransition(() => {
+			setScope(nextScope);
+			router.replace(`${base}${viewQuery({ ...nextScope, ...nextFilters })}`, { scroll: false });
+		});
+	}
+
+	function changeScope(patch: Partial<ServerScope>) {
+		loadScope({ ...scope, ...patch }, filters);
+	}
+
+	function changeFilters(patch: Partial<ClientFilters>) {
+		const next = { ...filters, ...patch };
+		setFilters(next);
+		writeAddress(scope, next);
+	}
+
+	function clearAll() {
+		setFilters(EMPTY_CLIENT_FILTERS);
+		if (scope.site || scope.round) loadScope(EMPTY_SCOPE, EMPTY_CLIENT_FILTERS);
+		else writeAddress(EMPTY_SCOPE, EMPTY_CLIENT_FILTERS);
 		firstFilterRef.current?.focus();
-	}, [updateFilters]);
+	}
 
-	const select = useCallback(
-		(id: string | null, via: "pointer" | "keyboard" | "map" = "keyboard") => {
-			setFilters({ ...latest.current.filters, record: id });
-			if (id && via !== "keyboard" && !window.matchMedia("(min-width: 1280px)").matches) setPanelOpen(true);
-			if (id && via === "map") tableRef.current?.revealRow(id);
-		},
-		[setFilters]
-	);
-
-	// The first visit selects the first record in view, as the design opens; Esc clears it after that.
-	const initialised = useRef(false);
-	useEffect(() => {
-		if (initialised.current) return;
-		initialised.current = true;
-		if (filters.record) return;
-		const first = applyFilters(records, filters, record => reviewWith(record, reviewStore.get()))[0];
-		if (first) setFilters({ ...filters, record: first.id });
-	}, [filters, records, setFilters]);
-
-	/* ── Review decisions ──────────────────────────────────────────────── */
-
-	const undo = useCallback(() => {
-		const last = lastDecision.current;
-		if (!last) return;
-		lastDecision.current = null;
-		dismiss(last.toastId);
-		reviews.setReview(last.record, last.previous);
-		setFilters({ ...latest.current.filters, record: last.record.id });
-		setAnnouncement(`${last.record.id} decision undone`);
-	}, [dismiss, reviews, setFilters]);
-
-	const decide = useCallback(
-		(next: "approved" | "excluded", record: Observation | null = latest.current.selected) => {
-			if (!record || !access.allowed) return;
-			if (reviews.reviewOf(record) === next) return;
-			const hadRowFocus = tableRef.current?.hasRowFocus() ?? false;
-			const previous = reviews.setReview(record, next);
-			const verb = REVIEW_VERB[next];
-			const toastId = toast({
-				title: `${record.id} ${verb}`,
-				action: { label: "Undo", onClick: undo, altText: "Undo with Command Z or Control Z" }
+	async function copyLink() {
+		try {
+			await navigator.clipboard.writeText(window.location.href);
+			toast({ title: "Link to this view copied", tone: "saved" });
+		} catch {
+			toast({
+				title: "Couldn't copy the link",
+				description: "Copy it from the address bar instead.",
+				tone: "attention"
 			});
-			lastDecision.current = { record, previous, toastId };
-
-			// Then on to the next record still waiting for review, in the order on screen.
-			const current = latest.current;
-			const after = (entry: Observation) =>
-				entry.id === record.id ? next : reviewWith(entry, reviewStore.get());
-			const nextShown = applyFilters(records, current.filters, after);
-			const from = current.shown.findIndex(entry => entry.id === record.id);
-			const ordered = [...current.shown.slice(from + 1), ...current.shown.slice(0, Math.max(from, 0))];
-			const following = ordered.find(
-				entry => after(entry) === "notReviewed" && nextShown.some(shownEntry => shownEntry.id === entry.id)
-			);
-			if (following) {
-				setFilters({ ...current.filters, record: following.id });
-				setAnnouncement(`${record.id} ${verb}. Next: ${following.id}`);
-				requestAnimationFrame(() => {
-					if (hadRowFocus) tableRef.current?.focusRow(following.id);
-					else tableRef.current?.revealRow(following.id);
-				});
-			} else if (!nextShown.some(entry => entry.id === record.id)) {
-				setFilters({ ...current.filters, record: null });
-				setAnnouncement(`${record.id} ${verb}. ${record.id} is not in this view`);
-			} else {
-				setAnnouncement(`${record.id} ${verb}`);
-			}
-		},
-		[access.allowed, records, reviews, setFilters, toast, undo]
-	);
-
-	/* ── Page keys: j / k, a / x, Esc, Enter, ⌘Z ──────────────────────── */
-
-	useEffect(() => {
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.defaultPrevented || event.isComposing) return;
-			if (isTypingTarget(event.target) || isOverlayOpen()) return;
-			const mod = event.metaKey || event.ctrlKey;
-			if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "z") {
-				if (!lastDecision.current) return;
-				event.preventDefault();
-				undo();
-				return;
-			}
-			if (mod || event.altKey) return;
-			const { shown: rows, selected: current } = latest.current;
-			const index = current ? rows.findIndex(entry => entry.id === current.id) : -1;
-			const move = (step: number) => {
-				if (rows.length === 0) return;
-				const target =
-					rows[
-						index < 0
-							? step > 0
-								? 0
-								: rows.length - 1
-							: Math.min(Math.max(index + step, 0), rows.length - 1)
-					];
-				if (!target) return;
-				event.preventDefault();
-				const hadFocus = tableRef.current?.hasRowFocus() ?? false;
-				select(target.id, "keyboard");
-				requestAnimationFrame(() => {
-					if (hadFocus) tableRef.current?.focusRow(target.id);
-					else tableRef.current?.revealRow(target.id);
-				});
-			};
-			switch (event.key) {
-				case "j":
-					move(1);
-					break;
-				case "k":
-					move(-1);
-					break;
-				case "a":
-					if (!current) return;
-					event.preventDefault();
-					decide("approved");
-					break;
-				case "x":
-					if (!current) return;
-					event.preventDefault();
-					decide("excluded");
-					break;
-				case "Escape":
-					if (!current) return;
-					select(null);
-					setAnnouncement("Selection cleared");
-					break;
-				case "Enter":
-					if (!current || event.target !== document.body) return;
-					event.preventDefault();
-					router.push(hrefOf(current.id));
-					break;
-				default:
-			}
 		}
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [decide, hrefOf, router, select, undo]);
+	}
 
-	/* ── What the screen shows ─────────────────────────────────────────── */
+	/* ── Selection ─────────────────────────────────────────────────────── */
 
-	const scope = `${shown.length} ${plural(shown.length, "observation")} · ${scopeParts(records, filters).join(" · ")}`;
-	const markers: PlanObservation[] = shown.flatMap(record => {
-		const position = positions[record.id];
-		return position ? [{ id: record.id, ...position, label: markerLabel(record) }] : [];
-	});
-	const focusZone = filters.zone && site ? zoneIdOf(records[0]?.siteSlug ?? "", filters.zone) : undefined;
+	function selectRow(id: string) {
+		setSelectedId(id);
+	}
+
+	function selectMarker(id: string) {
+		setSelectedId(id);
+		const nodes = listRef.current?.querySelectorAll<HTMLElement>(`[data-record-id="${id}"]`) ?? [];
+		[...nodes].find(node => node.offsetParent !== null)?.scrollIntoView({ block: "nearest" });
+	}
+
+	/* ── The plan ──────────────────────────────────────────────────────── */
+
+	const markers: PlanObservation[] = plan
+		? shown
+				.filter(record => record.siteCode === plan.siteCode)
+				.map(record => ({
+					id: record.id,
+					lng: record.row.coordinates[0],
+					lat: record.row.coordinates[1],
+					label: markerLabel(record)
+				}))
+		: [];
 	const zoneStyles: Record<string, ZonePlanStyle> | undefined =
-		site && focusZone
-			? Object.fromEntries(site.zones.map(zone => [zone.id, zone.id === focusZone ? {} : { emphasis: "dim" }]))
+		plan && filters.zone && filters.zone !== NO_ZONE_KEY
+			? Object.fromEntries(
+					plan.site.zones.map(zone => [
+						zone.id,
+						{ emphasis: (zone.code ?? zone.id) === filters.zone ? "focus" : "dim" } as ZonePlanStyle
+					])
+				)
 			: undefined;
+	const hasInventory = shown.some(record => record.round === "inventory" && record.siteCode === plan?.siteCode);
 
-	const live = screenState === "normal" || screenState === "offline";
-	const headerReason = live ? undefined : STATE_REASON[screenState];
-	const saveReason = headerReason ?? (offline ? OFFLINE_REASON : undefined);
-	const noRecords = records.length === 0;
+	/* ── What the list says about itself ───────────────────────────────── */
 
-	const selectedPanel = selected ? (
-		<SelectedRecord
-			record={selected}
-			review={reviews.reviewOf(selected)}
-			siteName={siteName}
-			access={access}
-			onDecide={next => decide(next, selected)}
-			detailHref={hrefOf(selected.id)}
+	const total = exactTotal(sites, scope);
+	const totalSite = scope.site ? (sites.find(site => site.code === scope.site)?.name ?? "This site") : "The project";
+	const count = pending
+		? "Loading observations…"
+		: `${formatCount(shown.length)} of ${formatCount(records.length)} shown`;
+
+	const limitedBody =
+		total === null
+			? "Older observations may not be listed or exported here. Choose a site or round type to narrow the list."
+			: total > records.length
+				? `Older observations are not listed or exported here. ${totalSite} has ${plural(total, "observation")} in all. Choose a site or round type to narrow the list.`
+				: `${totalSite} has ${plural(total, "observation")} in all.`;
+
+	const emptyBody = !sites.length
+		? "This project has no sites. Add a site and upload its map package, then observers can start collecting."
+		: !sites.some(site => site.hasPackage)
+			? "No site has a map package yet. Upload one, then observers can start collecting."
+			: "Observers upload observations from the FieldMaps app. Observations still on their devices are not listed here.";
+
+	const body = noneYet ? (
+		<ScreenState
+			kind="empty"
+			icon="list"
+			headingLevel={3}
+			title="No observations yet"
+			body={emptyBody}
+			actions={
+				!sites.length || !sites.some(site => site.hasPackage) ? (
+					<ButtonLink variant="outline" href={projectHref(org, project, "sites")}>
+						Open sites
+					</ButtonLink>
+				) : undefined
+			}
 		/>
 	) : (
-		<div className="flex items-start gap-3 p-5 type-body text-ink-2">
-			<Icon name="crosshair" size={18} className="mt-0.75 shrink-0" />
-			<p>Select an observation on the map or in the table to see its answers and review it.</p>
-		</div>
-	);
-
-	const results =
-		shown.length === 0 ? (
-			<ScreenState
-				kind="filtered"
-				headingLevel={2}
-				className="border-t border-rule"
-				actions={
-					<>
+		<>
+			<FilterBar
+				scope={scope}
+				filters={filters}
+				sites={sites.map(site => ({ value: site.code, label: site.name }))}
+				zones={options.zones}
+				observers={options.observers}
+				timeZone={clock.timeZone}
+				onScopeChange={changeScope}
+				onFiltersChange={changeFilters}
+				onClear={clearAll}
+				canClear={canClear}
+				firstFilterRef={firstFilterRef}
+			/>
+			{limited && (
+				<div className="px-island-pad pb-5">
+					<Note tone="neutral" title="Based on the newest 500 observations.">
+						{limitedBody}
+					</Note>
+				</div>
+			)}
+			{shown.length === 0 ? (
+				<ScreenState
+					kind="filtered"
+					icon="funnel"
+					headingLevel={3}
+					className="border-t border-rule"
+					title="No observations match this view"
+					body="Change the filters to see more. No observations were removed."
+					actions={
 						<Button variant="ink" icon="x" onClick={clearAll}>
 							Clear filters
 						</Button>
-						<ButtonLink variant="outline" href={viewsHref}>
-							Open saved views
-						</ButtonLink>
-					</>
-				}
-			/>
-		) : (
-			<div className="grid gap-5 px-island-pad pb-island-pad xl:grid-cols-[minmax(0,46fr)_minmax(0,54fr)] xl:items-start">
-				<div className="flex min-w-0 flex-col gap-5">
-					{site && (
-						<MapFrame
-							site={site}
-							surface="panel"
-							mapVersion={mapVersion}
-							title={`${markers.length} of ${records.length} shown`}
-							subtitle={
-								selected
-									? `Selected: ${selected.id}`
-									: `${siteName} · ${MAP_PALETTES[paletteName].label} plan`
-							}
-							observations={markers}
-							zones={zoneStyles}
-							selectedId={selected?.id ?? null}
-							onSelectObservation={id => select(id, "map")}
-						/>
-					)}
-					<InnerPanel flush className="hidden xl:block">
-						{selectedPanel}
-					</InnerPanel>
+					}
+				/>
+			) : (
+				<div ref={listRef} className="border-t border-rule">
+					<DataTable records={shown} hrefOf={hrefOf} selectedId={selectedId} onSelect={selectRow} />
 				</div>
-				<InnerPanel flush className="overflow-hidden">
-					<ObservationTable
-						handleRef={tableRef}
-						records={shown}
-						reviewOf={reviews.reviewOf}
-						selectedId={selected?.id ?? null}
-						onSelect={(id, via) => select(id, via)}
-						onOpen={id => router.push(hrefOf(id))}
-						hrefOf={hrefOf}
-						sort={filters.sort}
-						onSortChange={sort => updateFilters({ sort })}
-					/>
-				</InnerPanel>
-			</div>
-		);
+			)}
+		</>
+	);
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				title="Observation data"
-				lead="One filter set for the map, table and export."
+				lead="Filter what observers have uploaded, then copy a link to the view or export it."
 				actions={
-					<div className="flex flex-col items-start gap-2 md:items-end">
-						<div className="flex flex-wrap items-center gap-3">
-							<Button
-								variant="outline"
-								icon="plus"
-								disabled={Boolean(saveReason)}
-								aria-describedby={saveReason ? "data-header-reason" : undefined}
-								onClick={() => setSaveOpen(true)}>
-								Save view
-							</Button>
-							<Button
-								icon="download"
-								disabled={Boolean(headerReason)}
-								aria-describedby={headerReason ? "data-header-reason" : undefined}
-								onClick={() => setExportOpen(true)}>
-								Export
-							</Button>
-						</div>
-						{saveReason && (
-							<p id="data-header-reason" className="type-small text-ink-2">
-								{saveReason}
-							</p>
-						)}
-					</div>
+					<>
+						<Button variant="outline" icon="link" onClick={copyLink}>
+							Copy link to this view
+						</Button>
+						<Button
+							variant="primary"
+							icon="download"
+							disabled={shown.length === 0}
+							disabledReason={
+								shown.length === 0
+									? noneYet
+										? "There is nothing to export yet."
+										: "No observations are in this view."
+									: undefined
+							}
+							onClick={() => setExportOpen(true)}>
+							Export
+						</Button>
+					</>
 				}
 			/>
 
-			<p role="status" className="sr-only">
-				{announcement}
-			</p>
+			{missingVersions.length > 0 && (
+				<Note tone="attention" title="Some questions could not be loaded.">
+					Answers made with {missingVersions.join(", ")} are shown and exported under their question ids.
+				</Note>
+			)}
+			{planNote && <Note tone="neutral">{planNote}</Note>}
 
-			<Island
-				flush
-				divided={false}
-				aria-label="Observations"
-				footnote={
-					live && !noRecords && shown.length > 0
-						? `${shown.length} matching ${plural(shown.length, "observation")} · ${markers.length} ${plural(markers.length, "marker")} shown · records still on devices are not included.`
-						: undefined
-				}>
-				<PreviewStateView
-					loadingLabel="Loading observations…"
-					rows={6}
-					headingLevel={2}
-					empty={{
-						icon: "list",
-						title: "No observations yet",
-						body: "Observations appear here once observers upload them from the app. Records still on devices are not included."
-					}}
-					filtered={{
-						actions: (
-							<>
-								<Button
-									variant="ink"
-									icon="x"
-									onClick={() => {
-										setScreenState("normal");
-										clearAll();
-									}}>
-									Clear filters
-								</Button>
-								<ButtonLink variant="outline" href={viewsHref}>
-									Open saved views
-								</ButtonLink>
-							</>
-						)
-					}}>
-					{noRecords ? (
-						<ScreenState
-							kind="empty"
-							icon="list"
-							headingLevel={2}
-							title="No observations yet"
-							body="Observations appear here once observers upload them from the app. Records still on devices are not included."
-						/>
-					) : (
-						<>
-							<FilterRow
-								filters={filters}
-								options={options}
-								onChange={updateFilters}
-								onClear={clearAll}
-								firstFilterRef={firstFilterRef}
+			<div
+				className={plan ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)] xl:items-start" : undefined}>
+				<Island
+					flush
+					divided={false}
+					title="Observations"
+					meta={noneYet ? undefined : <span role="status">{count}</span>}
+					aria-busy={pending}>
+					{body}
+				</Island>
+
+				{plan && (
+					<Island title="Site plan" meta={`${plan.siteName} · Map v${plan.version}`}>
+						<div className="flex flex-col gap-4">
+							<MapFrame
+								site={plan.site}
+								surface="panel"
+								mapVersion={`v${plan.version}`}
+								title={plan.siteName}
+								subtitle={`${plural(markers.length, "observation")} placed`}
+								observations={markers}
+								zones={zoneStyles}
+								selectedId={selected?.id ?? null}
+								onSelectObservation={selectMarker}
 							/>
-							{results}
-						</>
-					)}
-				</PreviewStateView>
-			</Island>
-
-			<Dialog
-				open={!wide && panelOpen && selected !== null}
-				onOpenChange={setPanelOpen}
-				title={selected ? `${selected.playTypeLabel} play` : "Selected observation"}
-				footer={
-					<DialogClose asChild>
-						<Button variant="outline">Close</Button>
-					</DialogClose>
-				}>
-				{selected && (
-					<SelectedRecord
-						inDialog
-						record={selected}
-						review={reviews.reviewOf(selected)}
-						siteName={siteName}
-						access={access}
-						onDecide={next => decide(next, selected)}
-						detailHref={hrefOf(selected.id)}
-					/>
+							<div aria-live="polite" className="type-body">
+								{selected ? (
+									<p>
+										<span className="type-mono-data font-semibold">{selected.label}</span> ·{" "}
+										{selected.zoneLabel} · {selected.roundName} · {selected.when}{" "}
+										<TextLink tone="ink" href={hrefOf(selected)}>
+											Open observation
+										</TextLink>
+									</p>
+								) : (
+									<p className="text-ink-2">
+										Select a marker or a row to see which observation it is.
+									</p>
+								)}
+							</div>
+							<p className="type-small text-ink-2">
+								Drawn on the site&apos;s current map.
+								{hasInventory &&
+									" Zone inventory observations sit at the centre of their zone. They do not show where play happened."}
+							</p>
+						</div>
+					</Island>
 				)}
-			</Dialog>
+			</div>
 
-			<SaveViewDialog
-				open={saveOpen}
-				onOpenChange={setSaveOpen}
-				filters={filters}
-				suggestedName={suggestedViewName(records, filters)}
-				scope={scope}
-				viewsHref={viewsHref}
-			/>
-			<ExportDialog
+			<ExportObservations
 				open={exportOpen}
 				onOpenChange={setExportOpen}
 				records={shown}
-				positions={positions}
-				scope={scope}
-				fileStem={fileStem}
+				definitions={definitions}
+				missingVersions={missingVersions}
+				limited={limited}
+				projectCode={project}
+				clock={clock}
 			/>
 		</div>
 	);
