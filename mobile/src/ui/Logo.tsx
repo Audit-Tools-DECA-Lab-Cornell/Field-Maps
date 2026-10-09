@@ -1,8 +1,8 @@
 import { type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
-import Svg, { Circle, Ellipse, G, Rect } from "react-native-svg";
+import Svg, { Circle, ClipPath, Defs, G, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import { BRAND_ARTWORK as ART } from "./brand-artwork";
 import { Text } from "./Text";
-import { type Theme, useStyles, useTheme } from "./theme";
-import { colorsFor } from "./tokens";
+import { type Theme, useStyles } from "./theme";
 
 export type LogoProps = {
   /** Adds "FieldMaps" beside the mark (the header of a tab root). The mark alone sits opposite a back button. */
@@ -20,28 +20,74 @@ function logoStyles(t: Theme) {
   });
 }
 
+const CENTRE = ART.size / 2;
+/** Gradient and clip ids. Every mark draws the same artwork, so two marks sharing an id still match. */
+const GROUND = "fieldmaps-mark-ground";
+const ZONES = "fieldmaps-mark-zones";
+
 /**
- * The FieldMaps mark: an ink rounded square holding two contour rings around the observation point.
- * The point takes the accent as it reads on the ink square, which is the other theme's accent: light
- * magenta on Day's dark square, deep magenta on Dusk's light one.
+ * The FieldMaps mark: the purple app icon, drawn from `brand-artwork.ts` as a rounded square, the shape
+ * a launcher gives it. It is artwork, so it looks the same in Day and Dusk (D29).
  */
 function Mark({ label }: { label?: string | undefined }) {
-  const { c, scheme } = useTheme();
-  const point = colorsFor(scheme === "day" ? "dusk" : "day").accent;
   const a11y = label
     ? { accessible: true, accessibilityRole: "image" as const, accessibilityLabel: label }
     : {
         accessibilityElementsHidden: true,
         importantForAccessibility: "no-hide-descendants" as const,
       };
+  const { background, marker, path } = ART;
   return (
-    <Svg width={MARK} height={MARK} viewBox="0 0 72 72" {...a11y}>
-      <Rect width={72} height={72} rx={17} fill={c.ink} />
-      <G rotation={-24} origin="36, 36">
-        <Ellipse cx={36} cy={36} rx={23} ry={16.5} fill="none" stroke={c.onInk} strokeWidth={3} />
-        <Ellipse cx={36} cy={36} rx={13} ry={9.5} fill="none" stroke={c.onInk} strokeWidth={3} />
+    <Svg width={MARK} height={MARK} viewBox={`0 0 ${ART.size} ${ART.size}`} {...a11y}>
+      <Defs>
+        <RadialGradient
+          id={GROUND}
+          cx={background.cx}
+          cy={background.cy}
+          r={background.r}
+          gradientUnits="userSpaceOnUse"
+        >
+          <Stop offset={0} stopColor={background.inner} />
+          <Stop offset={1} stopColor={background.outer} />
+        </RadialGradient>
+        <ClipPath id={ZONES}>
+          {ART.zones.map((zone) => (
+            <Rect
+              key={zone.fill}
+              x={zone.x}
+              y={zone.y}
+              width={zone.width}
+              height={zone.height}
+              rx={ART.zoneCorner}
+            />
+          ))}
+        </ClipPath>
+      </Defs>
+      <Rect width={ART.size} height={ART.size} rx={ART.corner} fill={`url(#${GROUND})`} />
+      <G scale={ART.scale} origin={`${CENTRE}, ${CENTRE}`}>
+        {ART.zones.map((zone) => (
+          <Rect
+            key={zone.fill}
+            x={zone.x}
+            y={zone.y}
+            width={zone.width}
+            height={zone.height}
+            rx={ART.zoneCorner}
+            fill={zone.fill}
+          />
+        ))}
+        <Path
+          d={path.d}
+          fill="none"
+          stroke={path.stroke}
+          strokeWidth={path.width}
+          strokeLinecap="round"
+          clipPath={`url(#${ZONES})`}
+        />
+        {marker.rings.map((ring) => (
+          <Circle key={ring.r} cx={marker.cx} cy={marker.cy} r={ring.r} fill={ring.fill} />
+        ))}
       </G>
-      <Circle cx={36} cy={36} r={5.5} fill={point} />
     </Svg>
   );
 }

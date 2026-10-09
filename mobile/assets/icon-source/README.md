@@ -4,6 +4,11 @@ The icon is a site plan: three zones cut by a path, with the collector's own obs
 (dark halo, light ring, lavender dot) placed on the path. Colours are Nocturne tokens from
 `src/theme.ts`, the previous design system; the icon has not been redrawn in Contour (D19).
 
+This artwork is also the brand mark inside both apps (D29). The collector's `Logo` draws it from
+`src/ui/brand-artwork.ts`, and the web shows `web/public/icons/icon.svg`. After changing
+`generate.py`, update `brand-artwork.ts` to match: `src/ui/brand-artwork.test.ts` fails until its
+colours and shapes match `icon.svg` and the web icon.
+
 | File | Used for |
 | --- | --- |
 | `icon.svg` → `../icon.png` | iOS and the Expo default icon: 1024×1024, full bleed, no alpha |
