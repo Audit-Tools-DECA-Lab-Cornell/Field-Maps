@@ -1,309 +1,230 @@
 "use client";
 
-import Link from "next/link";
-import { type FormEvent, useId, useRef, useState } from "react";
+import { type FormEvent, useId, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/contour/Button";
 import { Dialog, DialogClose } from "@/components/contour/Dialog";
+import { FactsList } from "@/components/contour/FactsList";
 import { Field } from "@/components/contour/Field";
-import { Icon } from "@/components/contour/Icon";
 import { Island } from "@/components/contour/Island";
-import { Mono } from "@/components/contour/Mono";
+import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
 import { Select } from "@/components/contour/Select";
 import { StateBadge } from "@/components/contour/StateBadge";
+import { Textarea } from "@/components/contour/Textarea";
 import { TextInput } from "@/components/contour/TextInput";
 import { useToast } from "@/components/contour/Toast";
-import { projectHref } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
+import { NotAvailable } from "@/components/shell/NotAvailable";
 import { useLeaveGuard } from "@/features/shell/useLeaveGuard";
-import { VIEWER } from "@/fixtures";
-import { cx } from "@/lib/cx";
 
-import { DangerZone } from "./DangerZone";
-import { type ProjectSettings, type PublicationScope, SCOPE_LABEL, useProjectSettings } from "./store";
+import { saveSettings } from "./actions";
+import { ArchiveIsland } from "./ArchiveIsland";
+import {
+	changedFields,
+	checkSettings,
+	DESCRIPTION_MAX,
+	NAME_MAX,
+	patchOf,
+	type ProjectStatus,
+	SETTINGS_FIELDS,
+	type SettingsContext,
+	type SettingsErrors,
+	type SettingsField,
+	type SettingsForm,
+	zoneOptions
+} from "./rules";
 
-export type SettingsScreenProps = { org: string; project: string };
-
-type Form = {
-	name: string;
+export type SettingsScreenProps = {
+	context: SettingsContext;
+	organizationName: string;
+	/** The project as it was last saved. */
+	saved: SettingsForm;
+	/** The project's code. It is part of its web address and cannot be changed. */
 	code: string;
-	timezone: string;
-	roundsPerZone: string;
-	observationsPerRound: string;
-	publicationScope: PublicationScope;
+	status: ProjectStatus;
+	/** Every timezone the picker offers, read once on the server so both sides list the same. */
+	zones: string[];
 };
-
-type Errors = Partial<Record<keyof Form, string>>;
-
-const TIMEZONES = [
-	"America/New_York",
-	"America/Chicago",
-	"America/Denver",
-	"America/Los_Angeles",
-	"America/Toronto",
-	"Europe/London",
-	"Europe/Berlin",
-	"Asia/Kolkata",
-	"Australia/Sydney",
-	"UTC"
-];
-
-const OFFLINE_REASON = "You are offline. Changes cannot be saved until you reconnect.";
-
-const STATE_REASON: Partial<Record<string, string>> = {
-	loading: "The settings are still loading.",
-	error: "The settings did not load. Try again first.",
-	"no-access": "Your role cannot change this project."
-};
-
-function formOf(settings: ProjectSettings): Form {
-	return {
-		name: settings.name,
-		code: settings.code,
-		timezone: settings.timezone,
-		roundsPerZone: String(settings.roundsPerZone),
-		observationsPerRound: String(settings.observationsPerRound),
-		publicationScope: settings.publicationScope
-	};
-}
-
-function wholeNumber(value: string, max: number): number | null {
-	if (!/^\d+$/.test(value.trim())) return null;
-	const number = Number(value.trim());
-	return number >= 1 && number <= max ? number : null;
-}
-
-function validate(form: Form): Errors {
-	const errors: Errors = {};
-	if (form.name.trim() === "") errors.name = "Enter a project name.";
-	else if (form.name.trim().length > 60) errors.name = "Keep the name to 60 characters or fewer.";
-	if (!/^[A-Z0-9][A-Z0-9-]{1,11}$/.test(form.code))
-		errors.code = "Use 2 to 12 capital letters, digits and hyphens, such as PLAY-26.";
-	if (wholeNumber(form.roundsPerZone, 10) === null) errors.roundsPerZone = "Enter a whole number from 1 to 10.";
-	if (wholeNumber(form.observationsPerRound, 50) === null)
-		errors.observationsPerRound = "Enter a whole number from 1 to 50.";
-	return errors;
-}
 
 /**
- * Project settings (project-19): the project's name, code and timezone, the illustrative coverage target and
- * the QGIS publishing mode, with archive and deletion beside them. Unsaved changes say so and leaving asks
- * first. Saving changes this preview only.
+ * Project settings (project-19): the project's name, description and timezone, its code and status, and
+ * archiving. Unsaved changes say so and leaving asks first. What FieldMaps cannot do yet (deleting a
+ * project, planning rounds) is said plainly beside the controls that do exist.
  */
-export function SettingsScreen({ org, project }: SettingsScreenProps) {
+export function SettingsScreen({
+	context,
+	organizationName,
+	saved: initial,
+	code,
+	status,
+	zones
+}: SettingsScreenProps) {
 	const id = useId();
-	const { toast } = useToast();
-	const { screenState, offline } = usePreview();
-	const { settings, update } = useProjectSettings(org, project);
-	const saved = formOf(settings);
-	// Only the fields changed here; the rest read the saved settings, which arrive after hydration.
-	const [draft, setDraft] = useState<Partial<Form>>({});
-	const [errors, setErrors] = useState<Errors>({});
-	const refs = useRef<Partial<Record<keyof Form, HTMLElement | null>>>({});
-	const form: Form = { ...saved, ...draft };
-	const dirty = (Object.keys(draft) as (keyof Form)[]).some(key => draft[key] !== saved[key]);
-	const guard = useLeaveGuard(dirty);
-	const reason = offline ? OFFLINE_REASON : STATE_REASON[screenState];
-	const base = projectHref(org, project);
+	const toast = useToast();
+	const [saved, setSaved] = useState(initial);
+	const [seen, setSeen] = useState(JSON.stringify(initial));
+	const [draft, setDraft] = useState<Partial<SettingsForm>>({});
+	const [errors, setErrors] = useState<SettingsErrors>({});
+	const [failure, setFailure] = useState<string | null>(null);
+	const [unchanged, setUnchanged] = useState(false);
+	const [pending, startSave] = useTransition();
+	const refs = useRef<Partial<Record<SettingsField, HTMLElement | null>>>({});
 
-	function set<K extends keyof Form>(key: K, value: Form[K]) {
-		setDraft(current => ({ ...current, [key]: value }));
-		if (errors[key]) setErrors(current => ({ ...current, [key]: undefined }));
+	// The page was read again (this save, or another manager's): the saved values are what it says.
+	const key = JSON.stringify(initial);
+	if (seen !== key) {
+		setSeen(key);
+		setSaved(initial);
+	}
+
+	const form: SettingsForm = { ...saved, ...draft };
+	const dirty = changedFields(saved, form).length > 0;
+	const guard = useLeaveGuard(dirty);
+	const zoneList = zoneOptions(zones, saved.timezone);
+
+	function set(field: SettingsField, value: string) {
+		setDraft(current => ({ ...current, [field]: value }));
+		setUnchanged(false);
+		if (errors[field]) setErrors(current => ({ ...current, [field]: undefined }));
+	}
+
+	function focusFirst(found: SettingsErrors) {
+		const first = SETTINGS_FIELDS.find(field => found[field]);
+		if (first) refs.current[first]?.focus();
 	}
 
 	function save(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (reason) return;
+		setFailure(null);
 		if (!dirty) {
-			toast({ title: "No changes to save", description: "The settings are as they were last saved." });
+			setUnchanged(true);
 			return;
 		}
-		const found = validate(form);
+		const found = checkSettings(form);
 		setErrors(found);
-		const first = (Object.keys(found) as (keyof Form)[])[0];
-		if (first) {
-			refs.current[first]?.focus();
+		if (Object.keys(found).length > 0) {
+			focusFirst(found);
 			return;
 		}
-		const previous = settings;
-		update({
-			name: form.name.trim(),
-			code: form.code,
-			timezone: form.timezone,
-			roundsPerZone: Number(form.roundsPerZone.trim()),
-			observationsPerRound: Number(form.observationsPerRound.trim()),
-			publicationScope: form.publicationScope,
-			lastSaved: { by: VIEWER.initials, label: "just now" }
-		});
-		setDraft({});
-		toast({
-			title: "Settings saved in this preview",
-			description: "Nothing is sent to the FieldMaps database.",
-			tone: "saved",
-			action: { label: "Undo", altText: "Undo the save", onClick: () => update(previous) }
+		startSave(async () => {
+			const result = await saveSettings(context, patchOf(saved, form));
+			if (result.status === "failed") {
+				setFailure(result.message);
+				setErrors(result.fields ?? {});
+				focusFirst(result.fields ?? {});
+				return;
+			}
+			setSaved(result.saved);
+			setDraft({});
+			setErrors({});
+			toast({ title: "Project settings saved.", tone: "saved" });
 		});
 	}
-
-	const savedLine =
-		settings.lastSaved.label === "just now"
-			? `Saved just now by ${settings.lastSaved.by}`
-			: `Last saved ${settings.lastSaved.label} by ${settings.lastSaved.by}`;
-	const timezones = TIMEZONES.includes(form.timezone) ? TIMEZONES : [form.timezone, ...TIMEZONES];
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				title="Project settings"
-				lead="Project identity, coverage targets and analyst publication scope."
+				lead="Name, description and timezone. Renaming a project does not change its web address."
 			/>
 			<div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start">
-				<Island flush title="General" divided={false}>
-					<PreviewStateView
-						loadingLabel="Loading settings…"
-						rows={5}
-						headingLevel={3}
-						empty={{
-							icon: "settings",
-							title: "No settings yet",
-							body: "This project has no saved settings. Name it and set its code to start."
-						}}>
-						<form
-							noValidate
-							onSubmit={save}
-							className={cx("flex flex-col gap-6 px-island-pad pb-island-pad", offline && "pt-5")}>
-							<div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
-								<Field label="Project name" htmlFor={`${id}-name`} error={errors.name}>
-									<TextInput
-										ref={node => {
-											refs.current.name = node;
-										}}
-										autoComplete="off"
-										value={form.name}
-										onChange={event => set("name", event.target.value)}
-									/>
-								</Field>
-								<Field label="Project code" htmlFor={`${id}-code`} error={errors.code}>
-									<TextInput
-										ref={node => {
-											refs.current.code = node;
-										}}
-										autoComplete="off"
-										spellCheck={false}
-										className="font-mono"
-										value={form.code}
-										onChange={event =>
-											set("code", event.target.value.toUpperCase().replace(/\s/g, ""))
-										}
-									/>
-								</Field>
-							</div>
-							<Field
-								label="Timezone"
-								htmlFor={`${id}-timezone`}
-								hint="Capture times are shown in this timezone on the web.">
-								<Select value={form.timezone} onChange={event => set("timezone", event.target.value)}>
-									{timezones.map(zone => (
-										<option key={zone} value={zone}>
-											{zone}
-										</option>
-									))}
-								</Select>
-							</Field>
-
-							<fieldset
-								id="coverage"
-								className="flex scroll-mt-6 flex-col gap-4 border-t border-rule pt-6">
-								<legend className="contents">
-									<Mono variant="label" className="text-ink-2">
-										Coverage target
-									</Mono>
-								</legend>
-								<div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
-									<Field
-										label="Rounds per zone"
-										htmlFor={`${id}-rounds`}
-										error={errors.roundsPerZone}>
-										<TextInput
-											ref={node => {
-												refs.current.roundsPerZone = node;
-											}}
-											inputMode="numeric"
-											autoComplete="off"
-											value={form.roundsPerZone}
-											onChange={event => set("roundsPerZone", event.target.value)}
-										/>
-									</Field>
-									<Field
-										label="Observations per round, at least"
-										htmlFor={`${id}-per-round`}
-										error={errors.observationsPerRound}>
-										<TextInput
-											ref={node => {
-												refs.current.observationsPerRound = node;
-											}}
-											inputMode="numeric"
-											autoComplete="off"
-											value={form.observationsPerRound}
-											onChange={event => set("observationsPerRound", event.target.value)}
-										/>
-									</Field>
-								</div>
-								<p className="type-small text-ink-2">
-									Targets are a design proposal, not scheduled assignments. They only decide how
-									coverage is marked.
-								</p>
-							</fieldset>
-
-							<div className="border-t border-rule pt-6">
-								<Field
-									label="QGIS publishing mode"
-									htmlFor={`${id}-scope`}
-									hint="The other option, “Approved only”, is proposal U5 and is not decided.">
-									<Select
-										value={form.publicationScope}
-										onChange={event =>
-											set("publicationScope", event.target.value as PublicationScope)
-										}>
-										<option value="accepted">{SCOPE_LABEL.accepted}</option>
-										<option value="approved">{SCOPE_LABEL.approved}</option>
-									</Select>
-								</Field>
-							</div>
-
-							<div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-								<Button type="submit" icon="check" disabled={Boolean(reason)} disabledReason={reason}>
-									Save settings
-								</Button>
-								<p role="status" className="mt-3 type-small text-ink-2">
-									{dirty ? (
-										<StateBadge kind="form" state="draft" label="Unsaved changes" size="sm" />
-									) : (
-										savedLine
-									)}
-								</p>
-							</div>
-						</form>
-					</PreviewStateView>
+				<Island title="General">
+					<form noValidate onSubmit={save} className="flex flex-col gap-6">
+						<Field
+							label="Project name"
+							htmlFor={`${id}-name`}
+							error={errors.name}
+							hint="Shown in the header and in the list of projects.">
+							<TextInput
+								id={`${id}-name`}
+								ref={node => {
+									refs.current.name = node;
+								}}
+								autoComplete="off"
+								maxLength={NAME_MAX}
+								value={form.name}
+								onChange={event => set("name", event.target.value)}
+							/>
+						</Field>
+						<Field
+							label="Description"
+							htmlFor={`${id}-description`}
+							optional
+							error={errors.description}
+							hint="What the study is about, for the people who manage it.">
+							<Textarea
+								id={`${id}-description`}
+								ref={node => {
+									refs.current.description = node;
+								}}
+								maxLength={DESCRIPTION_MAX}
+								showCount
+								value={form.description}
+								onChange={event => set("description", event.target.value)}
+							/>
+						</Field>
+						<Field
+							label="Timezone"
+							htmlFor={`${id}-timezone`}
+							error={errors.timezone}
+							hint="Observation times and days on the web are shown in this timezone.">
+							<Select
+								id={`${id}-timezone`}
+								ref={node => {
+									refs.current.timezone = node;
+								}}
+								value={form.timezone}
+								onChange={event => set("timezone", event.target.value)}>
+								{zoneList.map(zone => (
+									<option key={zone} value={zone}>
+										{zone}
+									</option>
+								))}
+							</Select>
+						</Field>
+						{failure && (
+							<Note tone="attention" live="assertive">
+								{failure}
+							</Note>
+						)}
+						<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+							<Button type="submit" variant="primary" icon="check" busy={pending} busyLabel="Saving…">
+								Save changes
+							</Button>
+							<p role="status" className="type-small text-ink-2">
+								{dirty ? (
+									<StateBadge kind="form" state="draft" label="Unsaved changes" size="sm" />
+								) : unchanged ? (
+									"Nothing has changed since the last save."
+								) : null}
+							</p>
+						</div>
+					</form>
 				</Island>
 
 				<div className="flex min-w-0 flex-col gap-6">
-					<Island flush aria-label="Round planning">
-						<Link
-							href={`${base}/settings/rounds`}
-							className="flex items-center justify-between gap-4 rounded-island px-island-pad py-5 transition-[background-color] duration-(--ct-duration-quick) ease-standard hover:bg-ground">
-							<span className="min-w-0">
-								<span className="block type-island text-ink">Round planning</span>
-								<span className="block type-small text-ink-2">Optional schedule preview</span>
-							</span>
-							<span className="flex shrink-0 items-center gap-3">
-								<StateBadge kind="proposal" state="open" label="Proposal U6" size="sm" />
-								<Icon name="chevron-right" size={20} className="text-ink" />
-							</span>
-						</Link>
+					<Island
+						title="About this project"
+						footnote="The code is part of this project’s web address, so it cannot be changed.">
+						<FactsList
+							labelWidth="8rem"
+							items={[
+								{ label: "Project code", value: code, mono: true },
+								{ label: "Organization", value: organizationName }
+							]}
+						/>
 					</Island>
-					<DangerZone org={org} project={project} />
+					<ArchiveIsland context={context} projectName={saved.name} status={status} />
+					<NotAvailable
+						title="Deleting a project"
+						reason="FieldMaps does not delete projects, so a project’s sites, forms and observations are never removed by accident."
+						instead="To stop using a project, archive it."
+					/>
+					<NotAvailable
+						title="Planning rounds"
+						reason="Every project offers the same three rounds: Standard, Reliability and Inventory. There is nothing to plan or assign here."
+						instead="Overview shows how many observations each round has in each zone."
+					/>
 				</div>
 			</div>
 
