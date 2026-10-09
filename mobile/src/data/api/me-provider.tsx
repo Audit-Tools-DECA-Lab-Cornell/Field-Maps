@@ -11,7 +11,7 @@ import { useAccount } from "../../auth/provider";
 import { connection } from "../../platform/config";
 import { createApiClient } from "./client";
 import { ApiError } from "./errors";
-import type { ProfilePatch } from "./identity";
+import type { Identity, ProfilePatch } from "./identity";
 import { type MeSnapshot, refreshMeCache, selectProject } from "./me-cache";
 import { meFileStore } from "./me-file";
 
@@ -32,6 +32,8 @@ type MeState = {
 };
 const initial: MeState = { owner: null, snapshot: null, error: null, ready: false };
 const notSignedIn: ApiResult = { ok: false, error: new ApiError("unauthenticated", "sign-in") };
+const emptyOrganizations: Identity["organization_memberships"] = [];
+const emptyProjects: Identity["project_memberships"] = [];
 
 const MeContext = createContext({
   ...initial,
@@ -199,8 +201,8 @@ export function useMe() {
   return {
     ...state,
     profile: snapshot?.identity.profile ?? null,
-    organizations: snapshot?.identity.organization_memberships ?? [],
-    projects: snapshot?.identity.project_memberships ?? [],
+    organizations: snapshot?.identity.organization_memberships ?? emptyOrganizations,
+    projects: snapshot?.identity.project_memberships ?? emptyProjects,
     activeProjectId: snapshot?.activeProjectId ?? null,
   };
 }

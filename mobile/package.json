@@ -64,7 +64,9 @@
     "@types/geojson": "^7946.0.16",
     "@types/node": "^25.9.7",
     "@types/react": "~19.2.2",
+    "@types/react-test-renderer": "19.3.0",
     "openapi-typescript": "7.13.0",
+    "react-test-renderer": "19.2.3",
     "typescript": "~6.0.3",
     "vitest": "^4.1.11"
   }
