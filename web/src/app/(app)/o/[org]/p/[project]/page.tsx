@@ -1,75 +1,168 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { ButtonLink } from "@/components/contour/Button";
+import { Island } from "@/components/contour/Island";
 import { PageHeader } from "@/components/contour/PageHeader";
+import { ScreenState } from "@/components/contour/ScreenState";
+import { LoadFailure } from "@/components/shell/LoadFailure";
 import { ActivityIsland } from "@/features/overview/ActivityIsland";
-import { BlockingIsland } from "@/features/overview/BlockingIsland";
-import { CoverageIsland } from "@/features/overview/CoverageIsland";
+import { AttentionIsland } from "@/features/overview/AttentionIsland";
+import { CoverageSection } from "@/features/overview/CoverageSection";
 import { FieldReturnIsland } from "@/features/overview/FieldReturnIsland";
+import { attentionItems } from "@/features/overview/model";
 import { projectHref } from "@/features/shell/navigation";
 import {
-	activePackage,
-	ACTIVITY,
-	blockingItems,
-	coverageFor,
+	getPackage,
 	getProject,
-	observationsFor,
-	sitesIn,
-	SNAPSHOT_LABEL,
-	zonesFor
-} from "@/fixtures";
-import { loadProjectedSite } from "@/lib/plan-sites";
+	listForms,
+	listObservations,
+	listPackages,
+	listSites,
+	resolveProject
+} from "@/lib/api/workspace";
+import { activity } from "@/lib/observations/summary";
+import { clock } from "@/lib/time";
+import { projectAbilities } from "@/lib/workspace/access";
+import { collectPath } from "@/lib/workspace/home";
+import { settle } from "@/lib/workspace/result";
 
 export const metadata: Metadata = { title: "Overview" };
 
-/**
- * The project's Overview (project-01): what came back from the field, coverage by zone against the
- * illustrative target, what is blocking, and recent activity. Records still on devices are never counted.
- */
-export default async function OverviewPage({ params }: { params: Promise<{ org: string; project: string }> }) {
-	const { org, project: slug } = await params;
-	const project = getProject(org, slug);
-	if (!project) notFound();
+/** A search parameter's value, when it may be repeated. */
+function firstOf(value: string | string[] | undefined): string | undefined {
+	return Array.isArray(value) ? value[0] : value;
+}
 
-	const base = projectHref(org, slug);
-	const records = observationsFor(slug);
-	// The site the field return is about: where the observations are, or the project's first counted site.
-	const site =
-		sitesIn(slug).find(entry => entry.slug === records[0]?.siteSlug) ??
-		sitesIn(slug).find(entry => !entry.training && entry.zoneSlugs.length > 0);
-	const projected = site ? loadProjectedSite(site.geometry) : null;
-	const zoneHrefs = Object.fromEntries(
-		(site ? zonesFor(site.slug) : []).map(zone => [zone.slug, `${base}/sites/${site?.slug}/zones/${zone.slug}`])
+/**
+ * The project's Overview: what came back from the field, which zones have records in which rounds, what
+ * needs attention and what happened recently. Everything is read from FieldMaps when the page loads, and a
+ * part that cannot be read says so instead of showing zero. Viewers see the same page without links to
+ * manager pages.
+ */
+export default async function OverviewPage({
+	params,
+	searchParams
+}: {
+	params: Promise<{ org: string; project: string }>;
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+	const [{ org, project: code }, query] = await Promise.all([params, searchParams]);
+	const resolved = await settle(resolveProject(org, code));
+	if (!resolved.ok) return <LoadFailure failure={resolved.failure} what="the overview" />;
+	const ref = resolved.data;
+	if (!ref) notFound();
+	const abilities = projectAbilities(ref.role);
+	if (abilities.collectOnly) redirect(collectPath(org));
+	const base = projectHref(org, code);
+
+	const [projectRead, sitesRead, packagesRead, formsRead, observationsRead] = await Promise.all([
+		settle(getProject(ref.id)),
+		settle(listSites(ref.id)),
+		settle(listPackages(ref.id)),
+		settle(listForms(ref.id)),
+		settle(listObservations(ref.id))
+	]);
+	// Days and times are the project's own; without its time zone none of them can be shown truthfully.
+	if (!projectRead.ok) return <LoadFailure failure={projectRead.failure} what="the overview" />;
+	const projectClock = clock(projectRead.data.timezone);
+	const nowIso = new Date().toISOString();
+
+	// Needs attention: the first blocked check of each site's newest package, when that package is blocked.
+	const newestBlocked =
+		sitesRead.ok && packagesRead.ok
+			? sitesRead.data.flatMap(site => {
+					const newest = packagesRead.data
+						.filter(entry => entry.site_code === site.code)
+						.sort((a, b) => b.version - a.version)[0];
+					return newest?.state === "blocked" ? [newest] : [];
+				})
+			: [];
+	const blockedChecks = await Promise.all(
+		newestBlocked.map(async entry => {
+			const detail = await settle(getPackage(ref.id, entry.package_id));
+			const first = detail.ok ? detail.data.checks.find(check => check.state === "blocked") : undefined;
+			return [entry.package_id, first?.detail ?? null] as const;
+		})
 	);
-	const counted = project.counted && records.length > 0;
+	const items = sitesRead.ok
+		? attentionItems({
+				sites: sitesRead.data,
+				packages: packagesRead.ok ? packagesRead.data : null,
+				blocked: Object.fromEntries(blockedChecks),
+				forms: formsRead.ok ? formsRead.data : null,
+				base,
+				manage: abilities.manage
+			})
+		: [];
+	// The sites' own failure is shown in the Field return; here, only what else could not be checked.
+	const unchecked = [
+		...(packagesRead.ok ? [] : [{ what: "the map packages", failure: packagesRead.failure }]),
+		...(formsRead.ok ? [] : [{ what: "the forms", failure: formsRead.failure }])
+	];
+
+	// Activity: from whichever sources could be read; the others are named.
+	const entries = activity(
+		{
+			rows: observationsRead.ok ? observationsRead.data.rows : [],
+			packages: packagesRead.ok ? packagesRead.data : [],
+			forms: formsRead.ok ? formsRead.data : [],
+			sites: sitesRead.ok ? sitesRead.data : []
+		},
+		projectClock,
+		{ limit: 12 }
+	);
+	const unread = [
+		...(observationsRead.ok ? [] : [{ what: "recent observations", failure: observationsRead.failure }]),
+		...(packagesRead.ok ? [] : [{ what: "map package activity", failure: packagesRead.failure }]),
+		...(formsRead.ok ? [] : [{ what: "form activity", failure: formsRead.failure }])
+	];
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
 				title="What came back from the field"
-				lead={`${project.name} · snapshot ${SNAPSHOT_LABEL}. Records still on devices are not counted here.`}
+				lead={`${ref.name}. Records still on devices are not counted here.`}
 				actions={
-					<ButtonLink href={`${base}/data?review=notReviewed`} iconRight="arrow-right">
-						Review observations
+					<ButtonLink variant="primary" href={`${base}/data`} iconRight="arrow-right">
+						Open observations
 					</ButtonLink>
 				}
 			/>
-			<FieldReturnIsland org={org} project={project} />
+			<FieldReturnIsland
+				sites={sitesRead}
+				observations={observationsRead}
+				nowIso={nowIso}
+				clock={projectClock}
+				dataHref={`${base}/data`}
+			/>
 			<div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,3fr)] xl:items-start">
-				<CoverageIsland
-					site={projected}
-					siteName={site?.name ?? ""}
-					siteHref={site ? `${base}/sites/${site.slug}` : `${base}/sites`}
-					sitesHref={`${base}/sites`}
-					mapVersion={(site && activePackage(site.slug)?.version) ?? "v1"}
-					coverage={site ? coverageFor(slug, site.slug) : []}
-					target={project.target}
-					zoneHrefs={zoneHrefs}
-				/>
+				<Suspense
+					fallback={
+						<Island flush divided={false} title="Coverage by zone">
+							<ScreenState kind="loading" loadingLabel="Loading coverage…" rows={3} headingLevel={3} />
+						</Island>
+					}>
+					<CoverageSection
+						projectId={ref.id}
+						base={base}
+						manage={abilities.manage}
+						sites={sitesRead}
+						observations={observationsRead}
+						requested={firstOf(query.site)}
+					/>
+				</Suspense>
 				<div className="flex flex-col gap-6">
-					<BlockingIsland items={counted ? blockingItems(org, slug) : []} />
-					<ActivityIsland items={counted ? ACTIVITY : []} dataHref={`${base}/data`} />
+					{sitesRead.ok && <AttentionIsland items={items} unchecked={unchecked} />}
+					<ActivityIsland
+						entries={entries}
+						unread={unread}
+						limited={observationsRead.ok && observationsRead.data.limited}
+						nowIso={nowIso}
+						clock={projectClock}
+						dataHref={`${base}/data`}
+					/>
 				</div>
 			</div>
 		</div>

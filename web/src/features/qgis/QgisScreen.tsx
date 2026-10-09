@@ -1,383 +1,337 @@
 "use client";
 
-import { useId, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useId, useMemo, useState, useTransition } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
-import { FactsList } from "@/components/contour/FactsList";
 import { Field } from "@/components/contour/Field";
 import { Island, IslandSection } from "@/components/contour/Island";
+import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
-import { ProposalNote } from "@/components/contour/ProposalNote";
+import { ScreenState } from "@/components/contour/ScreenState";
 import { Select } from "@/components/contour/Select";
-import { StateBadge } from "@/components/contour/StateBadge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/contour/Table";
 import { TextLink } from "@/components/contour/TextLink";
-import { ExportDialog } from "@/features/data/ExportDialog";
-import type { MarkerPosition } from "@/features/data/markers";
-import { useReviews } from "@/features/data/review";
-import { activeRow, packageRows, sizeLabel } from "@/features/packages/model";
-import { packagesStore } from "@/features/packages/store";
-import { type PublicationScope, SCOPE_LABEL, useProjectSettings } from "@/features/project-settings/store";
-import { projectHref } from "@/features/shell/navigation";
-import { usePreview } from "@/features/shell/PreviewProvider";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
-import { useSessionStore } from "@/features/shell/useSessionStore";
-import { StackedRows } from "@/features/team/StackedRows";
-import {
-	CODEBOOK,
-	DEVICE_REPORTS,
-	FIELD_TYPES,
-	observationsFor,
-	PROJECT_MEMBERSHIPS,
-	type Site,
-	sitesIn,
-	SNAPSHOT_LABEL
-} from "@/fixtures";
+import { NotAvailable } from "@/components/shell/NotAvailable";
+import { downloadPackageArchive } from "@/lib/api/browser";
+import { apiRequestError, UNKNOWN_ERROR_COPY } from "@/lib/api/errors";
+import type { ObservationRow } from "@/lib/api/types";
+import { packageFileName, saveText } from "@/lib/download";
+import { RECORD_COLUMNS } from "@/lib/export/columns";
+import { codebook, EMPTY_CELL_NOTE, exportColumns, exportFileName, toCsv, toGeoJson } from "@/lib/export/observations";
+import { formatBytes, isRoundType, plural, ROUND_TYPES, roundLabel } from "@/lib/labels";
+import { clock } from "@/lib/time";
+import type { RoundType } from "@/lib/workspace/types";
 
-import { Eyebrow, FlowChips } from "./parts";
-import { ReaderGrantsIsland } from "./ReaderGrantsIsland";
+import { exportScope, type MapRow } from "./model";
 
 export type QgisScreenProps = {
-	org: string;
-	project: string;
-	projectName: string;
-	/** Each observation's place, for the export's coordinates. */
-	positions: Record<string, MarkerPosition>;
-	fileStem: string;
+	projectId: string;
+	projectCode: string;
+	timeZone: string;
+	/** When the page read its data (an ISO time); the day in the files' names. */
+	loadedAt: string;
+	/** The project's address, for links. */
+	base: string;
+	/** Managers can upload a map package. */
+	canUpload: boolean;
+	maps: readonly MapRow[];
+	/** The site and round the records were read for ("" for all). */
+	site: string;
+	round: RoundType | "";
+	rows: readonly ObservationRow[];
+	/** Form version code → its definition, for the records' answer columns. */
+	definitions: Readonly<Record<string, unknown>>;
+	/** Form versions whose definition could not be read. */
+	unreadableForms: number;
+	/** The list came back with 500 records, so older ones may be missing. */
+	limited: boolean;
 };
 
-const STEPS = [
-	{ title: "Upload", detail: "One QGIS export for one site." },
-	{ title: "Inspect", detail: "Geometry, zones, form fit, offline assets." },
-	{ title: "Activate", detail: "New sessions use it. Running sessions keep theirs." },
-	{ title: "Verify on devices", detail: "Each device downloads it and confirms it." }
-] as const;
-
-/** Why Export is off in a previewed screen state, if it is. */
-const STATE_REASON: Partial<Record<string, string>> = {
-	loading: "The records are still loading.",
-	error: "The records did not load. Try again first.",
-	empty: "There are no accepted observations to export yet.",
-	"no-access": "Your role cannot export this project."
-};
+/** What went wrong in words, for an error caught from a download. */
+function failureMessage(error: unknown): string {
+	try {
+		return apiRequestError(error).message;
+	} catch {
+		return UNKNOWN_ERROR_COPY;
+	}
+}
 
 /**
- * QGIS (project-05): the two directions between QGIS and FieldMaps. Map packages come in per site; accepted
- * observations go out as a typed, read-only layer whose scope this page previews. The export is the same
- * dialog and writer as Data's.
+ * QGIS: the two directions between QGIS and FieldMaps. Maps come in as packages made in QGIS and uploaded
+ * on a site's page; here every site's current package can be downloaded. Observations go out as files
+ * QGIS can open, written in the browser from the records the page read, with each record's own form
+ * version for its answer columns. There is no live connection to read from.
  */
-export function QgisScreen({ org, project, projectName, positions, fileStem }: QgisScreenProps) {
-	const { screenState, can } = usePreview();
-	const { settings } = useProjectSettings(org, project);
-	const reviews = useReviews();
-	// The saved publishing mode until the reader picks one here; the store is read after hydration.
-	const [chosen, setScope] = useState<PublicationScope | null>(null);
-	const scope = chosen ?? settings.publicationScope;
-	const [exportOpen, setExportOpen] = useState(false);
-	const records = observationsFor(project);
-	const approved = records.filter(record => reviews.reviewOf(record) === "approved");
-	const visible = scope === "approved" ? approved : records;
-	const exportReason = !can("export") ? "Your role cannot export this project." : STATE_REASON[screenState];
+export function QgisScreen({
+	projectId,
+	projectCode,
+	timeZone,
+	loadedAt,
+	base,
+	canUpload,
+	maps,
+	site,
+	round,
+	rows,
+	definitions,
+	unreadableForms,
+	limited
+}: QgisScreenProps) {
+	const ids = useId();
+	const router = useRouter();
+	const pathname = usePathname();
+	const [pending, startTransition] = useTransition();
+	const [downloading, setDownloading] = useState<string | null>(null);
+	const [failed, setFailed] = useState<{ package: string; message: string } | null>(null);
+	const projectClock = useMemo(() => clock(timeZone), [timeZone]);
+	const day = projectClock.dayKey(loadedAt);
+	const siteName = maps.find(entry => entry.code === site)?.name ?? null;
+	const columns = useMemo(() => exportColumns(rows, definitions), [rows, definitions]);
+
+	function choose(next: { site: string; round: string }) {
+		const query = new URLSearchParams();
+		if (next.site) query.set("site", next.site);
+		if (next.round) query.set("round", next.round);
+		const text = query.toString();
+		startTransition(() => router.replace(text ? `${pathname}?${text}` : pathname, { scroll: false }));
+	}
+
+	async function downloadMap(entry: MapRow) {
+		if (!entry.package) return;
+		setFailed(null);
+		setDownloading(entry.package.id);
+		try {
+			await downloadPackageArchive(
+				projectId,
+				entry.package.id,
+				packageFileName(entry.code, entry.package.version)
+			);
+		} catch (error) {
+			setFailed({ package: entry.package.id, message: failureMessage(error) });
+		} finally {
+			setDownloading(null);
+		}
+	}
+
+	function save(kind: "csv" | "geojson" | "codebook") {
+		if (kind === "csv")
+			saveText(
+				toCsv(rows, definitions, { byteOrderMark: true }),
+				exportFileName(projectCode, "observations", day, "csv"),
+				"text/csv"
+			);
+		else if (kind === "geojson")
+			saveText(
+				toGeoJson(rows, definitions),
+				exportFileName(projectCode, "observations", day, "geojson"),
+				"application/geo+json"
+			);
+		else saveText(codebook(definitions, rows), exportFileName(projectCode, "codebook", day, "csv"), "text/csv");
+	}
+
+	const none = rows.length === 0;
+	const noneReason = "There are no observations to download.";
 
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				title="QGIS · maps in, evidence out"
-				lead="Two directions. One set of versioned research records."
-				actions={
-					<Button
-						icon="download"
-						disabled={Boolean(exportReason)}
-						disabledReason={exportReason}
-						onClick={() => setExportOpen(true)}>
-						Export current scope
-					</Button>
-				}
+				title="QGIS"
+				lead="Maps go in as packages made in QGIS. Observations come out as files QGIS can open."
 			/>
-			<div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-				<InboundIsland org={org} project={project} />
-				<OutboundIsland
-					org={org}
-					project={project}
-					scope={scope}
-					onScopeChange={setScope}
-					total={records.length}
-					approved={approved.length}
-					formVersions={[...new Set(records.map(record => record.formVersion))]}
-				/>
-			</div>
-			<ReaderGrantsIsland project={project} projectName={projectName} />
-			<CodebookIsland />
-			<ExportDialog
-				open={exportOpen}
-				onOpenChange={setExportOpen}
-				records={visible}
-				positions={positions}
-				scope={`${visible.length} ${visible.length === 1 ? "observation" : "observations"} · ${scope === "approved" ? "approved only (proposal U5)" : "every accepted observation"} · all zones · all rounds`}
-				fileStem={fileStem}
-			/>
-		</div>
-	);
-}
 
-function InboundIsland({ org, project }: { org: string; project: string }) {
-	const packages = useSessionStore(packagesStore);
-	const sites = sitesIn(project);
-	const observers = PROJECT_MEMBERSHIPS.filter(entry => entry.projectSlug === project && entry.collectsAs).length;
-	const inspectSite = sites.find(site => !site.training && site.zoneSlugs.length > 0) ?? sites[0];
-	const base = projectHref(org, project, "sites");
-
-	function devicesFor(site: Site, bundled: boolean): string {
-		if (bundled) return "Ships with the app";
-		const reporting = DEVICE_REPORTS.filter(
-			report => report.siteSlug === site.slug && report.mapPackage.state === "downloaded"
-		).length;
-		return reporting === 0 ? "None yet" : `${reporting} of ${observers} observers`;
-	}
-
-	return (
-		<Island flush aria-label="Inbound map packages" className="relative flex flex-col">
-			<IslandSection className="flex flex-col gap-3 pt-6 pb-5">
-				<Eyebrow>Inbound · map packages</Eyebrow>
-				<h2 className="type-section text-ink">Prepare the field map.</h2>
-				<p className="type-body text-ink-2">
-					Upload a package to its site, inspect the checks, activate a version, then verify downloads on
-					devices.
-				</p>
-				<FlowChips
-					label="Map packages travel from QGIS to the site package to the collector"
-					steps={["QGIS", "Site package", "Collector"]}
-					className="mt-1"
-				/>
-			</IslandSection>
-			<PreviewStateView
-				loadingLabel="Loading map packages…"
-				rows={3}
-				headingLevel={3}
-				empty={{
-					title: "No map package yet",
-					body: "No site in this project has a map. Upload a QGIS package to give observers something to collect on.",
-					actions: (
-						<ButtonLink href={base} variant="outline" icon="map">
-							Open sites
-						</ButtonLink>
-					)
-				}}>
-				<div className="hidden border-t border-rule sm:block">
-					<Table caption="Active map package per site">
-						<THead>
-							<tr>
-								<Th>Site</Th>
-								<Th>Active</Th>
-								<Th>Size</Th>
-								<Th>Devices reporting it</Th>
-							</tr>
-						</THead>
-						<TBody>
-							{sites.map(site => {
-								const active = activeRow(packageRows(site.slug, packages[site.slug] ?? {}));
-								const bundled = active?.state === "bundled";
-								return (
-									<Tr key={site.slug}>
-										<Td>
-											{site.training ? (
-												site.name
-											) : (
-												<TextLink tone="ink" href={`${base}/${site.slug}/packages`}>
-													{site.name}
+			<div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+				<Island
+					flush
+					divided={false}
+					title="Maps in"
+					meta={plural(maps.length, "site")}
+					footnote="QGIS makes the map package. Upload it on the site's page, and observers download it in the app.">
+					{maps.length === 0 ? (
+						<ScreenState
+							kind="empty"
+							icon="map"
+							title="No sites yet"
+							body="A map package belongs to a site. Add a site, then upload its map package from QGIS."
+							actions={
+								canUpload ? (
+									<ButtonLink variant="outline" href={`${base}/sites`}>
+										Open sites
+									</ButtonLink>
+								) : undefined
+							}
+						/>
+					) : (
+						<ul className="divide-y divide-rule border-t border-rule">
+							{maps.map(entry => (
+								<li key={entry.code} className="flex flex-col gap-3 px-island-pad py-4">
+									<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+										<div className="min-w-0">
+											<p className="font-semibold">
+												<TextLink tone="ink" href={`${base}/sites/${entry.code}`}>
+													{entry.name}
+												</TextLink>
+											</p>
+											<p className="type-small text-ink-2">
+												{entry.package ? (
+													<>
+														<span className="type-mono-data">v{entry.package.version}</span>{" "}
+														· prepared {projectClock.day(entry.package.preparedAt)} ·{" "}
+														{formatBytes(entry.package.bytes)} ·{" "}
+														{plural(entry.zoneCount, "zone")}
+													</>
+												) : (
+													"No map package yet"
+												)}
+											</p>
+										</div>
+										<div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+											{entry.package && (
+												<Button
+													variant="outline"
+													size="sm"
+													icon="download"
+													aria-label={`Download ${entry.name} map package v${entry.package.version}`}
+													busy={downloading === entry.package.id}
+													busyLabel="Downloading…"
+													onClick={() => void downloadMap(entry)}>
+													Download
+												</Button>
+											)}
+											{canUpload && (
+												<TextLink href={`${base}/sites/${entry.code}/packages?step=upload`}>
+													{entry.package ? "Upload a new version" : "Upload a map package"}
 												</TextLink>
 											)}
-										</Td>
-										<Td nowrap>
-											{bundled ? (
-												"Bundled"
-											) : active ? (
-												<span className="inline-flex items-baseline gap-3">
-													<span className="type-mono-data">{active.version}</span>
-													<StateBadge kind="package" state="active" size="sm" />
-												</span>
-											) : (
-												<span className="text-ink-2">No package yet</span>
-											)}
-										</Td>
-										<Td mono nowrap>
-											{(active && sizeLabel(active)) ?? "n/a"}
-										</Td>
-										<Td>{devicesFor(site, bundled)}</Td>
-									</Tr>
-								);
-							})}
-						</TBody>
-					</Table>
-				</div>
-				<StackedRows
-					label="Active map package per site"
-					rows={sites.map(site => {
-						const active = activeRow(packageRows(site.slug, packages[site.slug] ?? {}));
-						const bundled = active?.state === "bundled";
-						return {
-							key: site.slug,
-							title: site.training ? (
-								<span className="font-semibold text-ink">{site.name}</span>
-							) : (
-								<TextLink tone="ink" href={`${base}/${site.slug}/packages`}>
-									{site.name}
-								</TextLink>
-							),
-							fields: [
-								{
-									label: "Active",
-									value: bundled ? (
-										"Bundled"
-									) : active ? (
-										<span className="inline-flex items-baseline gap-3">
-											<span className="type-mono-data">{active.version}</span>
-											<StateBadge kind="package" state="active" size="sm" />
-										</span>
-									) : (
-										"No package yet"
-									)
-								},
-								{ label: "Size", value: (active && sizeLabel(active)) ?? "n/a", mono: true },
-								{ label: "Devices reporting it", value: devicesFor(site, bundled) }
-							]
-						};
-					})}
-				/>
-				<IslandSection rule className="flex flex-col gap-5 pt-5 pb-6">
-					<ol className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-						{STEPS.map((step, index) => (
-							<li key={step.title} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-1">
-								<span className="type-mono-data font-semibold text-ink">{index + 1}</span>
-								<span className="min-w-0">
-									<span className="block font-semibold text-ink">{step.title}</span>
-									<span className="block type-small text-ink-2">{step.detail}</span>
-								</span>
-							</li>
-						))}
-					</ol>
-					{inspectSite && (
-						<ButtonLink
-							href={`${base}/${inspectSite.slug}/packages?step=inspect`}
-							variant="outline"
-							icon="layers"
-							fullWidth>
-							Inspect {inspectSite.name} packages
-						</ButtonLink>
+										</div>
+									</div>
+									{entry.package && failed?.package === entry.package.id && (
+										<Note tone="attention" live="polite" title="Nothing was downloaded.">
+											{failed.message}
+										</Note>
+									)}
+								</li>
+							))}
+						</ul>
 					)}
-				</IslandSection>
-			</PreviewStateView>
-		</Island>
-	);
-}
+				</Island>
 
-function OutboundIsland({
-	org,
-	project,
-	scope,
-	onScopeChange,
-	total,
-	approved,
-	formVersions
-}: {
-	org: string;
-	project: string;
-	scope: PublicationScope;
-	onScopeChange: (scope: PublicationScope) => void;
-	total: number;
-	approved: number;
-	formVersions: string[];
-}) {
-	const id = useId();
-	const visible = scope === "approved" ? approved : total;
-	const hint =
-		scope === "approved"
-			? `Approved only shows ${approved} of ${total} accepted records. Review the other ${total - approved} to include them.`
-			: `With “Approved only”, ${approved} of ${total} records would be visible.`;
-
-	return (
-		<Island flush aria-label="Outbound analyst layers" className="flex flex-col">
-			<IslandSection className="flex flex-col gap-3 pt-6 pb-5">
-				<Eyebrow>Outbound · analyst layers</Eyebrow>
-				<PreviewStateView
-					loadingLabel="Counting visible records…"
-					rows={2}
-					headingLevel={3}
-					empty={{
-						icon: "inbox",
-						title: "No accepted observations yet",
-						body: "Records appear in the analyst layer once they are uploaded and accepted. Records on devices are never in it."
-					}}>
-					<div className="flex flex-col gap-3">
-						<h2 className="type-section text-ink" aria-live="polite">
-							{visible} {visible === 1 ? "record" : "records"} visible.
-						</h2>
-						<p className="type-body text-ink-2">
-							QGIS refreshes a typed, read-only layer. There is no “send to QGIS” step.
+				<Island flush divided={false} title="Records out" aria-busy={pending || undefined}>
+					<IslandSection className="flex flex-col gap-4 border-t border-rule pt-5">
+						<div className="grid gap-4 sm:grid-cols-2">
+							<Field label="Site" htmlFor={`${ids}-site`}>
+								<Select
+									id={`${ids}-site`}
+									value={site}
+									onChange={event => choose({ site: event.target.value, round })}>
+									<option value="">All sites</option>
+									{maps.map(entry => (
+										<option key={entry.code} value={entry.code}>
+											{entry.name}
+										</option>
+									))}
+								</Select>
+							</Field>
+							<Field label="Round" htmlFor={`${ids}-round`}>
+								<Select
+									id={`${ids}-round`}
+									value={round}
+									onChange={event =>
+										choose({
+											site,
+											round: isRoundType(event.target.value) ? event.target.value : ""
+										})
+									}>
+									<option value="">All rounds</option>
+									{ROUND_TYPES.map(type => (
+										<option key={type} value={type}>
+											{roundLabel(type)}
+										</option>
+									))}
+								</Select>
+							</Field>
+						</div>
+						<p role="status" className="type-body font-semibold text-ink">
+							{exportScope({ count: rows.length, siteName, round: round || null })}
 						</p>
-						<FlowChips
-							label="Accepted observations become a read-only layer that QGIS reads"
-							steps={["Accepted observations", "Read-only layer", "QGIS"]}
-							className="mt-1"
-						/>
-						<Field label="Publication scope" htmlFor={`${id}-scope`} hint={hint} className="mt-4">
-							<Select
-								value={scope}
-								onChange={event => onScopeChange(event.target.value as PublicationScope)}>
-								<option value="accepted">{SCOPE_LABEL.accepted}</option>
-								<option value="approved">{SCOPE_LABEL.approved}</option>
-							</Select>
-						</Field>
-					</div>
-				</PreviewStateView>
-			</IslandSection>
-			<IslandSection rule className="flex flex-1 flex-col gap-5 pt-5 pb-6">
-				<FactsList
-					labelWidth="minmax(7rem, 26%)"
-					items={[
-						{ label: "Form version", value: formVersions.join(" · ") || "None yet", mono: true },
-						{ label: "Field types", value: FIELD_TYPES },
-						{ label: "Freshness", value: `Snapshot ${SNAPSHOT_LABEL}` },
-						{ label: "Device records", value: "Records still on devices are not in the server scope" }
-					]}
-				/>
-				<ProposalNote code="U5">
-					The Approved-only gate is optional and not decided. Every accepted observation stays the default.
-				</ProposalNote>
-				<ButtonLink
-					href={`${projectHref(org, project, "data")}?review=notReviewed`}
-					variant="outline"
-					icon="eye"
-					fullWidth
-					className="mt-auto">
-					Review records
-				</ButtonLink>
-			</IslandSection>
-		</Island>
-	);
-}
+						{limited && (
+							<Note title="Based on the newest 500 observations.">
+								Older observations are not in the files. Choose a site or a round to narrow the list.
+							</Note>
+						)}
+						{unreadableForms > 0 && (
+							<Note tone="attention" title="Some answers have no names.">
+								{unreadableForms === 1
+									? "One form version could not be loaded, so its answer columns use the question ids."
+									: `${unreadableForms} form versions could not be loaded, so their answer columns use the question ids.`}
+							</Note>
+						)}
+						<div className="flex flex-wrap gap-3">
+							<Button
+								variant="primary"
+								icon="download"
+								disabled={none}
+								disabledReason={none ? noneReason : undefined}
+								onClick={() => save("csv")}>
+								Download CSV
+							</Button>
+							<Button variant="outline" icon="download" disabled={none} onClick={() => save("geojson")}>
+								Download GeoJSON
+							</Button>
+							<Button variant="outline" icon="file-text" disabled={none} onClick={() => save("codebook")}>
+								Download codebook
+							</Button>
+						</div>
+						<p className="type-small text-ink-2">
+							In QGIS, choose Layer, Add Layer, Add Vector Layer and pick the GeoJSON file. For the CSV,
+							use Add Delimited Text Layer with longitude as X and latitude as Y (EPSG:4326).{" "}
+							{EMPTY_CELL_NOTE} Download again to refresh a layer.
+						</p>
+					</IslandSection>
+				</Island>
+			</div>
 
-function CodebookIsland() {
-	return (
-		<Island flush className="relative" title="Field definitions" meta="Shipped with every export as the codebook">
-			<Table caption="Field definitions">
-				<THead>
-					<tr>
-						<Th>Column</Th>
-						<Th>Type</Th>
-						<Th>Meaning</Th>
-					</tr>
-				</THead>
-				<TBody>
-					{CODEBOOK.map(field => (
-						<Tr key={field.column}>
-							<Td mono>{field.column}</Td>
-							<Td mono>{field.type}</Td>
-							<Td>{field.meaning}</Td>
-						</Tr>
-					))}
-				</TBody>
-			</Table>
-		</Island>
+			<Island flush title="Columns in the files" meta={plural(RECORD_COLUMNS.length + columns.length, "column")}>
+				<Table caption="Columns in the CSV and GeoJSON files">
+					<THead>
+						<tr>
+							<Th>Column</Th>
+							<Th>What it holds</Th>
+						</tr>
+					</THead>
+					<TBody>
+						{RECORD_COLUMNS.map(entry => (
+							<Tr key={entry.column}>
+								<Td className="[overflow-wrap:anywhere]">
+									<span className="block type-mono-data">{entry.column}</span>
+									<span className="block type-small text-ink-2">{entry.type}</span>
+								</Td>
+								<Td>{entry.label}</Td>
+							</Tr>
+						))}
+						{columns.map(entry => (
+							<Tr key={entry.header}>
+								<Td className="[overflow-wrap:anywhere]">
+									<span className="block type-mono-data">{entry.header}</span>
+									<span className="block type-small text-ink-2">{entry.type}</span>
+								</Td>
+								<Td>
+									{entry.label}
+									{entry.values && (
+										<span className="mt-1 block type-small text-ink-2">{entry.values}</span>
+									)}
+								</Td>
+							</Tr>
+						))}
+					</TBody>
+				</Table>
+			</Island>
+
+			<NotAvailable
+				title="Connecting QGIS directly to the database"
+				reason="QGIS cannot read FieldMaps records live yet."
+				instead="Download a file above and add it to QGIS. Download again when you want the newest records."
+			/>
+		</div>
 	);
 }
