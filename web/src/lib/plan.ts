@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 /**
- * Site plans as geometry. A site is a GeoJSON FeatureCollection in WGS84 (`contracts/fixtures/sites/*.json`
- * today, a QGIS map package later). Drawing it projects every position onto a plan: x runs east and y runs
- * south, in plan units of a fixed number of metres, using the equirectangular approximation with longitude
- * scaled by cos(latitude). That is exact enough for a site a few hundred metres across, and it keeps the
- * numbers a manager reads in the zone editor ("5 points · map units") the same on every screen.
+ * Site plans as geometry. A site is a GeoJSON FeatureCollection in WGS84 (the layers of a map package
+ * uploaded from QGIS). Drawing it projects every position onto a plan: x runs east and y runs south, in plan
+ * units of a fixed number of metres, using the equirectangular approximation with longitude scaled by
+ * cos(latitude). That is exact enough for a site a few hundred metres across, and it keeps the plan the same
+ * on every screen.
  *
  * Everything here is pure, so the plan draws on the server, in the browser and in print alike.
  */

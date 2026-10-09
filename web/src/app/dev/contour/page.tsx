@@ -21,7 +21,6 @@ import {
 	type NoteTone,
 	PageHeader,
 	ProgressBar,
-	ProposalNote,
 	RoleLabel,
 	ScreenState,
 	ShortcutHint,
@@ -487,19 +486,6 @@ export default function ContourGalleryPage() {
 									))}
 								</div>
 							</Specimen>
-							<Specimen
-								title="Proposals"
-								caption="Every screen that previews an undecided concept carries one. The inline form sits across a page header.">
-								<div className="flex flex-col gap-3">
-									<ProposalNote code="U5">
-										The Approved-only gate is optional and not decided.
-									</ProposalNote>
-									<ProposalNote code="U2" inline>
-										QGIS remains the pilot&rsquo;s geometry authority. Editing a boundary here is a
-										preview.
-									</ProposalNote>
-								</div>
-							</Specimen>
 						</div>
 					</GallerySection>
 
@@ -662,7 +648,7 @@ export default function ContourGalleryPage() {
 										},
 										{
 											tone: "ink",
-											title: "Map package activated",
+											title: "Map package uploaded",
 											detail: "Riverside · map v3 · 84 MB",
 											time: "Yesterday"
 										},
@@ -755,12 +741,9 @@ export default function ContourGalleryPage() {
 										kind="filtered"
 										headingLevel={4}
 										actions={
-											<>
-												<Button variant="ink" icon="x">
-													Clear filters
-												</Button>
-												<Button variant="outline">Open saved views</Button>
-											</>
+											<Button variant="ink" icon="x">
+												Clear filters
+											</Button>
 										}
 									/>
 								</Island>

@@ -95,7 +95,7 @@ export async function requestAccountDeletion(_state: DeletionState, form: FormDa
 	if (outcome === "unavailable")
 		return {
 			status: "failed",
-			message: "Account deletion is not available on this server yet. Nothing was deleted."
+			message: "Deleting accounts is not available yet. Nothing was deleted."
 		};
 	if (outcome === "pending") return { status: "pending" };
 	// The sign-in no longer exists, so end the session here only; the server has nothing left to revoke.

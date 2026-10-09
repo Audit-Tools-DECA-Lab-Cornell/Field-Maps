@@ -79,7 +79,7 @@ export async function authenticate(_state: AuthState, form: FormData): Promise<A
 				const { data, error: claimsError } = await supabase.auth.getClaims();
 				const sessionId = z.uuid().safeParse(data?.claims.session_id);
 				if (claimsError || !data?.claims.sub || !sessionId.success)
-					return { message: "Your recovery session expired. Request a new code." };
+					return { message: "That recovery code has expired. Ask for a new one." };
 				// Workflow marker only: retries still authenticate the user and session with Supabase.
 				store.set("fm-recovery-user", `${data.claims.sub}:${sessionId.data}`, cookieOptions);
 			}

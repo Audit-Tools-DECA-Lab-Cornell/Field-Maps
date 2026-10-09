@@ -194,3 +194,12 @@ for (const response of [
 		assert.equal(stored.size, 0);
 	});
 }
+
+test("the proxy refreshes the sign-in on invitation pages without protecting them", () => {
+	const source = readFileSync(new URL("../src/proxy.ts", import.meta.url), "utf8");
+	const matcher = source.slice(source.indexOf("matcher:"));
+	assert.match(matcher, /"\/invite"/);
+	assert.match(matcher, /"\/join"/);
+	// Only the workspace and the account are behind sign-in; signed-out people can open invitations.
+	assert.match(source, /const protectedRoute = \/\^\\\/\(o\|account\)\(\\\/\|\$\)\/\.test\(pathname\);/);
+});

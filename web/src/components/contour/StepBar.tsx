@@ -18,7 +18,7 @@ export type StepBarProps = {
 	current: string;
 	/** Keys of finished steps. They show a check and stay clickable. */
 	done: string[];
-	/** Names the navigation landmark: "Onboarding steps", "Map package steps". */
+	/** Names the navigation landmark: "Map package steps". */
 	label: string;
 	className?: string;
 };
@@ -32,7 +32,7 @@ const STATE: Record<StepState, string> = {
 };
 
 /**
- * The steps of a web flow on one wide track: onboarding (org-13) and map packages (project-10). A
+ * The steps of a web flow on one wide track, such as the map package steps (project-10). A
  * finished step shows a check and its label, the current step is an ink pill ("2 Project"), and later
  * steps show their number in secondary ink. On narrow screens the steps fall into two columns rather
  * than cutting a label.

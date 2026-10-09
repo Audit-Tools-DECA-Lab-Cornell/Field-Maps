@@ -6,8 +6,9 @@ import { supabaseConfig } from "@/lib/supabase/config";
 /**
  * Refreshes the Supabase sign-in on every matched request and keeps the workspace behind it: a signed-out
  * request for `/o/…` or `/account` goes to sign in and comes back afterwards (`next`). A signed-in person
- * who opens the home page goes straight to their workspace (`/o` picks the project). Without Supabase
- * configured nobody is signed in, so the workspace stays closed.
+ * who opens the home page goes straight to their workspace (`/o` picks the project). `/invite` and `/join`
+ * are matched only so the sign-in cookie is refreshed there; they stay open to people who are signed out.
+ * Without Supabase configured nobody is signed in, so the workspace stays closed.
  */
 export async function proxy(request: NextRequest) {
 	let response = NextResponse.next({ request });
@@ -72,6 +73,8 @@ export const config = {
 		"/sign-up",
 		"/verify",
 		"/forgot-password",
-		"/reset-password"
+		"/reset-password",
+		"/invite",
+		"/join"
 	]
 };

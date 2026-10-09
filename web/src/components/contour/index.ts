@@ -54,7 +54,6 @@ export { PAGE_TITLE_ID, PageHeader, type PageHeaderProps } from "./PageHeader";
 export { PasswordInput, type PasswordInputProps } from "./PasswordInput";
 export { Popover, PopoverAnchor, PopoverClose, PopoverContent, PopoverTrigger } from "./Popover";
 export { ProgressBar, type ProgressBarProps } from "./ProgressBar";
-export { ProposalNote, type ProposalNoteProps } from "./ProposalNote";
 export { type RadioRowOption, RadioRows, type RadioRowsProps } from "./RadioRows";
 export { RoleLabel, type RoleLabelProps } from "./RoleLabel";
 export { ScreenState, type ScreenStateKind, type ScreenStateProps } from "./ScreenState";

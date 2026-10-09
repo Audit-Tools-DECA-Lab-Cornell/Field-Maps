@@ -111,8 +111,8 @@ export function DeleteAccount({ organizations, projects, blockers }: DeleteAccou
 					<div className="flex flex-col gap-5">
 						<div ref={messageRef} tabIndex={-1} className="rounded-note">
 							<Note tone="waiting" title="Deletion is finishing." live="polite">
-								Your profile and memberships are removed. Removing your sign-in did not finish yet; the
-								server recorded it for the operator to complete.
+								Your profile and memberships are removed. Removing your sign-in did not finish yet. It
+								is recorded, and the person who runs FieldMaps will complete it.
 							</Note>
 						</div>
 						<form action={signOut} className="flex justify-end">
