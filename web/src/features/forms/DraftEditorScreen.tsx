@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 
 import { Button, ButtonLink } from "@/components/contour/Button";
 import { Dialog, DialogClose } from "@/components/contour/Dialog";
@@ -10,196 +11,211 @@ import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
 import { ScreenState } from "@/components/contour/ScreenState";
 import { Segmented } from "@/components/contour/Segmented";
-import { TextLink } from "@/components/contour/TextLink";
+import { StateBadge } from "@/components/contour/StateBadge";
 import { useToast } from "@/components/contour/Toast";
-import { addQuestion, type RawDefinition, updateQuestion } from "@/components/studio/model";
 import { projectHref } from "@/features/shell/navigation";
-import { PreviewStateView } from "@/features/shell/PreviewStateView";
 import { useLeaveGuard } from "@/features/shell/useLeaveGuard";
+import type { VersionState } from "@/lib/api/types";
+import { plural } from "@/lib/labels";
 import type { ProjectedSite } from "@/lib/plan";
 
+import { ActionNote } from "./ActionNote";
+import { saveDraftAction, startDraftAction } from "./actions";
+import { AddQuestionDialog } from "./AddQuestionDialog";
 import { CollectorPreview, type PreviewDevice } from "./CollectorPreview";
-import { useCreateDraft, useFormWriteBlock } from "./CreateDraftDialog";
-import { changedIds, definitionOf, findVersion, questionNumber, toForm } from "./model";
+import { changedIds, isZoneForm, questionNumber, sameDefinition, toForm } from "./model";
+import { draftProblems } from "./problems";
 import { QuestionList } from "./QuestionList";
-import { ADDED_SOURCE, type QuestionPatch, QuestionSettings, saveProblem } from "./QuestionSettings";
-import { saveDraftDefinition, useFormsPreview } from "./store";
+import { type QuestionPatch, QuestionSettings, saveProblem } from "./QuestionSettings";
+import { addQuestion, type QuestionKind, type RawDefinition, removeQuestion, updateQuestion } from "./raw";
+import type { FormActionFailure } from "./result";
 
-export type EditorSession = {
-	plan: ProjectedSite;
-	zoneId: string;
+/** What the collector view draws: the first site that has a map package, when there is one. */
+export type CollectorContext = {
+	plan: ProjectedSite | null;
 	siteName: string;
-	sessionLine: string;
-	mapVersion: string;
+	zoneId: string | null;
+	zoneName: string | null;
+	/** "v3"; null when no site has a map package. */
+	mapVersion: string | null;
 };
 
-/** Applies unsaved edits over the saved draft. An emptied guidance removes the key, as authored JSON has it. */
-function applyEdits(raw: RawDefinition, edits: Record<string, QuestionPatch>): RawDefinition {
-	let next = raw;
-	for (const [id, patch] of Object.entries(edits)) {
-		const clean: QuestionPatch = { ...patch };
-		if ("hint" in clean && !clean.hint) clean.hint = undefined;
-		next = updateQuestion(next, id, clean);
-	}
-	return next;
+export type EditorVersion = {
+	code: string;
+	state: VersionState;
+	formCode: string;
+	formName: string;
+};
+
+/** Applies a patch to one question. An emptied guidance removes the key, as authored files have it. */
+function patched(raw: RawDefinition, id: string, patch: QuestionPatch): RawDefinition {
+	const clean: QuestionPatch = { ...patch };
+	if ("hint" in clean && !clean.hint) clean.hint = undefined;
+	return updateQuestion(raw, id, clean);
 }
 
 /**
- * The draft form editor (project-13): the draft's questions, the selected question's settings, and the
- * collector preview running the edited draft through the real engine as it is typed. A published or
- * retired version opens read-only.
+ * The form editor: the version's questions, the selected question's settings and the collector view running
+ * the edited version through the engine the device runs, as it is typed. A draft saves as a whole with
+ * Save draft; the manager can leave only after saving or giving the edits up. A published or retired
+ * version opens read-only, with a way to start a new draft from it.
  */
 export function DraftEditorScreen({
 	org,
 	project,
-	versionId,
-	session
+	version,
+	definition,
+	base,
+	baseProblem,
+	canManage,
+	collector
 }: {
 	org: string;
 	project: string;
-	versionId: string;
-	session: EditorSession;
+	version: EditorVersion;
+	definition: RawDefinition;
+	/** The version before this one, to mark what changed. */
+	base: { code: string; definition: RawDefinition } | null;
+	/** Why the version before could not be read, when it could not. */
+	baseProblem: string | null;
+	canManage: boolean;
+	collector: CollectorContext;
 }) {
-	const preview = useFormsPreview();
-	const writeBlock = useFormWriteBlock();
-	const create = useCreateDraft(org, project);
+	const router = useRouter();
 	const toast = useToast();
-	const version = findVersion(versionId, preview);
-	const saved = definitionOf(versionId, preview);
-	const baseRaw = version?.base ? definitionOf(version.base, preview) : undefined;
+	const editable = canManage && version.state === "draft";
+	const readOnly = !editable;
 
-	const [edits, setEdits] = useState<Record<string, QuestionPatch>>({});
+	const [saved, setSaved] = useState(definition);
+	const [raw, setRaw] = useState(definition);
 	const [chosen, setChosen] = useState<string | null>(null);
 	const [device, setDevice] = useState<PreviewDevice>("phone");
+	const [failure, setFailure] = useState<FormActionFailure | null>(null);
+	const [refused, setRefused] = useState<Record<string, Record<string, string>>>({});
+	const [general, setGeneral] = useState<readonly string[]>([]);
+	const [savedOnce, setSavedOnce] = useState(false);
+	const [pending, start] = useTransition();
 
-	const working = useMemo(() => (saved ? applyEdits(saved, edits) : undefined), [saved, edits]);
-	const form = useMemo(() => (working ? toForm(working) : undefined), [working]);
-	const dirty = Object.keys(edits).length > 0;
+	const dirty = useMemo(() => editable && !sameDefinition(raw, saved), [editable, raw, saved]);
+	const form = useMemo(() => toForm(raw), [raw]);
+	const baseRaw = base?.definition;
+	const changed = useMemo(() => changedIds(raw, baseRaw), [raw, baseRaw]);
+	const unsaved = useMemo(() => {
+		const before = new Map(saved.questions.map(question => [question.id, JSON.stringify(question)] as const));
+		return new Set(raw.questions.filter(q => before.get(q.id) !== JSON.stringify(q)).map(q => q.id));
+	}, [raw, saved]);
+	const refusedIds = useMemo(() => new Set(Object.keys(refused)), [refused]);
 
-	// Leaving with unsaved edits asks first: closing the tab gets the browser's question, and a link inside the
-	// workspace ("Review publication", a breadcrumb, a tab) is held until the manager saves, discards or stays.
-	// Without this, the publication page would read the older saved wording.
+	// The first thing that stops Save draft, in the order the questions are asked.
+	const blocker = useMemo(() => {
+		for (const [index, question] of raw.questions.entries()) {
+			const problem = saveProblem(
+				question,
+				baseRaw?.questions.find(other => other.id === question.id)
+			);
+			if (problem) return `Question ${questionNumber(index)}: ${problem}`;
+		}
+		return null;
+	}, [raw, baseRaw]);
+
+	// Leaving with unsaved edits asks first: closing the tab gets the browser's question, and a link inside
+	// the workspace (Publish, a breadcrumb, a tab) is held until the manager saves, gives the edits up or stays.
+	// Without this, the publish page would read the older saved wording.
 	const guard = useLeaveGuard(dirty);
-	const unsavedLabels = Object.keys(edits).filter(id => (working?.questions ?? []).some(q => q.id === id));
-	// Leaving through "Save edits and leave" holds every edited question to the rules its own Save button does.
-	const leaveProblem =
-		unsavedLabels
-			.map(id => {
-				const question = working?.questions.find(q => q.id === id);
-				const base = baseRaw?.questions.find(q => q.id === id);
-				return question ? saveProblem(question, base) : null;
-			})
-			.find(problem => problem !== null) ?? null;
 
 	const forms = projectHref(org, project, "forms");
-	const versions = projectHref(org, project, "forms/versions");
-
-	if (!version || !saved || !working || !form)
-		return (
-			<div className="flex flex-col gap-6">
-				<PageHeader
-					breadcrumbs={[
-						{ label: "Forms", href: forms },
-						{ label: "Form versions", href: versions },
-						{ label: versionId }
-					]}
-					title="Form version not found"
-				/>
-				<Island flush>
-					<ScreenState
-						kind="empty"
-						icon="file-text"
-						headingLevel={2}
-						title={`${versionId} is not in this preview`}
-						body="A draft made in the preview lasts only as long as the tab it was made in. Every version this project has is on Form versions."
-						actions={
-							<ButtonLink href={versions} variant="ink" icon="arrow-left">
-								Return to form versions
-							</ButtonLink>
-						}
-					/>
-				</Island>
-			</div>
-		);
-
-	const readOnly = version.state !== "draft";
-	const questions = working.questions;
+	const versions = projectHref(org, project, `forms/versions?form=${encodeURIComponent(version.formCode)}`);
+	const questions = raw.questions;
 	const selectedId = questions.some(question => question.id === chosen) ? chosen : (questions[0]?.id ?? null);
 	const selectedIndex = questions.findIndex(question => question.id === selectedId);
 	const selected = questions[selectedIndex];
-	const changed = changedIds(saved, baseRaw);
-	const unsaved = new Set(Object.keys(edits));
-	const created = preview.created.find(entry => entry.id === versionId);
-	const canAdd = !readOnly && writeBlock === null && created?.origin === "empty";
+	const word = version.state === "draft" ? "draft" : version.state;
 
 	function change(patch: QuestionPatch) {
-		if (!selectedId) return;
-		setEdits(current => ({ ...current, [selectedId]: { ...current[selectedId], ...patch } }));
+		if (!selectedId || readOnly) return;
+		setRaw(current => patched(current, selectedId, patch));
+		setRefused(current => {
+			if (!(selectedId in current)) return current;
+			return Object.fromEntries(Object.entries(current).filter(([id]) => id !== selectedId));
+		});
 	}
 
-	function save() {
-		if (!saved || !selected || !working) return;
-		const number = questionNumber(selectedIndex);
-		if (!edits[selected.id]) {
-			toast({
-				title: `Question ${number} has no unsaved edits`,
-				description: "The draft already has this wording."
+	function save(afterwards?: () => void) {
+		if (!editable || pending || blocker) return;
+		const sent = raw;
+		setFailure(null);
+		start(async () => {
+			const result = await saveDraftAction({
+				org,
+				project,
+				version: version.code,
+				definition: JSON.parse(JSON.stringify(sent)) as Record<string, unknown>
 			});
-			return;
-		}
-		const before = saved;
-		const after = applyEdits(saved, { [selected.id]: edits[selected.id] });
-		saveDraftDefinition(versionId, after);
-		setEdits(current => {
-			const next = { ...current };
-			delete next[selected.id];
-			return next;
-		});
-		toast({
-			title: `Question ${number} saved to the ${versionId} draft`,
-			description: version?.base
-				? `In this preview only. Published ${version.base} is unchanged.`
-				: "In this preview only. The source file is unchanged.",
-			action: { label: "Undo", onClick: () => saveDraftDefinition(versionId, before) }
+			if (result.status === "done") {
+				setSaved(sent);
+				setRefused({});
+				setGeneral([]);
+				setSavedOnce(true);
+				toast({
+					title: "Draft saved",
+					description: `${version.code} has the wording you see here.`,
+					tone: "saved"
+				});
+				afterwards?.();
+				return;
+			}
+			setFailure(result);
+			const placed = draftProblems(result.fields);
+			setGeneral(placed.general);
+			const byId: Record<string, Record<string, string>> = {};
+			for (const [index, properties] of Object.entries(placed.byQuestion)) {
+				const question = sent.questions[Number(index)];
+				if (question) byId[question.id] = { ...properties };
+			}
+			setRefused(byId);
+			const first = sent.questions.find(question => byId[question.id]);
+			if (first) setChosen(first.id);
 		});
 	}
 
-	/** Saves every question with unsaved edits in one step, so leaving keeps them. */
-	function saveAllAndLeave() {
-		const to = guard.leavingTo;
-		if (!saved || !to) return;
-		if (leaveProblem) return;
-		saveDraftDefinition(versionId, applyEdits(saved, edits));
-		setEdits({});
-		toast({
-			title: `${unsavedLabels.length === 1 ? "1 question" : `${unsavedLabels.length} questions`} saved to the ${versionId} draft`,
-			description: "In this preview only."
+	function add(label: string, kind: QuestionKind) {
+		const { raw: next, id } = addQuestion(raw, "Record", kind, label);
+		setRaw(next);
+		setChosen(id);
+	}
+
+	function remove(id: string) {
+		setRaw(current => removeQuestion(current, id));
+		setChosen(null);
+	}
+
+	function startFromThis() {
+		setFailure(null);
+		start(async () => {
+			const result = await startDraftAction({ org, project, form: version.formCode, from: version.code });
+			if (result.status === "failed") return setFailure(result);
+			toast({
+				title: `${result.version} is a new draft`,
+				description: `Copied from ${version.code}, which stays as it is.`,
+				tone: "saved"
+			});
+			router.push(projectHref(org, project, `forms/versions/${result.version}`));
 		});
-		guard.leave();
 	}
 
 	function leaveWithoutSaving() {
-		setEdits({});
+		setRaw(saved);
 		guard.leave();
 	}
 
-	function add() {
-		if (!saved) return;
-		const { raw, id } = addQuestion(saved, "Record", "text", "New question");
-		const withSource = updateQuestion(raw, id, { source: ADDED_SOURCE });
-		saveDraftDefinition(versionId, withSource);
-		setChosen(id);
-		toast({ title: "A new question is in the draft", description: "Word it, then save it to the draft." });
-	}
-
-	const stateWord = version.state === "draft" ? "draft" : version.state;
 	const lead = readOnly ? (
 		<>
-			<Mono>{versionId}</Mono> {stateWord} · its wording and rules are fixed.
+			<Mono>{version.code}</Mono> is {word}. Its wording and rules are fixed.
 		</>
 	) : (
 		<>
-			<Mono>{versionId}</Mono> draft · question wording is editable · conditional rules are preserved.
+			<Mono>{version.code}</Mono> is a draft. Reword and add questions, then save. Nothing reaches observers until
+			you publish it.
 		</>
 	);
 
@@ -208,19 +224,34 @@ export function DraftEditorScreen({
 			<PageHeader
 				breadcrumbs={[
 					{ label: "Forms", href: forms },
-					{ label: "Form versions", href: versions },
-					{ label: readOnly ? versionId : "Draft" }
+					{ label: version.formName, href: versions },
+					{ label: version.code }
 				]}
-				title={readOnly ? `Form ${versionId}` : "Draft form editor"}
+				title={version.formName}
+				titleAddon={<StateBadge kind="form" state={version.state} />}
 				lead={lead}
 				actions={
-					readOnly ? undefined : (
-						<ButtonLink
-							href={projectHref(org, project, `forms/versions/${versionId}/publish`)}
-							iconRight="arrow-right">
-							Review publication
-						</ButtonLink>
-					)
+					editable ? (
+						<>
+							<Button
+								variant="primary"
+								icon="check"
+								busy={pending}
+								disabled={!dirty || blocker !== null}
+								disabledReason={
+									blocker ?? (savedOnce ? "All changes saved." : "No changes since the last save.")
+								}
+								onClick={() => save()}>
+								Save draft
+							</Button>
+							<ButtonLink
+								variant="ink"
+								iconRight="arrow-right"
+								href={projectHref(org, project, `forms/versions/${version.code}/publish`)}>
+								Publish
+							</ButtonLink>
+						</>
+					) : undefined
 				}
 			/>
 
@@ -229,23 +260,34 @@ export function DraftEditorScreen({
 					<span className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
 						<span>
 							{version.state === "retired"
-								? "Retired versions cannot change. Start a new draft to edit."
-								: "Published versions cannot change. Start a new draft to edit."}
+								? "A retired version cannot change. It stays readable for the records collected with it."
+								: version.state === "published"
+									? canManage
+										? "A published version cannot change. Start a new draft to edit."
+										: "A published version cannot change. Only project managers can start a new draft."
+									: "Only project managers can edit a draft."}
 						</span>
-						<Button
-							variant="outline"
-							icon="pencil"
-							disabled={writeBlock !== null}
-							disabledReason={writeBlock ?? undefined}
-							onClick={() => create("copy", versionId)}>
-							Start a new draft
-						</Button>
+						{canManage && version.state !== "draft" && (
+							<Button variant="outline" icon="pencil" busy={pending} onClick={startFromThis}>
+								Start a new draft from this version
+							</Button>
+						)}
 					</span>
 				</Note>
 			)}
-			{!readOnly && writeBlock && (
-				<Note tone="waiting" icon="lock">
-					{writeBlock}
+			{baseProblem && (
+				<Note tone="waiting" icon="clock">
+					{baseProblem}
+				</Note>
+			)}
+			<ActionNote failure={failure} onReload={() => window.location.reload()} />
+			{general.length > 0 && (
+				<Note tone="attention" title="The form checker found problems.">
+					{general.map(problem => (
+						<span key={problem} className="block">
+							{problem}
+						</span>
+					))}
 				</Note>
 			)}
 
@@ -255,54 +297,30 @@ export function DraftEditorScreen({
 						? "grid items-start gap-6 lg:grid-cols-2"
 						: "grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)_minmax(0,0.95fr)]"
 				}>
-				<Island
-					title="Questions"
-					meta={
-						questions.length === 0
-							? "None yet"
-							: version.base
-								? `${questions.length} · ${changed.size} changed`
-								: `${questions.length} questions`
-					}
-					flush>
-					<PreviewStateView
-						loadingLabel="Loading questions…"
-						rows={6}
-						headingLevel={3}
-						empty={{
-							icon: "file-text",
-							title: "No questions yet",
-							body: "This version has no questions to show."
-						}}
-						filtered={{
-							title: "No questions match this view",
-							body: "Change your filters to see more questions. The draft is unchanged."
-						}}>
-						{questions.length === 0 ? (
-							<ScreenState
-								kind="empty"
-								icon="file-text"
-								headingLevel={3}
-								title="No questions yet"
-								body="Add the first question. It appears in the preview as an observer sees it."
-							/>
-						) : (
-							<QuestionList
-								questions={questions}
-								selectedId={selectedId}
-								changed={changed}
-								unsaved={unsaved}
-								onSelect={setChosen}
-							/>
-						)}
-						{canAdd && (
-							<div className="border-t border-rule px-5 py-4">
-								<Button variant="outline" icon="plus" onClick={add}>
-									Add a question
-								</Button>
-							</div>
-						)}
-					</PreviewStateView>
+				<Island title="Questions" meta={dirty ? "Unsaved changes" : plural(questions.length, "question")} flush>
+					{questions.length === 0 ? (
+						<ScreenState
+							kind="empty"
+							icon="file-text"
+							headingLevel={3}
+							title="No questions yet"
+							body="This version has no questions to show."
+						/>
+					) : (
+						<QuestionList
+							questions={questions}
+							selectedId={selectedId}
+							changed={changed}
+							unsaved={unsaved}
+							refused={refusedIds}
+							onSelect={setChosen}
+						/>
+					)}
+					{editable && (
+						<div className="border-t border-rule px-5 py-4">
+							<AddQuestionDialog onAdd={add} />
+						</div>
+					)}
 				</Island>
 
 				<Island
@@ -313,26 +331,24 @@ export function DraftEditorScreen({
 						) : undefined
 					}
 					divided={false}>
-					<PreviewStateView loadingLabel="Loading question settings…" rows={5} headingLevel={3}>
-						{selected ? (
-							<QuestionSettings
-								key={selected.id}
-								question={selected}
-								base={baseRaw?.questions.find(question => question.id === selected.id)}
-								baseVersion={version.base}
-								readOnly={readOnly}
-								writeBlock={writeBlock}
-								onChange={change}
-								onSave={save}
-							/>
-						) : (
-							<p className="type-body text-ink-2">Choose a question to see its settings.</p>
-						)}
-					</PreviewStateView>
+					{selected ? (
+						<QuestionSettings
+							key={selected.id}
+							question={selected}
+							base={baseRaw?.questions.find(question => question.id === selected.id)}
+							baseVersion={base?.code ?? null}
+							readOnly={readOnly}
+							problems={refused[selected.id] ?? {}}
+							onChange={change}
+							onRemove={questions.length > 1 ? () => remove(selected.id) : undefined}
+						/>
+					) : (
+						<p className="type-body text-ink-2">Choose a question to see its settings.</p>
+					)}
 				</Island>
 
 				<section
-					aria-label="Live preview"
+					aria-label="Collector view"
 					className={
 						device === "tablet"
 							? "flex flex-col gap-4 lg:col-span-2"
@@ -340,11 +356,11 @@ export function DraftEditorScreen({
 					}>
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<h2 className="min-w-32 grow basis-0 type-mono-label text-ink-2">
-							Live {device} preview · {readOnly ? stateWord : "draft"}
+							As observers see it · {device}
 						</h2>
 						<div className="shrink-0">
 							<Segmented
-								label="Preview device"
+								label="Device"
 								value={device}
 								onValueChange={value => setDevice(value as PreviewDevice)}
 								options={[
@@ -356,14 +372,16 @@ export function DraftEditorScreen({
 					</div>
 					<CollectorPreview
 						form={form}
-						versionLabel={`${versionId} ${stateWord}`}
+						versionLabel={`${version.code} ${word}`}
 						device={device}
 						focusQuestionId={selectedId}
-						{...session}
+						plan={collector.plan}
+						zoneId={collector.zoneId}
+						siteName={collector.siteName}
+						zoneName={collector.zoneName}
+						round={isZoneForm(raw) ? "Inventory round" : "Standard round"}
+						mapVersion={collector.mapVersion}
 					/>
-					<TextLink href={projectHref(org, project, "data")} className="self-center">
-						See collected version provenance
-					</TextLink>
 				</section>
 			</div>
 
@@ -372,12 +390,8 @@ export function DraftEditorScreen({
 				onOpenChange={open => {
 					if (!open) guard.stay();
 				}}
-				title="Save your question edits first?"
-				description={
-					unsavedLabels.length === 1
-						? "One question has edits that are not in the draft yet. If you leave without saving, they are lost and the draft keeps its earlier wording."
-						: `${unsavedLabels.length} questions have edits that are not in the draft yet. If you leave without saving, they are lost and the draft keeps its earlier wording.`
-				}
+				title="Save your changes first?"
+				description="This draft has edits that are not saved. If you leave without saving, they are lost and the draft keeps its earlier wording."
 				footer={
 					<>
 						<DialogClose asChild>
@@ -389,10 +403,11 @@ export function DraftEditorScreen({
 						<Button
 							variant="ink"
 							icon="check"
-							disabled={leaveProblem !== null}
-							disabledReason={leaveProblem ? `${leaveProblem} Or leave without saving.` : undefined}
-							onClick={saveAllAndLeave}>
-							Save edits and leave
+							busy={pending}
+							disabled={blocker !== null}
+							disabledReason={blocker ? `${blocker} Or leave without saving.` : undefined}
+							onClick={() => save(() => guard.leave())}>
+							Save and leave
 						</Button>
 					</>
 				}

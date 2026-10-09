@@ -2,31 +2,36 @@
 
 import { type KeyboardEvent, useRef } from "react";
 
-import type { RawQuestion } from "@/components/studio/model";
+import { Icon } from "@/components/contour/Icon";
+import { StateBadge } from "@/components/contour/StateBadge";
 import { cx } from "@/lib/cx";
 
 import { questionNumber } from "./model";
-import { VersionStateText } from "./parts";
+import type { RawQuestion } from "./raw";
 
 /* Keys typed into a field belong to the field, never to the list. */
 const TYPING = "input, textarea, select, [contenteditable]:not([contenteditable='false'])";
 
 /**
- * The draft's questions as a single-choice list (project-13): numbered, with whether each is required
- * and always asked, and a "Changed" marker against the published version. The list is one tab stop;
- * ↑ / ↓ (or j / k), Home and End move the selection, and focus follows it.
+ * The version's questions as a single-choice list: numbered, with whether each is required and always
+ * asked, a "Changed" marker against the version before, "Unsaved" for edits not yet saved and "Needs
+ * fixing" where the last save was refused. The list is one tab stop; ↑ / ↓ (or j / k), Home and End move
+ * the selection, and focus follows it.
  */
 export function QuestionList({
 	questions,
 	selectedId,
 	changed,
 	unsaved,
+	refused,
 	onSelect
 }: {
 	questions: readonly RawQuestion[];
 	selectedId: string | null;
 	changed: ReadonlySet<string>;
 	unsaved: ReadonlySet<string>;
+	/** Questions the last save was refused for. */
+	refused: ReadonlySet<string>;
 	onSelect: (id: string) => void;
 }) {
 	const listRef = useRef<HTMLUListElement>(null);
@@ -99,9 +104,15 @@ export function QuestionList({
 									{question.dependsOn ? "Conditional" : "Always visible"}
 								</span>
 								{changed.has(question.id) && (
-									<VersionStateText state="draft" label="Changed" className="text-sm" />
+									<StateBadge kind="form" state="draft" label="Changed" size="sm" />
 								)}
 								{unsaved.has(question.id) && <span className="font-semibold text-ink">Unsaved</span>}
+								{refused.has(question.id) && (
+									<span className="inline-flex items-baseline gap-1.5 font-semibold text-attention">
+										<Icon name="triangle-alert" size={16} className="shrink-0 self-center" />
+										Needs fixing
+									</span>
+								)}
 							</span>
 						</span>
 					</li>
