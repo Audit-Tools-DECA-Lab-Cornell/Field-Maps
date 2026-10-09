@@ -1,0 +1,118 @@
+"use client";
+
+import createClient from "openapi-fetch";
+
+import { saveBlob } from "@/lib/download";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+
+import { ApiError, apiRequestError, parseApiError } from "./errors";
+import type { paths } from "./schema";
+import type { PackageDetail, PackageSubmission } from "./types";
+
+/**
+ * Requests the browser sends to the API itself, as the signed-in person: map package uploads (up to
+ * 24 MiB) and archive downloads, which are larger than a Server Action may carry. The API allows the web
+ * app's origin (CORS). Every other read and write goes through the server (`workspace.ts`,
+ * `mutations.ts`).
+ */
+
+/** A session expiring sooner than this is refreshed before it is sent. */
+const REFRESH_WITHIN_MS = 60_000;
+const REQUEST_TIMEOUT_MS = 15_000;
+/** Uploads and downloads of several megabytes on a slow connection. */
+const TRANSFER_TIMEOUT_MS = 180_000;
+
+/** The API's address for the browser, or null when this deployment does not set one. */
+export function browserApiUrl(): string | null {
+	return process.env.NEXT_PUBLIC_FIELDMAPS_API_URL || null;
+}
+
+/** The signed-in person's access token, refreshed first when it expires within a minute. */
+async function accessToken(): Promise<string> {
+	let supabase: ReturnType<typeof createSupabaseClient>;
+	try {
+		supabase = createSupabaseClient();
+	} catch {
+		throw new ApiError("storage_unavailable", "retry");
+	}
+	const { data, error } = await supabase.auth.getSession();
+	if (error || !data.session) throw new ApiError("token_invalid", "sign-in");
+	const expiresAt = data.session.expires_at;
+	if (expiresAt !== undefined && expiresAt * 1000 - Date.now() > REFRESH_WITHIN_MS) return data.session.access_token;
+	const refreshed = await supabase.auth.refreshSession();
+	if (refreshed.error || !refreshed.data.session) throw new ApiError("token_invalid", "sign-in");
+	return refreshed.data.session.access_token;
+}
+
+/**
+ * An API client for the browser. Each request carries a fresh token and its own timeout signal.
+ * Throws when this deployment has no browser API address.
+ */
+export function browserApi(timeoutMs = REQUEST_TIMEOUT_MS) {
+	const baseUrl = browserApiUrl();
+	if (!baseUrl) throw new ApiError("storage_unavailable", "retry");
+	const client = createClient<paths>({
+		baseUrl,
+		fetch: request => fetch(request, { signal: AbortSignal.timeout(timeoutMs) })
+	});
+	client.use({
+		async onRequest({ request }) {
+			request.headers.set("Authorization", `Bearer ${await accessToken()}`);
+			return request;
+		}
+	});
+	return client;
+}
+
+/**
+ * Sends a map package from QGIS layers and returns what the API prepared, with its checks. A blocked
+ * package is still an answer (state "blocked"); only a refused request throws.
+ */
+export async function preparePackage(projectId: string, submission: PackageSubmission): Promise<PackageDetail> {
+	try {
+		const api = browserApi(TRANSFER_TIMEOUT_MS);
+		const { data, error, response } = await api.POST("/v1/projects/{project_id}/packages", {
+			params: { path: { project_id: projectId } },
+			body: submission
+		});
+		if (!response.ok || !data) throw parseApiError(response.status, error, response.headers);
+		return data;
+	} catch (error) {
+		throw apiRequestError(error);
+	}
+}
+
+async function sha256Hex(blob: Blob): Promise<string | null> {
+	if (typeof crypto === "undefined" || !crypto.subtle) return null;
+	const digest = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+	return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Downloads a ready package's archive and saves it as `fileName` (name it from the site code and version,
+ * e.g. `packageFileName` in `lib/download.ts`; the API's own file name is not readable cross-origin).
+ * When the answer carries the archive's SHA-256 (its ETag), the bytes are checked against it first.
+ */
+export async function downloadPackageArchive(
+	projectId: string,
+	packageId: string,
+	fileName: string
+): Promise<{ bytes: number }> {
+	try {
+		const api = browserApi(TRANSFER_TIMEOUT_MS);
+		const { data, error, response } = await api.GET("/v1/projects/{project_id}/packages/{package_id}/archive", {
+			params: { path: { project_id: projectId, package_id: packageId } },
+			parseAs: "blob"
+		});
+		if (!response.ok || !data) throw parseApiError(response.status, error, response.headers);
+		const expected = response.headers.get("ETag")?.replace(/^W\//, "").replaceAll('"', "").toLowerCase();
+		if (expected && /^[0-9a-f]{64}$/.test(expected)) {
+			const actual = await sha256Hex(data);
+			if (actual !== null && actual !== expected) throw new ApiError("unknown", "retry");
+		}
+		saveBlob(data, fileName);
+		return { bytes: data.size };
+	} catch (error) {
+		throw apiRequestError(error);
+	}
+}
