@@ -1,6 +1,6 @@
 # Site fixtures
 
-Sample sites for the web workspace's site plans (`SitePlan`, `MapFrame`, `PlanThumbnail`). Each file is a GeoJSON FeatureCollection in WGS84 (longitude, latitude). They are fixtures: Riverside and the practice garden are fictional, drawn to match the Contour designs, and none of the three is read from or written to the FieldMaps database. A real site arrives as a QGIS map package.
+Sample sites for the collector's site plans (`mobile/src/features/projects/SitePlan.tsx`). The web workspace no longer reads them: it draws the layers of uploaded map packages (`web/src/lib/plan.ts`). Each file is a GeoJSON FeatureCollection in WGS84 (longitude, latitude). They are fixtures: Riverside and the practice garden are fictional, drawn to match the Contour designs, and none of the three is read from or written to the FieldMaps database. A real site arrives as a QGIS map package.
 
 | File | Site | Source |
 | --- | --- | --- |
@@ -8,7 +8,7 @@ Sample sites for the web workspace's site plans (`SitePlan`, `MapFrame`, `PlanTh
 | `practice-garden.json` | Practice garden, two training zones | Drawn from the Project 6 thumbnail |
 | `fall-creek.json` | Fall Creek, one zone | The collector's QGIS output, combined |
 
-`scripts/site-fixtures.mjs` writes all three. Change the script, not the JSON, then run `node scripts/site-fixtures.mjs`; `--check` fails if a file differs from what the script writes. The web reads the files through `web/src/lib/plan-sites.ts`, which checks them with `parseSite` and projects them with `projectSite` (`web/src/lib/plan.ts`).
+`scripts/site-fixtures.mjs` writes all three. Change the script, not the JSON, then run `node scripts/site-fixtures.mjs`; `--check` fails if a file differs from what the script writes. The files use the same shapes as `parseSite` and `projectSite` in `web/src/lib/plan.ts`.
 
 ## Features
 

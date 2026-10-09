@@ -131,16 +131,7 @@ This is every piece of dummy data that must be gone before the pilot, and the ta
 | `mobile/src/domain/observation.ts:30`, `build-observation.ts:45-79` | `"sample-garden"` literal, branching on version strings, a Janet-specific summary key | The generic envelope; summary and carry-forward become definition properties | MOB-13 |
 | `mobile/src/storage/sync-store.ts:29`, `mobile/src/sync/contracts.ts:25` | A queue and payload for `shell-v1` only | The PowerSync queue and the envelope | MOB-10 |
 | Developer copy across `mobile/app/*` and `mobile/src/*/provider.tsx` | Explanations of stubs | Copy for field users | MOB-15 |
-| `web/src/data/observations.ts` | 132 seeded records | `GET /v1/projects/{p}/observations` | WEB-10 |
-| `web/src/data/project.ts` | Viewer fixed as Janet; fixture org, project and sites; illustrative QGIS values | The session, `/v1/me`, the sites API, `/gis-access` | WEB-06, WEB-08, WEB-12 |
-| `web/src/data/site-geometry.ts` | Hand-drawn training geometry used by `LeafletCanvas`, `ZonePlan` and `project.ts` | Zones and ground from the sites API | WEB-08, WEB-10, WEB-12 |
-| `web/src/lib/exports.ts` | Client-side CSV/GeoJSON over the fixtures | BE-14's server exports | WEB-12 |
-| `web/src/components/observations/FilterRail.tsx`, `markers.ts` | Zone, round and observer options from `ACTIVE_SITE`; play types, flags and marker shapes from `data/instrument.ts` | Zones API, summary, form definition | WEB-10 |
-| `web/src/lib/format.ts`, `ObservationDetail` | `SITE_TIME_ZONE = "America/New_York"` | Project and site timezones from the API | WEB-10 |
-| `web/src/app/(marketing)/page.tsx` | `ORGANIZATION.name` from fixtures | Static product copy, with no tenant name | WEB-06 |
-| `web/src/data/basemaps.ts`, `web/src/components/basemaps/PackageUpload.tsx:92,166-181` | Fixture packages, a fixture project ID, a pasted token | The packages API, project from the route, token from the server session | WEB-01, WEB-08 |
-| `web/src/data/instrument.ts` | Fixture variables, rules and versions | The forms and versions API | WEB-09 |
-| `web/src/lib/analysis.ts` over the fixtures | Client-side aggregation | `GET …/summary` | WEB-11 |
+| `web/src/fixtures/*`, `web/src/data/*`, `web/src/lib/preview.ts` and the client-side exports and aggregation over them | Removed on 2026-10-09 (D30). Every web screen reads and writes the API, and a lint rule bans the old imports | `/v1/me`, the projects, sites, packages, forms and observations APIs | WEB-27 |
 | Canonical baseline `gis.sample_observations` | A view with fixed IDs | Generated per-form views | GIS-01, GIS-03 |
 
 ## What is deliberately not in the architecture yet

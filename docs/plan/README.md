@@ -88,7 +88,7 @@ The full decision log, the running cost and the open questions are in [decisions
 - **Secrets.** Never read, print or edit `.env`, `.env.*` or secret files. Credentials never go into tracked files. Publishable keys and URLs may.
 - **Git.** No commits, pushes, branches or amends without the user's explicit approval.
 - **Hosted changes.** Applying a migration, changing dashboard settings or deploying is a separate, explicitly authorized step. Tasks that need one say `Needs user:`.
-- **Fixture honesty (web).** One Preview data marker in the header and one footer line say that the screens read fixtures (D20). They come off only when no screen reads fixtures. Proposal-only concepts (U2–U7) always show their "PROPOSAL Ux" flag.
+- **Honesty (web).** Every workspace page is live (D30): no fixtures and no Preview data marker. A feature with no backend says "X is not available yet."
 - **Design system.** Web and mobile share Contour (D19). Day is the default; Dusk is a preference. Tokens live only in `contracts/contour.json`: `pnpm tokens` generates `web/src/styles/contour.css`, the collector reads the same file in `mobile/src/ui/tokens.ts`, and `pnpm tokens:check` fails on drift or low contrast. Root `DESIGN.md` is the reference.
 - **Toolchains.** Node 24, pnpm 10.17.1, uv with Python 3.13. Each app owns its own dependencies.
 
@@ -116,10 +116,10 @@ Each phase ends with something working that can be demonstrated. The weeks are t
 - **Contracts:** CON-04
 - **Operations:** OPS-05, OPS-13, OPS-14
 - **Mobile:** MOB-02, MOB-03, MOB-04, MOB-05, MOB-06, MOB-07, MOB-08, MOB-22, MOB-23, MOB-24, MOB-25, MOB-26, MOB-27
-- **Web:** WEB-03, WEB-04, WEB-05, WEB-06, WEB-07, WEB-14, WEB-17, WEB-18, WEB-19, WEB-20, WEB-21, WEB-22, WEB-23, WEB-24, WEB-25, WEB-26
+- **Web:** WEB-03, WEB-04, WEB-05, WEB-06, WEB-07, WEB-14, WEB-17, WEB-18, WEB-19, WEB-20, WEB-21, WEB-22, WEB-23, WEB-24, WEB-25, WEB-26, WEB-27
 - **Verification:** QA-01
 
-WEB-20 to WEB-26 and MOB-23 to MOB-27 build the Contour screens on fixtures ahead of the wiring tasks, which then connect real data without changing the layout.
+WEB-20 to WEB-26 and MOB-23 to MOB-27 build the Contour screens ahead of the wiring tasks, which then connect real data without changing the layout. On the web, WEB-27 (D30) did the wiring for every screen at once and removed the fixtures.
 
 ### Phase 2: PowerSync and real data on mobile (weeks 4–7)
 

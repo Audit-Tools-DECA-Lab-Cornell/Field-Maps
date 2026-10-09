@@ -10,7 +10,7 @@ Product UI: the design serves the task. The landing and privacy pages use the sa
 
 ## What FieldMaps is
 
-FieldMaps is offline field collection for research teams. A researcher on a playground marks where a child's play happened on a site map and answers a versioned, conditional form, usually with no signal. The record is saved on the device first and uploads when the app is open and connected. On the web, a project's managers prepare maps from QGIS, publish form versions, invite observers and review what came back. Analysts read the same observations as typed layers in QGIS or as exports. The pilot is Janet's playground study. The designs and fixtures call it Play Study, in the DECA Lab organization. Today the collector's form engine, drafts, SQLite queue, sync and sign-in are real. The web reads fixtures everywhere except the map package upload.
+FieldMaps is offline field collection for research teams. A researcher on a playground marks where a child's play happened on a site map and answers a versioned, conditional form, usually with no signal. The record is saved on the device first and uploads when the app is open and connected. On the web, a project's managers prepare maps from QGIS, publish form versions, invite observers and review what came back. Analysts read the same observations as typed layers in QGIS or as exports. The pilot is Janet's playground study: Play Study, in the DECA Lab organization. Today the collector's form engine, drafts, SQLite queue, sync and sign-in are real, and so is the whole web workspace (D30): it reads and writes the API, with no fixture data.
 
 ## Design system
 
@@ -27,7 +27,7 @@ The design system is **Contour** (D19). **Day** is the default everywhere and **
 | **Org owner / admin** | Web, at a desk, occasionally | Create the organization and its projects, manage members, own the data, settle deletions | Plain administrative language. Consequences come before any action that cannot be undone. |
 
 - **Field language** is short and concrete, about the place and the device: "Place a point", "Save on this device", "Ready offline", "Riverside · North meadow · Round 1".
-- **Research language** names the method precisely: coverage against an illustrative target, form version, protocol notes, publication, reader access, "Record abundance is not completeness". It is still plain sentences, never jargon for its own sake.
+- **Research language** names the method precisely: coverage by zone and round, form version, protocol notes, publication, reader access, "Record abundance is not completeness". It is still plain sentences, never jargon for its own sake.
 - **What the field implies for design.** Day theme first. Targets of 48–60 on the collector. One action to do now. Placement works without a precise tap ("Place at map centre"). Text follows the device text size. Labels wrap and never truncate.
 
 ## Roles
@@ -45,14 +45,14 @@ Authorization lives in the database and is checked on every request (D12).
 | Project | GIS reader grant | A per-project read-only login for QGIS (D10). This is not a user role. |
 
 - **Training.** Every new account joins the server Training project as an observer (D4, D13). It is for practising every step offline. Training observations are visible only to their creator, purged after 30 days, and never in research exports. On mobile it is "Always available".
-- **The role is always visible.** The web header shows it in mono (MANAGER, ADMIN, OBSERVER). An observer who signs in on the web gets "You collect in the app" (PROPOSAL U3).
+- **The role is always visible.** The web header shows it in mono (MANAGER, ADMIN, OBSERVER). An observer who signs in on the web gets "You collect in the app".
 - **Settings sit at three levels:** `/account` for everyone, org settings for owners and admins, and project settings for managers.
 
 ## Journeys the pilot must support
 
 Full steps are in [docs/plan/product.md](docs/plan/product.md#journeys-the-pilot-must-support).
 
-- **J1: The manager sets up a study (web).** Sign up, then enter the 6-digit code. Onboarding creates the organization and the first project. In Sites › Map packages, upload the QGIS export, inspect the checks and activate the version. In Forms, open the draft, review the publication and publish. In Team, create the 8-character observer join code (shown once) or an invitation. Overview then shows what came back, coverage by zone and round, and what is blocking.
+- **J1: The manager sets up a study (web).** Sign up, then enter the 6-digit code. The organization comes from the bootstrap script, and an owner or admin creates the first project on the organization's Projects page (D30). In Sites › Map packages, upload the QGIS export and inspect the checks; the newest ready package is the one observers download. In Forms, open the draft, review the publication and publish. In Team, create the 8-character observer join code (shown once) or an invitation. Overview then shows what came back, coverage by zone and round, and what is blocking.
 - **J2: The observer collects (mobile).** Create an account and enter the code. Set the profile: name and initials, which become the observer code. Practise in Training. Join with the code or the invitation link. Download the site on Wi-Fi, with the size shown first; on cellular the app asks. "Before you begin" sets the zone, round and observer code, and the map and form versions stay locked for the session. Then Place → Answer → Review → Saved, with no transition between observations. Back online, records upload by themselves. A rejected record stays visible as "Needs attention" with its reason.
 - **J3: The analyst reads (QGIS and exports).** The manager exports CSV or GeoJSON for a filtered scope, and the export repeats that scope. For live access, the operator issues a per-project read-only login, and the analyst opens the typed layer, where `form_version` tells versions apart.
 - **J4: An account leaves.** Signing out with unsent records warns first, and the records wait on the device for that account. Deleting an account removes memberships and anonymizes the profile. Observations keep the observer code as a research label.
@@ -83,28 +83,26 @@ FieldMaps holds research evidence. The interface must never say more than the sy
 2. **Never overclaim readiness or delivery.**
    - "Uploaded" appears only after the server acknowledges the record.
    - "Ready offline" appears only when the site map, zone boundaries, form definition and field guide are all verified.
-   - Web device readiness is always "as last reported" ("Yesterday · may be stale").
+   - Device readiness is not available on the web yet, and the site page says so instead of guessing.
    - Overview counts state "Records still on devices are not counted here."
    - The collector header shows the real map and form versions.
-3. **One Preview data marker (D20).** A quiet mono "Preview data" marker in the web header replaces the per-section fixture notices, with one footer line. Its popover reads: "Everything here is sample data. Nothing is read from or written to the FieldMaps database." Fixtures still mirror `supabase/migrations`. The real package upload says "Sends this package to the FieldMaps API." Pilot-ready still means no fixture data on any production screen (QA-05).
-4. **Proposals are flagged every time.** Concepts that are not decided always show their flag, for example "PROPOSAL U2 · QGIS remains the pilot's geometry authority. This editor previews a later, versioned web workflow; the coordinates are illustrative." The flagged concepts are:
-   - U2 zone editing;
-   - U3 web join and the observer handoff;
-   - U4 form templates;
-   - U5 review and publication scope;
-   - U6 rounds;
-   - U7 reports and saved views.
-
-   Proposal concepts live in tagged fixture types, never in the types that mirror the schema.
-5. **No control claims to do what it does not do.** Preview actions (approve, exclude, save view, dismiss code, publish, activate, vertex edits, settings) change session-only state and reset on reload. They never imply a server round trip. Where something does not exist yet, say so: "Store links and the install QR code appear after the first signed app release. Nothing here points to a store that does not exist yet."
-6. **Illustrative numbers say so.** Coverage targets are "illustrative" until a project sets them (U6).
+3. **Everything on the web is live (D30).** There are no fixtures, no sample workspace and no Preview data marker. A page that cannot load says so and never shows an empty list. A list of observations holds at most the newest 500, and anything counted or exported from a list that long says "Based on the newest 500 observations."
+4. **Say what is not built, once.** A feature with no backend shows "X is not available yet." with why and what to do instead. It is never a disabled button or a mock-up. Today that covers:
+   - the zone editor (U2: edit zones in QGIS);
+   - the organization form library (U4);
+   - reviewing and excluding records (U5);
+   - the rounds plan (U6);
+   - saved named views (U7: a link to the filtered view replaces them);
+   - device readiness, live QGIS database access, deleting projects, organizations, sites or map packages, and resending an invitation.
+5. **No control claims to do what it does not do.** A button does what its label says or is not on the page. Where something does not exist yet, say so: the Android link on the home and collect pages appears only when one is set, and nothing points to a store that does not exist yet.
+6. **Counts claim only what they count.** Coverage is the records present by zone and round type, not completion, and no target is claimed until a project sets one (U6).
 7. **Do not fabricate verification**, whether of production, a device or background sync (AGENTS.md).
 
 ## Voice and copy
 
 Plain, exact and calm. FieldMaps sounds like a careful colleague who is precise about where your data is and what to do next.
 
-- **Buttons are verb + object:** "Save on this device", "Correct and send again", "Activate v4", "Publish demo-v2", "Return to projects". Avoid bare "OK", "Submit" and "Yes".
+- **Buttons are verb + object:** "Save on this device", "Correct and send again", "Publish v2", "Return to projects". Avoid bare "OK", "Submit" and "Yes".
 - **Sentence case everywhere.** Mono eyebrow labels are uppercase by style, not by typing.
 - **No "Oops", no exclamation marks, no "successfully" and no blame.** Say what is needed ("Up to ten uppercase characters."), not what the person did wrong.
 - **Errors say what happened, what is safe, then what to do.**
@@ -132,8 +130,8 @@ The "instead of" column is wording from the earlier apps or a common default. Th
 | "Passwords don't match!" (on every keystroke) | "Does not match yet", shown after the field loses focus, and under the disabled button "The button turns on when both passwords match." |
 | "Publish form" + "Are you sure?" | "Publishing creates demo-v2. It never changes demo-v1." with "I understand that a published version cannot be edited." then **Publish demo-v2** |
 | "Download complete. Offline ready." | "60 of 126 MB" while each part moves Waiting → Downloading → Verified. "Ready offline" appears once all four verify, and "Set up this session" turns on then. |
-| "All devices ready" | "Device readiness, as last reported", with "Yesterday · may be stale" on an old report |
-| "These screens read local fixtures, not the database" on every section | One "Preview data" marker in the header (see Honesty) |
+| "All devices ready" | "Device readiness is not available yet.", with what to do instead |
+| "These screens read local fixtures, not the database" on every section | Nothing: the web is live (D30, see Honesty) |
 
 ## Brand personality
 
@@ -173,7 +171,7 @@ The pilot is Janet's field session on a real iPad and a real Android tablet, rea
 
 - **Observers stay on the children.** They go from Before you begin to Saved and on to the next observation without hunting for a control. They always know whether a record is on the device or uploaded.
 - **Nothing is lost.** A record survives a force quit, a restart and an expired session, and uploads exactly once. A rejected record says what to fix.
-- **Managers see the field return.** Coverage, what is blocking and what needs attention, without mistaking sample data or stale device reports for the truth.
+- **Managers see the field return.** Coverage, what is blocking and what needs attention, without mistaking a capped list for the whole record. The page says when counts are based on the newest 500 observations.
 - **The form holds.** Janet's form is published and validated the same way on the device and on the server. Its observations open in QGIS with typed columns and the form version that produced them.
 
 The full pilot-ready list is in [docs/plan/product.md](docs/plan/product.md#pilot-ready-means).

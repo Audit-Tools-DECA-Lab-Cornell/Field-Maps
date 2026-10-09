@@ -1,47 +1,54 @@
 # FieldMaps web
 
-The management side of FieldMaps: projects, places, instruments, base map packages, the QGIS connection, and the observations the [native collector](../mobile/README.md) writes into the shared spatial database.
+The management side of FieldMaps: projects, sites, forms, map packages, the team, and the observations the [native collector](../mobile/README.md) uploads into the shared spatial database. Researchers read what came back here and take it into QGIS.
 
 This application and the collector are one product, so they carry one design system, **Contour**, described in [`DESIGN.md`](../DESIGN.md). Its values live in [`contracts/contour.json`](../contracts/contour.json). `pnpm tokens` generates [`src/styles/contour.css`](src/styles/contour.css) from that file, and the collector reads the same file in `mobile/src/ui/tokens.ts`, so a token changes in one place and the two applications cannot drift. Day is the default theme; Dusk is a preference in the account menu.
 
 ## What is real
 
-The collector's uploads are real: it signs in natively, saves offline, uploads on reconnect, and two test observations have been confirmed in hosted PostGIS and opened in QGIS Desktop. **Sign-in, the account screen and base map upload are connected.** Sign-in, sign-up, verification and password recovery use Supabase through Server Actions (`src/lib/auth/actions.ts`). The account screen renders the signed-in profile and every organization and project membership from `/v1/me` on the server, saves profile edits with `PATCH /v1/me` and requests account deletion with `DELETE /v1/me`, all through Server Actions; it carries no Preview data marker. Base map upload posts a real package to `POST /v1/projects/{project}/packages` and renders the checks the server returns. Every other record, count, chart and connection value comes from fixtures: under [`src/data/`](src/data) for screens not yet rebuilt, and under `src/fixtures/` for Contour screens, where every count is derived from the rows. Contour screens move to the API as their endpoints exist (D24): a signed-in user's organization at `/o/<slug>` reads the API, and the sample workspace at `/o/deca` stays on fixtures.
+All of it (D30). Every page under `/o/<org>/p/<project>` reads and writes the FieldMaps API for the signed-in person: sites and map packages, forms and their versions, observations, the team, invitations, and project and organization settings. Sign-in, sign-up, verification and password recovery use Supabase through Server Actions (`src/lib/auth/actions.ts`). There is no sample workspace, no fixture data, no Preview data marker and no set-up flow.
 
-That is stated on the screens themselves. Today the top bar, the status footer and each section carry a notice. From WEB-22 it is stated once: a quiet **Preview data** marker in the header and one line in the footer, which replace the per-section notices (D20). The marker's popover reads: "Everything here is sample data. Nothing is read from or written to the FieldMaps database." Keep it that way while any screen reads fixtures. Preview actions, such as approving a record or publishing a form version, change only this browser session and reset on reload; none claims a server round trip. The real package upload says "Sends this package to the FieldMaps API." Proposal-only concepts (U2 to U7: zone editing, web join and observer handoff, form templates, review and publication scope, rounds, reports and saved views) carry their "PROPOSAL Ux" flag on every screen that shows them.
+When a feature has no backend, the page says so once, with `components/shell/NotAvailable.tsx`: "X is not available yet.", then why, and what to do instead. Today that covers saved named views, the rounds plan, the zone editor (edit zones in QGIS), reviewing or excluding records, device readiness, live QGIS database access, deleting projects, organizations, sites or map packages, and resending invitations. A read that fails shows `LoadFailure` and never an empty list. The Honesty section of [`AGENTS.md`](AGENTS.md) holds the rules.
 
-The fixture observations are a **preview**, and the distinction is load-bearing. The database today holds two `shell-v1` records: the three-field practice form, enough to prove the upload path and nothing else. A management console over two rows demonstrates nothing about managing a study, so the fixtures preview how this workspace will read once `janet-test-v1` is published and a few days of collection have landed. `janet-test-v1` is still a draft, its record count in the database is still zero, and the instrument screen shows both numbers side by side rather than letting one of them pass for the other.
+Two limits show on the screens. The API lists at most the newest 500 observations of a project and has no paging, so every count, chart and export built from a list that long says "Based on the newest 500 observations." And dates use the project's timezone, not the browser's.
 
-The fixtures mirror the real schema rather than a convenient one: `supabase/migrations/` is the authority for what an organization, project, site, form version and observation are, and [`src/types/domain.ts`](src/types/domain.ts) does not invent a concept the schema does not have. The site geometry is the training site the collector already carries, copied coordinate for coordinate from `mobile/src/maps/sample-site.ts`, so a zone on this map is the polygon the observer tapped inside.
+Organizations are created by the bootstrap script (`scripts/bootstrap-study.mjs`), not on the web. Owners and admins create projects on the organization's Projects page.
 
 ## Sections
 
-| Route           | What it is                                                                                      |
-| --------------- | ----------------------------------------------------------------------------------------------- |
-| `/`             | The landing page — what the product is, and what is built, open and not built yet               |
-| `/overview`     | Overview — what the field returned, coverage against the protocol target, and what is blocking  |
-| `/observations` | Data review — one filter set, a coordinated map and table over it, and the record itself        |
-| `/places`       | Sites and the zones inside them                                                                 |
-| `/instrument`   | Variable library, display logic and form versions                                               |
-| `/basemaps`     | Turning a QGIS project into a package: uploading layers, and the checks the server runs on them |
-| `/qgis`         | The connection that reads the same database                                                     |
+| Route | What it is |
+| --- | --- |
+| `/` | The home page: what FieldMaps is, Sign in, and how observers get the Android app |
+| `/sign-in`, `/sign-up`, `/verify`, `/forgot-password`, `/reset-password` | Authentication with six-digit email codes |
+| `/invite`, `/join` | Join a project or organization with an invitation link or a code |
+| `/account` | Profile, password, sign out, delete account |
+| `/o` | Opens the person's last project, their only project, or their first organization |
+| `/o/[org]` | The organization's projects; Members and Settings for owners and admins |
+| `/o/[org]/collect` | Where observers land: they collect in the FieldMaps app |
+| `/o/[org]/p/[project]` | Overview: what the field returned, coverage by zone and round, and what needs attention |
+| `…/data`, `…/data/[observation]` | The newest 500 observations as a table and a plan, with filters and export; one record |
+| `…/sites`, `…/sites/[site]`, `…/sites/[site]/packages` | Sites, the plan of each, and its map packages: history, checks, upload from QGIS layers |
+| `…/forms`, `…/forms/versions`, `…/forms/versions/[version]` | Forms, their versions, the draft editor and publishing |
+| `…/team`, `…/settings` | Project members and invitations; name, description, timezone and archive (managers only) |
+| `…/qgis` | Maps for QGIS in; records out as CSV, GeoJSON and a codebook |
+| `…/reports` | Counts by zone, round type, play type, observer and day, printable |
 
-These are today's routes. The Contour workspace (WEB-22, D21) moves them under an organization and a project, with slugs that follow the designed tab labels: `/o/[org]` for the organization (projects, `members`, `library`, `settings`) and `/o/[org]/p/[project]/` for a project (the overview at its root, then `data`, `sites`, `forms`, `team`, `qgis`, `reports`, `settings`). The fixtures use `/o/deca/p/play-study/`. The old routes then redirect to their new homes and keep the query string.
+The route tree is in [`PLAN.md`](PLAN.md#target-route-tree). Old paths (`/overview`, `/observations`, `/places`, `/basemaps`, `/instrument`, `/qgis`, `/onboarding`) redirect to `/o` and keep the query string.
 
-Filters and the selected record live in the URL, so a filtered view can be sent to a colleague, opened in a second tab, and undone with the back button.
+Filters and the selected record live in the URL, so a filtered view can be sent to a colleague, opened in a second tab, and undone with the back button. A link replaces saved named views.
 
 ## Design rules this application keeps
 
 - **Day by default, Dusk by choice.** Every screen works in both. Map canvases keep their own palette (Day, Night) from [`contracts/map-palettes.json`](../contracts/map-palettes.json), the one the collector uses, so a manager sees the plan the observer saw.
 - **Map colours stay on the map.** Zones and observations take the palette's colours, and UI state colours never appear on a plan.
-- **State is a glyph plus a word plus a colour**, in that order, so the colour is never load-bearing. The vocabulary is the `states` block of `contracts/contour.json`, shared with the collector, and nothing invents a state beside it. It replaces [`src/lib/states.ts`](src/lib/states.ts), which WEB-26 removes.
+- **State is a glyph plus a word plus a colour**, in that order, so the colour is never load-bearing. The vocabulary is the `states` block of `contracts/contour.json`, shared with the collector, and nothing invents a state beside it.
 - **One magenta action per screen.** Ink is for the strong second action and outline for the rest. Selection, focus and navigation use ink.
 - **Mono for anything someone might read aloud.** IDs, versions, codes and counts are Spline Sans Mono; words are Geologica. Labels wrap and never truncate, and text follows the browser zoom.
 - **Motion conveys state, never decoration.** Durations come from the tokens. No shimmer and no hover lift, and every movement has a reduced-motion fallback.
 - **Nothing tappable goes below 44 px**, focus is a visible ink ring, and keyboard and screen readers are first-class.
 - **Copy says where the work is and what to do next.** Buttons are a verb and an object, in sentence case. Errors say what happened, what is safe and what to do. No "Oops", no exclamation marks, no "successfully", no blame.
 
-Primitives live in `src/components/contour/`, with the same names as the collector's `mobile/src/ui/`. When one side gains a primitive, give the other the same one. `/dev/contour` (dev and preview builds only) shows every primitive in Day and Dusk. Screens not yet moved still use the previous chrome in `src/components/nocturne/`, which WEB-26 retires along with `src/data/` and Leaflet.
+Primitives live in `src/components/contour/`, with the same names as the collector's `mobile/src/ui/`. When one side gains a primitive, give the other the same one. `/dev/contour` (dev and preview builds only) shows every primitive in Day and Dusk.
 
 ## Public policy pages
 
@@ -56,11 +63,11 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Without Supabase configuration, a development build opens the sample workspace (`/o/deca`) and the set-up flow preview without signing in (D23); with it, every workspace, onboarding and account route requires Supabase sign-in. The default map base is bundled vector geometry.
+Open [http://localhost:3000](http://localhost:3000). Every workspace and account route needs a Supabase sign-in, so set the Supabase and API variables below first. Without Supabase configuration nobody is signed in, and the workspace stays closed.
 
 ## Connect it to the API
 
-Base map upload calls the API directly from the browser. Account data calls the API only from the server.
+The server calls the API for everything except map packages. A map package (up to 24 MiB) is too large for Vercel and for Server Actions, so the browser sends it, and fetches its archive, straight to the API.
 
 ```bash
 cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
@@ -68,18 +75,15 @@ cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
 
 | Variable | Value |
 | --- | --- |
-| `NEXT_PUBLIC_FIELDMAPS_API_URL` | The API's origin, no trailing slash — `http://127.0.0.1:8000` locally, `https://api.example.org` deployed |
-| `NEXT_PUBLIC_FIELDMAPS_PROJECT_ID` | The project UUID the base map screen uploads packages to. Unset, it falls back to the fixture `PROJECT.id`, which is not a UUID and the API will refuse — WEB-01's quick fix, superseded by WEB-08 taking the project from the route. |
+| `FIELDMAPS_API_URL` | The API's origin, no trailing slash, read by the web server: `http://127.0.0.1:8000` locally, `https://field-maps.onrender.com` deployed |
+| `NEXT_PUBLIC_FIELDMAPS_API_URL` | The same origin, for the browser's package upload and download |
+| `NEXT_PUBLIC_ANDROID_APP_URL` | Optional. An https link to the Android build. When set, the home page and the collect page show it |
 
-`NEXT_PUBLIC_` variables are compiled into the browser bundle, so this one is public by construction. Never put a token or key beside it. Next.js reads `.env.local` at build time, so restart `pnpm dev` after changing it; on Vercel, set it in **Project → Settings → Environment Variables** and redeploy, since a running deployment will not pick it up.
+`NEXT_PUBLIC_` variables are compiled into the browser bundle, so they are public by construction. Never put a token or key beside them. Next.js reads `.env.local` at build time, so restart `pnpm dev` after changing one; on Vercel, set it in **Project → Settings → Environment Variables** and redeploy, since a running deployment will not pick it up.
 
-Leave it unset and the screen says so: it assembles the package and downloads the submission rather than pretending to upload it.
+The API must also name the web origin. Browsers preflight a cross-origin request that carries an `Authorization` header, and the API allows no origin by default, so add the web origin to `browser_origins` in the API's configuration (`backend/config.local.json` locally, `backend/config.render.json` deployed) — see [the API README](../backend/README.md). Miss that step and a package upload or download fails in the browser's network layer before the API is reached; the pages the server renders still load. Vercel preview deployments get a new hostname per branch, so those are covered by `browser_origin_pattern` rather than listed.
 
-The API must also name this origin. Browsers preflight a cross-origin request that carries an `Authorization` header, and the API allows no origin by default, so add the web origin to `browser_origins` in `backend/config.local.json` — see [the API README](../backend/README.md). Miss that step and the upload fails in the browser's network layer before the API is reached. Vercel preview deployments get a new hostname per branch, so those are covered by `browser_origin_pattern` rather than listed.
-
-Two things this cannot fix on its own. A page served over HTTPS may not call an API on `http://127.0.0.1`, so the deployed site needs a deployed API over HTTPS — pointing it at a laptop will not work. And uploading still needs a manager's token, below.
-
-Uploading needs an access token for an account with the **manager** role on the project. The fixture upload screen still has a pasted-token stopgap, marked as such; WEB-06 will connect its account menu and remove that field.
+A page served over HTTPS may not call an API on `http://127.0.0.1`, so the deployed site needs a deployed API over HTTPS. Uploading takes the signed-in person's own access, and the API accepts it only from a project manager.
 
 Quality checks:
 
@@ -104,9 +108,9 @@ Set these process or deployment settings before starting the app:
 
 `/sign-up`, `/verify`, `/sign-in`, `/forgot-password`, and `/reset-password` use Server Actions and six-digit email codes. The local confirmation/recovery email templates must contain `{{ .Token }}`; read the codes in Mailpit at `http://127.0.0.1:54324`. Pending email addresses live in short-lived httpOnly cookies, never URLs. Resends enforce a 60-second cooldown in the action as well as the UI. Supabase remains the rate-limit authority. If a recovery code succeeds but the new password is rejected, retries reuse that verified recovery session. A short-lived httpOnly workflow marker must match the current Supabase-verified user, session ID and pending email; it is cleared when a new recovery starts, the password changes, or the user signs out.
 
-The proxy refreshes cookies and protects `/o`, `/onboarding`, and `/account`; server components and the API client independently verify claims. `/o` currently opens `/account`, which shows the live profile and memberships, profile editing, account deletion and sign-out. Onboarding remains an explicitly labelled preview until WEB-06. Sign-in uses a validated same-origin `next` path or `/onboarding`; last-project selection arrives with the organization/project routes.
+The proxy refreshes cookies and protects `/o` and `/account`; server components and the API client independently verify claims. A signed-in visit to `/` goes to `/o`, which opens the project the person was last in (the `fm-place` cookie), their only project, or their first organization, and says "You are not in a project yet" when there is none. `/account` shows the live profile and memberships, profile editing, account deletion and sign-out. Sign-in uses a validated same-origin `next` path or `/o`.
 
-`src/lib/api/client.ts` is server-only, uses generated endpoint types, validates identity data, attaches the verified session's access token, disables caching, and imposes a 15-second timeout. Future tenant mutations must call it from authenticated Server Actions. Large package uploads intentionally remain browser-to-API to avoid proxy body-size limits, so the existing public API origin and CORS settings are retained until that consumer changes.
+`src/lib/api/client.ts` is server-only, uses generated endpoint types, validates identity data, attaches the verified session's access token, disables caching, and gives every request its own 15-second timeout. `src/lib/api/workspace.ts` holds the cached reads and `src/lib/api/mutations.ts` one function per write; writes run in authenticated Server Actions that validate their input and then refresh the page. Map package upload and archive download go browser-to-API through `src/lib/api/browser.ts`, to avoid the Vercel and Server Action body limits, so the public API origin and the CORS settings are required.
 
 The service worker only caches the public landing page, icons, and static build assets. It never stores auth pages, account/tenant pages, API results, query strings, cross-origin requests, or RSC responses. The landing shell is network-first, with its current build cache used offline; static assets are cache-first. Installation and asset prewarming apply the same response checks, rejecting redirects, unsuccessful responses, and responses marked private or no-store.
 
@@ -120,14 +124,15 @@ Run `pnpm test:auth` for redirect, response-validation and private-cache regress
 - Tailwind v4, with the generated Contour tokens mapped in `@theme inline` so the utilities _are_ the design system
 - Geologica and Spline Sans Mono, self-hosted through `next/font`, so chrome never waits on a network
 - Lucide icons (`lucide-react`)
-- React Leaflet, rendered browser-side only, over bundled GeoJSON or street tiles, until WEB-26 replaces it with an SVG site plan
-- Client-side CSV, GeoJSON and codebook generation
+- SVG site plans (`SitePlan`, `MapFrame`) drawn from a map package's GeoJSON and the palettes in `contracts/map-palettes.json`; `fflate` reads the package archive in the browser
+- Client-side CSV, GeoJSON and codebook generation from the loaded observations
 - Progressive Web App manifest and a same-origin offline shell cache
 
 ## What this application deliberately does not do
 
 - **Collect observations.** The collector does that, on a device, offline. A browser form beside it would be a second way to enter the same record and a second thing to keep in step.
-- **Draw zones or create sites.** Zones come from the QGIS project a base map package is prepared from; the upload screen carries the exported `zones` layer to the server, which derives the boxes. A second authority beside QGIS would drift from it. The designed zone editor is PROPOSAL U2: its edits are preview state for this browser session and reach no server.
-- **Edit or publish the instrument.** The API now accepts any seeded form version and validates answers against its stored definition, and `form_versions` rows are already immutable, so what publishing still needs is an editor here and a typed GIS view over the answers. Until those exist, this reads the instrument and shows what is blocking its first version. The designed draft editor and publication review preview that flow; publishing there changes only this browser session.
-- **Deliver a package to a device.** A prepared package is stored, versioned and downloadable from the API, but the collector still reads its bundled geometry. The hosted package provider on the device, with the download and cellular policy that belong to it, is the next piece.
+- **Draw zones.** Zones come from the QGIS project a map package is prepared from; the upload carries the exported `zones` layer to the server, which derives the boxes. A second authority beside QGIS would drift from it, so the site page says editing zones on the web is not available yet.
+- **Review, exclude or delete records and projects.** Every uploaded observation is in the exports. Deleting projects, organizations, sites and map packages, and resending invitations, are not available yet; each says so where it would be.
+- **Send email.** FieldMaps does not email invitations. The link and the code are shown once for the person who invites to send.
+- **Deliver a package to a device.** The web app stores, versions and offers map packages for download. The collector downloads each site's current package itself (D27).
 - **Claim a sync path of its own.** QGIS reads the live database; exports are for analysis, backup and interoperability, and say so.
