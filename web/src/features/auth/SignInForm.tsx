@@ -7,11 +7,9 @@ import { Field } from "@/components/contour/Field";
 import { PasswordInput } from "@/components/contour/PasswordInput";
 import { TextInput } from "@/components/contour/TextInput";
 import { TextLink } from "@/components/contour/TextLink";
-import type { AuthState } from "@/lib/auth/actions";
 
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, isEmail, MAX_PASSWORD_LENGTH, withQuery } from "./params";
-import { NO_MESSAGE, ServerMessage, useAuthAction } from "./useAuthAction";
+import { isEmail, MAX_PASSWORD_LENGTH, withQuery } from "./params";
+import { ServerMessage, useAuthAction } from "./useAuthAction";
 import { formatCountdown, useCooldown } from "./useCooldown";
 
 type Errors = { email?: string; password?: string };
@@ -21,30 +19,21 @@ export type SignInFormProps = {
 	next: string;
 	/** True when the address carried `next`, so the links to the other auth pages keep it. */
 	carryNext: boolean;
-	state: AuthPreviewState;
 };
-
-/** The preview's sample answer for `?preview-state=error`, word for word what the server says. */
-const PREVIEW_ERROR: AuthState = { message: "The email or password is incorrect." };
 
 /**
  * Sign in (Org 6). The checks run here first; the email and password then go to the `authenticate`
  * Server Action, which signs in with Supabase Auth and continues to `next`. An unconfirmed account gets
  * the server's message and a way to enter its code; a rate limit turns the button off until it passes.
  */
-export function SignInForm({ next, carryNext, state: preview }: SignInFormProps) {
+export function SignInForm({ next, carryNext }: SignInFormProps) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [errors, setErrors] = useState<Errors>({});
 	const emailRef = useRef<HTMLInputElement>(null);
 	const passwordRef = useRef<HTMLInputElement>(null);
 	const cooldown = useCooldown();
-	const auth = useAuthAction({
-		initial: preview === "error" ? PREVIEW_ERROR : NO_MESSAGE,
-		fields: { email: emailRef, password: passwordRef },
-		onRetryAfter: cooldown.start
-	});
-	const offline = preview === "offline";
+	const auth = useAuthAction({ fields: { email: emailRef, password: passwordRef }, onRetryAfter: cooldown.start });
 	const waiting = cooldown.remaining > 0;
 	const nextQuery = { next: carryNext ? next : undefined };
 
@@ -54,7 +43,7 @@ export function SignInForm({ next, carryNext, state: preview }: SignInFormProps)
 			password: password.length > 0 ? undefined : "Enter your password."
 		};
 		setErrors(found);
-		if (auth.pending || offline || waiting || found.email || found.password) event.preventDefault();
+		if (auth.pending || waiting || found.email || found.password) event.preventDefault();
 		if (found.email) emailRef.current?.focus();
 		else if (found.password) passwordRef.current?.focus();
 	}
@@ -68,7 +57,6 @@ export function SignInForm({ next, carryNext, state: preview }: SignInFormProps)
 			aria-busy={auth.pending || undefined}>
 			<input type="hidden" name="intent" value="sign-in" />
 			<input type="hidden" name="next" value={next} />
-			{offline && <OfflineNote />}
 			<ServerMessage {...auth.note}>
 				{auth.state.verify && (
 					<>
@@ -120,12 +108,8 @@ export function SignInForm({ next, carryNext, state: preview }: SignInFormProps)
 				fullWidth
 				iconRight="arrow-right"
 				busy={auth.pending}
-				disabled={offline || waiting}
-				disabledReason={
-					offline
-						? "Signing in needs a connection."
-						: `Wait ${formatCountdown(cooldown.remaining)} before trying again.`
-				}>
+				disabled={waiting}
+				disabledReason={`Wait ${formatCountdown(cooldown.remaining)} before trying again.`}>
 				{/* A full-width button keeps its width anyway, so the label swaps without the primitive's
 				    reserved busy width, which would push the arrow away from "Sign in" at rest. */}
 				{auth.pending ? "Signing in…" : "Sign in"}

@@ -1,105 +1,74 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-
-import { Button } from "@/components/contour/Button";
-import { InnerPanel } from "@/components/contour/InnerPanel";
+import { ButtonLink } from "@/components/contour/Button";
 import { Island } from "@/components/contour/Island";
 import { Mono } from "@/components/contour/Mono";
-import { Note } from "@/components/contour/Note";
 import { PageHeader } from "@/components/contour/PageHeader";
-import { ProposalNote } from "@/components/contour/ProposalNote";
-import { getProject, JOIN_CODE } from "@/fixtures";
-import { MOTION } from "@/lib/contour";
+import { StateBadge } from "@/components/contour/StateBadge";
 
-/** "Copy code" reads "Copied ✓" for the contract's copied duration, then returns. */
-function CopyCode({ code }: { code: string }) {
-	const [copied, setCopied] = useState(false);
-	const [failed, setFailed] = useState(false);
-	const timer = useRef<number | undefined>(undefined);
-	useEffect(() => () => window.clearTimeout(timer.current), []);
+export type CollectProject = { code: string; name: string };
 
-	async function copy() {
-		try {
-			await navigator.clipboard.writeText(code);
-			setFailed(false);
-			setCopied(true);
-			window.clearTimeout(timer.current);
-			timer.current = window.setTimeout(() => setCopied(false), MOTION.copied);
-		} catch {
-			setFailed(true);
-		}
-	}
-
-	return (
-		<div className="flex flex-col items-start gap-2">
-			<Button variant="ink" icon="copy" onClick={copy}>
-				{copied ? "Copied ✓" : "Copy code"}
-			</Button>
-			<span role="status" className="sr-only">
-				{copied ? "Code copied" : ""}
-			</span>
-			{failed && (
-				<p role="status" className="type-small text-ink-2">
-					This browser did not allow copying. Select the code and copy it by hand.
-				</p>
-			)}
-		</div>
-	);
-}
+export type CollectHandoffProps = {
+	organization: string;
+	/** The person's observer projects in this organization, from their workspace. */
+	projects: CollectProject[];
+	/** Where to get the Android app, when the deployment has a link for it. */
+	androidUrl: string | null;
+};
 
 /**
- * Where an observer who signs in on the web is sent (proposal U3): collection happens in the mobile
- * collector, so the page says how to get it and how to join. Phase 5 builds it out to org-14.
+ * Where an observer who signs in on the web lands: collecting happens in the FieldMaps app, so this says
+ * which projects they are an observer on here and how to continue. It shows only what the person's own
+ * workspace holds, and an install link only when one is configured.
  */
-export function CollectHandoff() {
-	const project = getProject("deca", JOIN_CODE.projectSlug);
-	const projectName = project?.name ?? "the project";
-
+export function CollectHandoff({ organization, projects, androidUrl }: CollectHandoffProps) {
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				title="Collect on your phone"
-				lead="Your observer role gives you access to field collection, not management settings."
+				title="Collect with the FieldMaps app"
+				lead="Observers collect in the app. This site is for managers and viewers."
 			/>
-			<ProposalNote code="U3" inline>
-				This handoff page for observers who sign in on the web is not decided yet.
-			</ProposalNote>
 			<div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-				<Island title="Get the collector">
-					<ol className="flex list-decimal flex-col gap-2 pl-6 type-body marker:text-ink-2">
-						<li>Install the FieldMaps collector on your phone or tablet.</li>
-						<li>Sign in with the address you use here.</li>
-						<li>Open your invitation on the phone, or join with the code on this page.</li>
-						<li>Download a site while you have signal.</li>
-						<li>Collect offline. Records upload when the app is open and connected.</li>
-					</ol>
-					<p className="mt-5 type-small text-ink-2">
-						Store links and the install QR code appear after the first signed app release. Nothing here
-						points to a store that does not exist yet.
-					</p>
+				<Island
+					title={projects.length === 1 ? "Your project" : "Your projects"}
+					meta={organization}
+					flush={projects.length > 0}>
+					{projects.length === 0 ? (
+						<p className="type-body text-ink">
+							You are not an observer on any project in {organization}. Collecting happens in the
+							FieldMaps app, on the projects where you are an observer.
+						</p>
+					) : (
+						<ul className="divide-y divide-rule">
+							{projects.map(project => (
+								<li
+									key={project.code}
+									className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-island-pad py-3">
+									<span className="min-w-0 type-body font-semibold text-ink wrap-anywhere">
+										{project.name}
+									</span>
+									<span className="flex items-baseline gap-4">
+										<Mono variant="data" className="text-ink-2">
+											{project.code}
+										</Mono>
+										<StateBadge kind="role" state="observer" size="sm" />
+									</span>
+								</li>
+							))}
+						</ul>
+					)}
 				</Island>
-				<Island title={`Join ${projectName}`}>
-					<InnerPanel tone="well" className="flex flex-col gap-1">
-						<Mono variant="label" className="text-ink-2">
-							Observer join code
-						</Mono>
-						<Mono variant="code" className="text-ink">
-							{JOIN_CODE.code}
-						</Mono>
-					</InnerPanel>
-					<p className="mt-4 type-body text-ink-2">
-						In the collector, choose Join a project and enter this code.
+				<Island title="Next">
+					<p className="type-body text-ink">
+						Open the FieldMaps app, sign in with this account, and choose the project.
 					</p>
-					<div className="mt-5">
-						<CopyCode code={JOIN_CODE.code} />
-					</div>
+					{androidUrl && (
+						<div className="mt-5">
+							<ButtonLink variant="primary" icon="external-link" href={androidUrl}>
+								Get the Android app
+							</ButtonLink>
+						</div>
+					)}
 				</Island>
 			</div>
-			<Note>
-				Observers collect in the FieldMaps mobile app. This web workspace is for managers, viewers and
-				organization admins.
-			</Note>
 		</div>
 	);
 }

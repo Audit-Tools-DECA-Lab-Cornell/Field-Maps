@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 /**
  * Every sign-in, account and invitation page: one toast host that outlives the move from page to page
  * (and shows a message another page left, such as "Account deleted"), and a skip link. The two groups
- * inside add their header and the split frame; the invitation group, which still reads sample data,
- * adds the Preview data footer line.
+ * inside add their header and the split frame: `(signed-out)` for sign in, create an account and
+ * recovery, `(join)` for the invitation and join pages.
  */
 export default function AuthLayout({ children }: Readonly<{ children: ReactNode }>) {
 	return (

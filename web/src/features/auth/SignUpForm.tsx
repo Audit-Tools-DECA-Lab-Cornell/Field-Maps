@@ -9,8 +9,7 @@ import { Icon } from "@/components/contour/Icon";
 import { TextInput } from "@/components/contour/TextInput";
 import { TextLink } from "@/components/contour/TextLink";
 
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, isEmail, MIN_PASSWORD_LENGTH, withQuery } from "./params";
+import { isEmail, MIN_PASSWORD_LENGTH, withQuery } from "./params";
 import { PasswordFields } from "./PasswordFields";
 import { ServerMessage, useAuthAction } from "./useAuthAction";
 import { formatCountdown, useCooldown } from "./useCooldown";
@@ -22,7 +21,6 @@ export type SignUpFormProps = {
 	next: string;
 	/** True when the address carried `next`, so the link back to sign in keeps it. */
 	carryNext: boolean;
-	state: AuthPreviewState;
 };
 
 /**
@@ -30,7 +28,7 @@ export type SignUpFormProps = {
  * `authenticate` Server Action, which creates the account with Supabase Auth, keeps the address in an
  * httpOnly cookie (never the URL) and continues to the code screen.
  */
-export function SignUpForm({ next, carryNext, state: preview }: SignUpFormProps) {
+export function SignUpForm({ next, carryNext }: SignUpFormProps) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirm, setConfirm] = useState("");
@@ -41,12 +39,11 @@ export function SignUpForm({ next, carryNext, state: preview }: SignUpFormProps)
 	const confirmRef = useRef<HTMLInputElement>(null);
 	const cooldown = useCooldown();
 	const auth = useAuthAction({ fields: { email: emailRef, password: passwordRef }, onRetryAfter: cooldown.start });
-	const offline = preview === "offline";
 	const waiting = cooldown.remaining > 0;
 
 	function submit(event: FormEvent<HTMLFormElement>) {
 		const found: Errors = {
-			email: isEmail(email) ? undefined : "Enter an email address, such as name@example.org.",
+			email: isEmail(email) ? undefined : "Enter your email address.",
 			password: password.length >= MIN_PASSWORD_LENGTH ? undefined : "Use at least 8 characters.",
 			confirm:
 				confirm.length === 0
@@ -58,7 +55,7 @@ export function SignUpForm({ next, carryNext, state: preview }: SignUpFormProps)
 		};
 		setErrors(found);
 		const invalid = Object.values(found).some(Boolean);
-		if (auth.pending || offline || waiting || invalid) event.preventDefault();
+		if (auth.pending || waiting || invalid) event.preventDefault();
 		if (found.email) emailRef.current?.focus();
 		else if (found.password) passwordRef.current?.focus();
 		else if (found.confirm) confirmRef.current?.focus();
@@ -74,7 +71,6 @@ export function SignUpForm({ next, carryNext, state: preview }: SignUpFormProps)
 			aria-busy={auth.pending || undefined}>
 			<input type="hidden" name="intent" value="sign-up" />
 			<input type="hidden" name="next" value={next} />
-			{offline && <OfflineNote />}
 			<ServerMessage {...auth.note} />
 			<Field label="Email address" htmlFor="sign-up-email" error={errors.email}>
 				<TextInput
@@ -149,12 +145,8 @@ export function SignUpForm({ next, carryNext, state: preview }: SignUpFormProps)
 				icon="mail"
 				busy={auth.pending}
 				busyLabel="Sending verification code…"
-				disabled={offline || waiting}
-				disabledReason={
-					offline
-						? "Creating an account needs a connection."
-						: `Wait ${formatCountdown(cooldown.remaining)} before trying again.`
-				}>
+				disabled={waiting}
+				disabledReason={`Wait ${formatCountdown(cooldown.remaining)} before trying again.`}>
 				Send verification code
 			</Button>
 			<p className="-mt-2 type-body text-ink">

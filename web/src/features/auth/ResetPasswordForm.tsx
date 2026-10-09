@@ -7,13 +7,11 @@ import { CodeCounter } from "@/components/contour/CodeCounter";
 import { CodeInput } from "@/components/contour/CodeInput";
 import { Field } from "@/components/contour/Field";
 import { TextLink } from "@/components/contour/TextLink";
-import type { AuthState } from "@/lib/auth/actions";
 
-import { OfflineNote } from "./OfflineNote";
-import { type AuthPreviewState, MIN_PASSWORD_LENGTH } from "./params";
+import { MIN_PASSWORD_LENGTH } from "./params";
 import { PasswordFields } from "./PasswordFields";
 import { ResendCodeForm } from "./ResendCodeForm";
-import { asksToStartAgain, NO_MESSAGE, ServerMessage, StartAgainLink, useAuthAction } from "./useAuthAction";
+import { asksToStartAgain, ServerMessage, StartAgainLink, useAuthAction } from "./useAuthAction";
 import { formatCountdown, useCooldown } from "./useCooldown";
 
 const CODE_LENGTH = 6;
@@ -21,26 +19,15 @@ const CODE_LENGTH = 6;
 /** Where a recovery starts over: the address goes in again. */
 const START_AGAIN_HREF = "/forgot-password";
 
-/** The preview's sample answer for `?preview-state=error`, word for word what the server says. */
-const PREVIEW_ERROR: AuthState = { message: "That code is invalid or expired. Request a new code." };
-
 export type ResetPasswordFormProps = {
 	/** Where the account continues once the password is saved, already made safe by `safeNext`. */
 	next: string;
 	/** Seconds until another code may be sent, from the `fm-email-sent` cookie. */
 	cooldownSeconds: number;
-	state: AuthPreviewState;
 };
 
 /** Why "Save new password" is off, naming the first thing still missing, top to bottom. */
-function disabledReason(
-	code: string,
-	password: string,
-	confirm: string,
-	offline: boolean,
-	wait: number
-): string | undefined {
-	if (offline) return "Saving a new password needs a connection.";
+function disabledReason(code: string, password: string, confirm: string, wait: number): string | undefined {
 	if (wait > 0) return `Wait ${formatCountdown(wait)} before trying again.`;
 	if (code.length < CODE_LENGTH) return "The button turns on when all six digits of the code are in.";
 	if (password.length < MIN_PASSWORD_LENGTH)
@@ -56,20 +43,15 @@ function disabledReason(
  * Supabase Auth and continues to `next`. A wrong code reselects the field; a refused password keeps the
  * code, so a second try needs no new email.
  */
-export function ResetPasswordForm({ next, cooldownSeconds, state: preview }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ next, cooldownSeconds }: ResetPasswordFormProps) {
 	const [code, setCode] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirm, setConfirm] = useState("");
 	const codeRef = useRef<HTMLInputElement>(null);
 	const passwordRef = useRef<HTMLInputElement>(null);
 	const cooldown = useCooldown();
-	const auth = useAuthAction({
-		initial: preview === "error" ? PREVIEW_ERROR : NO_MESSAGE,
-		fields: { code: codeRef, password: passwordRef },
-		onRetryAfter: cooldown.start
-	});
-	const offline = preview === "offline";
-	const reason = disabledReason(code, password, confirm, offline, cooldown.remaining);
+	const auth = useAuthAction({ fields: { code: codeRef, password: passwordRef }, onRetryAfter: cooldown.start });
+	const reason = disabledReason(code, password, confirm, cooldown.remaining);
 
 	function submit(event: FormEvent<HTMLFormElement>) {
 		if (auth.pending || reason) event.preventDefault();
@@ -85,7 +67,6 @@ export function ResetPasswordForm({ next, cooldownSeconds, state: preview }: Res
 				aria-busy={auth.pending || undefined}>
 				<input type="hidden" name="intent" value="reset-password" />
 				<input type="hidden" name="next" value={next} />
-				{offline && <OfflineNote />}
 				<ServerMessage {...auth.note}>
 					{asksToStartAgain(auth.state) && <StartAgainLink href={START_AGAIN_HREF} />}
 				</ServerMessage>
@@ -140,7 +121,6 @@ export function ResetPasswordForm({ next, cooldownSeconds, state: preview }: Res
 			<ResendCodeForm
 				kind="reset-password"
 				cooldownSeconds={cooldownSeconds}
-				offline={offline}
 				codeRef={codeRef}
 				startAgainHref={START_AGAIN_HREF}
 			/>
