@@ -27,8 +27,12 @@ Done and committed:
 Partly done:
 - WP9 E2E harness: the scripts and specs exist, and a sign-in run and an honesty scan ran once against the old screens. The final run was cut off.
 
+Shell integration review (2026-10-09): typecheck, lint, format:check, test:unit 84/84, test:auth 33/33,
+test:api-errors 31/31, test:account 12/12 and `pnpm --dir web build` all pass. On the local stack the sign-in
+spec passes 13 of 14: a fresh manager sign-in now lands on the project. The earlier `/account` landing came
+from the half-finished shell during that run. The one failure is the old collect page (WP7).
+
 Not started:
-- **Shell integration review** (step 1 below).
 - **WP1–WP7 screens:**
   - WP1 sites and packages
   - WP2 forms
@@ -46,7 +50,6 @@ Not started:
 
 Known issues found so far:
 - The project screens still read sample data inside the real project. The overview of the seeded project shows "This page is not on the map", because the old page looks up sample slugs.
-- In the first E2E run, a fresh manager sign-in landed on `/account` instead of the project. Check the sign-in `next` handling and the `/o` resolver.
 - `/o/web-acceptance/collect` still shows the old sample page (WP7).
 - The local API allows browser origins on port 3000 only, so the harness runs the web app on `127.0.0.1:3000`.
 - Switchers no longer offer "Create project"; WP6 adds it to the org projects page.
