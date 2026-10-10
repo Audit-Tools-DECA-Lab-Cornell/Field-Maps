@@ -142,6 +142,7 @@ Success bodies, URLs, status codes and archive headers are unchanged by BE-03. W
 | `PUT /v1/projects/{project}/observations/{uuid}` | Validate and commit a new point or acknowledge an identical retry |
 | `GET /v1/projects/{project}/observations/{uuid}` | Read a permitted observation                                      |
 | `POST /v1/projects/{project}/packages`            | Check a base map submission and store a prepared package version  |
+| `POST /v1/projects/{project}/packages/import`     | Convert uploaded QGIS vector sources for review without saving a package |
 | `GET /v1/projects/{project}/packages`             | List prepared package versions and their state                    |
 | `GET /v1/projects/{project}/packages/{package}`   | Read one package's manifest and every check it ran                |
 | `GET /v1/projects/{project}/packages/{package}/archive` | Download the zip; the ETag is its `sha256`                  |
@@ -155,6 +156,14 @@ A package submission carries the site and form version, the GeoJSON layers (`gro
 A 200 receipt includes observation/project/user UUIDs, original `received_at`, and `accepted_revision: 1`. A receipt is returned only after commit. Identical retries return the original receipt; conflicting content returns 409 and preserves the original. The authenticated user and normalized payload fingerprint are immutable. A lost response can therefore be retried without duplicate records.
 
 Project membership is enforced in both the API lookup and database row policies. The API uses a restricted non-owner role with transaction-local identity, preventing pooled connections from retaining another account's context. It can select permitted rows and insert observations; it cannot edit/delete observations or grant membership. The SQLite queue keeps records until matching receipt verification and never uploads unassigned practice records.
+
+## QGIS conversion
+
+`POST /v1/projects/{project}/packages/import` accepts `files`, an array of base64 `ProjectFile` objects. Managers can upload one `.qgz`/`.qgs` with its sources, optionally in a ZIP. The response returns the original `.qgs` as `project_file`, converted `layers` (`name`, `collection`), and per-layer `issues`. It neither creates a site nor saves a package. Clients review and assign the converted layers, optionally replace them with GeoJSON, then use the existing package submission with `site_code` and `form_version`.
+
+Fiona's bundled GDAL reads only uploaded GeoPackage, shapefile and GeoJSON datasets through a fixed driver list. A layer's QGIS CRS assignment takes precedence over dataset metadata; coordinates are converted to EPSG:4326. Remote sources are not fetched. Missing/ambiguous sources, unsupported providers, raster layers and filtered layers return actionable issues. The original project remains available for preparation checks, including imagery policy. Uploaded ZIP paths, symlinks, encryption, duplicate paths and XML entities are rejected. The standard inert QGIS DOCTYPE is allowed without fetching its URL.
+
+Conversion runs in a temporary subprocess with no inherited credentials, at most two simultaneous conversions per API process and a 45-second overall deadline. Limits are 16 MB of selected inputs, 64 MB of counted archive expansion, 256 archive members, two archive levels, 64 layers, 20,000 features per layer and 16 MB of result data. Linux also applies CPU, memory and file-size limits. These are resource and format restrictions, not an operating-system sandbox. Install the locked Fiona dependency in the API deployment; no QGIS Desktop installation is needed.
 
 ## Verification and limits
 

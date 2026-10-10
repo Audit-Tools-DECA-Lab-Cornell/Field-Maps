@@ -30,6 +30,8 @@ from tests.signing import ISSUER, Signer
     ("method", "path", "limit"),
     [
         ("POST", "/v1/projects/project/packages", 24 * MIB),
+        ("POST", "/v1/projects/project/packages/import", 24 * MIB),
+        ("POST", "/v1/projects/project/packages/import/other", 256 * KIB),
         ("POST", "/v1/sync/upload", 4 * MIB),
         ("PUT", "/v1/projects/project/observations/id", 256 * KIB),
         ("POST", "/v1/invitations/preview", 256 * KIB),

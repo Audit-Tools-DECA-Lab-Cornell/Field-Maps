@@ -6,9 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from fieldmaps_api.deps import Authentication, user_transaction
 from fieldmaps_api.domain.packages import PackageSubmission
+from fieldmaps_api.domain.project_import import ProjectImportRequest, ProjectImportResult
 from fieldmaps_api.errors import ERROR_RESPONSES
+from fieldmaps_api.queries import tenancy as tenancy_queries
+from fieldmaps_api.repositories import tenancy as tenancy_db
 from fieldmaps_api.schemas import PackageDetail, PackageSummary
 from fieldmaps_api.services import sites as site_service
+from fieldmaps_api.services.project_import import import_project
 from fieldmaps_api.services.sites import (
     get_package,
     list_packages,
@@ -61,6 +65,17 @@ def create_router(
     ) -> Site:
         async with user_transaction(sessions, user_id) as session:
             return await site_service.update_site(session, project_id, site_code, payload)
+
+    @router.post("/v1/projects/{project_id}/packages/import", operation_id="importQgisProject")
+    async def import_qgis(
+        project_id: UUID,
+        submission: ProjectImportRequest,
+        user_id: Annotated[UUID, Depends(authenticate)],
+    ) -> ProjectImportResult:
+        """Convert supplied QGIS sources for review without saving a package."""
+        async with user_transaction(sessions, user_id) as session:
+            await tenancy_db.require_manager(session, tenancy_queries.PROJECT_MANAGER, project_id)
+        return await import_project(submission)
 
     @router.post(
         "/v1/projects/{project_id}/packages",

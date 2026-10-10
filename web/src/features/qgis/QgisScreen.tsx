@@ -146,7 +146,7 @@ export function QgisScreen({
 					divided={false}
 					title="Maps in"
 					meta={plural(maps.length, "site")}
-					footnote="QGIS makes the map package. Upload it on the site's page, and observers download it in the app.">
+					footnote="Open a site's upload page to read a QGIS project with its source files, or upload GeoJSON layers. Review the layers before saving its map package.">
 					{maps.length === 0 ? (
 						<ScreenState
 							kind="empty"

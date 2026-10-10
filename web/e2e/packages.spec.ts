@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { expect, type Page, test } from "@playwright/test";
+import { strToU8, zipSync } from "fflate";
 
 import { currentPackageVersion, listPackages } from "./support/api";
 import { authFile } from "./support/auth";
@@ -15,19 +17,9 @@ const LAYERS_DIR = fileURLToPath(new URL("../../qgis/fall-creek/upload-sample/",
 const LAYERS = ["ground", "zones", "trees"].map(layer => ({ layer, file: `${LAYERS_DIR}${layer}.geojson` }));
 
 async function chooseLayers(page: Page) {
-	// One picker for every file of the QGIS export, or one per layer.
-	const many = page.locator('input[type="file"][multiple]');
-	if ((await many.count()) > 0) {
-		await many.first().setInputFiles(LAYERS.map(item => item.file));
-		return;
-	}
-	for (const { layer, file } of LAYERS) {
-		await page
-			.getByLabel(new RegExp(layer, "i"))
-			.and(page.locator('input[type="file"]'))
-			.first()
-			.setInputFiles(file);
-	}
+	await page
+		.getByLabel("Choose files from the QGIS export", { exact: true })
+		.setInputFiles(LAYERS.map(item => item.file));
 }
 
 test("uploading a new package from QGIS layers makes it the current one", async ({ page }) => {
@@ -49,6 +41,67 @@ test("uploading a new package from QGIS layers makes it the current one", async 
 
 	// The history marks the new version Active (the newest ready package is current).
 	await page.goto(projectPath(`sites/${site}/packages`));
-	const row = page.getByRole("main").locator('tr, li, [role="row"]').filter({ hasText: versionWords }).first();
+	const row = page
+		.getByRole("main")
+		.locator('tr:visible, li:visible, [role="row"]:visible')
+		.filter({ has: page.getByRole("link", { name: `v${next}`, exact: true }) });
 	await expect(row).toContainText("Active");
+});
+
+function qgisUpload(includeSources: boolean) {
+	const project = `<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+		<qgis><title>Fall Creek</title><projectlayers>${LAYERS.map(
+			({ layer }) =>
+				`<maplayer type="vector"><layername>${layer}</layername><provider>ogr</provider><datasource>${layer}.geojson</datasource></maplayer>`
+		).join("")}</projectlayers></qgis>`;
+	return {
+		name: "fall-creek.qgz",
+		mimeType: "application/zip",
+		buffer: Buffer.from(
+			zipSync({
+				"fall-creek.qgs": strToU8(project),
+				...(includeSources
+					? Object.fromEntries(LAYERS.map(({ layer, file }) => [`${layer}.geojson`, readFileSync(file)]))
+					: {})
+			})
+		)
+	};
+}
+
+test("a self-contained QGIS project becomes the site's current map without separate GeoJSON files", async ({
+	page
+}) => {
+	test.setTimeout(120_000);
+	const site = SEED.sites.fallCreek;
+	const before = await listPackages(site);
+	const next = Math.max(0, ...before.map(item => item.version)) + 1;
+	await page.goto(projectPath(`sites/${site}/packages?step=upload`));
+	await page.getByLabel("QGIS project and source files", { exact: true }).setInputFiles(qgisUpload(true));
+	await page.getByRole("button", { name: "Read project", exact: true }).click();
+	await expect(page.getByText("3 layers read. Nothing saved yet.", { exact: true })).toBeVisible({ timeout: 60_000 });
+	await expect.poll(() => currentPackageVersion(site)).toBe(next - 1);
+	await page.getByRole("button", { name: "Upload package", exact: true }).click();
+	await expect.poll(() => currentPackageVersion(site), { timeout: 60_000 }).toBe(next);
+	await expect(page.getByText("3 layers read. Nothing saved yet.", { exact: true })).not.toBeVisible();
+	await page.goto(projectPath(`sites/${site}`));
+	await expect(
+		page
+			.getByRole("main")
+			.getByText(new RegExp(`\\bv${next}\\b`))
+			.filter({ visible: true })
+			.first()
+	).toBeVisible();
+});
+
+test("a project with missing sources names them and accepts optional GeoJSON exports", async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.goto(projectPath(`sites/${SEED.sites.fallCreek}/packages?step=upload`));
+	await page.getByLabel("QGIS project and source files", { exact: true }).setInputFiles(qgisUpload(false));
+	await page.getByRole("button", { name: "Read project", exact: true }).click();
+	await expect(page.getByText(/Include ground.geojson with this project/)).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole("button", { name: "Upload package", exact: true })).toBeDisabled();
+	await page
+		.getByLabel("Choose files from the QGIS export", { exact: true })
+		.setInputFiles(LAYERS.map(item => item.file));
+	await expect(page.getByRole("button", { name: "Upload package", exact: true })).toBeEnabled();
 });

@@ -6,12 +6,37 @@ from zipfile import ZipFile
 import pytest
 from fastapi.testclient import TestClient
 
+from fieldmaps_api.domain.project_import import ProjectImportResult
 from fieldmaps_api.schemas import PackageDetail
 from tests.signing import MANAGER, Signer
+from tests.test_project_import import document, request
 
 pytestmark = pytest.mark.integration
 
 Json = dict[str, object]
+
+
+def test_manager_can_preview_a_project_without_saving_a_package(
+    api_client: TestClient,
+    signer: Signer,
+) -> None:
+    client = as_manager(api_client, signer)
+    base = "/v1/projects/10000000-0000-4000-8000-000000000002/packages"
+    before = client.get(base).content
+    response = client.post(
+        f"{base}/import", json=request({"site.qgs": document()}).model_dump(mode="json")
+    )
+    assert response.status_code == 200, response.text
+    assert len(ProjectImportResult.model_validate_json(response.content).issues) == 2
+    assert client.get(base).content == before
+
+
+def test_observer_cannot_convert_a_project(api_client: TestClient) -> None:
+    response = api_client.post(
+        "/v1/projects/10000000-0000-4000-8000-000000000002/packages/import",
+        json=request({"site.qgs": document()}).model_dump(mode="json"),
+    )
+    assert response.status_code == 403
 
 
 def polygon(west: float, south: float, east: float, north: float, **properties: object) -> Json:

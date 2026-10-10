@@ -26,7 +26,7 @@ def body_limit(method: str, path: str) -> int:
     if method == "POST":
         if path == "/v1/sync/upload":
             return 4 * MIB
-        if re.fullmatch(r"/v1/projects/[^/]+/packages", path):
+        if re.fullmatch(r"/v1/projects/[^/]+/packages(/import)?", path):
             return 24 * MIB
     # A form definition with many questions, options and protocol notes outgrows the default.
     if method in {"POST", "PUT"} and re.fullmatch(

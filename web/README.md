@@ -37,6 +37,14 @@ The route tree is in [`PLAN.md`](PLAN.md#target-route-tree). Old paths (`/overvi
 
 Filters and the selected record live in the URL, so a filtered view can be sent to a colleague, opened in a second tab, and undone with the back button. A link replaces saved named views.
 
+## Import a QGIS project for a site
+
+Open **Sites → the site → Upload a new version**. Choose a `.qgz` or `.qgs` project and click **Read project**. If its vector data is external, select its GeoPackage or every shapefile part too, or upload a ZIP containing the project folder. A `.qgz` alone works only when it contains the source datasets; a saved project normally refers to files on the author's computer.
+
+The API converts uploaded GeoPackage, shapefile and GeoJSON layers to EPSG:4326. Review the ground and zones slots and assign any unmatched layer names before **Upload package** saves an immutable version for that site and published form. Reading the project does not save a package. Optional GeoJSON files replace matching converted layers; existing GeoJSON-only uploads remain available. A single ground polygon without `kind` becomes the site boundary; multiple polygons still require exactly one feature with `kind = site`. Zones need valid identifiers and labels.
+
+Import accepts at most 64 selected files totalling 16 MB, with bounded ZIP expansion. Missing or ambiguous sources are named rather than read from the host. Remote sources, raster imagery, QGIS styling and filtered-layer conversion are not supported; include a GeoJSON export of a filtered layer. The original project metadata remains attached for the existing source and imagery checks. This flow requires deploying the matching API and web changes together.
+
 ## Design rules this application keeps
 
 - **Day by default, Dusk by choice.** Every screen works in both. Map canvases keep their own palette (Day, Night) from [`contracts/map-palettes.json`](../contracts/map-palettes.json), the one the collector uses, so a manager sees the plan the observer saw.

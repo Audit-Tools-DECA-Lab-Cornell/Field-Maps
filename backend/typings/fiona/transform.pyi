@@ -1,0 +1,3 @@
+from .model import Geometry
+
+def transform_geom(src_crs: str, dst_crs: str, geom: Geometry) -> Geometry: ...

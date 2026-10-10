@@ -15,7 +15,7 @@ import { StateBadge } from "@/components/contour/StateBadge";
 import { MapFrame } from "@/components/map/MapFrame";
 import { preparePackage } from "@/lib/api/browser";
 import { apiRequestError, wasRefused } from "@/lib/api/errors";
-import type { PackageDetail, PackageSubmission } from "@/lib/api/types";
+import type { PackageDetail, PackageSubmission, ProjectImportResult } from "@/lib/api/types";
 import { cx } from "@/lib/cx";
 import { formatBytes, plural } from "@/lib/labels";
 import {
@@ -43,15 +43,9 @@ import { packageUploaded } from "./actions";
 import { CheckBadge } from "./CheckBadge";
 import { CHECK_STEP } from "./checks";
 import type { PublishedVersion } from "./forms";
+import { importedFiles, importedProject, normalizeImportedLayer } from "./project-import";
+import { ProjectImport } from "./ProjectImport";
 import { previewPlan } from "./upload-preview";
-
-/**
- * The Upload step: a manager chooses the layers QGIS exported (ground, zones, and optionally paths, trees
- * and the .qgz project), picks the published form version the map is for, and uploads. The files are read
- * in this browser as soon as they are chosen, matched to their slot by name, drawn on a plan and checked;
- * the upload goes from this browser to FieldMaps signed in as the manager (`preparePackage`), FieldMaps
- * runs its own checks, and the result is shown here while the history refreshes.
- */
 
 const ACCEPT = ".json,.geojson,application/json,application/geo+json,.qgz,.qgs";
 
@@ -171,7 +165,11 @@ export function UploadStep({
 	const [projectSlot, setProjectSlot] = useState<ProjectSlotState>({ kind: "empty" });
 	const [unassigned, setUnassigned] = useState<readonly UnassignedFile[]>([]);
 	const [dragging, setDragging] = useState(false);
-	const [busy, setBusy] = useState(false);
+	const [uploading, setBusy] = useState(false);
+	const [importing, setImporting] = useState(false);
+	const [importReset, setImportReset] = useState(0);
+	const busy = uploading || importing;
+	const convertedFiles = useRef(new WeakSet<File>());
 	const [error, setError] = useState<string | null>(null);
 	const [uncertain, setUncertain] = useState(false);
 	const [formVersionProblem, setFormVersionProblem] = useState<string | null>(null);
@@ -183,7 +181,8 @@ export function UploadStep({
 	async function assignLayer(name: LayerName, file: File) {
 		setSlots(current => ({ ...current, [name]: { kind: "reading", file } }));
 		try {
-			const collection = await readLayer(file);
+			const read = await readLayer(file);
+			const collection = convertedFiles.current.has(file) ? normalizeImportedLayer(name, read) : read;
 			setSlots(current => ({
 				...current,
 				[name]: { kind: "ready", file, collection, analysis: analyzeLayer(collection) }
@@ -194,12 +193,44 @@ export function UploadStep({
 		}
 	}
 
+	async function acceptImport(imported: ProjectImportResult, originals: readonly File[]) {
+		const nextSlots = { ...slots };
+		for (const name of LAYER_NAMES) {
+			const slot = nextSlots[name];
+			if (slot.kind !== "empty" && convertedFiles.current.has(slot.file)) nextSlots[name] = { kind: "empty" };
+		}
+		const parked = unassigned.filter(entry => !convertedFiles.current.has(entry.file));
+		for (const file of importedFiles(imported, originals)) {
+			const converted = !originals.includes(file);
+			if (converted) convertedFiles.current.add(file);
+			const name = matchSlot(file.name);
+			if (name && name !== "project" && (nextSlots[name].kind === "empty" || !converted)) {
+				const read = await readLayer(file);
+				const collection = converted ? normalizeImportedLayer(name, read) : read;
+				nextSlots[name] = { kind: "ready", file, collection, analysis: analyzeLayer(collection) };
+			} else {
+				nextId.current += 1;
+				parked.push({ id: `file-${nextId.current}`, file, guess: name });
+			}
+		}
+		setSlots(nextSlots);
+		setUnassigned(parked);
+		setProjectSlot({ kind: "ready", file: importedProject(imported) });
+		setResult(null);
+		setError(null);
+	}
+
 	/** A whole drop or selection at once: files whose name matches a free slot go there; the rest wait. */
 	function ingestFiles(incoming: File[]) {
 		if (incoming.length === 0 || busy) return;
 		setResult(null);
 		setError(null);
-		const claimedLayers = new Set<LayerName>(LAYER_NAMES.filter(name => slots[name].kind !== "empty"));
+		const claimedLayers = new Set<LayerName>(
+			LAYER_NAMES.filter(name => {
+				const slot = slots[name];
+				return slot.kind !== "empty" && !convertedFiles.current.has(slot.file);
+			})
+		);
 		let claimedProject = projectSlot.kind !== "empty";
 		const parked: UnassignedFile[] = [];
 		for (const file of incoming) {
@@ -240,15 +271,17 @@ export function UploadStep({
 	const blocked = clientChecks.some(check => check.state === "blocked");
 	const ready = canUpload(slots, clientChecks) && formVersion !== "";
 
-	const reason = ready
-		? null
-		: missing.length > 0
-			? `The button turns on when ${missing.map(name => SLOT_LABELS[name].toLowerCase()).join(" and ")} ${missing.length === 1 ? "is" : "are"} chosen.`
-			: reading
-				? "The button turns on when your files have been read."
-				: blocked
-					? "A check below blocks this package. Fix the export in QGIS and choose the file again."
-					: "Choose a form version.";
+	const reason = importing
+		? "Wait for the project to finish reading."
+		: ready
+			? null
+			: missing.length > 0
+				? `The button turns on when ${missing.map(name => SLOT_LABELS[name].toLowerCase()).join(" and ")} ${missing.length === 1 ? "is" : "are"} chosen.`
+				: reading
+					? "The button turns on when your files have been read."
+					: blocked
+						? "A check below blocks this package. Fix the export in QGIS and choose the file again."
+						: "Choose a form version.";
 
 	async function send() {
 		setBusy(true);
@@ -269,6 +302,7 @@ export function UploadStep({
 			setSlots(EMPTY_SLOTS);
 			setProjectSlot({ kind: "empty" });
 			setUnassigned([]);
+			setImportReset(current => current + 1);
 			// Everything that shows this site's current package refreshes, then this page does.
 			await packageUploaded({ org, project }).catch(() => undefined);
 			router.refresh();
@@ -290,6 +324,15 @@ export function UploadStep({
 	return (
 		<div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
 			<Island flush divided title="Upload from QGIS" meta="Ground and zones are required">
+				<IslandSection className="pt-5">
+					<ProjectImport
+						key={importReset}
+						projectId={projectId}
+						disabled={uploading}
+						onImported={acceptImport}
+						onBusy={setImporting}
+					/>
+				</IslandSection>
 				<IslandSection className="pt-5">
 					<Field
 						label="Form version"
@@ -323,12 +366,10 @@ export function UploadStep({
 							<span className="grid size-12 place-items-center rounded-pill bg-well text-ink">
 								<Icon name="upload" size={22} />
 							</span>
-							<p className="type-body font-semibold text-ink">
-								Drop the QGIS export here, or choose files
-							</p>
+							<p className="type-body font-semibold text-ink">Add or replace layers with GeoJSON</p>
 							<p className="max-w-md type-small text-ink-2">
-								Ground, zones, paths and trees as .geojson files, and the .qgz project if you have it.
-								Files are matched to their slot by name.
+								Optional after reading a project. You can also upload ground and zones directly, with
+								paths and trees if needed. Files are matched to their slot by name.
 							</p>
 							<FilePick
 								id={`${fieldId}-files`}
@@ -485,7 +526,7 @@ export function UploadStep({
 						<Button
 							variant="primary"
 							icon="upload"
-							busy={busy}
+							busy={uploading}
 							busyLabel="Uploading…"
 							disabled={reason !== null}
 							disabledReason={reason ?? undefined}
@@ -523,7 +564,7 @@ export function UploadStep({
 							subtitle="Read in this browser, not uploaded yet"
 						/>
 						<p className="type-small text-ink-2">
-							A plan drawn from the files you chose. Nothing is sent until you upload.
+							A plan drawn from the chosen layers. The site changes only when you upload the package.
 						</p>
 					</section>
 				)}

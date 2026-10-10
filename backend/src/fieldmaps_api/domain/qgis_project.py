@@ -28,11 +28,11 @@ class ProjectFileError(ValueError):
     """A project file that cannot be read, with a reason worth showing the manager."""
 
 
-#: A QGIS project never carries a document type definition, and both ways an uploaded XML
-#: document attacks the machine reading it — an entity that expands into gigabytes, and one that
-#: resolves to a file on the server — need one. Refusing the declaration closes both, without
-#: depending on parser internals that differ between CPython's Python and C implementations.
+# Strip QGIS's standard inert header; reject every other declaration before XML parsing.
 _DECLARATION: Final = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)", re.IGNORECASE)
+_QGIS_DOCTYPE: Final = re.compile(
+    r"<!DOCTYPE\s+qgis\s+PUBLIC\s+(['\"])http://mrcc\.com/qgis\.dtd\1\s+(['\"])SYSTEM\2\s*>",
+)
 
 REFUSAL: Final = "The project file declares XML entities, which FieldMaps does not read"
 
@@ -73,6 +73,7 @@ def _decode(payload: bytes) -> str:
 
 
 def parse(document: str) -> ElementTree.Element:
+    document = _QGIS_DOCTYPE.sub("", document)
     if _DECLARATION.search(document):
         raise ProjectFileError(REFUSAL)
     try:

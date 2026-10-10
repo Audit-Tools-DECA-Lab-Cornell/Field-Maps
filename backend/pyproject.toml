@@ -13,6 +13,7 @@ dependencies = [
   "uvicorn>=0.34,<1",
   "sentry-sdk>=2,<3",
   "httpx2[http2,brotli,zstd]>=2",
+  "fiona>=1.10,<2",
 ]
 
 [dependency-groups]

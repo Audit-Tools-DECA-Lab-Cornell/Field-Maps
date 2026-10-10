@@ -7,7 +7,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 
 import { ApiError, apiRequestError, parseApiError } from "./errors";
 import type { paths } from "./schema";
-import type { PackageDetail, PackageSubmission } from "./types";
+import type { PackageDetail, PackageSubmission, ProjectImportRequest, ProjectImportResult } from "./types";
 
 /**
  * Requests the browser sends to the API itself, as the signed-in person: map package uploads (up to
@@ -72,6 +72,23 @@ export async function preparePackage(projectId: string, submission: PackageSubmi
 	try {
 		const api = browserApi(TRANSFER_TIMEOUT_MS);
 		const { data, error, response } = await api.POST("/v1/projects/{project_id}/packages", {
+			params: { path: { project_id: projectId } },
+			body: submission
+		});
+		if (!response.ok || !data) throw parseApiError(response.status, error, response.headers);
+		return data;
+	} catch (error) {
+		throw apiRequestError(error);
+	}
+}
+
+export async function importQgisProject(
+	projectId: string,
+	submission: ProjectImportRequest
+): Promise<ProjectImportResult> {
+	try {
+		const api = browserApi(TRANSFER_TIMEOUT_MS);
+		const { data, error, response } = await api.POST("/v1/projects/{project_id}/packages/import", {
 			params: { path: { project_id: projectId } },
 			body: submission
 		});
