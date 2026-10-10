@@ -106,3 +106,11 @@ Do:
 4. Confirm the alerts (OPS-12) fire on a test.
 
 Done when: each item is checked, with its date.
+
+### QA-07: Verify the complete zone-boundary feature
+Status: todo · Phase 4 · Size L · Depends: BE-20, MOB-29, WEB-28, WEB-29, GIS-09 · Blocks: none
+Owner: Integration lead and reviewers.
+Read first: [Master plan](zone-boundaries/README.md) and [component specification](zone-boundaries/verification.md).
+Do: Run geometry/security/migration/concurrency/offline/readback matrix with two managers, old queue, physical device and more than 500 rows.
+Done when: Actual evidence supports historical binding and data survival; unresolved browser/device/security/migration checks block completion.
+Verify: Component checks plus live local HTTP/browser/device/GIS story; spec review then quality review.

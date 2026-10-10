@@ -1,0 +1,57 @@
+# Backend plan: zone drafts, publication and bound observations
+
+[Master plan](../docs/plan/zone-boundaries/README.md) · [Canonical contract](../docs/plan/zone-boundaries/contract.md) · Tasks BE-18, BE-19 and BE-20 in [PLAN.md](PLAN.md).
+
+## Existing integration points
+
+Read `src/fieldmaps_api/{schemas,site_schemas,errors,body_limits}.py`, routers/services/repositories/queries for `sites` and `collection`, and `domain/{packages,geojson,project_import}.py`. Preserve thin routers, services owning domain decisions, repositories owning SQL and request-local authenticated transactions. Keep existing API error envelope and receipt-after-commit behavior.
+
+The current observation hash is `sha256(payload.model_dump_json(exclude_unset=True))`; do not change its field order/default handling or rewrite historical data. The current list is an array capped at 500. The importer converts vector sources but does not save packages. Existing package creation immediately exposes highest ready version; managed-site finalization must replace that implicit behavior.
+
+## BE-18: authoring and publication
+
+Create focused zone request/response schemas and a zone service/repository module rather than enlarging collection code with editor state. Expose draft create/list/get/replace/validate/discard/publish and historical zones exactly as CON-05 freezes. Every read/write checks project/site and role before expensive geometry work. Draft mutation preconditions are database compare-and-swap; reading a revision then writing without a condition is insufficient.
+
+Build one canonical geometry validation path backed by PostGIS. Python validates input structure and resource limits; PostGIS evaluates geometry validity/topology/coverage. Return precise safe issues by zone UUID and geometry path. Offline/browser preview validators provide immediate help but are never authoritative. Do not add Shapely solely to duplicate PostGIS unless a measured offline preprocessing requirement justifies it and parity tests exist.
+
+Reuse package archive generation for format 2, preserving ground, paths, trees and frozen forms. Use normalized accepted polygons to generate both archive layer and DB snapshot inputs. Put stable UUID, legacy code, label, anchor and geometry-contract version in the manifest/layer. Test archive polygons equal database snapshots geometrically and hashes/ETags match their documented content. Preserve byte-identical generation for unchanged legacy format-1 submissions; add a new format path rather than silently changing old archive identity.
+
+The DB finalization service serializes site publications. No archive conversion or long compression should hold a row lock unnecessarily: prepare from a frozen draft revision, then check that revision and expected current pointer again inside the final transaction. If state changed, discard unpublished prepared bytes and return conflict. No pending files become downloadable as a successful package. Current transactional bytea archive is sufficient within existing limits; external object-store orchestration is not part of this feature.
+
+Extend legacy package submission only where a managed site requires explicit expected-current/idempotency/identity mapping. All ways to create a format-2/current package, including QGIS import follow-up and rollback, call the same finalization routine. Ensure an old manager client cannot bypass the editor and implicitly activate a different current version. Maintain unmanaged legacy package behavior until explicit adoption.
+
+Implement the contract's v2 site list for updated clients and freeze a v1-compatible site selection for managed sites. Old clients must not consume format-2 packages via max(version) while stripping their metadata. Return matching package/zone summaries together; test both client generations before enabling publication. This changes package discovery, not late-upload authorization.
+
+Endpoint-specific body limits must admit draft geometry while protecting memory/CPU. Add safe limits for concurrent validation and timeout behavior; 429/503 leave draft content intact. Rate-limit publication appropriately with existing mechanism, documenting that per-process limits are not distributed. Do not log full geometries or research answers. Expose request ID, operation, result code, duration and safe counts for diagnosing failures.
+
+## BE-19: bound uploads and compatibility
+
+Implement a strict nested-answer v2 schema and separate route. Both v1 and v2 call shared answer validation and receipt storage, but use protocol-specific normalization/fingerprint logic. Persist protocol and exact package-zone binding with each new v2 row. Reject ambiguous schemas instead of treating envelope metadata as form answers.
+
+V2 processing: check current access; recognize an exact idempotent replay; resolve immutable package/site/zone/form; validate point coverage or inventory semantics; derive compatibility code/anchor; commit insert; emit receipt with binding. Historical published package remains valid even when superseded. Retirement of a form must not invalidate previously bound offline work; deletion/revocation policies still govern authorization.
+
+Validate Standard/Reliability versus Inventory without assuming a particular form code prefix. Published package explicitly binds form codes/IDs for each role. Current inventory selection happens at download from available forms; format 2 must pin it so a future form publication cannot change a resumed package's inventory questions.
+
+Do not add new metadata to old v1 responses if consumers are strict without testing them; prefer v2 read endpoints for bound metadata. Old v1 requests keep omitted/default fields and hash semantics. Existing UUID with incompatible payload/protocol returns conflict. New v2 record failing against an old server stays queued/needs attention according to capabilities; mobile never silently drops provenance and resubmits it as v1.
+
+Acceptance includes a v1 request accepted before deploy, response lost, identical replay after deploy; an old never-uploaded v1 record after site adoption; and a v2 record captured from v7, uploaded after v8 and form retirement. None may change its UUID, answers or capture context.
+
+## BE-20: reads, zone filters and complete exports
+
+Add v2 paginated list/detail, summary and export with a single reusable authorized SQL filter definition. Add historical zone fields and `spatial_support`; no current-zone-name join for old rows. Reserve static `/summary` and `/export` routes before the UUID route. Preserve the v1 list's array response and limits for old callers.
+
+Filter before LIMIT and before aggregation. Support stable zone UUID across versions, exact package+zone, explicit legacy code scoped to site, legacy/unversioned basis, round type, observer and UTC date bounds. Validate incompatible filters rather than quietly ignoring them. Make date boundaries half-open; web translates project-local day boundaries to UTC, including DST. Filter labels must distinguish same code on two sites.
+
+Use correct mixed-direction keyset pagination; bind cursor to filters and project without putting confidential payloads into URLs. Count and rows should share a database snapshot within one response. Interactive pages may see new uploads; full export must use a consistent statement/snapshot, obey cancellation, release DB resources, and fail clearly on measured size/time limits. Count/summary includes zero matching records correctly and never counts invisible records under RLS.
+
+Exports add `package_id`, `map_version`, `zone_id`, `zone_code`, `zone_label_at_capture`, `assignment_basis`, `spatial_support`. Legacy code is preserved with unknown version/label, not recast. Preserve form-version codebook behavior and prevent CSV formula injection. GeoJSON event inventories have null geometry plus zone reference; a separate authorized historical-zone layer provides polygons. Do not mix polygon inventory features into the existing point layer without an explicit geometry-type contract.
+
+No viewport query, heatmap, general full-text search engine or asynchronous export job is required. If the map shows one loaded page, the client must label it; exact totals come from summary. Set a tested synchronous export ceiling and give an actionable narrowing error above it rather than introducing an unplanned job platform.
+
+## Validation and release
+
+Add shared-case tests in Python for structure/geometry outcomes, real local PostGIS tests for spatial semantics/RLS, API concurrency tests using two authenticated managers and lost-response replay tests. Check missing/stale preconditions, oversized streamed bodies without Content-Length, cancellation, bounded complexity and safe errors. Keep existing form parity/import/upload tests passing.
+
+Run `pnpm backend:check`, targeted backend tests, then `pnpm backend:test` and `pnpm db:test` when required local infrastructure is available. Coordinator runs `pnpm contracts:generate`; both clients compile and runtime-parse examples. A live local HTTP driver must exercise create → edit → validate → publish → historical upload → filtered read/export. Mocked service tests alone do not establish completion.
+
+Backend schema and capability must ship before clients enable v2. Publication remains gated until client retention and historical display are accepted. Do not remove v2 support on operational rollback once a device can hold unsent v2 records. Explicit approval is required for hosted migrations/deployments. No claim of a device or production test follows from local API checks.

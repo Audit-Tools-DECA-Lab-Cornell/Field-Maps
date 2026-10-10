@@ -608,3 +608,19 @@ Do:
 Done when: no hex literal remains outside `src/ui/tokens.ts`; all tests pass.
 
 Verify: `pnpm --dir mobile typecheck && pnpm --dir mobile lint && pnpm --dir mobile test`, `pnpm tokens:check`, `EXPO_NO_DOTENV=1 npx expo export --platform ios` and `--platform android` from `mobile/`, plus the simulator checklist in the PR (airplane mode shows the offline states, haptics only when the switch is on, the gallery in both themes).
+
+### MOB-28: Retain exact offline package versions safely
+Status: todo · Phase 3 · Size L · Depends: CON-05 · Blocks: MOB-29
+Owner: Mobile data agent.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Migrate local context/protocol, add catalog/reference retention and atomic verified installation, fence async account work and remove bound-draft zone fallback.
+Done when: Upgrade with unsent v1 rows preserves all payloads/receipts; restart/download/removal cannot lose referenced maps.
+Verify: pnpm mobile:check, mobile:test and real SQLite/filesystem restart/failure drivers.
+
+### MOB-29: Collect and upload pinned zone observations
+Status: todo · Phase 3 · Size L · Depends: MOB-28, BE-19 · Blocks: QA-07
+Owner: Mobile data agent with Claude UI owner.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Freeze session forms/package/zone, apply geometry parity and v2 upload/receipt validation; coordinate update/recovery screens.
+Done when: Physical-device draft survives newer publication and restart, uploads with original attribution; inventory is whole-zone.
+Verify: Mobile checks/tests and physical-device acceptance matrix; missing evidence remains pending.

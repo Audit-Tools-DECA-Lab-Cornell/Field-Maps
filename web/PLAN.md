@@ -485,3 +485,19 @@ Done when: no page under `/o` reads a fixture, and no code imports `@/fixtures`,
 Verify: `pnpm --dir web check`, `format:check`, `build`, `test:unit`, `test:auth`, `test:api-errors` and `test:account`; from the root `pnpm tokens:check`, `pnpm forms:parity`, `pnpm plan:check`, `pnpm mobile:check` and `pnpm mobile:test`; a grep showing no `@/fixtures`, `/o/deca` or `onboarding` in `web/src`; and `sh scripts/e2e-local.sh` on the local stack (its header lists the options; the seed is `database/seed-web-workspace.mjs`, and nothing targets hosted services).
 
 Verified 2026-10-09 (Node 22.22.0, pnpm 10.17.1): `test:unit` 229 of 229, `test:auth` 34 of 34, `test:api-errors` 31 of 31, `test:account` 12 of 12, `pnpm forms:parity` and `pnpm tokens:check`. The full local-stack Playwright run is not recorded here.
+
+### WEB-28: Build a real manager zone editor
+Status: todo · Phase 3 · Size L · Depends: BE-18 · Blocks: QA-07
+Owner: Claude web owner.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: First plan detailed UI and drawing suitability, then wire server-backed drafts/validation/publication with conflicts and accessibility.
+Done when: Real API browser flow and two-manager conflict pass; no fake saves or complex-geometry loss.
+Verify: Web checks/unit tests and local browser role/network/keyboard/touch cases; split if over five days.
+
+### WEB-29: Display and filter historical zone versions
+Status: todo · Phase 3 · Size L · Depends: BE-20 · Blocks: QA-07
+Owner: Claude web owner.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Plan and wire historical labels/version, scoped filters, v2 pagination/summary/export and inventory/legacy states.
+Done when: Map/table/export agree beyond 500 without reclassification against current boundaries.
+Verify: Web checks/unit tests and real browser history/filter/export scenarios.

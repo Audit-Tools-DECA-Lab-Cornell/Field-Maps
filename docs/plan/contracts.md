@@ -232,7 +232,7 @@ Server parity is BE-10's job, against the same case files. This task is finished
 Verify: `pnpm --dir mobile test`, then `git status contracts/` shows no drift after re-running the script.
 
 ### CON-03: Generate OpenAPI types for web and mobile
-Status: done (2026-10-03) · Phase 0 · Size S · Depends: BE-04, CON-01 · Blocks: CON-04, MOB-04, WEB-05
+Status: done (2026-10-03) · Phase 0 · Size S · Depends: BE-04, CON-01 · Blocks: CON-04, CON-05, MOB-04, WEB-05
 Verified: both apps typecheck with generated types; two complete generation runs produced identical SHA-256 values for all three artifacts. A CI job regenerates them and rejects drift. Files are ready for the next authorized commit.
 Read first: `web/src/lib/packages.ts`, `mobile/src/sync/contracts.ts`, `backend/Makefile` (or the root `Makefile`).
 Do:
@@ -264,3 +264,11 @@ Done when:
 - every code in the list has copy.
 
 Verify: unit tests in both apps for three codes each.
+
+### CON-05: Freeze zone contracts and shared cases
+Status: todo · Phase 3 · Size M · Depends: CON-03 · Blocks: DB-15, MOB-28
+Owner: Contract coordinator.
+Read first: [Master plan](zone-boundaries/README.md) and [component specification](zone-boundaries/contract.md).
+Do: Freeze identity/geometry rules, draft preconditions, v2 payloads/reads/errors, capabilities, legacy fingerprints and input limits; author independent geometry/publication/upload cases.
+Done when: All owners can implement without guessing; examples cover points, inventory, old v1 and conflicts.
+Verify: Review cases and source paths; pnpm plan:check. OpenAPI remains backend-generated.

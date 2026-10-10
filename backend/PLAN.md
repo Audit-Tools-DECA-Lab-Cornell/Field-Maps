@@ -332,6 +332,7 @@ Done when the tests cover:
 
 ### BE-13: Sites, zones and packages in Storage
 Status: doing (step 1 in place 2026-10-07; Storage remains) · Phase 2 · Size L · Depends: DB-12 · Blocks: DB-14, GIS-07, MOB-14, OPS-15, WEB-08
+Zone-feature integration (2026-10-10 proposal): BE-18 owns managed-site geometry publication, historical zone reads and serialized version allocation under [ZONE-BOUNDARIES.md](ZONE-BOUNDARIES.md). Those rules supersede the mutable-zone/current-pointer and retry-max-version steps below for managed sites. Storage migration must retain/rehome every referenced historical archive; do not return 410 for a package needed by a draft or observation merely because it predates Storage.
 Done so far: `GET/POST /v1/projects/{p}/sites` and `GET/PATCH …/sites/{code}`. A site reports its newest ready package, that package's zones, extent and centre (from the manifest, still bounding boxes) and its observation count, which replaces the planned `…/zones` route until step 2 stores real polygons. A package can only be prepared with a published form version (422 on `form_version` otherwise).
 Needs user: a Storage S3 access key (Project Settings → Storage), provided as a runtime Secret File. It is never committed.
 Read first: `domain/packages.py` (`469-478` bounding-box zones; `31` the empty allow-list); `services/sites.py` and `repositories/sites.py` (`prepare_package`, `read_package_archive`); DB-12.
@@ -360,6 +361,7 @@ Done when:
 
 ### BE-14: Analysis: observation list, summary, exports
 Status: doing (a first list 2026-10-07; cursor, summary and exports remain) · Phase 3 · Size L · Depends: BE-10, DB-10 · Blocks: WEB-10, WEB-11, WEB-12
+Zone-feature integration (2026-10-10 proposal): BE-20 owns the version-safe paginated v2 list/summary/export subset. Preserve the shipped v1 array response and reuse BE-20's filter definitions instead of implementing competing semantics. Remaining broader analysis, viewport and other unimplemented filters stay here; see [ZONE-BOUNDARIES.md](ZONE-BOUNDARIES.md).
 Done so far: `GET /v1/projects/{p}/observations` filtered by `site`, `round_type` and `since` (received), newest first, `limit` at most 500, each row with its site, form version, zone and round context. No cursor yet.
 Do:
 1. `GET /v1/projects/{p}/observations`:
@@ -394,3 +396,27 @@ Verified by:
 - the 19 local SQL assertions;
 - all 59 API tests, via `make -C database api-build api-test`;
 - Ruff and BasedPyright.
+
+### BE-18: Expose persisted zone drafts and publication
+Status: todo · Phase 3 · Size L · Depends: DB-16 · Blocks: BE-19, WEB-28
+Owner: API agent.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Implement draft lifecycle, conditional writes, geometry validation, publication, history/capabilities and format-2 archives; unify managed import activation.
+Done when: Live local HTTP workflow persists and publishes; conflicts/replays preserve current state; archive and DB shapes agree.
+Verify: pnpm backend:check and backend:test; contract coordinator regenerates OpenAPI/types.
+
+### BE-19: Bind new uploads to historical zone packages
+Status: todo · Phase 3 · Size L · Depends: BE-18 · Blocks: BE-20, GIS-09, MOB-29
+Owner: API agent.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Implement strict v2 upload, package/zone/form checks, point coverage, inventory semantics and bound receipts; preserve v1.
+Done when: v7 upload after v8 and old lost-receipt retry pass; cross-site and protocol conflicts fail safely.
+Verify: Backend checks and local API/SQL tests with old/new payloads.
+
+### BE-20: Add historical-zone queries and complete exports
+Status: todo · Phase 3 · Size L · Depends: BE-19 · Blocks: QA-07, WEB-29
+Owner: API read agent.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Implement v2 list/detail/cursor, common server filters, summary and consistent bounded exports.
+Done when: More than 500 matching records are queryable/exportable without hidden truncation; historical labels and inventory support remain correct.
+Verify: API tests for filters, cursor ties, RLS, dates, export limits and query plans.

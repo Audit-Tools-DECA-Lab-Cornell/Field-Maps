@@ -29,6 +29,8 @@ The full decision log, the running cost and the open questions are in [decisions
 
 ## File map
 
+**Current focused feature:** [Zone polygon boundaries](zone-boundaries/README.md), with linked database, API, mobile-data, web/GIS handoffs, contract, edge-case matrix and a Claude frontend-planning prompt. This is a proposed implementation plan, not shipped functionality. Finish its QA gate before taking on the next map feature. Status remains in the owning task files below.
+
 | File | Owns | Task IDs defined there |
 |---|---|---|
 | [docs/plan/README.md](README.md) | This index, conventions, phase board | none |
@@ -142,6 +144,10 @@ WEB-20 to WEB-26 and MOB-23 to MOB-27 build the Contour screens ahead of the wir
 - **Web:** WEB-08, WEB-09, WEB-10, WEB-11, WEB-12, WEB-13
 - **GIS:** GIS-01, GIS-02, GIS-03, GIS-04
 - **Operations:** OPS-16
+- **Zone contracts/data:** CON-05, DB-15, DB-16
+- **Zone API:** BE-18, BE-19, BE-20
+- **Zone clients:** MOB-28, MOB-29, WEB-28, WEB-29
+- **Zone GIS:** GIS-09
 
 ### Phase 4: Mobile UX and hardening (weeks 9–12)
 
@@ -152,6 +158,7 @@ WEB-20 to WEB-26 and MOB-23 to MOB-27 build the Contour screens ahead of the wir
 - **Data:** DB-13
 - **Operations:** OPS-09, OPS-10, OPS-11, OPS-12, OPS-17
 - **Verification:** QA-04
+- **Zone acceptance:** QA-07
 
 ### Phase 5: Pilot (week 13)
 

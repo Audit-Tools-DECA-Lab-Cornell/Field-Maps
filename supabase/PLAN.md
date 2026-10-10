@@ -564,6 +564,7 @@ Applying it to staging is OPS-15's job, and proving replication (including the i
 
 ### DB-12: Sites, zones, and packages in Storage
 Status: todo · Phase 2 · Size M · Depends: DB-01, DB-05 · Blocks: BE-13, DB-11, OPS-15, SYNC-02
+Zone-feature supersession (2026-10-10 proposal): DB-15/DB-16 and [ZONE-BOUNDARIES.md](ZONE-BOUNDARIES.md) own stable identities, immutable snapshots and managed-site current state. The old `zones` table/current-pointer steps below are historical design context, not instructions to create a second zone model. Remaining Storage work must integrate with that model when present and preserve all referenced historical archives; it is not a prerequisite for the zone feature. Do not expose a direct manager pointer update that bypasses publication.
 Do: add migration `spatial_storage`.
 1. **Add to `sites`:** `boundary geometry(MultiPolygon,4326) NULL`, `timezone text NULL`, `current_package_id uuid NULL`.
    - Add `UNIQUE (organization_id, project_id, site_id, id)` on `site_packages`.
@@ -631,3 +632,19 @@ Do: add migration `drop_package_archive`.
 3. In `database/hosted/verify.sql`, make **both** package inserts write `storage_path` and `archive_bytes` instead of `archive`: the manager's insert, and the observer's insert inside `assert_rejected`.
 
 Done when: the migration applies locally, and `verify.sql` passes locally. OPS-15 applies it to staging, together with DB-11.
+
+### DB-15: Add stable zones and immutable package snapshots
+Status: todo · Phase 3 · Size L · Depends: CON-05 · Blocks: DB-16
+Owner: Database agent.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Add forward schema, composite keys, RLS, indexes, drafts/publication state and adoption validation.
+Done when: Populated old-shape fixtures survive without resets; cross-tenant links and late snapshot mutations are denied.
+Verify: Local migration/isolation tests via pnpm db:test.
+
+### DB-16: Enforce atomic publication and observation binding
+Status: todo · Phase 3 · Size L · Depends: DB-15 · Blocks: BE-18, GIS-09
+Owner: Database agent.
+Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component specification](ZONE-BOUNDARIES.md).
+Do: Implement finalization, revision/idempotency, geometry rules and v2 observation constraints; prevent managed-site legacy bypass.
+Done when: Concurrency/replay/rollback/spatial checks pass under restricted role; old hashes/rows unchanged.
+Verify: pnpm db:test plus coordinated API concurrency cases.
