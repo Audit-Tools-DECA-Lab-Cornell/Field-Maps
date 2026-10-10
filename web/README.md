@@ -1,12 +1,12 @@
-# FieldMaps web
+# DECA Mark web
 
-The management side of FieldMaps: projects, sites, forms, map packages, the team, and the observations the [native collector](../mobile/README.md) uploads into the shared spatial database. Researchers read what came back here and take it into QGIS.
+The management side of DECA Mark: projects, sites, forms, map packages, the team, and the observations the [native collector](../mobile/README.md) uploads into the shared spatial database. Researchers read what came back here and take it into QGIS.
 
 This application and the collector are one product, so they carry one design system, **Contour**, described in [`DESIGN.md`](../DESIGN.md). Its values live in [`contracts/contour.json`](../contracts/contour.json). `pnpm tokens` generates [`src/styles/contour.css`](src/styles/contour.css) from that file, and the collector reads the same file in `mobile/src/ui/tokens.ts`, so a token changes in one place and the two applications cannot drift. Day is the default theme; Dusk is a preference in the account menu.
 
 ## What is real
 
-All of it (D30). Every page under `/o/<org>/p/<project>` reads and writes the FieldMaps API for the signed-in person: sites and map packages, forms and their versions, observations, the team, invitations, and project and organization settings. Sign-in, sign-up, verification and password recovery use Supabase through Server Actions (`src/lib/auth/actions.ts`). There is no sample workspace, no fixture data, no Preview data marker and no set-up flow.
+All of it (D30). Every page under `/o/<org>/p/<project>` reads and writes the DECA Mark API for the signed-in person: sites and map packages, forms and their versions, observations, the team, invitations, and project and organization settings. Sign-in, sign-up, verification and password recovery use Supabase through Server Actions (`src/lib/auth/actions.ts`). There is no sample workspace, no fixture data, no Preview data marker and no set-up flow.
 
 When a feature has no backend, the page says so once, with `components/shell/NotAvailable.tsx`: "X is not available yet.", then why, and what to do instead. Today that covers saved named views, the rounds plan, the zone editor (edit zones in QGIS), reviewing or excluding records, device readiness, live QGIS database access, deleting projects, organizations, sites or map packages, and resending invitations. A read that fails shows `LoadFailure` and never an empty list. The Honesty section of [`AGENTS.md`](AGENTS.md) holds the rules.
 
@@ -18,13 +18,13 @@ Organizations are created by the bootstrap script (`scripts/bootstrap-study.mjs`
 
 | Route | What it is |
 | --- | --- |
-| `/` | The home page: what FieldMaps is, Sign in, and how observers get the Android app |
+| `/` | The home page: what DECA Mark is, Sign in, and how observers get the Android app |
 | `/sign-in`, `/sign-up`, `/verify`, `/forgot-password`, `/reset-password` | Authentication with six-digit email codes |
 | `/invite`, `/join` | Join a project or organization with an invitation link or a code |
 | `/account` | Profile, password, sign out, delete account |
 | `/o` | Opens the person's last project, their only project, or their first organization |
 | `/o/[org]` | The organization's projects; Members and Settings for owners and admins |
-| `/o/[org]/collect` | Where observers land: they collect in the FieldMaps app |
+| `/o/[org]/collect` | Where observers land: they collect in the DECA Mark app |
 | `/o/[org]/p/[project]` | Overview: what the field returned, coverage by zone and round, and what needs attention |
 | `…/data`, `…/data/[observation]` | The newest 500 observations as a table and a plan, with filters and export; one record |
 | `…/sites`, `…/sites/[site]`, `…/sites/[site]/packages` | Sites, the plan of each, and its map packages: history, checks, upload from QGIS layers |
@@ -83,8 +83,8 @@ cp .env.example .env.local   # then edit if your API is not on 127.0.0.1:8000
 
 | Variable | Value |
 | --- | --- |
-| `FIELDMAPS_API_URL` | The API's origin, no trailing slash, read by the web server: `http://127.0.0.1:8000` locally, `https://field-maps.onrender.com` deployed |
-| `NEXT_PUBLIC_FIELDMAPS_API_URL` | The same origin, for the browser's package upload and download |
+| `DECAMARK_API_URL` | The API's origin, no trailing slash, read by the web server: `http://127.0.0.1:8000` locally, `https://field-maps.onrender.com` deployed |
+| `NEXT_PUBLIC_DECAMARK_API_URL` | The same origin, for the browser's package upload and download |
 | `NEXT_PUBLIC_ANDROID_APP_URL` | Optional. An https link to the Android build. When set, the home page and the collect page show it |
 
 `NEXT_PUBLIC_` variables are compiled into the browser bundle, so they are public by construction. Never put a token or key beside them. Next.js reads `.env.local` at build time, so restart `pnpm dev` after changing one; on Vercel, set it in **Project → Settings → Environment Variables** and redeploy, since a running deployment will not pick it up.
@@ -112,7 +112,7 @@ Set these process or deployment settings before starting the app:
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Auth origin, local `http://127.0.0.1:54321` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key (local legacy anon key also supported), never a service-role key |
-| `FIELDMAPS_API_URL` | Server-only API origin, normally local `http://127.0.0.1:8000` |
+| `DECAMARK_API_URL` | Server-only API origin, normally local `http://127.0.0.1:8000` |
 
 `/sign-up`, `/verify`, `/sign-in`, `/forgot-password`, and `/reset-password` use Server Actions and six-digit email codes. The local confirmation/recovery email templates must contain `{{ .Token }}`; read the codes in Mailpit at `http://127.0.0.1:54324`. Pending email addresses live in short-lived httpOnly cookies, never URLs. Resends enforce a 60-second cooldown in the action as well as the UI. Supabase remains the rate-limit authority. If a recovery code succeeds but the new password is rejected, retries reuse that verified recovery session. A short-lived httpOnly workflow marker must match the current Supabase-verified user, session ID and pending email; it is cleared when a new recovery starts, the password changes, or the user signs out.
 
@@ -122,9 +122,9 @@ The proxy refreshes cookies and protects `/o` and `/account`; server components 
 
 The service worker only caches the public landing page, icons, and static build assets. It never stores auth pages, account/tenant pages, API results, query strings, cross-origin requests, or RSC responses. The landing shell is network-first, with its current build cache used offline; static assets are cache-first. Installation and asset prewarming apply the same response checks, rejecting redirects, unsuccessful responses, and responses marked private or no-store.
 
-`src/lib/pwa/service-worker.js` is the worker source. `next.config.ts` renders the ignored `public/sw.js` during development startup and production builds, using a fresh UUID for each build. The public `FIELDMAPS_SERVICE_WORKER_BUILD_ID` process variable keeps that token stable across Next's build workers; it is an internal build value, not a deployment setting. Local builds use the same token as Next's build ID. With Vercel's deployment ID, Next ignores custom build IDs, so the worker retains its independently generated build token. Production startup preserves the generated file. `/sw.js` is served with revalidation headers, and activation removes older FieldMaps public caches and the legacy `fieldmaps-shell-v1` cache. The install manifest opens `/o`; `/robots.txt` permits only the exact landing URL and `/privacy*`.
+`src/lib/pwa/service-worker.js` is the worker source. `next.config.ts` renders the ignored `public/sw.js` during development startup and production builds, using a fresh UUID for each build. The public `DECAMARK_SERVICE_WORKER_BUILD_ID` process variable keeps that token stable across Next's build workers; it is an internal build value, not a deployment setting. Local builds use the same token as Next's build ID. With Vercel's deployment ID, Next ignores custom build IDs, so the worker retains its independently generated build token. Production startup preserves the generated file. `/sw.js` is served with revalidation headers, and activation removes older DECA Mark public caches and the legacy FieldMaps caches (`fieldmaps-shell-v1` and `fieldmaps-public-*`). The install manifest opens `/o`; `/robots.txt` permits only the exact landing URL and `/privacy*`.
 
-Run `pnpm test:auth` for redirect, response-validation and private-cache regressions, then `pnpm check` and `pnpm build`. With a dev server on port 3002 connected to the local Auth/API stack, run `FIELDMAPS_AUTH_LOCAL_TEST=1 pnpm test:auth:local` for real signup, verification, recovery and changed-password sign-in through Server Actions. This opt-in test creates a synthetic local account and reads its codes from local Mailpit; it never targets hosted services.
+Run `pnpm test:auth` for redirect, response-validation and private-cache regressions, then `pnpm check` and `pnpm build`. With a dev server on port 3002 connected to the local Auth/API stack, run `DECAMARK_AUTH_LOCAL_TEST=1 pnpm test:auth:local` for real signup, verification, recovery and changed-password sign-in through Server Actions. This opt-in test creates a synthetic local account and reads its codes from local Mailpit; it never targets hosted services.
 
 ## Technical shape
 
@@ -141,6 +141,6 @@ Run `pnpm test:auth` for redirect, response-validation and private-cache regress
 - **Collect observations.** The collector does that, on a device, offline. A browser form beside it would be a second way to enter the same record and a second thing to keep in step.
 - **Draw zones.** Zones come from the QGIS project a map package is prepared from; the upload carries the exported `zones` layer to the server, which derives the boxes. A second authority beside QGIS would drift from it, so the site page says editing zones on the web is not available yet.
 - **Review, exclude or delete records and projects.** Every uploaded observation is in the exports. Deleting projects, organizations, sites and map packages, and resending invitations, are not available yet; each says so where it would be.
-- **Send email.** FieldMaps does not email invitations. The link and the code are shown once for the person who invites to send.
+- **Send email.** DECA Mark does not email invitations. The link and the code are shown once for the person who invites to send.
 - **Deliver a package to a device.** The web app stores, versions and offers map packages for download. The collector downloads each site's current package itself (D27).
 - **Claim a sync path of its own.** QGIS reads the live database; exports are for analysis, backup and interoperability, and say so.

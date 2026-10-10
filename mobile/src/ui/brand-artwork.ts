@@ -1,5 +1,5 @@
 /**
- * The FieldMaps brand mark is the purple app icon: three zones of a site plan cut by a path, with the
+ * The DECA Mark brand mark is the purple app icon: three zones of a site plan cut by a path, with the
  * collector's own observation marker (dark halo, light ring, lavender dot) on the path. It is the icon
  * that installs on the phone, the one the store lists and the one the web shows (D29).
  *

@@ -52,12 +52,12 @@ class Settings(BaseModel):
         return self
 
 
-CONFIG_VARIABLE = "FIELDMAPS_CONFIG"
+CONFIG_VARIABLE = "DECAMARK_CONFIG"
 DEFAULT_CONFIG = Path("config.local.json")
 
 
 def configured_path() -> Path:
-    """Name the configuration file to read: FIELDMAPS_CONFIG, or the local development one."""
+    """Name the configuration file to read: DECAMARK_CONFIG, or the local development one."""
     named = os.environ.get(CONFIG_VARIABLE, "").strip()
     return Path(named) if named else DEFAULT_CONFIG
 

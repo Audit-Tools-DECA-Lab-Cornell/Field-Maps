@@ -4,9 +4,9 @@
  * Development builds only — the (dev) layout sends a release build back to the start. There is no
  * button for it in the app. Open it with the deep link:
  *
- *   npx uri-scheme open fieldmaps://gallery --ios      (or --android)
- *   xcrun simctl openurl booted fieldmaps://gallery
- *   adb shell am start -W -a android.intent.action.VIEW -d fieldmaps://gallery
+ *   npx uri-scheme open decamark://gallery --ios      (or --android)
+ *   xcrun simctl openurl booted decamark://gallery
+ *   adb shell am start -W -a android.intent.action.VIEW -d decamark://gallery
  *
  * The Day / Dusk switch at the top writes the observer's screen preference, so the choice stays
  * after the gallery closes. "Open the states screen" leads to (dev)/states, which switches the sign-in
@@ -835,7 +835,7 @@ function ChoiceSection() {
         <Checkbox label="Required when visible" checked={required} onCheckedChange={setRequired} />
         <Checkbox
           label="I have read the privacy information"
-          description="What FieldMaps stores, where, and for how long."
+          description="What DECA Mark stores, where, and for how long."
           checked={privacy}
           onCheckedChange={setPrivacy}
         />

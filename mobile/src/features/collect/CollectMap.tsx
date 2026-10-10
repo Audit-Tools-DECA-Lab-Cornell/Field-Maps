@@ -205,7 +205,7 @@ function locationLine(
         ? `You are here · ${accuracyLabel(fix)}`
         : `You are ${distanceLabel(distanceMetres(fix.coordinate, sitePackage.centre))}`;
     case "denied":
-      return "Location is off for FieldMaps. Tap the location button to open Settings.";
+      return "Location is off for DECA Mark. Tap the location button to open Settings.";
     case "services-off":
       return "Location services are off on this device.";
     case "unavailable":

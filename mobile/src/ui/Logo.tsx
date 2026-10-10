@@ -5,7 +5,7 @@ import { Text } from "./Text";
 import { type Theme, useStyles } from "./theme";
 
 export type LogoProps = {
-  /** Adds "FieldMaps" beside the mark (the header of a tab root). The mark alone sits opposite a back button. */
+  /** Adds "DECA Mark" beside the mark (the header of a tab root). The mark alone sits opposite a back button. */
   wordmark?: boolean | undefined;
   style?: StyleProp<ViewStyle>;
   testID?: string | undefined;
@@ -22,11 +22,11 @@ function logoStyles(t: Theme) {
 
 const CENTRE = ART.size / 2;
 /** Gradient and clip ids. Every mark draws the same artwork, so two marks sharing an id still match. */
-const GROUND = "fieldmaps-mark-ground";
-const ZONES = "fieldmaps-mark-zones";
+const GROUND = "decamark-mark-ground";
+const ZONES = "decamark-mark-zones";
 
 /**
- * The FieldMaps mark: the purple app icon, drawn from `brand-artwork.ts` as a rounded square, the shape
+ * The DECA Mark brand mark: the purple app icon, drawn from `brand-artwork.ts` as a rounded square, the shape
  * a launcher gives it. It is artwork, so it looks the same in Day and Dusk (D29).
  */
 function Mark({ label }: { label?: string | undefined }) {
@@ -97,13 +97,13 @@ export function Logo({ wordmark = false, style, testID }: LogoProps) {
   if (!wordmark)
     return (
       <View testID={testID} style={style}>
-        <Mark label="FieldMaps" />
+        <Mark label="DECA Mark" />
       </View>
     );
   return (
     <View testID={testID} style={[s.lockup, style]}>
       <Mark />
-      <Text variant="island">FieldMaps</Text>
+      <Text variant="island">DECA Mark</Text>
     </View>
   );
 }

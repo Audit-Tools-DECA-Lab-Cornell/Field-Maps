@@ -191,7 +191,7 @@ function base(
  * contrast on either one); day instead stays light so the drawing reads in daylight.
  */
 export function sampleSiteBase(palette: MapPalette): StyleSpecification {
-  return base(`FieldMaps ${palette.label.toLowerCase()} base`, {
+  return base(`DECA Mark ${palette.label.toLowerCase()} base`, {
     background: palette.background,
     site: palette.site,
     structure: palette.structure,
@@ -199,7 +199,7 @@ export function sampleSiteBase(palette: MapPalette): StyleSpecification {
 }
 
 /** The aerial fixture is a synthetic matte, not imagery or a palette entry — kept as it was. */
-export const aerialStyle = base("FieldMaps aerial fixture", {
+export const aerialStyle = base("DECA Mark aerial fixture", {
   background: "#20241d",
   site: { fill: "#272d20", edge: "#333a29" },
   structure: { fill: "#3a352b", edge: "#4a4437" },

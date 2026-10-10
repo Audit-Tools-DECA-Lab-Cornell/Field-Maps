@@ -34,7 +34,7 @@ _QGIS_DOCTYPE: Final = re.compile(
     r"<!DOCTYPE\s+qgis\s+PUBLIC\s+(['\"])http://mrcc\.com/qgis\.dtd\1\s+(['\"])SYSTEM\2\s*>",
 )
 
-REFUSAL: Final = "The project file declares XML entities, which FieldMaps does not read"
+REFUSAL: Final = "The project file declares XML entities, which DECA Mark does not read"
 
 
 def read_document(content: bytes) -> str:
@@ -51,7 +51,7 @@ def read_document(content: bytes) -> str:
             message = f"The project archive holds {len(entries)} files, more than a project needs"
             raise ProjectFileError(message)
         if sum(entry.file_size for entry in entries) > MAX_UNCOMPRESSED_BYTES:
-            message = "The project archive expands to more than FieldMaps will read"
+            message = "The project archive expands to more than DECA Mark will read"
             raise ProjectFileError(message)
         documents = [entry for entry in entries if entry.filename.lower().endswith(".qgs")]
         if not documents:
@@ -59,7 +59,7 @@ def read_document(content: bytes) -> str:
             raise ProjectFileError(message)
         document = documents[0]
         if document.file_size > MAX_DOCUMENT_BYTES:
-            message = "The project document is larger than FieldMaps will read"
+            message = "The project document is larger than DECA Mark will read"
             raise ProjectFileError(message)
         return _decode(archive.read(document))
 

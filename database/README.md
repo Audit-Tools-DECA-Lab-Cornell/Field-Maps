@@ -1,4 +1,4 @@
-# FieldMaps database tests
+# DECA Mark database tests
 
 `supabase/migrations/` is the canonical PostgreSQL 17/PostGIS schema. Local development and integration tests run the actual Supabase stack, including Auth, Storage and Mailpit. The schema and task specifications are in [supabase/PLAN.md](../supabase/PLAN.md).
 

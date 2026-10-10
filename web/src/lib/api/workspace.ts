@@ -45,7 +45,7 @@ export const getMe = cache(getIdentity);
 /**
  * The signed-in person, their organizations and their projects (training projects hidden). Never throws:
  * when the person cannot be placed it returns `status: "unavailable"` with the failure (signed out,
- * FieldMaps unreachable, sign-in not configured).
+ * DECA Mark unreachable, sign-in not configured).
  */
 export const getWorkspace = cache(async (): Promise<WorkspaceIndex> => {
 	let claims: { sub: string; email: string | undefined } | null = null;

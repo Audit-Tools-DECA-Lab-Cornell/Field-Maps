@@ -1,4 +1,4 @@
-# Design track: pages, flows and the look of FieldMaps
+# Design track: pages, flows and the look of DECA Mark
 
 The [production plan](../plan/README.md) says what has to work for Janet's pilot. This track decides which screens the product has and what each one does, then how they look. It defines no plan tasks. Its output becomes `WEB-*` and `MOB-*` tasks at the handoff stage (stage 8).
 

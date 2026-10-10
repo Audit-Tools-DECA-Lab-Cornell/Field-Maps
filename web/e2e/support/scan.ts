@@ -26,11 +26,12 @@ const SAMPLE: Banned[] = [
 
 /**
  * Inside the local workspace ("Web acceptance lab" / "Play study acceptance") the real study's names can
- * only be hard-coded. The public pages may name the DECA Lab, which runs FieldMaps, so this list applies
+ * only be hard-coded. The public pages may name the DECA Lab, which runs DECA Mark, so this list applies
  * to signed-in pages only.
  */
 const HARD_CODED: Banned[] = [
-	{ label: "hard-coded organization DECA", pattern: /\bDECA/ },
+	// The product is DECA Mark; any other DECA (the lab's own name) is a hard-coded organization.
+	{ label: "hard-coded organization DECA", pattern: /\bDECA(?! Mark\b)/ },
 	{ label: "hard-coded project Play Study", pattern: /\bPlay Study\b/ }
 ];
 

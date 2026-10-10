@@ -25,7 +25,7 @@ export type ScreenHeaderProps = {
   showOnline?: boolean | undefined;
   /** The account mark at the far right: initials, or an Avatar node (pressable to open the account). */
   avatar?: ReactNode;
-  /** The FieldMaps lockup at the left of a tab root. On by default when there is no back circle or title. */
+  /** The DECA Mark lockup at the left of a tab root. On by default when there is no back circle or title. */
   logo?: boolean | undefined;
   style?: StyleProp<ViewStyle>;
   testID?: string | undefined;
@@ -54,7 +54,7 @@ function headerStyles(t: Theme) {
 }
 
 /**
- * The top of a collector screen (mobile-10 to 16): the back circle or the FieldMaps lockup at the left,
+ * The top of a collector screen (mobile-10 to 16): the back circle or the DECA Mark lockup at the left,
  * the connection, a state and the account at the right. It sits inside Screen, below the safe area.
  */
 export function ScreenHeader({

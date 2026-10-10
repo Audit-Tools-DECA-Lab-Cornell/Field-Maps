@@ -93,7 +93,7 @@ test("a refused change says nothing changed, then why", () => {
 	);
 });
 
-test("a change FieldMaps failed on, or did not answer, is not reported as not made", async () => {
+test("a change DECA Mark failed on, or did not answer, is not reported as not made", async () => {
 	const unanswered = [
 		apiRequestError(new TypeError("fetch failed")),
 		apiRequestError(new DOMException("timed out", "TimeoutError")),

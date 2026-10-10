@@ -1,4 +1,4 @@
-**Production architecture recommendation for FieldMaps**
+**Production architecture recommendation for DECA Mark**
 
 Research date: September 17, 2026. Status: proposed architecture, ready for review and a device proof of concept. This report does not claim that synchronization, hosting, or QGIS integration has been implemented or tested.
 
@@ -191,4 +191,4 @@ A custom SQLite synchronization protocol is the fallback if PowerSync fails the 
 
 The first proof must also test an expired login, an app upgrade with pending writes, a permanently rejected record, two devices editing one record, a missing offline map asset, and an account switch. Passing a happy-path upload or a simulator test is insufficient to select the full production combination.
 
-This repository has a Next.js/React/Leaflet prototype, now located in `web/`. Preserve useful management UI and domain ideas, then introduce the backend and collector incrementally. This architecture report originally changed documentation only; it does not connect FieldMaps to the separate Audit Tools backend or merge the products. See [workspace operations](Workspace.md) and [Supabase setup](Supabase-Setup.md) for subsequent implementation status.
+This repository has a Next.js/React/Leaflet prototype, now located in `web/`. Preserve useful management UI and domain ideas, then introduce the backend and collector incrementally. This architecture report originally changed documentation only; it does not connect DECA Mark to the separate Audit Tools backend or merge the products. See [workspace operations](Workspace.md) and [Supabase setup](Supabase-Setup.md) for subsequent implementation status.

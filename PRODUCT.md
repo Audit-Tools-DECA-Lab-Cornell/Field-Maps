@@ -1,6 +1,6 @@
-# FieldMaps product context
+# DECA Mark product context
 
-Who FieldMaps is for, what it must never claim, and how it speaks. Every UI change and the impeccable design skill read this file first. How it looks is in [DESIGN.md](DESIGN.md) and [`contracts/contour.json`](contracts/contour.json). Roles and journeys are owned by [docs/plan/product.md](docs/plan/product.md), and the pages and decisions U1–U10 by [docs/ux/sitemap.md](docs/ux/sitemap.md). This file summarises them for design work. If they disagree, those files win.
+Who DECA Mark is for, what it must never claim, and how it speaks. Every UI change and the impeccable design skill read this file first. How it looks is in [DESIGN.md](DESIGN.md) and [`contracts/contour.json`](contracts/contour.json). Roles and journeys are owned by [docs/plan/product.md](docs/plan/product.md), and the pages and decisions U1–U10 by [docs/ux/sitemap.md](docs/ux/sitemap.md). This file summarises them for design work. If they disagree, those files win.
 
 ## Register
 
@@ -8,9 +8,9 @@ product
 
 Product UI: the design serves the task. The landing and privacy pages use the same system and voice.
 
-## What FieldMaps is
+## What DECA Mark is
 
-FieldMaps is offline field collection for research teams. A researcher on a playground marks where a child's play happened on a site map and answers a versioned, conditional form, usually with no signal. The record is saved on the device first and uploads when the app is open and connected. On the web, a project's managers prepare maps from QGIS, publish form versions, invite observers and review what came back. Analysts read the same observations as typed layers in QGIS or as exports. The pilot is Janet's playground study: Play Study, in the DECA Lab organization. Today the collector's form engine, drafts, SQLite queue, sync and sign-in are real, and so is the whole web workspace (D30): it reads and writes the API, with no fixture data.
+DECA Mark is offline field collection for research teams. A researcher on a playground marks where a child's play happened on a site map and answers a versioned, conditional form, usually with no signal. The record is saved on the device first and uploads when the app is open and connected. On the web, a project's managers prepare maps from QGIS, publish form versions, invite observers and review what came back. Analysts read the same observations as typed layers in QGIS or as exports. The pilot is Janet's playground study: Play Study, in the DECA Lab organization. Today the collector's form engine, drafts, SQLite queue, sync and sign-in are real, and so is the whole web workspace (D30): it reads and writes the API, with no fixture data.
 
 ## Design system
 
@@ -77,7 +77,7 @@ One set of words in both apps, matching the database. Proper names such as "Play
 
 ## Honesty
 
-FieldMaps holds research evidence. The interface must never say more than the system knows.
+DECA Mark holds research evidence. The interface must never say more than the system knows.
 
 1. **Say where the work is.** Every save, error and empty state says whether the work is on this device, uploading, uploaded or held. On the phone, an error's first line says where the draft or record is.
 2. **Never overclaim readiness or delivery.**
@@ -100,7 +100,7 @@ FieldMaps holds research evidence. The interface must never say more than the sy
 
 ## Voice and copy
 
-Plain, exact and calm. FieldMaps sounds like a careful colleague who is precise about where your data is and what to do next.
+Plain, exact and calm. DECA Mark sounds like a careful colleague who is precise about where your data is and what to do next.
 
 - **Buttons are verb + object:** "Save on this device", "Correct and send again", "Publish v2", "Return to projects". Avoid bare "OK", "Submit" and "Yes".
 - **Sentence case everywhere.** Mono eyebrow labels are uppercase by style, not by typing.

@@ -17,7 +17,7 @@ import mapPalettesContract from "../../../contracts/map-palettes.json";
 
 type PaletteName = "day" | "night";
 
-const STORAGE_KEY = "fieldmaps.map.palette";
+const STORAGE_KEY = "decamark.map.palette";
 
 function isPaletteName(value: string | null): value is PaletteName {
 	return value === "day" || value === "night";

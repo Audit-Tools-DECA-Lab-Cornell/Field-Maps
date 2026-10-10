@@ -1,6 +1,6 @@
 # Product: stakeholders, roles and journeys
 
-This file is part of the [FieldMaps production plan](README.md) and defines no tasks. It answers two questions: who the system serves, and what "pilot-ready" means. Architecture is in [architecture.md](architecture.md); contracts are in [contracts.md](contracts.md).
+This file is part of the [DECA Mark production plan](README.md) and defines no tasks. It answers two questions: who the system serves, and what "pilot-ready" means. Architecture is in [architecture.md](architecture.md); contracts are in [contracts.md](contracts.md).
 
 ## Stakeholders
 

@@ -59,7 +59,7 @@ export type InvitationCreatedProps = {
 
 /**
  * A new invitation, shown once: the link (its token travels after `#`, so it never reaches a server log)
- * and the join code, each with Copy. FieldMaps does not send email, so the manager sends one of them.
+ * and the join code, each with Copy. DECA Mark does not send email, so the manager sends one of them.
  */
 export function InvitationCreated({ invitation, timeZone }: InvitationCreatedProps) {
 	// Shown only after an invitation is created in the browser, so this site's address is at hand.
@@ -72,7 +72,7 @@ export function InvitationCreated({ invitation, timeZone }: InvitationCreatedPro
 
 	return (
 		<div className="flex flex-col gap-5">
-			<Note tone="waiting" title="FieldMaps does not send email.">
+			<Note tone="waiting" title="DECA Mark does not send email.">
 				Send the link or the code yourself. It is shown only once.
 			</Note>
 			<p className="type-body text-ink">

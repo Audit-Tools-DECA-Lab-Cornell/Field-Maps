@@ -1,6 +1,6 @@
 # Web E2E on the local stack (WP9)
 
-Everything is local: Docker → local Supabase (:54321) → FieldMaps API (:8001, `backend/config.auth-local.json`)
+Everything is local: Docker → local Supabase (:54321) → DECA Mark API (:8001, `backend/config.auth-local.json`)
 → seed `database/seed-web-workspace.mjs` → web app on **http://127.0.0.1:3000** → Playwright (Chromium at
 `/opt/pw-browsers/chromium`, Playwright 1.56.1; never `playwright install`).
 
@@ -62,7 +62,7 @@ setsid nohup dockerd > database/.local/e2e/dockerd.log 2>&1 < /dev/null &
 pnpm db:start            # stop: pnpm db:stop
 
 # API on :8001 (what the script runs; from backend/)
-cd backend && FIELDMAPS_CONFIG=config.auth-local.json uv run --frozen uvicorn \
+cd backend && DECAMARK_CONFIG=config.auth-local.json uv run --frozen uvicorn \
   fieldmaps_api.main:create_app_from_config --factory --app-dir src --host 127.0.0.1 --port 8001
 # stop the one the script started:
 kill -TERM -- -$(cat database/.local/e2e/api.pid)
@@ -71,7 +71,7 @@ kill -TERM -- -$(cat database/.local/e2e/api.pid)
 node --test database/seed-web-workspace.test.mjs && node database/seed-web-workspace.mjs
 
 # Web app: let the script start it (it sets NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY from
-# `pnpm dlx supabase@2.118.0 status --output json`, FIELDMAPS_API_URL and NEXT_PUBLIC_FIELDMAPS_API_URL =
+# `pnpm dlx supabase@2.118.0 status --output json`, DECAMARK_API_URL and NEXT_PUBLIC_DECAMARK_API_URL =
 # http://127.0.0.1:8001, __NEXT_PROCESSED_ENV=true so no .env file is loaded).
 sh scripts/e2e-local.sh --stop && sh scripts/e2e-local.sh --skip-seed e2e/sign-in.spec.ts
 ```

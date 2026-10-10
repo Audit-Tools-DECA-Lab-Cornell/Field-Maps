@@ -6,7 +6,7 @@ import type { WorkspaceIndex } from "@/lib/workspace/types";
  * preview shows, how a failed attempt is worded, where a successful join leads, and how an invitation
  * link's secret is kept for the length of one sign-in.
  *
- * An invitation link is `/invite#t=<secret>`. The browser never sends a fragment to FieldMaps, so the page
+ * An invitation link is `/invite#t=<secret>`. The browser never sends a fragment to DECA Mark, so the page
  * reads it, keeps it in this tab's sessionStorage under `fm-invite` (so signing in or creating an account
  * on the way does not lose it), and takes it out of the address bar. A join code is typed into a field and
  * is never put in an address.
@@ -20,7 +20,7 @@ export type InviteCredential = { token: string } | { code: string };
 
 export type InviteRole = "member" | "admin" | "manager" | "observer" | "viewer";
 
-/** What FieldMaps tells someone about an invitation before they join. */
+/** What DECA Mark tells someone about an invitation before they join. */
 export type InvitationDetails = {
 	organization: string;
 	/** Null for an invitation to the organization itself. */
@@ -39,7 +39,7 @@ export type InviteProblemKind =
 	| "already-member"
 	/** Too many tries: `retryAfter` seconds. */
 	| "wait"
-	/** FieldMaps could not be reached, or failed. */
+	/** DECA Mark could not be reached, or failed. */
 	| "unavailable"
 	| "refused";
 
@@ -66,7 +66,7 @@ export const EXPIRED_COPY = "This invitation has expired. Ask your project manag
 export const ALREADY_PROJECT_COPY = "You are already on this project.";
 export const ALREADY_ORGANIZATION_COPY = "You are already in this organization.";
 export const SIGNED_OUT_COPY = "You were signed out. Sign in again to continue.";
-export const UNREACHABLE_COPY = "FieldMaps could not be reached. Check your connection and try again.";
+export const UNREACHABLE_COPY = "DECA Mark could not be reached. Check your connection and try again.";
 
 /** The wording of a problem, which depends on whether the invitation is to a project or an organization. */
 export function problemText(problem: InviteProblem, invitation: { project: string | null } | null): string {
@@ -159,7 +159,7 @@ export type ProblemSource = {
 	kind: "sign-in" | "retry" | "rejected";
 	status?: number;
 	retryAfter?: number;
-	/** FieldMaps' own wording for the error (`errorCopy`). */
+	/** DECA Mark's own wording for the error (`errorCopy`). */
 	message: string;
 };
 
@@ -170,7 +170,7 @@ export type ProblemContext = {
 
 /**
  * A failed preview or join in the words a person reads. An expired invitation (410), too many tries (429,
- * with how long to wait) and an invitation that is gone each get their own sentence; a join that FieldMaps
+ * with how long to wait) and an invitation that is gone each get their own sentence; a join that DECA Mark
  * refuses as a duplicate (409) means the person is already a member.
  */
 export function inviteProblem(error: ProblemSource, { step, credential }: ProblemContext): InviteProblem {

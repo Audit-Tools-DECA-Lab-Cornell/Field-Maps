@@ -19,7 +19,7 @@ function welcomeStyles(t: Theme) {
 }
 
 /**
- * Welcome (Mobile 23): the FieldMaps lockup, the Riverside plan, the promise, and the way in. When
+ * Welcome (Mobile 23): the DECA Mark lockup, the Riverside plan, the promise, and the way in. When
  * records are waiting on this device for a signed-out account, a note names them and their owner before
  * anything else can be chosen. When the server reported the account on this device deleted, the gate
  * opens here instead of the app, and the note says its records stay on this device and cannot upload;

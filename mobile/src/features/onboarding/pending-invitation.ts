@@ -3,7 +3,7 @@ import { JOIN_CODE_LENGTH, joinCodeOf } from "./invitation";
 
 /**
  * An invitation link that arrived before it could be shown (Greptile P1, "Sign-in drops invitation
- * codes"). `fieldmaps://join/DECA2026` opened while signed out lands on welcome, because the gate keeps
+ * codes"). `decamark://join/DECA2026` opened while signed out lands on welcome, because the gate keeps
  * onboarding closed; the code would be lost. So the link's code is kept on this device for a week:
  * the auth screens say it is waiting, onboarding's profile step carries on to it after sign-in, and an
  * account that is already set up finds it on Projects. It is cleared once the invitation has been
@@ -64,13 +64,13 @@ export function readPendingInvitationValue(
 
 /**
  * The join code an incoming link carries, if it is an invitation link with a whole code. Accepts the
- * forms the app is opened with: `fieldmaps://join/DECA2026`, `/join/DECA-2026`, `join?code=deca2026`
- * and Expo's development form `exp://host/--/join/DECA2026`.
+ * forms the app is opened with: `decamark://join/DECA2026` (or the older `fieldmaps://`), `/join/DECA-2026`,
+ * `join?code=deca2026` and Expo's development form `exp://host/--/join/DECA2026`.
  */
 export function joinCodeFromLink(link: string): string | null {
   const trimmed = link.trim();
   if (!trimmed) return null;
-  // Drop the scheme and host (`fieldmaps://`, `exp://192.168.0.2:8081/--`), keeping the path.
+  // Drop the scheme and host (`decamark://`, `exp://192.168.0.2:8081/--`), keeping the path.
   const withoutScheme = trimmed.replace(/^[a-z][a-z0-9+.-]*:\/\//i, "");
   const [beforeQuery = "", query = ""] = withoutScheme.split("?", 2);
   const segments = beforeQuery.split("/").filter((part) => part !== "" && part !== "--");

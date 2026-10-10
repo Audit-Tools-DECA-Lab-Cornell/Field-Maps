@@ -2,12 +2,12 @@ import type { PackageSubmission } from "./api/types";
 
 /**
  * The browser's half of preparing a map package: reading the GeoJSON files QGIS exports, matching each to
- * its slot by name, and checking what FieldMaps will check, so a manager fixes a problem before the upload
+ * its slot by name, and checking what DECA Mark will check, so a manager fixes a problem before the upload
  * instead of after it. The upload itself is `preparePackage` in `lib/api/browser.ts`, signed with the
  * manager's own sign-in; the project and site come from the address, never from a pasted value.
  *
  * Every blocking check here mirrors a refusal in `backend/src/fieldmaps_api/domain/packages.py` or in the
- * GeoJSON models it validates with. None of it replaces FieldMaps' own checks, which still run on upload.
+ * GeoJSON models it validates with. None of it replaces DECA Mark's own checks, which still run on upload.
  * Pure (a file is only read through `file.text()`), so it is unit-tested without a browser.
  */
 
@@ -36,7 +36,7 @@ const SHAPE_WORD: Record<LayerName, { many: string; one: string }> = {
 };
 
 /**
- * The geometry types each layer may hold. FieldMaps accepts every GeoJSON shape in any layer; these are the
+ * The geometry types each layer may hold. DECA Mark accepts every GeoJSON shape in any layer; these are the
  * ones the map package draws (`lib/sites/archive.ts`), so a layer of anything else would arrive and show
  * nothing. QGIS writes the Multi variants whenever a layer holds one.
  */
@@ -47,7 +47,7 @@ export const EXPECTED_GEOMETRY: Record<LayerName, readonly string[]> = {
 	trees: ["Point", "MultiPoint", "Polygon", "MultiPolygon"]
 };
 
-/** The most zones, features and bytes FieldMaps takes (`domain/packages.py`, the upload body limit). */
+/** The most zones, features and bytes DECA Mark takes (`domain/packages.py`, the upload body limit). */
 export const MAX_ZONES = 64;
 export const MAX_FEATURES_PER_LAYER = 20_000;
 export const MAX_PROJECT_BYTES = 8 * 1024 * 1024;
@@ -163,7 +163,7 @@ export async function readProjectFile(file: File): Promise<{ file_name: string; 
 }
 
 /**
- * The layers as the upload takes them. The checks have already refused what FieldMaps would (a feature with
+ * The layers as the upload takes them. The checks have already refused what DECA Mark would (a feature with
  * no shape, a layer of projected coordinates), so the layers are sent as they were read.
  */
 export function submissionLayers(slots: Record<LayerName, LayerSlotState>): PackageSubmission["layers"] {
@@ -259,7 +259,7 @@ export function declaredOtherCrs(collection: LayerCollection): string | null {
 	return WGS84_NAMES.has(name.trim().toLowerCase()) ? null : name.trim();
 }
 
-/* ── Property reading, as FieldMaps reads it ──────────────────────────────── */
+/* ── Property reading, as DECA Mark reads it ──────────────────────────────── */
 
 /** A text property, trimmed and not empty: a number or a blank text is not one (`Feature.text`). */
 export function textProperty(properties: Readonly<Record<string, unknown>>, key: string): string | null {
@@ -324,7 +324,7 @@ function readingLayers(slots: Record<LayerName, LayerSlotState>): boolean {
  * Everything the upload step can check without sending anything: that the required layers are chosen and
  * readable, their shapes and coordinates, that every zone has a distinct text id (what an observation
  * records), that the ground has one site outline, and that the files fit. Each blocking check is one
- * FieldMaps would refuse the package for.
+ * DECA Mark would refuse the package for.
  */
 export function runClientChecks(
 	slots: Record<LayerName, LayerSlotState>,
@@ -518,7 +518,7 @@ export function runClientChecks(
 				? `The QGIS project is over ${MAX_PROJECT_BYTES / 1024 / 1024} MB. Leave it out or save a smaller one.`
 				: tooBig
 					? `The files add up to over ${MAX_UPLOAD_BYTES / 1024 / 1024} MB. Simplify the layers and export again.`
-					: "Within the 24 MB FieldMaps takes at once."
+					: "Within the 24 MB DECA Mark takes at once."
 		});
 	}
 

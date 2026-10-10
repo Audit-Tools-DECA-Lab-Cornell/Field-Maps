@@ -2,7 +2,7 @@ import { Easing } from "react-native-reanimated";
 import contour from "../../../contracts/contour.json";
 
 /**
- * Contour, the FieldMaps design system, read from `contracts/contour.json` — the same contract the web
+ * Contour, the DECA Mark design system, read from `contracts/contour.json` — the same contract the web
  * workspace reads, so a colour, a state word or a duration changes in one place. This is the only
  * module in the collector that may hold a colour value; everything else asks `useTheme()`.
  */

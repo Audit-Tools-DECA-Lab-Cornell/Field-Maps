@@ -25,7 +25,7 @@ import {
 import { cleanJoinCode } from "./params";
 
 /**
- * What the invitation and join pages ask FieldMaps. The credential travels in the body of these calls,
+ * What the invitation and join pages ask DECA Mark. The credential travels in the body of these calls,
  * never in an address: a link's secret came from the address fragment, and a join code is only typed.
  */
 
@@ -105,7 +105,7 @@ export async function redeemInvite(
 	} catch (error) {
 		const problem = inviteProblem(apiRequestError(error), { step: "redeem", credential: kindOf(read.credential) });
 		if (problem.kind !== "already-member" && problem.kind !== "invalid") return { status: "failed", problem };
-		// FieldMaps refuses a repeat join, and says so as "invitation not found" or as a conflict. If the
+		// DECA Mark refuses a repeat join, and says so as "invitation not found" or as a conflict. If the
 		// person is on that project already, that is what happened.
 		const place = placeOf(await getWorkspace(), names);
 		if (place)

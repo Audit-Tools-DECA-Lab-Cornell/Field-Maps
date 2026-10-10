@@ -13,7 +13,7 @@ import { UNKNOWN_ERROR_COPY } from "@/lib/api/errors";
 import { getWorkspace } from "@/lib/api/workspace";
 import { homeFor } from "@/lib/workspace/home";
 
-export const metadata: Metadata = { title: "Your projects · FieldMaps" };
+export const metadata: Metadata = { title: "Your projects · DECA Mark" };
 
 function rememberedPlace(value: string | undefined): string | undefined {
 	if (!value) return undefined;
@@ -25,7 +25,7 @@ function rememberedPlace(value: string | undefined): string | undefined {
 }
 
 /**
- * Opening FieldMaps: the project the person had open last on this browser, if they still belong to it;
+ * Opening DECA Mark: the project the person had open last on this browser, if they still belong to it;
  * otherwise their only project, or their first organization (`homeFor`). Someone who belongs to nothing
  * yet is told how to join.
  */

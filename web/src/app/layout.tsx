@@ -25,11 +25,11 @@ const splineMono = Spline_Sans_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "FieldMaps",
-		template: "%s · FieldMaps"
+		default: "DECA Mark",
+		template: "%s · DECA Mark"
 	},
 	description:
-		"FieldMaps keeps every field observation with its place: an offline collector for observers and a workspace for the research team.",
+		"DECA Mark keeps every field observation with its place: an offline collector for observers and a workspace for the research team.",
 	manifest: "/manifest.webmanifest"
 };
 

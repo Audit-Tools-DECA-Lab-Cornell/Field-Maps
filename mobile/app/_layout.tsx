@@ -93,11 +93,11 @@ export default function RootLayout() {
       <PreferencesProvider>
         <ThemeProvider>
           {!fontsReady && !fontError ? (
-            <Splash title="Opening FieldMaps" detail="Preparing your local workspace…" />
+            <Splash title="Opening DECA Mark" detail="Preparing your local workspace…" />
           ) : (
             <Suspense
               fallback={
-                <Splash title="Opening FieldMaps" detail="Preparing your local workspace…" />
+                <Splash title="Opening DECA Mark" detail="Preparing your local workspace…" />
               }
             >
               <SQLiteProvider

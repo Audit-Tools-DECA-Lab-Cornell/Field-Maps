@@ -116,11 +116,11 @@ function FilePick({
 }
 
 const UNCONFIRMED_UPLOAD_COPY =
-	"FieldMaps could not confirm the upload. Check the history below for a new version before you upload again.";
+	"DECA Mark could not confirm the upload. Check the history below for a new version before you upload again.";
 
 /**
- * Why the upload failed, in words: a file problem, or FieldMaps' reason (its own message for a rejected
- * package). With no answer from FieldMaps, or a failure on its side, the package may have arrived, and
+ * Why the upload failed, in words: a file problem, or DECA Mark's reason (its own message for a rejected
+ * package). With no answer from DECA Mark, or a failure on its side, the package may have arrived, and
  * `confirmed` is false so the screen does not say it was not uploaded.
  */
 function uploadProblem(error: unknown): { message: string; confirmed: boolean; formVersion?: string } {
@@ -534,7 +534,7 @@ export function UploadStep({
 							Upload package
 						</Button>
 						<p className="type-small text-ink-2">
-							The package is sent to FieldMaps as you. It becomes the site&rsquo;s current map once its
+							The package is sent to DECA Mark as you. It becomes the site&rsquo;s current map once its
 							checks pass.
 						</p>
 					</div>
@@ -575,7 +575,7 @@ export function UploadStep({
 					meta={clientChecks.length > 0 ? undefined : "Waiting for files"}>
 					{clientChecks.length === 0 ? (
 						<p className="px-island-pad pb-island-pad type-body text-ink-2">
-							Checks appear once a layer is chosen. FieldMaps runs its own checks after the upload.
+							Checks appear once a layer is chosen. DECA Mark runs its own checks after the upload.
 						</p>
 					) : (
 						<ul className="border-t border-rule">
@@ -598,13 +598,13 @@ export function UploadStep({
 	);
 }
 
-/** What FieldMaps found when it prepared the package. */
+/** What DECA Mark found when it prepared the package. */
 function ServerResult({ result, packagesHref }: { result: PackageDetail; packagesHref: string }) {
 	const ready = result.state === "ready";
 	return (
 		<Island
 			flush
-			title="Checked by FieldMaps"
+			title="Checked by DECA Mark"
 			meta={<StateBadge kind="check" state={ready ? "passes" : "fails"} label={ready ? "Ready" : "Blocked"} />}
 			aria-live="polite">
 			<p className="border-t border-rule px-island-pad py-3 type-mono-data text-ink">
@@ -626,8 +626,8 @@ function ServerResult({ result, packagesHref }: { result: PackageDetail; package
 			<IslandSection className="flex flex-col gap-3 pb-island-pad">
 				<Note tone={ready ? "saved" : "attention"}>
 					{ready
-						? `Version ${result.version} is the site's current map. Observers get it the next time they make the site ready offline in the FieldMaps app.`
-						: "FieldMaps kept this package with its reasons, but observers cannot download it. Fix what blocked it and upload the next version."}
+						? `Version ${result.version} is the site's current map. Observers get it the next time they make the site ready offline in the DECA Mark app.`
+						: "DECA Mark kept this package with its reasons, but observers cannot download it. Fix what blocked it and upload the next version."}
 				</Note>
 				<Link
 					href={`${packagesHref}?package=${result.package_id}`}

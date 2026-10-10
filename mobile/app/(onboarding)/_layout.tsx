@@ -5,8 +5,8 @@ import { useTheme } from "../../src/ui";
  * Onboarding (mobile-29 to 31): the observer identity, then joining a project. The root layout opens
  * this group only for a signed-in account without a finished profile.
  *
- * Invitation links: `fieldmaps://join/DECA2026` opens `join/[code]`, which shows the invitation once
- * the identity is saved (and the identity step first when it is not). `fieldmaps://join?code=DECA2026`
+ * Invitation links: `decamark://join/DECA2026` opens `join/[code]`, which shows the invitation once
+ * the identity is saved (and the identity step first when it is not). `decamark://join?code=DECA2026`
  * opens the join step with the code filled in. Both open here only while onboarding: the group is
  * guarded otherwise. A link opened while signed out, or once the app is open, still keeps its code on
  * this device (app/+native-intent.tsx): the auth screens say it is waiting, the profile step carries on

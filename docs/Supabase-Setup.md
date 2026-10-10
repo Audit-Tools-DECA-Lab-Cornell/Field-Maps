@@ -4,7 +4,7 @@ Project: **Field Maps GIS**, `lezmqhuucfwqknspgcdy`, in AWS `us-east-1` (session
 
 **Status, September 22, 2026.** The new project is provisioned and every tracked configuration points at it: `backend/config.hosted.json`, `backend/config.local.json`, `mobile/connection.config.json`, and `qgis/pg_service.conf`.
 
-- **Done and verified on the new project:** the three migrations applied in one transaction and recorded in `supabase_migrations.schema_migrations`; PostGIS 3.3.7 in `extensions`; the seven rollback-only assertions in `database/hosted/verify.sql` passed. New generated passwords for `fieldmaps_api` and `fieldmaps_qgis_training` were set as SCRAM verifiers, so no plain-text password reached the server, and both logins connect through the pooler with verified TLS. The QGIS login is read-only and is refused the private `fieldmaps` and `auth` schemas. `anon` and `authenticated` cannot use any FieldMaps schema, and every table has row-level security. The confirmed account `test-user@example.org` has observer access to the practice project.
+- **Done and verified on the new project:** the three migrations applied in one transaction and recorded in `supabase_migrations.schema_migrations`; PostGIS 3.3.7 in `extensions`; the seven rollback-only assertions in `database/hosted/verify.sql` passed. New generated passwords for `fieldmaps_api` and `fieldmaps_qgis_training` were set as SCRAM verifiers, so no plain-text password reached the server, and both logins connect through the pooler with verified TLS. The QGIS login is read-only and is refused the private `fieldmaps` and `auth` schemas. `anon` and `authenticated` cannot use any DECA Mark schema, and every table has row-level security. The confirmed account `test-user@example.org` has observer access to the practice project.
 - **Docker:** the API password is in the new volume `fieldmaps_hosted_api_secrets` and the QGIS password in `fieldmaps_qgis_secrets`. The rebuilt `fieldmaps-hosted-api-1` answers `/health`, rejects requests without a token, and its own connection code logs in to the new database. The earlier `fieldops-hosted-api-1` container is stopped, and the `fieldops_*` volumes still hold the earlier project's credentials.
 - **Publishable key:** set in `mobile/connection.config.json`; the project's Auth settings endpoint accepts it, and the project signs tokens with an ES256 key that the API container fetched from its JWKS URL.
 - **Auth hardening:** public sign-up is off (Auth settings report `disable_signup: true`), so only administrators create accounts. The administrator password and secret key were rotated after setup; the API and QGIS logins use their own passwords and kept working.
@@ -71,9 +71,9 @@ Run these once per Supabase project, from the repository root. Keep every passwo
    docker compose --env-file /dev/null -f database/compose.hosted.yaml down
    docker volume rm fieldmaps_hosted_api_secrets
    docker volume create fieldmaps_hosted_api_secrets
-   read -rs FIELDMAPS_API_PASSWORD
-   printf '%s' "$FIELDMAPS_API_PASSWORD" | docker run --rm -i -v fieldmaps_hosted_api_secrets:/s alpine sh -c 'umask 077; cat > /s/database-password'
-   unset FIELDMAPS_API_PASSWORD
+   read -rs DECAMARK_API_PASSWORD
+   printf '%s' "$DECAMARK_API_PASSWORD" | docker run --rm -i -v fieldmaps_hosted_api_secrets:/s alpine sh -c 'umask 077; cat > /s/database-password'
+   unset DECAMARK_API_PASSWORD
    ```
 
    Store the QGIS password the same way in `fieldmaps_qgis_secrets`, file `training-password`, so the administrator can hand it out. To read it back: `docker run --rm -v fieldmaps_qgis_secrets:/s:ro fieldmaps-hosted-api cat /s/training-password`.

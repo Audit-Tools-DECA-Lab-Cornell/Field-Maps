@@ -61,7 +61,7 @@ export function blankDefinition(code: string, name: string): RawDefinition {
 		version: `${code}-v1`,
 		title: name,
 		summary: "Questions observers answer at each observation.",
-		source: "Written in FieldMaps",
+		source: "Written in DECA Mark",
 		status: "draft",
 		inclusion: "Every question on this form is asked at each observation.",
 		knownExportCollisions: [],

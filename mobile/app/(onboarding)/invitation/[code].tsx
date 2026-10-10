@@ -94,7 +94,7 @@ export default function InvitationScreen() {
         <ScreenState
           kind="loading"
           title="Looking up the code"
-          body={`Asking FieldMaps what ${code} opens. Nothing is joined yet.`}
+          body={`Asking DECA Mark what ${code} opens. Nothing is joined yet.`}
         />
       </Screen>
     );

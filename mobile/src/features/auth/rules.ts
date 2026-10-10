@@ -177,7 +177,7 @@ export const SIGN_IN_MESSAGES: Record<SignInFailure, { title: string; body: stri
   },
   unconfirmed: {
     title: "This email address is not verified yet.",
-    body: "Your records are safe on this device. Follow the verification email from FieldMaps, then sign in again.",
+    body: "Your records are safe on this device. Follow the verification email from DECA Mark, then sign in again.",
   },
   rateLimited: {
     title: "Too many sign-in attempts.",

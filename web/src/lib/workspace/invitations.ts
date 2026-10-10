@@ -1,6 +1,6 @@
 /**
  * Invitations as the team pages list them. The API's list keeps revoked, expired and used-up invitations;
- * only the ones that can still be redeemed are pending. FieldMaps never sends email: the person who made
+ * only the ones that can still be redeemed are pending. DECA Mark never sends email: the person who made
  * an invitation shares its link or join code themselves.
  */
 

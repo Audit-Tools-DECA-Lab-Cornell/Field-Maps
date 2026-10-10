@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 /**
- * A map package was prepared in the browser (`preparePackage` sends it straight to FieldMaps, because it can
+ * A map package was prepared in the browser (`preparePackage` sends it straight to DECA Mark, because it can
  * be larger than a form post may carry). This refreshes everything that shows a site's current package:
  * Sites, the site page, Overview and QGIS.
  */

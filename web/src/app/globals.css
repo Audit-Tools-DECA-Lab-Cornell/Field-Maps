@@ -2,7 +2,7 @@
 @import "../styles/contour.css";
 
 /* ============================================================================
-   FieldMaps web — Contour.
+   DECA Mark web — Contour.
 
    The token values live in contracts/contour.json, which the collector reads too.
    `pnpm tokens` writes ../styles/contour.css from it; nothing in this file holds a

@@ -1,5 +1,5 @@
 /**
- * A site's code: the short name FieldMaps files its map packages, observations and export columns under.
+ * A site's code: the short name DECA Mark files its map packages, observations and export columns under.
  * It cannot change once the site exists, so it is worth getting right when the site is made. The pattern is
  * the API's (`Slug` in contracts/openapi.json): 3 to 40 lowercase letters, numbers or dashes, starting and
  * ending with a letter or number.

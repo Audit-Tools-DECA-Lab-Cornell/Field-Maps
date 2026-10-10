@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Sets up a study on a FieldMaps API, signed in as its manager: the organization and project, Janet's
+// Sets up a study on a DECA Mark API, signed in as its manager: the organization and project, Janet's
 // two forms (published), a site with its map package, and invitations. Every step is idempotent, so the
 // script can be run again to finish or extend a set-up; what already exists is kept, never replaced.
 //
-//   FIELDMAPS_API_URL=https://… SUPABASE_URL=https://….supabase.co SUPABASE_PUBLISHABLE_KEY=sb_publishable_… \
+//   DECAMARK_API_URL=https://… SUPABASE_URL=https://….supabase.co SUPABASE_PUBLISHABLE_KEY=sb_publishable_… \
 //   MANAGER_EMAIL=you@example.org node scripts/bootstrap-study.mjs \
 //     --invite janet@example.org:manager --join-code observer:25
 //
@@ -38,7 +38,7 @@ const { values } = parseArgs({
 if (values.help) {
   console.log(`Usage: node scripts/bootstrap-study.mjs [options]
 
-Environment: FIELDMAPS_API_URL, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, MANAGER_EMAIL, MANAGER_PASSWORD (asked if unset)
+Environment: DECAMARK_API_URL, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, MANAGER_EMAIL, MANAGER_PASSWORD (asked if unset)
 
   --org-name, --org-slug           organization (default DECA Lab, deca-lab)
   --project-name, --project-code   project (default Play Study, play-study)
@@ -59,7 +59,7 @@ function env(name) {
   return value.replace(/\/$/, "");
 }
 
-const apiUrl = env("FIELDMAPS_API_URL");
+const apiUrl = env("DECAMARK_API_URL");
 const supabaseUrl = env("SUPABASE_URL");
 const publishableKey = env("SUPABASE_PUBLISHABLE_KEY");
 const email = env("MANAGER_EMAIL");

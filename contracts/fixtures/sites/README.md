@@ -1,6 +1,6 @@
 # Site fixtures
 
-Sample sites for the collector's site plans (`mobile/src/features/projects/SitePlan.tsx`). The web workspace no longer reads them: it draws the layers of uploaded map packages (`web/src/lib/plan.ts`). Each file is a GeoJSON FeatureCollection in WGS84 (longitude, latitude). They are fixtures: Riverside and the practice garden are fictional, drawn to match the Contour designs, and none of the three is read from or written to the FieldMaps database. A real site arrives as a QGIS map package.
+Sample sites for the collector's site plans (`mobile/src/features/projects/SitePlan.tsx`). The web workspace no longer reads them: it draws the layers of uploaded map packages (`web/src/lib/plan.ts`). Each file is a GeoJSON FeatureCollection in WGS84 (longitude, latitude). They are fixtures: Riverside and the practice garden are fictional, drawn to match the Contour designs, and none of the three is read from or written to the DECA Mark database. A real site arrives as a QGIS map package.
 
 | File | Site | Source |
 | --- | --- | --- |

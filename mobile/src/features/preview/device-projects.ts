@@ -5,14 +5,14 @@ import { PREVIEW_PROJECTS, type PreviewProject } from "./fixtures";
  * The collector's projects on device data, from the account's `/v1/me` (D24). Memberships carry the
  * project, its organization id, the role and the Training flag; the organization's name comes from the
  * account's organization memberships. Training belongs to an organization the observer is not a member
- * of, so its name falls back to "FieldMaps".
+ * of, so its name falls back to "DECA Mark".
  *
  * Training opens the practice sites that ship with the app. Every other project lists the sites its
- * managers created, read from the FieldMaps API (MOB-14); it never claims bundled sites as its own.
+ * managers created, read from the DECA Mark API (MOB-14); it never claims bundled sites as its own.
  */
 
 /** The organization name when the account is not a member of the project's organization. */
-export const FALLBACK_ORG = "FieldMaps";
+export const FALLBACK_ORG = "DECA Mark";
 
 const TRAINING_FIXTURE = PREVIEW_PROJECTS.find((project) => project.training);
 const TRAINING_SUMMARY =

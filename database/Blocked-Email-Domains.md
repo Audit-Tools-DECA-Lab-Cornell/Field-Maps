@@ -16,7 +16,7 @@ The migration contains a frozen snapshot of the community-maintained [disposable
 | Domains | 9,189 |
 | Source file SHA-256 | `d99c636df4e72f94ee903d5a190efd7d68c6e04234af4c01cb66c3106d873e72` |
 
-Matching is case-insensitive and includes subdomains. For example, `mailinator.com` and `inbox.mailinator.com` are blocked; `fieldmaps-notmailinator.com` is not matched merely because its spelling ends similarly. The list is a signup policy, not proof that an address is trustworthy or that every disposable provider is covered.
+Matching is case-insensitive and includes subdomains. For example, `mailinator.com` and `inbox.mailinator.com` are blocked; `decamark-notmailinator.com` is not matched merely because its spelling ends similarly. The list is a signup policy, not proof that an address is trustworthy or that every disposable provider is covered.
 
 ## Maintenance
 

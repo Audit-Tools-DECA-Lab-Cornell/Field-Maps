@@ -1,4 +1,4 @@
-# FieldMaps mobile collector
+# DECA Mark mobile collector
 
 A native iOS/Android collector for observational play research: a researcher on a playground
 marks a child on a site map and answers a conditional questionnaire, usually offline, often

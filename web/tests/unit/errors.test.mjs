@@ -109,7 +109,7 @@ test("settle returns data or the failure, and rethrows anything that is not an A
 	assert.throws(() => apiRequestError(new RangeError("bug")), RangeError);
 });
 
-test("team and form changes claim nothing happened only when FieldMaps refused them", () => {
+test("team and form changes claim nothing happened only when DECA Mark refused them", () => {
 	const refused = parseApiError(403, envelope("role_required"));
 	assert.equal(
 		failedTeamChange("Nothing was changed.", refused).message,
@@ -132,7 +132,7 @@ test("team and form changes claim nothing happened only when FieldMaps refused t
 	for (const lost of [new TypeError("fetch failed"), parseApiError(503, envelope("storage_unavailable"))]) {
 		const team = failedTeamChange("Nothing was changed.", lost).message;
 		const form = failedFormChange("Nothing was saved.", lost).message;
-		assert.equal(team, "FieldMaps could not confirm the change. Reload the page to check before you try again.");
+		assert.equal(team, "DECA Mark could not confirm the change. Reload the page to check before you try again.");
 		assert.equal(form, team);
 	}
 	assert.throws(() => failedTeamChange("Nothing was changed.", new RangeError("bug")), RangeError);

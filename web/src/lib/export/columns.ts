@@ -39,7 +39,7 @@ export const RECORD_COLUMNS: readonly RecordColumn[] = [
 	},
 	{ column: "observer", label: "Observer initials", type: "text" },
 	{ column: "observed_at", label: "When the observation was made (ISO 8601)", type: "date and time" },
-	{ column: "received_at", label: "When FieldMaps received it (ISO 8601)", type: "date and time" },
+	{ column: "received_at", label: "When DECA Mark received it (ISO 8601)", type: "date and time" },
 	{ column: "form_version", label: "Form version the observer answered", type: "text" },
 	{ column: "revision", label: "Record revision", type: "number" },
 	{ column: "longitude", label: "Longitude, EPSG:4326", type: "number" },

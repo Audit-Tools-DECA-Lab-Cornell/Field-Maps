@@ -73,7 +73,7 @@ def create_app(
         finally:
             await engine.dispose()
 
-    app = FastAPI(title="FieldMaps API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="DECA Mark API", version="0.1.0", lifespan=lifespan)
     # Handle unexpected failures inside CORS and request-id middleware, so browsers can read
     # the sanitized error and its request ID instead of seeing an opaque network failure.
     app.add_middleware(ServerErrorMiddleware, handler=error_response)

@@ -9,7 +9,7 @@ export type RoleOption<R extends PeopleRole> = { value: R; label: string; hint?:
 /** What a change to the team came to. A failure says what did not happen and why, in plain words. */
 export type PeopleActionResult = { status: "done" } | { status: "failed"; message: string };
 
-/** A project or organization member, as the API lists them (no email: FieldMaps does not show it). */
+/** A project or organization member, as the API lists them (no email: DECA Mark does not show it). */
 export type MemberLike<R extends PeopleRole> = {
 	user_id: string;
 	role: R;

@@ -1,4 +1,4 @@
-# Importing a QGIS project for a FieldMaps site
+# Importing a QGIS project for a DECA Mark site
 
 The website converts uploaded vector sources into the GeoJSON layers used by a site's map package. Deploy the API and web changes together before using this on a hosted website.
 

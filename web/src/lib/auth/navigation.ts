@@ -7,7 +7,7 @@ export function safeNext(value: unknown): string {
 	try {
 		const decoded = decodeURIComponent(value);
 		if (decoded.startsWith("//") || /[\\\r\n]/.test(decoded)) return HOME;
-		const url = new URL(value, "https://fieldmaps.invalid");
+		const url = new URL(value, "https://decamark.invalid");
 		if (["/sign-in", "/sign-up", "/verify", "/forgot-password", "/reset-password"].includes(url.pathname))
 			return HOME;
 		return url.pathname + url.search;

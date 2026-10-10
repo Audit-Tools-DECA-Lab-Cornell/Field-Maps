@@ -30,7 +30,7 @@ type View =
 	| { step: "reading" }
 	/** No link is open in this tab. */
 	| { step: "none" }
-	/** There is a link, and the person has to sign in before FieldMaps will show it. */
+	/** There is a link, and the person has to sign in before DECA Mark will show it. */
 	| { step: "sign-in"; unkept: boolean }
 	| { step: "loading" }
 	| { step: "ready"; token: string; invitation: InvitationDetails }
@@ -38,9 +38,9 @@ type View =
 
 /**
  * Join a project from an invitation link (Org 11). The link is `/invite#t=…`: the secret after the `#`
- * never reaches FieldMaps in a request, so this screen reads it, keeps it in this tab's sessionStorage
+ * never reaches DECA Mark in a request, so this screen reads it, keeps it in this tab's sessionStorage
  * (`fm-invite`) so signing in or creating an account on the way does not lose it, and takes it out of the
- * address bar. Signed in, it asks FieldMaps what the invitation is (that uses nothing up) and shows the
+ * address bar. Signed in, it asks DECA Mark what the invitation is (that uses nothing up) and shows the
  * organization, project, role and expiry; Join then adds the account.
  */
 export function InviteScreen({ viewer }: { viewer: Viewer }) {
@@ -100,7 +100,7 @@ export function InviteScreen({ viewer }: { viewer: Viewer }) {
 
 	if (viewer.status === "unavailable") {
 		return (
-			<AuthPanel kicker={KICKER} title="Your invitation" lead="Opening an invitation needs FieldMaps.">
+			<AuthPanel kicker={KICKER} title="Your invitation" lead="Opening an invitation needs DECA Mark.">
 				<LoadFailure failure={viewer.failure} what="the invitation" />
 			</AuthPanel>
 		);

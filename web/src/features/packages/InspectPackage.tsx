@@ -35,7 +35,7 @@ function layerName(name: string): string {
 }
 
 /**
- * Inspect: what FieldMaps found when it prepared one package (its checks, one by one) and what the package
+ * Inspect: what DECA Mark found when it prepared one package (its checks, one by one) and what the package
  * holds (zones, layers, the QGIS project it came from). A ready package is drawn on a plan and can be
  * downloaded; a blocked one has neither, only the reasons.
  */

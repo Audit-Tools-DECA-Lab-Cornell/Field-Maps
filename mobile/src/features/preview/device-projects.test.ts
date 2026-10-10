@@ -57,9 +57,9 @@ describe("device projects from /v1/me", () => {
     });
   });
 
-  it("names FieldMaps when the account is not in the project's organization", () => {
-    expect(FALLBACK_ORG).toBe("FieldMaps");
-    expect(training?.org).toBe("FieldMaps");
+  it("names DECA Mark when the account is not in the project's organization", () => {
+    expect(FALLBACK_ORG).toBe("DECA Mark");
+    expect(training?.org).toBe("DECA Mark");
   });
 
   it("opens the bundled practice site for Training and claims no bundled site for a joined project", () => {

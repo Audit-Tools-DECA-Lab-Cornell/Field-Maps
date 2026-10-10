@@ -2,12 +2,12 @@
 
 ## Context
 
-Janet (DECA Lab owner, Play Study manager) starts using FieldMaps today. On the web today:
+Janet (DECA Lab owner, Play Study manager) starts using DECA Mark today. On the web today:
 
 - every page under `/o/**` reads made-up sample data (`/o/deca`), and her real org `/o/deca-lab` returns 404;
 - the account menu shows a hard-coded sample person ("PS · ps2245@cornell.edu", `web/src/fixtures/people.ts`, `AccountMenu.tsx:52`) for everyone;
 - signing in lands on `/onboarding`, a set-up flow that saves nothing and links into the sample;
-- the headers (web and mobile) draw a newer black "ring" mark instead of the purple FieldMaps app icon that installs, favicons and the store use;
+- the headers (web and mobile) draw a newer black "ring" mark instead of the purple DECA Mark app icon that installs, favicons and the store use;
 - the home page `/` is old Nocturne styling with developer copy.
 
 Owner decisions: delete the sample workspace entirely; build the full manager set on live data; build features whose backend is light (derive from existing endpoints) and show a short "not available yet" for the rest; replace the home page; remove set-up; real identity; purple icon everywhere; copy written for researchers (no "preview/API/endpoint/session/token/fixture"), anti-AI-slop, per `ui-ux-pro-max` + DESIGN.md rules.
@@ -67,7 +67,7 @@ The API already has everything needed (`contracts/openapi.json`): `/v1/me`, orgs
 | Form versions      | New draft, discard, retire                                                                                                                                                                                                            |
 | Draft editor       | Save (PUT); 422 messages shown; leave guard kept                                                                                                                                                                                      |
 | Publish            | Protocol notes from the definition; copy states that older versions stay published                                                                                                                                                    |
-| Team               | Members, role change, remove, invite (link and code shown once, with "FieldMaps does not email this"), revoke                                                                                                                         |
+| Team               | Members, role change, remove, invite (link and code shown once, with "DECA Mark does not email this"), revoke                                                                                                                         |
 | QGIS               | Download maps; CSV, GeoJSON and codebook export; live connection is not available                                                                                                                                                     |
 | Reports            | Counts by zone, round type, play type, observer and day; print                                                                                                                                                                        |
 | Settings           | Name, description, IANA timezone, archive and unarchive; delete and rounds plan are not available                                                                                                                                     |
@@ -85,7 +85,7 @@ The API already has everything needed (`contracts/openapi.json`): `/v1/me`, orgs
   - Web: `components/shell/Brand.tsx` `BrandMark` → `/icons/icon.svg`.
   - Mobile: `mobile/src/ui/Logo.tsx` `Mark` redrawn from `mobile/assets/icon-source/generate.py` with react-native-svg, plus a vitest that keeps its colours in step with `icon.svg`.
   - Docs: DESIGN.md :460 and the rule-03 exception (:67, :969); decision D29. App icons, favicons and the manifest are already purple.
-- **Home page `/`:** replaced with a short Contour page in plain words: what FieldMaps is, Sign in, how observers get the Android app (`NEXT_PUBLIC_ANDROID_APP_URL` when set), and Privacy.
+- **Home page `/`:** replaced with a short Contour page in plain words: what DECA Mark is, Sign in, how observers get the Android app (`NEXT_PUBLIC_ANDROID_APP_URL` when set), and Privacy.
 
 ## Deletions
 
@@ -146,6 +146,6 @@ The API already has everything needed (`contracts/openapi.json`): `/v1/me`, orgs
 
 ## After merge (owner)
 
-- Vercel needs `NEXT_PUBLIC_FIELDMAPS_API_URL=https://field-maps.onrender.com` (browser upload and download) and `FIELDMAPS_API_URL`.
-- The API's CORS allows `field-maps.vercel.app`. If production uses another domain, add it to `browser_origins` in `backend/config.render.json`.
+- Vercel needs `NEXT_PUBLIC_DECAMARK_API_URL=https://field-maps.onrender.com` (browser upload and download) and `DECAMARK_API_URL`.
+- The API's CORS allows `decamark.vercel.app`. If production uses another domain, add it to `browser_origins` in `backend/config.render.json`.
 - Janet owns DECA Lab (she ran the bootstrap), so she can add you from Organization members.

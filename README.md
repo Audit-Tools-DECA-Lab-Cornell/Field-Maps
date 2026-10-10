@@ -1,13 +1,13 @@
-# FieldMaps
+# DECA Mark
 
 Custom offline field collection for research teams: a native collector, a web management application, an authenticated API, and a shared spatial database readable in QGIS.
 
-This is one Git repository with independently managed components. The root owns product documentation and development commands; each application owns its dependencies, lockfile, and runtime. FieldMaps remains independent of Playspace, COPA, and YEE.
+This is one Git repository with independently managed components. The root owns product documentation and development commands; each application owns its dependencies, lockfile, and runtime. DECA Mark remains independent of Playspace, COPA, and YEE.
 
 ## Product layout
 
 ```text
-field-maps/
+decamark/
 ├── web/          Next.js management application, source, public assets, and build config
 ├── mobile/       Expo / React Native collector with SQLite and MapLibre
 ├── backend/      FastAPI authentication and observation API

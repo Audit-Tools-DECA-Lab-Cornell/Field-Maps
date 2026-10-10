@@ -38,7 +38,7 @@ async function asManager<T extends object>(
 		revalidatePath(`/o/${org}/p/${project}`, "layout");
 		return { status: "done", ...done };
 	} catch (error) {
-		// Anything that is not a FieldMaps or network failure is rethrown there.
+		// Anything that is not a DECA Mark or network failure is rethrown there.
 		return failedChange(nothing, error);
 	}
 }

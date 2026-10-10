@@ -57,8 +57,8 @@ const nextConfig: NextConfig = {
 
 export default function config(phase: string): NextConfig {
 	if (phase !== PHASE_PRODUCTION_BUILD && phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
-	const buildId = (process.env.FIELDMAPS_SERVICE_WORKER_BUILD_ID ??= randomUUID());
+	const buildId = (process.env.DECAMARK_SERVICE_WORKER_BUILD_ID ??= randomUUID());
 	const source = readFileSync(path.join(__dirname, "src/lib/pwa/service-worker.js"), "utf8");
-	writeFileSync(path.join(__dirname, "public/sw.js"), source.replace("__FIELDMAPS_BUILD_ID__", buildId));
+	writeFileSync(path.join(__dirname, "public/sw.js"), source.replace("__DECAMARK_BUILD_ID__", buildId));
 	return { ...nextConfig, generateBuildId: async () => buildId };
 }

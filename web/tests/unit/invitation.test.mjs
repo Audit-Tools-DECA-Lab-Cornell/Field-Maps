@@ -137,7 +137,7 @@ test("an expired invitation (410) says to ask for a new one", () => {
 	assert.equal(problem.message, EXPIRED_COPY);
 });
 
-test("too many tries (429) keeps the wait FieldMaps asked for", () => {
+test("too many tries (429) keeps the wait DECA Mark asked for", () => {
 	const source = {
 		code: "rate_limited",
 		kind: "retry",
@@ -183,10 +183,10 @@ test("signed out, unreachable and other refusals", () => {
 		"signed-out"
 	);
 	const down = inviteProblem(
-		{ code: "storage_unavailable", kind: "retry", status: 503, message: "FieldMaps cannot be reached right now." },
+		{ code: "storage_unavailable", kind: "retry", status: 503, message: "DECA Mark cannot be reached right now." },
 		{ step: "preview", credential: "token" }
 	);
-	assert.deepEqual(down, { kind: "unavailable", message: "FieldMaps cannot be reached right now." });
+	assert.deepEqual(down, { kind: "unavailable", message: "DECA Mark cannot be reached right now." });
 	assert.equal(
 		inviteProblem(rejected("role_required", { status: 403 }), { step: "preview", credential: "code" }).kind,
 		"refused"
@@ -248,8 +248,8 @@ test("only the invitation pages count as invitation paths", () => {
 
 test("the Android link is used only when it is an https address", () => {
 	assert.equal(
-		androidAppUrl("https://play.example/store/apps/details?id=org.fieldmaps"),
-		"https://play.example/store/apps/details?id=org.fieldmaps"
+		androidAppUrl("https://play.example/store/apps/details?id=org.decamark"),
+		"https://play.example/store/apps/details?id=org.decamark"
 	);
 	assert.equal(androidAppUrl(undefined), null);
 	assert.equal(androidAppUrl(""), null);

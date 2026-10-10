@@ -1,6 +1,6 @@
-# FieldMaps production plan (index)
+# DECA Mark production plan (index)
 
-This is the entry point for taking FieldMaps from prototype to Janet's first field pilot. Every other plan file links back here. **Read this file first, then only the files your task names.**
+This is the entry point for taking DECA Mark from prototype to Janet's first field pilot. Every other plan file links back here. **Read this file first, then only the files your task names.**
 
 - Plan agreed: 2026-09-22.
 - Target: the pilot in week 13 (about 3 months) with one developer.
@@ -155,7 +155,8 @@ WEB-20 to WEB-26 and MOB-23 to MOB-27 build the Contour screens ahead of the wir
 
 - **Mobile:** MOB-16, MOB-17, MOB-18, MOB-20, MOB-21
 - **Web:** WEB-15, WEB-16
-- **Data:** DB-13
+- **Data:** DB-13, DB-17
+- **API:** BE-21
 - **Operations:** OPS-09, OPS-10, OPS-11, OPS-12, OPS-17
 - **Verification:** QA-04
 - **Zone acceptance:** QA-07

@@ -1,6 +1,6 @@
 # Operations: hosted settings, CI, deploys, monitoring, releases
 
-This file is part of the [FieldMaps production plan](README.md) and defines the `OPS-*` tasks.
+This file is part of the [DECA Mark production plan](README.md) and defines the `OPS-*` tasks.
 
 Most tasks here change hosted services, and **every one of those needs the user's explicit authorization**. The steps below say `Needs user:` for those. An agent may prepare files, checklists and scripts, but must not apply dashboard changes, deploy, or buy anything on its own.
 
@@ -27,7 +27,7 @@ Do:
    - email OTP length 6, expiry 3600 s;
    - minimum password length 8;
    - Site URL is the staging web origin;
-   - Redirect URLs: the web origins plus `fieldmaps://auth/callback`;
+   - Redirect URLs: the web origins plus `decamark://auth/callback`;
    - anonymous sign-ins OFF.
 2. After the user applies it, update `docs/Supabase-Setup.md`: sign-up is ON, the settings above, and the date.
 
@@ -58,7 +58,7 @@ Needs user: paste the templates into the Supabase dashboard (staging, and later 
 Read first: <https://supabase.com/docs/guides/auth/auth-email-templates>.
 Do:
 1. Create `supabase/templates/confirm-signup.html`, `recovery.html` and `email-change.html`.
-   - Each shows `{{ .Token }}` prominently: "Your FieldMaps code is 123456".
+   - Each shows `{{ .Token }}` prominently: "Your DECA Mark code is 123456".
    - They carry **codes only**, with no link (decision D3). A `{{ .TokenHash }}` link would need a confirm route the web does not have, and would put a one-time token in a URL.
    - Use plain HTML in Contour's Day colours (`DESIGN.md`), with inline styles and no tracking pixels.
 2. Reference them from `supabase/config.toml` (`[auth.email.template.*]`), so the local stack (DB-02) uses the same files.
@@ -74,7 +74,7 @@ Read first: `backend/README.md` ("Deploy it"); `backend/config.render.json`; `ba
 Do:
 1. Add `render.yaml` (a Blueprint) at the repo root:
    - web service built from `backend/Dockerfile`;
-   - `FIELDMAPS_CONFIG=config.render.json`;
+   - `DECAMARK_CONFIG=config.render.json`;
    - health check path `/ready`;
    - region Virginia (near `aws-0-us-east-1`);
    - plan Starter.
@@ -92,7 +92,7 @@ Do:
 1. Document these in `web/README.md`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - `FIELDMAPS_API_URL` (server-only; replaces `NEXT_PUBLIC_FIELDMAPS_API_URL` once WEB-05 lands)
+   - `DECAMARK_API_URL` (server-only; replaces `NEXT_PUBLIC_DECAMARK_API_URL` once WEB-05 lands)
    - `SENTRY_DSN` (server) and `NEXT_PUBLIC_SENTRY_DSN` (browser). A DSN is public; the `NEXT_PUBLIC_` one is fixed at build time
 2. The user sets them for Preview (staging) and Production.
 

@@ -115,7 +115,7 @@ export function PreviewData({ children }: { children?: string | undefined }) {
     <View style={s.preview}>
       <PreviewLine>
         {children ??
-          "Sample projects and sites. Nothing here is read from or written to the FieldMaps database."}
+          "Sample projects and sites. Nothing here is read from or written to the DECA Mark database."}
       </PreviewLine>
     </View>
   );

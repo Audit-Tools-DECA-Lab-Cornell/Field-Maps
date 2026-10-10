@@ -10,7 +10,7 @@ import { packageFileName } from "@/lib/download";
 
 /**
  * Download a ready map package as a zip, from the browser. The file is named from the site code and the
- * version (`fall-creek-map-v3.zip`), and its contents are checked against the digest FieldMaps recorded
+ * version (`fall-creek-map-v3.zip`), and its contents are checked against the digest DECA Mark recorded
  * when it prepared the package.
  */
 export function DownloadPackageButton({

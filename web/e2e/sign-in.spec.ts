@@ -35,7 +35,7 @@ test.describe("where the workspace opens", () => {
 	test.describe("a manager", () => {
 		test.use({ storageState: authFile("manager") });
 
-		test("opening FieldMaps goes to the only project", async ({ page }) => {
+		test("opening DECA Mark goes to the only project", async ({ page }) => {
 			await page.goto("/o");
 			await expect(page).toHaveURL(url => url.pathname === projectPath());
 		});

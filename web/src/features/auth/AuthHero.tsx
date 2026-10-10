@@ -2,7 +2,7 @@ import { Island } from "@/components/contour/Island";
 import { StateBadge } from "@/components/contour/StateBadge";
 
 /**
- * The island beside the auth forms (System 12): what FieldMaps promises about every observation, in the
+ * The island beside the auth forms (System 12): what DECA Mark promises about every observation, in the
  * two states a record passes through. Words only. It shows no site, no zone and no record, so nothing on
  * it can be mistaken for someone's data.
  */
@@ -28,7 +28,7 @@ export function AuthHero() {
 					<dt>
 						<StateBadge kind="queue" state="uploaded" />
 					</dt>
-					<dd className="type-body text-ink-2">Only after FieldMaps has the record.</dd>
+					<dd className="type-body text-ink-2">Only after DECA Mark has the record.</dd>
 				</div>
 			</dl>
 		</Island>

@@ -1,6 +1,6 @@
 # API plan (`backend/`)
 
-This file is part of the [FieldMaps production plan](../docs/plan/README.md) and defines the `BE-*` tasks.
+This file is part of the [DECA Mark production plan](../docs/plan/README.md) and defines the `BE-*` tasks.
 - The [web flow completion proposal](WEB-FLOW-PLAN.md) scopes the backend work supporting Claude's live-web implementation; task status remains in this file and the other owning plans.
 - **Endpoint shapes and the error envelope** are owned by [contracts.md](../docs/plan/contracts.md). Implement them as written there; if one must change, change contracts.md first.
 - **Database objects** these tasks rely on are `DB-*` tasks in [supabase/PLAN.md](../supabase/PLAN.md).
@@ -420,3 +420,15 @@ Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component
 Do: Implement v2 list/detail/cursor, common server filters, summary and consistent bounded exports.
 Done when: More than 500 matching records are queryable/exportable without hidden truncation; historical labels and inventory support remain correct.
 Verify: API tests for filters, cursor ties, RLS, dates, export limits and query plans.
+
+### BE-21: Rename the API's internal FieldMaps identifiers
+Status: todo · Phase 4 · Size M · Depends: DB-17 · Blocks: none
+Needs user: the same window as DB-17. Render's `database_url` user and its Secret File change with it.
+Read first: DB-17; `backend/README.md` (Deploy it).
+Do:
+1. Move `backend/src/fieldmaps_api/` to `decamark_api/`. Update the imports, the module paths in `Dockerfile`, `Makefile`, `scripts/e2e-local.sh` and the READMEs, and the `backend/src/fieldmaps_api/…` paths that web, mobile and QGIS comments cite. Rename the `fieldmaps-api` project in `pyproject.toml` and regenerate `uv.lock`.
+2. Point every `config*.json` `database_url` at the renamed role, and rename the `fieldmaps-api-password` and `/run/fieldmaps-secrets` paths. Set the `decamark.*` request settings that DB-17 introduces.
+3. Rename the internal names: the `fieldmaps-test.invalid` and `fieldmaps-web.invalid` test origins, the `fieldmaps-import-` temporary prefix, the `fieldmaps_request_id` scope key, and the container's `fieldmaps` user.
+4. Run `pnpm contracts:generate`.
+
+Done when: `pnpm backend:check` and `pnpm backend:test` pass against a local stack carrying DB-17, and `grep -rni fieldmaps backend` finds only history.

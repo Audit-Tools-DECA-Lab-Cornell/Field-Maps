@@ -20,7 +20,7 @@ function currentPlace(): string | null {
 }
 
 /**
- * Remembers the project on screen, so opening FieldMaps again (`/o`) goes back to it. Only the path is
+ * Remembers the project on screen, so opening DECA Mark again (`/o`) goes back to it. Only the path is
  * kept, for a year, and only on this browser; `/o` checks the person still belongs there before using it.
  */
 export function RememberPlace({ path }: { path: string }) {

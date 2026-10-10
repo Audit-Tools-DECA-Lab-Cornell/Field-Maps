@@ -13,7 +13,7 @@ export default function OrgError({
 }) {
 	return (
 		<ShellMain>
-			<title>Something went wrong · FieldMaps</title>
+			<title>Something went wrong · DECA Mark</title>
 			<ErrorView error={error} retry={unstable_retry} />
 		</ShellMain>
 	);
