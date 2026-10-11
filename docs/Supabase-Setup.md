@@ -1,6 +1,6 @@
 # Supabase development connection
 
-Project: **Field Maps GIS**, `lezmqhuucfwqknspgcdy`, in AWS `us-east-1` (session pooler `aws-0-us-east-1.pooler.supabase.com:5432`). It replaced the earlier development project on September 22, 2026.
+Project: **DECA Mark GIS** (named Field Maps GIS until October 11, 2026), `lezmqhuucfwqknspgcdy`, in AWS `us-east-1` (session pooler `aws-0-us-east-1.pooler.supabase.com:5432`). It replaced the earlier development project on September 22, 2026.
 
 **Status, September 22, 2026.** The new project is provisioned and every tracked configuration points at it: `backend/config.hosted.json`, `backend/config.local.json`, `mobile/connection.config.json`, and `qgis/pg_service.conf`.
 

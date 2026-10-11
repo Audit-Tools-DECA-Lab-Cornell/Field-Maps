@@ -204,7 +204,7 @@ QGIS reprojects the EPSG:4326 points onto the EPSG:3857 base map automatically.
 
 ### Known snags in the current `qgis/` folder
 
-- **The new database starts empty.** `pg_service.conf` points at the Field Maps GIS project, provisioned September 22, 2026. The layer shows points only after the app uploads to it; the QGIS password is read from the `fieldmaps_qgis_secrets` volume as described in [the QGIS README](../qgis/README.md).
+- **The new database starts empty.** `pg_service.conf` points at the DECA Mark GIS project, provisioned September 22, 2026. The layer shows points only after the app uploads to it; the QGIS password is read from the `fieldmaps_qgis_secrets` volume as described in [the QGIS README](../qgis/README.md).
 - **The saved project file is missing.** `open-training.command` opens `qgis/fieldmaps-training.qgs`, which is not in the folder; only an older backup, `fieldops-training.qgs~`, is there. Use the manual layer steps above, then save your own project. The launcher still works for setting `PGSERVICEFILE` if you point it at your project.
 
 ---

@@ -1,6 +1,6 @@
 # Live DECA Mark observations in QGIS
 
-The Supabase login `fieldmaps_qgis_training` is restricted to the fictional training project's `gis.sample_observations` view. It cannot read private application or Auth tables, edit observations, create objects in `public`, grant memberships, or bypass row policies. On the earlier development project, its pooler login was tested with TLS certificate and hostname verification and returned both uploaded WGS84 points. The connection below now points at the Field Maps GIS project, provisioned September 22, 2026; its QGIS login connects with verified TLS and is read-only. It has no observations yet.
+The Supabase login `fieldmaps_qgis_training` is restricted to the fictional training project's `gis.sample_observations` view. It cannot read private application or Auth tables, edit observations, create objects in `public`, grant memberships, or bypass row policies. On the earlier development project, its pooler login was tested with TLS certificate and hostname verification and returned both uploaded WGS84 points. The connection below now points at the DECA Mark GIS project, provisioned September 22, 2026; its QGIS login connects with verified TLS and is read-only. It has no observations yet.
 
 This is a development reader for the practice project. Real research projects need their own scoped reader assignments and credential lifecycle.
 

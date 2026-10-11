@@ -2,7 +2,7 @@
 
 The steps that turn `master` into something Janet signs in to herself: the hosted database, the API on Render, the web app on Vercel, her account and study, and a collector build on her device. Each step names who does it and how to check it. Hosted changes are never part of an automated task (`AGENTS.md`); every step here is run by a person.
 
-Project: **Field Maps GIS**, `lezmqhuucfwqknspgcdy` (us-east-1). Checked read-only on October 8: the ledger holds `0001`–`0005`; `auth.users` has one account; no project membership lacks its Auth user; `pg_cron` is available.
+Project: **DECA Mark GIS**, `lezmqhuucfwqknspgcdy` (us-east-1). Checked read-only on October 8: the ledger holds `0001`–`0005`; `auth.users` has one account; no project membership lacks its Auth user; `pg_cron` is available.
 
 ## 1. The database (you, about 10 minutes)
 
@@ -68,7 +68,7 @@ Production environment variables, then redeploy. `NEXT_PUBLIC_` values are compi
 
 In Supabase, **Authentication → URL Configuration**: Site URL `https://decamark.vercel.app`.
 
-The browser calls the API directly, so the API must allow the web domain. In `backend/config.render.json`, `browser_origins` now allows `https://decamark.vercel.app`, `http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:5173` and `http://127.0.0.1:5173`. `browser_origin_pattern` also allows Vercel's per-branch preview hosts: `https://decamark-<name>-audit-tools-web-apps-deca-lab-at-cornell.vercel.app`. If production is served from any other domain, add it to `browser_origins` and redeploy the API. Until then, uploading or downloading a map package fails in the browser, and the pages the server renders still load.
+The browser calls the API directly, so the API must allow the web domain. In `backend/config.render.json`, `browser_origins` now allows `https://decamark.vercel.app`, `http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:5173` and `http://127.0.0.1:5173`. `browser_origin_pattern` also allows Vercel's per-branch preview hosts: `https://deca-mark-<name>-audit-tools-web-apps-deca-lab-at-cornell.vercel.app`. If production is served from any other domain, add it to `browser_origins` and redeploy the API. Until then, uploading or downloading a map package fails in the browser, and the pages the server renders still load.
 
 Check: sign in at `https://decamark.vercel.app/sign-in` with your account. Before step 5 a new account has no project to show, and `/o` says "You are not in a project yet". After step 5 you land on Play Study, and the header shows your name, email and initials.
 

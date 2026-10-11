@@ -57,8 +57,8 @@ def test_without_configured_origins_nothing_is_allowed() -> None:
 
 # Vercel names a preview deployment <project>-git-<branch>-<team>.vercel.app, so the team slug
 # is what makes the pattern safe: nobody outside the team can produce a host that matches it.
-PREVIEWS = r"https://decamark-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\.vercel\.app"
-PREVIEW = "https://decamark-git-somebranch-audit-tools-web-apps-deca-lab-at-cornell.vercel.app"
+PREVIEWS = r"https://deca-?mark-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\.vercel\.app"
+PREVIEW = "https://deca-mark-git-somebranch-audit-tools-web-apps-deca-lab-at-cornell.vercel.app"
 
 
 def previewing_app() -> TestClient:
@@ -66,10 +66,12 @@ def previewing_app() -> TestClient:
 
 
 def test_a_preview_deployment_matching_the_pattern_may_preflight() -> None:
-    response = previewing_app().options(PACKAGES, headers={**PREFLIGHT, "Origin": PREVIEW})
+    # The project slug is deca-mark; decamark (the production subdomain's spelling) also matches.
+    for origin in (PREVIEW, PREVIEW.replace("deca-mark-", "decamark-")):
+        response = previewing_app().options(PACKAGES, headers={**PREFLIGHT, "Origin": origin})
 
-    assert response.status_code == 200
-    assert response.headers["access-control-allow-origin"] == PREVIEW
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == origin
 
 
 def test_the_pattern_matches_the_whole_origin_and_not_a_prefix() -> None:

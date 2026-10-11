@@ -34,7 +34,7 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 	"jwks_url": "https://YOUR_PROJECT.supabase.co/auth/v1/.well-known/jwks.json",
 	"audience": "authenticated",
 	"browser_origins": ["http://localhost:3000", "https://decamark.vercel.app"],
-	"browser_origin_pattern": "https://decamark-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
+	"browser_origin_pattern": "https://deca-?mark-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
 }
 ```
 
