@@ -35,7 +35,7 @@ export function JoinScreen({ viewer }: { viewer: Viewer }) {
 
 	if (viewer.status === "unavailable") {
 		return (
-			<AuthPanel kicker={KICKER} title="Join a project" lead="Joining needs FieldMaps.">
+			<AuthPanel kicker={KICKER} title="Join a project" lead="Joining needs DECA Mark.">
 				<LoadFailure failure={viewer.failure} what="this page" />
 			</AuthPanel>
 		);

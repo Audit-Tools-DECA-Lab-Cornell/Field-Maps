@@ -1,7 +1,7 @@
 import { ApiError, apiRequestError, failedWrite } from "@/lib/api/errors";
 
 /**
- * What a form action answers. A failure says what did not happen and why, in FieldMaps' own words. A 422
+ * What a form action answers. A failure says what did not happen and why, in DECA Mark's own words. A 422
  * also carries the API's field problems; a 409 says the form changed under the person, and the screen
  * offers a reload.
  */
@@ -23,9 +23,9 @@ export const GONE_COPY = "This version is no longer there. It may have been disc
 
 /**
  * A failed change: "Nothing was saved." then why. A conflict, a vanished version and a refused definition
- * get their own sentences; every other refusal uses `errorCopy`. When FieldMaps did not answer, or failed on
+ * get their own sentences; every other refusal uses `errorCopy`. When DECA Mark did not answer, or failed on
  * its side, the change may have landed and the message says so (`failedWrite`). Anything that is not a
- * FieldMaps or network failure is rethrown.
+ * DECA Mark or network failure is rethrown.
  */
 export function failedChange(nothing: string, error: unknown): FormActionFailure {
 	const failure: ApiError = apiRequestError(error);

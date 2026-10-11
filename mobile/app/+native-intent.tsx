@@ -3,7 +3,7 @@ import { rememberInvitation } from "../src/features/onboarding/pending-invitatio
 
 /**
  * Every link the system opens the collector with passes through here before a route is chosen. An
- * invitation link (`fieldmaps://join/DECA2026`, `fieldmaps://join?code=…`) leaves its code on this
+ * invitation link (`decamark://join/DECA2026`, `decamark://join?code=…`) leaves its code on this
  * device first, because the gate may not open the route it points to yet: signed out it lands on
  * welcome, and an account already set up lands on Projects. The code then waits there (pending
  * invitation) instead of being lost. The path itself is never changed, so onboarding still opens the

@@ -95,7 +95,7 @@ export default function ProjectsHome() {
             title="No projects yet"
             body={
               me.error
-                ? "Your projects could not be read from FieldMaps. Join with a code from your coordinator, or try again when you have signal."
+                ? "Your projects could not be read from DECA Mark. Join with a code from your coordinator, or try again when you have signal."
                 : "Join with the eight-character code from your coordinator."
             }
             action={

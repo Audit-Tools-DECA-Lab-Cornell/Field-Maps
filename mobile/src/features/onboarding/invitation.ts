@@ -65,9 +65,9 @@ export const EXPIRED_CODE = "This invitation has expired. Ask your coordinator f
 export const JOIN_OFFLINE =
   "Joining needs a connection. Your code is kept; try again when you have signal.";
 export const JOIN_SERVER =
-  "The FieldMaps server could not answer. Your code is kept; try again in a few minutes.";
+  "The DECA Mark server could not answer. Your code is kept; try again in a few minutes.";
 export const JOIN_SESSION =
-  "The server did not accept your sign-in. Your code is kept; close and reopen FieldMaps, then try again.";
+  "The server did not accept your sign-in. Your code is kept; close and reopen DECA Mark, then try again.";
 export const JOIN_REFUSED = "This code could not be used. Check it with your coordinator.";
 export const JOIN_DELETED = "This account was deleted. Nothing was joined.";
 /** A link whose code is cut short. */

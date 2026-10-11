@@ -110,7 +110,7 @@ retain the middleware's plain-text 400 behavior. Do not turn a failed fetch into
 Start local Supabase with `pnpm db:start`. Run the API from `backend/`:
 
 ```sh
-FIELDMAPS_CONFIG=config.auth-local.json uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8001
+DECAMARK_CONFIG=config.auth-local.json uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8001
 ```
 
 Then, from the repository root:

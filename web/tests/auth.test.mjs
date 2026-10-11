@@ -39,7 +39,7 @@ function worker(fetchResponse = async () => new Response("fresh", { headers: { "
 		match: async request => stored.get(typeof request === "string" ? request : request.url)
 	};
 	const source = readFileSync(new URL("../src/lib/pwa/service-worker.js", import.meta.url), "utf8").replace(
-		"__FIELDMAPS_BUILD_ID__",
+		"__DECAMARK_BUILD_ID__",
 		"test-build"
 	);
 	vm.runInNewContext(source, {
@@ -48,7 +48,7 @@ function worker(fetchResponse = async () => new Response("fresh", { headers: { "
 		Response,
 		fetch: fetchResponse,
 		self: {
-			location: { origin: "https://fieldmaps.test" },
+			location: { origin: "https://decamark.test" },
 			addEventListener: (name, handler) => listeners.set(name, handler),
 			skipWaiting() {},
 			clients: { claim: async () => {} }
@@ -56,7 +56,7 @@ function worker(fetchResponse = async () => new Response("fresh", { headers: { "
 		caches: {
 			open: async () => cache,
 			match: cache.match,
-			keys: async () => ["fieldmaps-shell-v1", "fieldmaps-public-old", "other-app"],
+			keys: async () => ["fieldmaps-shell-v1", "fieldmaps-public-old", "decamark-public-old", "other-app"],
 			delete: async key => deleted.push(key)
 		}
 	});
@@ -68,7 +68,7 @@ test("preserves unrelated caches when a new worker activates", async () => {
 	let completed;
 	listeners.get("activate")({ waitUntil: promise => (completed = promise) });
 	await completed;
-	assert.deepEqual(deleted, ["fieldmaps-shell-v1", "fieldmaps-public-old"]);
+	assert.deepEqual(deleted, ["fieldmaps-shell-v1", "fieldmaps-public-old", "decamark-public-old"]);
 });
 
 for (const headers of [
@@ -105,14 +105,14 @@ test("never caches private URLs when the worker receives prewarm URLs", async ()
 		waitUntil: promise => (completed = promise)
 	});
 	await completed;
-	assert.deepEqual([...stored.keys()], ["https://fieldmaps.test/", "https://fieldmaps.test/_next/static/public.js"]);
+	assert.deepEqual([...stored.keys()], ["https://decamark.test/", "https://decamark.test/_next/static/public.js"]);
 });
 
 for (const url of excludedUrls) {
 	test(`does not intercept excluded request ${url}`, () => {
 		const { listeners } = worker();
 		listeners.get("fetch")({
-			request: new Request(new URL(url, "https://fieldmaps.test")),
+			request: new Request(new URL(url, "https://decamark.test")),
 			respondWith: () => assert.fail("request intercepted")
 		});
 	});
@@ -121,7 +121,7 @@ for (const headers of [{ RSC: "1" }, { Authorization: "Bearer private" }]) {
 	test(`does not intercept protected request headers ${JSON.stringify(headers)}`, () => {
 		const { listeners } = worker();
 		listeners.get("fetch")({
-			request: new Request("https://fieldmaps.test/", { headers }),
+			request: new Request("https://decamark.test/", { headers }),
 			respondWith: () => assert.fail("request intercepted")
 		});
 	});
@@ -132,7 +132,7 @@ async function navigate(listeners, path = "/") {
 	let stored;
 	listeners.get("fetch")({
 		request: {
-			url: new URL(path, "https://fieldmaps.test").href,
+			url: new URL(path, "https://decamark.test").href,
 			method: "GET",
 			mode: "navigate",
 			headers: new Headers()
@@ -147,7 +147,7 @@ async function navigate(listeners, path = "/") {
 
 test("returns fresh shell content when a cached shell exists", async () => {
 	const { listeners, stored } = worker();
-	stored.set("https://fieldmaps.test/", new Response("old"));
+	stored.set("https://decamark.test/", new Response("old"));
 	assert.equal(await (await navigate(listeners)).text(), "fresh");
 });
 
@@ -155,7 +155,7 @@ test("returns cached shell content when the network fails", async () => {
 	const { listeners, stored } = worker(async () => {
 		throw new TypeError("offline");
 	});
-	stored.set("https://fieldmaps.test/", new Response("offline shell"));
+	stored.set("https://decamark.test/", new Response("offline shell"));
 	assert.equal(await (await navigate(listeners)).text(), "offline shell");
 });
 
@@ -163,23 +163,23 @@ test("returns cached shell content when the installed start URL opens offline", 
 	const { listeners, stored } = worker(async () => {
 		throw new TypeError("offline");
 	});
-	stored.set("https://fieldmaps.test/", new Response("offline shell"));
+	stored.set("https://decamark.test/", new Response("offline shell"));
 	assert.equal(await (await navigate(listeners, "/o")).text(), "offline shell");
-	assert.equal(stored.has("https://fieldmaps.test/o"), false);
+	assert.equal(stored.has("https://decamark.test/o"), false);
 });
 
 test("does not store installed start URL responses", async () => {
 	const { listeners, stored } = worker(
 		async () => new Response("protected", { headers: { "Cache-Control": "private" } })
 	);
-	stored.set("https://fieldmaps.test/", new Response("offline shell"));
+	stored.set("https://decamark.test/", new Response("offline shell"));
 	assert.equal(await (await navigate(listeners, "/o")).text(), "protected");
-	assert.equal(stored.has("https://fieldmaps.test/o"), false);
+	assert.equal(stored.has("https://decamark.test/o"), false);
 });
 
 for (const response of [
 	new Response("error", { status: 500 }),
-	Response.redirect("https://fieldmaps.test/account"),
+	Response.redirect("https://decamark.test/account"),
 	new Response("redirected")
 ]) {
 	test(`does not prewarm HTTP response ${response.status}`, async () => {

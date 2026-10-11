@@ -26,7 +26,7 @@ api-build:
 
 api-test: api-build
 	docker run --rm --add-host host.docker.internal:host-gateway \
-	  -e FIELDMAPS_CONTAINER_TESTS=1 \
+	  -e DECAMARK_CONTAINER_TESTS=1 \
 	  -v /var/run/docker.sock:/var/run/docker.sock \
 	  -v "$(ROOT)/database/.local/fieldmaps-api-password:/database/.local/fieldmaps-api-password:ro" \
 	  -v "$(ROOT)/contracts:/contracts:ro" $(API_TEST_IMAGE)

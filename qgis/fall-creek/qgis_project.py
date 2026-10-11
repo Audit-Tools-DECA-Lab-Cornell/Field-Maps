@@ -126,7 +126,7 @@ def project(extent):
 def launcher():
     path = OUT / "open-in-qgis.command"
     path.write_text(f"""#!/bin/sh
-# Opens the corrected Fall Creek project with the FieldMaps service file, so the live
+# Opens the corrected Fall Creek project with the DECA Mark service file, so the live
 # observations layer can be added afterwards with service fieldmaps_training (qgis/README.md).
 export PGSERVICEFILE="{build.REPO / 'qgis' / 'pg_service.conf'}"
 exec /Applications/QGIS-final-4_2_2.app/Contents/MacOS/QGIS-final-4_2_2 --project "{QGZ}"

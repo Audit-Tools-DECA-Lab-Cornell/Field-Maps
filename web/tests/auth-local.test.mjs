@@ -5,7 +5,7 @@ import test from "node:test";
 
 const require = createRequire(import.meta.url);
 const { encodeReply } = require("next/dist/compiled/react-server-dom-webpack/client.node.js");
-const enabled = process.env.FIELDMAPS_AUTH_LOCAL_TEST === "1";
+const enabled = process.env.DECAMARK_AUTH_LOCAL_TEST === "1";
 
 test(
 	"signs up, verifies, recovers and signs in with the new password through local web actions",
@@ -13,9 +13,9 @@ test(
 	async () => {
 		const origin = "http://localhost:3002";
 		const mailbox = "http://127.0.0.1:54324";
-		const email = `fieldmaps-auth-${Date.now()}@example.com`;
-		const password = "FieldmapsLocalTest!1004";
-		const nextPassword = "FieldmapsRecovered!1004";
+		const email = `decamark-auth-${Date.now()}@example.com`;
+		const password = "DecamarkLocalTest!1004";
+		const nextPassword = "DecamarkRecovered!1004";
 		const jar = new Map();
 		await fetch(`${origin}/sign-up`);
 		const manifest = JSON.parse(

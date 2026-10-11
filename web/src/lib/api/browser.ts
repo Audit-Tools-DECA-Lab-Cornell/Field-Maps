@@ -24,7 +24,7 @@ const TRANSFER_TIMEOUT_MS = 180_000;
 
 /** The API's address for the browser, or null when this deployment does not set one. */
 export function browserApiUrl(): string | null {
-	return process.env.NEXT_PUBLIC_FIELDMAPS_API_URL || null;
+	return process.env.NEXT_PUBLIC_DECAMARK_API_URL || null;
 }
 
 /** The signed-in person's access token, refreshed first when it expires within a minute. */

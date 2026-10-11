@@ -33,7 +33,7 @@ export function AuthSplit({ children, hero, className }: AuthSplitProps) {
 }
 
 export type AuthPanelProps = {
-	/** The mono eyebrow, typed in sentence case: "FieldMaps · Research in place". */
+	/** The mono eyebrow, typed in sentence case: "DECA Mark · Research in place". */
 	kicker: ReactNode;
 	title: ReactNode;
 	/** One or two sentences in secondary ink under the title. */

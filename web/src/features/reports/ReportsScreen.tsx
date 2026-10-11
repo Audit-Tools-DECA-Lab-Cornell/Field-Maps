@@ -92,7 +92,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /**
- * Reports: a summary of the observations FieldMaps holds, in one sentence and bars by zone, round, play
+ * Reports: a summary of the observations DECA Mark holds, in one sentence and bars by zone, round, play
  * type, observer and day, that can be printed. Site and round are chosen on the server before the newest
  * 500 observations are taken; days are chosen here, so they only see the observations that came back.
  */
@@ -169,7 +169,7 @@ export function ReportsScreen({
 			<style>{PRINT_CSS}</style>
 			<PageHeader
 				title="Reports"
-				lead="Counts of the observations FieldMaps holds, ready to print."
+				lead="Counts of the observations DECA Mark holds, ready to print."
 				actions={
 					<Button
 						variant="primary"

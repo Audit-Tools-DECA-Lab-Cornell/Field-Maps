@@ -34,7 +34,5 @@ def admin_sql(statement: str, *variables: str) -> str:
 
 
 def database_url() -> str:
-    host = (
-        "host.docker.internal" if environ.get("FIELDMAPS_CONTAINER_TESTS") == "1" else "127.0.0.1"
-    )
+    host = "host.docker.internal" if environ.get("DECAMARK_CONTAINER_TESTS") == "1" else "127.0.0.1"
     return f"postgresql+asyncpg://fieldmaps_api@{host}:54322/postgres"

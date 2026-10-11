@@ -11,7 +11,7 @@ export function signInAvailable(): boolean {
 export function NotConfigured() {
 	return (
 		<Note tone="attention" title="Signing in is not available here right now.">
-			Try again in a few minutes, or ask the person who set up FieldMaps for your team.
+			Try again in a few minutes, or ask the person who set up DECA Mark for your team.
 		</Note>
 	);
 }
@@ -24,7 +24,7 @@ export type StartAgainProps = {
 };
 
 /**
- * A code page opened without the address its code went to: FieldMaps keeps that address in an httpOnly
+ * A code page opened without the address its code went to: DECA Mark keeps that address in an httpOnly
  * cookie for 30 minutes, so it has expired, or the flow began in another browser.
  */
 export function StartAgain({ href, nothing }: StartAgainProps) {

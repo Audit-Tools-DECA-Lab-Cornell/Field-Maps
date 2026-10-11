@@ -18,7 +18,7 @@ export default function GlobalError({
 	return (
 		<html lang="en" data-theme="day" suppressHydrationWarning>
 			<head>
-				<title>Something went wrong · FieldMaps</title>
+				<title>Something went wrong · DECA Mark</title>
 				<script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
 			</head>
 			<body className="bg-ground text-ink">
@@ -26,7 +26,7 @@ export default function GlobalError({
 					<p className="type-mono-label text-ink-2">Request interrupted</p>
 					<h1 className="type-page text-ink">Something went wrong.</h1>
 					<p className="type-lead text-ink-2">
-						FieldMaps could not load this page. Your records remain available, and records on devices are
+						DECA Mark could not load this page. Your records remain available, and records on devices are
 						not affected. Try again, or reload the page.
 					</p>
 					<div className="mt-2 flex flex-wrap gap-3">

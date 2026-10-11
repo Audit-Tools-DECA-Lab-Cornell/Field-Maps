@@ -1,6 +1,6 @@
 # Product workspace
 
-FieldMaps uses one Git repository and separate component toolchains. Central management means common entry-point commands, documentation, and coordinated changes; it does not require a shared React version or a combined JavaScript/Python dependency graph.
+DECA Mark uses one Git repository and separate component toolchains. Central management means common entry-point commands, documentation, and coordinated changes; it does not require a shared React version or a combined JavaScript/Python dependency graph.
 
 ## Dependency boundaries
 

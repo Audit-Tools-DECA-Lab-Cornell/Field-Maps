@@ -1,8 +1,8 @@
-# Putting FieldMaps in front of Janet (October 8, 2026)
+# Putting DECA Mark in front of Janet (October 8, 2026)
 
 The steps that turn `master` into something Janet signs in to herself: the hosted database, the API on Render, the web app on Vercel, her account and study, and a collector build on her device. Each step names who does it and how to check it. Hosted changes are never part of an automated task (`AGENTS.md`); every step here is run by a person.
 
-Project: **Field Maps GIS**, `lezmqhuucfwqknspgcdy` (us-east-1). Checked read-only on October 8: the ledger holds `0001`–`0005`; `auth.users` has one account; no project membership lacks its Auth user; `pg_cron` is available.
+Project: **DECA Mark GIS**, `lezmqhuucfwqknspgcdy` (us-east-1). Checked read-only on October 8: the ledger holds `0001`–`0005`; `auth.users` has one account; no project membership lacks its Auth user; `pg_cron` is available.
 
 ## 1. The database (you, about 10 minutes)
 
@@ -41,7 +41,7 @@ New **Web Service** from this repository:
 | Region | Virginia (US East), near the database pooler |
 | Instance | Starter or larger, so it does not sleep between requests |
 | Health check path | `/ready` |
-| Environment variable | `FIELDMAPS_CONFIG=config.render.json` |
+| Environment variable | `DECAMARK_CONFIG=config.render.json` |
 | Secret File | `database-password`: the hosted `fieldmaps_api` password, nothing else (`node scripts/api-role-password.mjs` makes a new one) |
 
 The password is in your local volume: `docker run --rm -v fieldmaps_hosted_api_secrets:/s alpine cat /s/database-password`. Account deletion needs a second Secret File, `supabase-secret-key`, and `auth_admin_key_file` in the configuration (BE-08); without it, deleting an account answers "not available yet" and changes nothing.
@@ -62,22 +62,22 @@ Production environment variables, then redeploy. `NEXT_PUBLIC_` values are compi
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://lezmqhuucfwqknspgcdy.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | the project's publishable key (as in `mobile/config/staging.json`) |
-| `FIELDMAPS_API_URL` | `https://field-maps.onrender.com`, no trailing slash. The web server reads and writes the API with it |
-| `NEXT_PUBLIC_FIELDMAPS_API_URL` | the same value. The browser uploads and downloads map packages (up to 24 MiB, more than Vercel passes through) straight to the API with it |
+| `DECAMARK_API_URL` | `https://field-maps.onrender.com`, no trailing slash. The web server reads and writes the API with it |
+| `NEXT_PUBLIC_DECAMARK_API_URL` | the same value. The browser uploads and downloads map packages (up to 24 MiB, more than Vercel passes through) straight to the API with it |
 | `NEXT_PUBLIC_ANDROID_APP_URL` | Optional. An https link to the Android build. When it is set, the home page and the collect page show it |
 
-In Supabase, **Authentication → URL Configuration**: Site URL `https://field-maps.vercel.app`.
+In Supabase, **Authentication → URL Configuration**: Site URL `https://decamark.vercel.app`.
 
-The browser calls the API directly, so the API must allow the web domain. In `backend/config.render.json`, `browser_origins` now allows `https://field-maps.vercel.app`, `http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:5173` and `http://127.0.0.1:5173`. `browser_origin_pattern` also allows Vercel's per-branch preview hosts: `https://field-maps-<name>-audit-tools-web-apps-deca-lab-at-cornell.vercel.app`. If production is served from any other domain, add it to `browser_origins` and redeploy the API. Until then, uploading or downloading a map package fails in the browser, and the pages the server renders still load.
+The browser calls the API directly, so the API must allow the web domain. In `backend/config.render.json`, `browser_origins` now allows `https://decamark.vercel.app`, `http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:5173` and `http://127.0.0.1:5173`. `browser_origin_pattern` also allows Vercel's per-branch preview hosts: `https://deca-mark-<name>-audit-tools-web-apps-deca-lab-at-cornell.vercel.app`. If production is served from any other domain, add it to `browser_origins` and redeploy the API. Until then, uploading or downloading a map package fails in the browser, and the pages the server renders still load.
 
-Check: sign in at `https://field-maps.vercel.app/sign-in` with your account. Before step 5 a new account has no project to show, and `/o` says "You are not in a project yet". After step 5 you land on Play Study, and the header shows your name, email and initials.
+Check: sign in at `https://decamark.vercel.app/sign-in` with your account. Before step 5 a new account has no project to show, and `/o` says "You are not in a project yet". After step 5 you land on Play Study, and the header shows your name, email and initials.
 
 ## 5. Janet's study (you, 2 minutes)
 
 From the repository, signed in as your own account:
 
 ```sh
-FIELDMAPS_API_URL=https://<service>.onrender.com \
+DECAMARK_API_URL=https://<service>.onrender.com \
 SUPABASE_URL=https://lezmqhuucfwqknspgcdy.supabase.co \
 SUPABASE_PUBLISHABLE_KEY=<publishable key> \
 MANAGER_EMAIL=<your email> \
@@ -86,7 +86,7 @@ node scripts/bootstrap-study.mjs --invite <janet's email>:manager --join-code ob
 
 It creates the DECA Lab organization and the Play Study project, publishes Janet's behaviour-mapping and zone-inventory forms, creates the Fall Creek site with its map package (outline, surfaces, equipment, tree canopies, one zone covering the playground), and prints Janet's invitation code and an observer join code once. Run it again and it changes nothing that exists. `--help` lists the options, including `--package <folder>` for another site's QGIS export (`ground`, `zones`, and optionally `trees` and `paths` as GeoJSON). Zones come only from the export: no zone is drawn that the site's own drawings do not have.
 
-The account that runs the script owns DECA Lab. Owners and admins add more people from **Organization members** (`/o/deca-lab/members`), and project managers add observers and viewers from the project's **Team** tab. An invitation gives a link and a code, shown once. FieldMaps does not send email: copy the link or the code and send it yourself.
+The account that runs the script owns DECA Lab. Owners and admins add more people from **Organization members** (`/o/deca-lab/members`), and project managers add observers and viewers from the project's **Team** tab. An invitation gives a link and a code, shown once. DECA Mark does not send email: copy the link or the code and send it yourself.
 
 ## 6. The collector on Janet's device (you)
 

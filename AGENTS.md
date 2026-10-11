@@ -1,6 +1,6 @@
-# AGENTS.md — FieldMaps product workspace
+# AGENTS.md — DECA Mark product workspace
 
-FieldMaps is one Git repository with independently managed applications. It is separate from Playspace, COPA, YEE, and their backend.
+DECA Mark is one Git repository with independently managed applications. It is separate from Playspace, COPA, YEE, and their backend.
 
 ## Routing
 

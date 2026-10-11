@@ -12,7 +12,7 @@ export type BrandMarkProps = {
 };
 
 /**
- * The FieldMaps mark: the purple app icon, the same artwork the installed app, the favicon and the store
+ * The DECA Mark brand mark: the purple app icon, the same artwork the installed app, the favicon and the store
  * listing use (D29; `web/public/icons/icon.svg`, drawn from `mobile/assets/icon-source/generate.py`). The
  * file clips itself to its rounded square, so no rounding is added here, and it is artwork, not tokens: it
  * looks the same in Day and Dusk.
@@ -35,21 +35,21 @@ export function BrandMark({ label, size = 36, className }: BrandMarkProps) {
 export type BrandProps = {
 	/** Where the brand leads. Without it the lockup is not a link. */
 	href?: string;
-	/** Hide the "FieldMaps" wordmark (narrow headers); the mark then names itself. */
+	/** Hide the "DECA Mark" wordmark (narrow headers); the mark then names itself. */
 	markOnly?: boolean;
 	/** Show the wordmark from 640 px up only, for a header that needs the room on a phone. */
 	wordmarkFromSm?: boolean;
 	className?: string;
 };
 
-/** The mark and the "FieldMaps" wordmark, as the header's first item. */
+/** The mark and the "DECA Mark" wordmark, as the header's first item. */
 export function Brand({ href, markOnly = false, wordmarkFromSm = false, className }: BrandProps) {
 	const content = (
 		<>
-			<BrandMark label={markOnly ? "FieldMaps" : undefined} />
+			<BrandMark label={markOnly ? "DECA Mark" : undefined} />
 			{!markOnly && (
 				<span className={cx("type-island text-ink", wordmarkFromSm && "sr-only sm:not-sr-only")}>
-					FieldMaps
+					DECA Mark
 				</span>
 			)}
 		</>

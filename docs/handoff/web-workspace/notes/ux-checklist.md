@@ -1,4 +1,4 @@
-# FieldMaps web manager screens: UX checklist (Contour)
+# DECA Mark web manager screens: UX checklist (Contour)
 
 Sources: DESIGN.md (wins on any conflict), PRODUCT.md (glossary, honesty), ui-ux-pro-max (admin/dashboard rules), the code in `web/src/components/contour`. Read DESIGN §5 to §7, §10 and §11 before building. The reader is a researcher who manages a study (Janet). Every word must be true for live API data.
 
@@ -97,7 +97,7 @@ Sources: DESIGN.md (wins on any conflict), PRODUCT.md (glossary, honesty), ui-ux
 |---|---|---|
 | Sites | "Riverside · 3 zones · Map package v3"; empty: "No sites yet" + what a site is for | "Locations", "Places", "Site 1" |
 | Zones | "North meadow · 7 observations"; records without a zone: "No zone" | "Region", "Polygon 3", "Unassigned area" |
-| Map packages | "Activate v4" + "v3 becomes Archived."; upload: "Sends this package to the FieldMaps API." | "Basemap", "Tiles", "Bundle uploaded successfully!" |
+| Map packages | "Activate v4" + "v3 becomes Archived."; upload: "Sends this package to the DECA Mark API." | "Basemap", "Tiles", "Bundle uploaded successfully!" |
 | Forms | "`demo-v2` Draft · 2 changes", "Publish demo-v2", reason until the box is ticked | "Survey", "Instrument", "Submit", "Save Changes" |
 | Rounds | Cell "Reliability"; sentence "Reliability round"; Inventory: "Zone inventory · one per zone" | "Round 1", "Visit", "Shift", "Scheduled", "Assigned to you" |
 | Observations | `OBS-3F2A1B` (mono, linked); "OBS-3F2A1B approved · Undo"; Not yet reviewed / Approved / Excluded | "Entry", "Submission", "Response #12", "Accepted", "Rejected" |

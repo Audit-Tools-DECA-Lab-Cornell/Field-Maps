@@ -1,4 +1,4 @@
-# FieldMaps observation API
+# DECA Mark observation API
 
 The [live web workspace handoff](WEB-FLOW-HANDOFF.md) documents current endpoint roles,
 observation-detail metadata, bounded reporting, local browser fixtures and release checks.
@@ -16,7 +16,7 @@ pnpm backend:test
 
 From `backend/`, start the API with `uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8000`. Stop any existing API on that port first. `config.local.json` points to local Supabase port 54322 and its generated ignored password file. `pnpm db:stop` preserves local database volumes; `pnpm db:reset` explicitly recreates the local schema and fictional fixtures.
 
-Tests use ephemeral signing keys and fictional accounts on local Supabase, with real RLS through `fieldmaps_api`. `config.local.json` retains the hosted identity provider for existing development installs. To use local Auth as well as local Postgres, start from `backend/` with `FIELDMAPS_CONFIG=config.auth-local.json uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8001`. Set the web server's `FIELDMAPS_API_URL` to `http://127.0.0.1:8001`. HTTP identity URLs are allowed only on literal loopback hosts. There is no test-user bypass in the running API. `/health` is liveness. `/ready` checks the database and the cached signing-key set; it returns 503 when either is unavailable. Startup refuses database roles that are superusers or can bypass row security.
+Tests use ephemeral signing keys and fictional accounts on local Supabase, with real RLS through `fieldmaps_api`. `config.local.json` retains the hosted identity provider for existing development installs. To use local Auth as well as local Postgres, start from `backend/` with `DECAMARK_CONFIG=config.auth-local.json uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src --port 8001`. Set the web server's `DECAMARK_API_URL` to `http://127.0.0.1:8001`. HTTP identity URLs are allowed only on literal loopback hosts. There is no test-user bypass in the running API. `/health` is liveness. `/ready` checks the database and the cached signing-key set; it returns 503 when either is unavailable. Startup refuses database roles that are superusers or can bypass row security.
 
 `make -C database api-build api-test` builds separate runtime and test images and runs the API suite against the existing local database. The test image includes pytest and Docker tooling for SQL fixtures; the runtime image contains neither and runs as UID 10001. Runtime-mounted password files must be readable by that user. The runtime health check uses the configured `PORT` and calls `/health`.
 
@@ -33,8 +33,8 @@ Create/select a Supabase development project, use its asymmetric JWT signing key
 	"issuer": "https://YOUR_PROJECT.supabase.co/auth/v1",
 	"jwks_url": "https://YOUR_PROJECT.supabase.co/auth/v1/.well-known/jwks.json",
 	"audience": "authenticated",
-	"browser_origins": ["http://localhost:3000", "https://field-maps.vercel.app"],
-	"browser_origin_pattern": "https://field-maps-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
+	"browser_origins": ["http://localhost:3000", "https://decamark.vercel.app"],
+	"browser_origin_pattern": "https://deca-?mark-[a-z0-9-]+-audit-tools-web-apps-deca-lab-at-cornell\\.vercel\\.app"
 }
 ```
 
@@ -68,7 +68,7 @@ Rebuild/restart the API after public config changes. Configure the same provider
 ## Deploy it
 
 The image carries every configuration it might run under and picks one at startup from the
-`FIELDMAPS_CONFIG` environment variable. Unset, it reads `config.local.json`, which is the local
+`DECAMARK_CONFIG` environment variable. Unset, it reads `config.local.json`, which is the local
 development file and names localhost Supabase — so a deployed container that does not set this
 variable cannot start unless its configured local database is reachable with a restricted role.
 
@@ -76,7 +76,7 @@ On [Render](https://render.com/docs/docker), deploying `backend/Dockerfile`:
 
 | What | Where | Value |
 | ---- | ----- | ----- |
-| Environment variable | `FIELDMAPS_CONFIG` | `config.render.json` |
+| Environment variable | `DECAMARK_CONFIG` | `config.render.json` |
 | Secret File | `database-password` | the `fieldmaps_api` role's password, nothing else in the file |
 
 That is the whole list. Everything else — the pooler URL, the TLS settings, the CA path, the
@@ -90,7 +90,7 @@ close to the database; this configuration points at `aws-0-us-east-1`.
 
 Two things a deployment still needs that are not in this repository: the web application's
 origin must appear in `browser_origins` before a browser there can call the API, and
-`NEXT_PUBLIC_FIELDMAPS_API_URL` in the web deployment must name the API. Missing either one and
+`NEXT_PUBLIC_DECAMARK_API_URL` in the web deployment must name the API. Missing either one and
 base map upload fails in the browser rather than at the API.
 
 ## Organizations, projects and invitations

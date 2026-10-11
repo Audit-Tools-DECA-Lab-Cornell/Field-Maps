@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 	referrer: "no-referrer"
 };
 
-/** Org 12. The join code is typed on this page and sent to FieldMaps in a request body; it is never in the address. */
+/** Org 12. The join code is typed on this page and sent to DECA Mark in a request body; it is never in the address. */
 export default async function JoinPage() {
 	const { viewer } = await readViewer();
 	return <JoinScreen viewer={viewer} />;

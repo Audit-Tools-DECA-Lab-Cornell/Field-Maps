@@ -1,6 +1,6 @@
 # Contracts shared by web, mobile and API
 
-This file is part of the [FieldMaps production plan](README.md) and defines the `CON-*` tasks. It is the single reference for:
+This file is part of the [DECA Mark production plan](README.md) and defines the `CON-*` tasks. It is the single reference for:
 - the shapes that cross a component boundary;
 - the API endpoint catalog;
 - the canonical form definition;

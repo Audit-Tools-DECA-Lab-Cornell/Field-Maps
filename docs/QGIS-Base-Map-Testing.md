@@ -1,4 +1,4 @@
-# Testing FieldMaps on a real QGIS map
+# Testing DECA Mark on a real QGIS map
 
 How to get a base map into QGIS, draw your own site on it, load that site into the mobile collector, and check your collected points in QGIS on top of the base map.
 
@@ -63,7 +63,7 @@ Other sources:
 
 1. Click the CRS button at the bottom right of the QGIS window.
 2. Pick `EPSG:3857` (Web Mercator) for display. This matches the tile base maps.
-3. Save the project somewhere outside `qgis/` for your own work, for example `~/Documents/FieldMaps/my-site.qgz`.
+3. Save the project somewhere outside `qgis/` for your own work, for example `~/Documents/DECA Mark/my-site.qgz`.
 
 ---
 
@@ -132,7 +132,7 @@ This stores your site as a prepared, versioned package the API can serve. It doe
 
 5. `GET /v1/projects/{project}/packages` lists versions, and `.../packages/{id}/archive` returns the zip. The archive is deterministic: the same submission yields the same `sha256`, which is also the ETag.
 
-If the web application has no API configured (`NEXT_PUBLIC_FIELDMAPS_API_URL`), the screen downloads the assembled submission instead of pretending to upload it.
+If the web application has no API configured (`NEXT_PUBLIC_DECAMARK_API_URL`), the screen downloads the assembled submission instead of pretending to upload it.
 
 ---
 
@@ -204,7 +204,7 @@ QGIS reprojects the EPSG:4326 points onto the EPSG:3857 base map automatically.
 
 ### Known snags in the current `qgis/` folder
 
-- **The new database starts empty.** `pg_service.conf` points at the Field Maps GIS project, provisioned September 22, 2026. The layer shows points only after the app uploads to it; the QGIS password is read from the `fieldmaps_qgis_secrets` volume as described in [the QGIS README](../qgis/README.md).
+- **The new database starts empty.** `pg_service.conf` points at the DECA Mark GIS project, provisioned September 22, 2026. The layer shows points only after the app uploads to it; the QGIS password is read from the `fieldmaps_qgis_secrets` volume as described in [the QGIS README](../qgis/README.md).
 - **The saved project file is missing.** `open-training.command` opens `qgis/fieldmaps-training.qgs`, which is not in the folder; only an older backup, `fieldops-training.qgs~`, is there. Use the manual layer steps above, then save your own project. The launcher still works for setting `PGSERVICEFILE` if you point it at your project.
 
 ---

@@ -28,10 +28,10 @@ test("an invitation expiring exactly now is no longer active", () => {
 
 test("the link keeps the token in the fragment", () => {
 	assert.equal(
-		inviteLink("https://field-maps.example", "abc_DEF-123"),
-		"https://field-maps.example/invite#t=abc_DEF-123"
+		inviteLink("https://decamark.example", "abc_DEF-123"),
+		"https://decamark.example/invite#t=abc_DEF-123"
 	);
-	assert.equal(inviteLink("https://field-maps.example/", "a b"), "https://field-maps.example/invite#t=a%20b");
+	assert.equal(inviteLink("https://decamark.example/", "a b"), "https://decamark.example/invite#t=a%20b");
 });
 
 test("uses read as a count of the limit", () => {

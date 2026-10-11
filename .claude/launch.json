@@ -2,13 +2,13 @@
 	"version": "0.0.1",
 	"configurations": [
 		{
-			"name": "fieldmaps",
+			"name": "decamark",
 			"runtimeExecutable": "pnpm",
 			"runtimeArgs": ["-C", ".", "dev"],
 			"port": 3000
 		},
 		{
-			"name": "fieldmaps-nvm",
+			"name": "decamark-nvm",
 			"runtimeExecutable": "bash",
 			"runtimeArgs": ["-c", "source \"$HOME/.nvm/nvm.sh\" && nvm use 24 >/dev/null && pnpm dev"],
 			"port": 3000

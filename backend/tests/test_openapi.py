@@ -15,7 +15,7 @@ def test_export_is_deterministic_without_external_io(monkeypatch: pytest.MonkeyP
         message = "OpenAPI export must not perform external I/O"
         raise AssertionError(message)
 
-    monkeypatch.setenv("FIELDMAPS_CONFIG", "/nonexistent/openapi-config.json")
+    monkeypatch.setenv("DECAMARK_CONFIG", "/nonexistent/openapi-config.json")
     monkeypatch.setattr(Path, "read_text", forbidden_io)
     monkeypatch.setattr(Path, "read_bytes", forbidden_io)
     monkeypatch.setattr(socket.socket, "connect", forbidden_io)

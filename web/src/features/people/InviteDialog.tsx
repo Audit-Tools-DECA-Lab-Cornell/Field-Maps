@@ -114,7 +114,7 @@ export function InviteDialog<R extends PeopleRole>({
 			description={
 				created
 					? undefined
-					: "FieldMaps does not send email. You will get a link and a join code to send yourself."
+					: "DECA Mark does not send email. You will get a link and a join code to send yourself."
 			}
 			footer={
 				created ? (

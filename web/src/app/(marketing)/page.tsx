@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const FRAME = "mx-auto w-full max-w-(--container-page) px-4 md:px-gutter xl:px-23";
 
 /**
- * The front door: what FieldMaps is, the next step for each visitor, what each side of a study does, and
+ * The front door: what DECA Mark is, the next step for each visitor, what each side of a study does, and
  * what the product will and will not claim. Someone who is already signed in never sees it; the proxy
  * sends them to their workspace.
  */

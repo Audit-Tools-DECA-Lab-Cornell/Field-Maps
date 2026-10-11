@@ -59,7 +59,7 @@ def test_every_copied_path_exists_and_survives_the_ignore_rules() -> None:
 
 
 def test_the_configuration_the_deployment_names_is_in_the_image() -> None:
-    # backend/README.md tells a Render deployment to set FIELDMAPS_CONFIG to this file.
+    # backend/README.md tells a Render deployment to set DECAMARK_CONFIG to this file.
     assert "config.render.json" in copied_sources()
 
 

@@ -1,6 +1,6 @@
 # Mobile collector plan (`mobile/`)
 
-This file is part of the [FieldMaps production plan](../docs/plan/README.md) and defines the `MOB-*` tasks. Related plan files:
+This file is part of the [DECA Mark production plan](../docs/plan/README.md) and defines the `MOB-*` tasks. Related plan files:
 - The sync design is in [sync-powersync.md](../docs/plan/sync-powersync.md). Its tasks here are MOB-09 to MOB-12.
 - The API shapes are in [contracts.md](../docs/plan/contracts.md).
 - The user journeys are J2 and J4 in [product.md](../docs/plan/product.md#journeys-the-pilot-must-support).
@@ -214,7 +214,7 @@ Do:
    - `POST /v1/invitations/preview` first, then a confirm screen ("Join {project} ({org}) as {role}?"), then `POST /v1/invitations/redeem`;
    - the explanation "You're already in Training — you can practise now";
    - "Skip for now".
-3. Deep link `fieldmaps://join?code=XXXX` opens join with the code filled in (use `expo-linking`).
+3. Deep link `decamark://join?code=XXXX` opens join with the code filled in (use `expo-linking`).
    - It needs no session exchange.
    - It never redeems without the confirm screen: a link from someone else must not silently enrol the user.
 4. After a join succeeds, refresh `/v1/me` and set the active project to the one joined.
@@ -241,7 +241,7 @@ Do:
 4. **"Remove account from this device"** (without deleting the account) runs the same routine after sign-out, behind a confirm dialog that names any unsent records it destroys. The routine:
    - deletes this user's rows and drafts from the shared legacy file if it still exists, before and after MOB-09 (every scope whose `userId` matches), never the file itself, which other accounts share;
    - upserts the MOB-11 ledger to `removed`, if the ledger exists;
-   - after MOB-09, closes and deletes `fieldmaps-{userId}.db`, its per-account summary and `last-account.json`;
+   - after MOB-09, closes and deletes `decamark-{userId}.db`, its per-account summary and `last-account.json`;
    - drops this user's package references (MOB-14). A package directory is deleted only when no account references it.
 5. At sign-out, write the per-account summary (`documentDirectory/accounts/{userId}.json`: email and counts) that MOB-05 shows.
 6. Remove the developer copy from this screen (`app/account.tsx:142-146`).
@@ -284,7 +284,7 @@ Do:
    - synced tables that mirror the SYNC-02 streams;
    - the local-only tables `drafts`, `package_files`, `migration_state`;
    - `held_observations`: records that must stay on the device, with owner, reason and payload. Examples are a form version not yet published, and practice records saved while signed out.
-6. Create `src/data/powersync/db.ts`: one database per user (`fieldmaps-{userId}.db`), opened after the account is known.
+6. Create `src/data/powersync/db.ts`: one database per user (`decamark-{userId}.db`), opened after the account is known.
    - The connector is **bound to that database's owner**.
    - `fetchCredentials` returns `null`, and `uploadData` throws without calling the API, whenever the current session's user is not the owner.
    - On account change, `await disconnect()` and `close()` before the next account's session is used. A pending batch must never go out with another person's token.
@@ -339,7 +339,7 @@ Do:
    - The path is `new File(Paths.document, 'SQLite', 'fieldmaps-shell.db')`: expo-sqlite's default directory, `<Documents>/SQLite` on iOS and `<files>/SQLite` on Android.
    - Open it in place with op-sqlite's absolute location constants (`IOS_DOCUMENT_PATH` / `ANDROID_FILES_PATH` + `/SQLite`). op-sqlite resolves relative names against a different directory.
    - Never copy the `.db` without its `-wal` and `-shm`. The last commits before a force-quit may live only in the WAL.
-4. **When an account signs in** and its `fieldmaps-{userId}.db` is open, the old file exists, and this user's `migration_state` is not `copied`: in one `writeTransaction` on this user's database, copy only this user's rows, across all of their scopes.
+4. **When an account signs in** and its `decamark-{userId}.db` is open, the old file exists, and this user's `migration_state` is not `copied`: in one `writeTransaction` on this user's database, copy only this user's rows, across all of their scopes.
    - `pending` and `needs-attention` rows go into `observations`, as PUTs. Keep each UUID, skip ids already present, map `shell-v1` to its server form version, and convert numbers to JSON numbers.
    - `synced` rows are **never queued**.
      - Their `server_receipt` shows that the server accepted them, and the server copy returns through `my_observations`.

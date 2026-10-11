@@ -1,6 +1,6 @@
 # Prompt for Claude: plan web and mobile zone-boundary frontend
 
-Copy the text below into the FieldMaps workspace chat with Claude. All proposed backend details must be checked against the linked contract before coding.
+Copy the text below into the DECA Mark workspace chat with Claude. All proposed backend details must be checked against the linked contract before coding.
 
 ---
 
@@ -15,7 +15,7 @@ Read these in order:
 
 ## Product and user context
 
-FieldMaps serves research teams observing children's play. Managers use the web to prepare sites/maps/forms and review data. Observers use phones/tablets in daylight, often offline, with attention on the activity. They manually place the observed activity location, which often differs from the observer's GPS position. Standard and Reliability rounds collect point events; Inventory records conditions/materials for a whole zone. Do not treat an inventory's compatibility anchor as an observed point.
+DECA Mark serves research teams observing children's play. Managers use the web to prepare sites/maps/forms and review data. Observers use phones/tablets in daylight, often offline, with attention on the activity. They manually place the observed activity location, which often differs from the observer's GPS position. Standard and Reliability rounds collect point events; Inventory records conditions/materials for a whole zone. Do not treat an inventory's compatibility anchor as an observed point.
 
 The first editor changes zones over existing imported ground/reference layers. Basemap/imagery ingestion, round scheduling, field polygon authoring on mobile, GPS tracking, form builders and a general GIS rewrite are out of scope. Keep Polygon, MultiPolygon and holes readable and lossless. Contour is shared between web/mobile; tokens live in `contracts/contour.json` and map palettes in `contracts/map-palettes.json`. Managers get research language; observers get short field language. Every web operation uses real API data, never session-only fake persistence.
 

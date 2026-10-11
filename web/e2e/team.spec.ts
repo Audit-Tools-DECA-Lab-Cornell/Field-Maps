@@ -24,7 +24,7 @@ test("a manager invites someone, sees the link and code once, and revokes the in
 		.last()
 		.click();
 
-	// The link and the code are shown once, with the note that FieldMaps sends no email.
+	// The link and the code are shown once, with the note that DECA Mark sends no email.
 	await expect(dialog).toContainText(/does not send email/i);
 	const shown = await textWithValues(dialog);
 	expect(shown, "the invitation link").toMatch(/\/invite#t=[\w-]{20,}/);

@@ -48,7 +48,7 @@ export type SettingsScreenProps = {
 
 /**
  * Project settings (project-19): the project's name, description and timezone, its code and status, and
- * archiving. Unsaved changes say so and leaving asks first. What FieldMaps cannot do yet (deleting a
+ * archiving. Unsaved changes say so and leaving asks first. What DECA Mark cannot do yet (deleting a
  * project, planning rounds) is said plainly beside the controls that do exist.
  */
 export function SettingsScreen({
@@ -232,7 +232,7 @@ export function SettingsScreen({
 					<ArchiveIsland context={context} projectName={saved.name} status={status} />
 					<NotAvailable
 						title="Deleting a project"
-						reason="FieldMaps does not delete projects, so a project’s sites, forms and observations are never removed by accident."
+						reason="DECA Mark does not delete projects, so a project’s sites, forms and observations are never removed by accident."
 						instead="To stop using a project, archive it."
 					/>
 					<NotAvailable

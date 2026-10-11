@@ -52,11 +52,11 @@ function roleLabel(role: InvitationDetails["role"]): string {
 }
 
 /**
- * An invitation as someone decides on it (Org 11): the organization, project, role and expiry FieldMaps
+ * An invitation as someone decides on it (Org 11): the organization, project, role and expiry DECA Mark
  * reports, and one Join. Looking at it shared nothing; Join adds the account to the project, then moves on
  * to the project (an observer to the collect page, an organization invitation to the organization). A
  * failed join keeps this page and says why: expired, no longer valid, already a member, too many tries
- * (with the wait), or FieldMaps unreachable.
+ * (with the wait), or DECA Mark unreachable.
  */
 export function InvitationCard({ invitation, credential, next, back }: InvitationCardProps) {
 	const router = useRouter();

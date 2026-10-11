@@ -1,6 +1,6 @@
 # Verification: cross-cutting suites and acceptance runs
 
-This file is part of the [FieldMaps production plan](README.md) and defines the `QA-*` tasks. Component-level tests belong to their own tasks (every task has a `Verify:` line). This file owns the suites that cross components, and the manual acceptance runs.
+This file is part of the [DECA Mark production plan](README.md) and defines the `QA-*` tasks. Component-level tests belong to their own tasks (every task has a `Verify:` line). This file owns the suites that cross components, and the manual acceptance runs.
 
 "Pilot-ready" is defined in [product.md](product.md#pilot-ready-means). Each item there is proved by one task below.
 

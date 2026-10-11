@@ -1,6 +1,6 @@
 # Mobile sync with PowerSync
 
-This file is part of the [FieldMaps production plan](README.md) and defines the `SYNC-*` tasks. It is the design for decision D2 (PowerSync now). The implementation is spread across components, and this file lists those tasks in order.
+This file is part of the [DECA Mark production plan](README.md) and defines the `SYNC-*` tasks. It is the design for decision D2 (PowerSync now). The implementation is spread across components, and this file lists those tasks in order.
 
 | Order | Task | Where | What |
 |---|---|---|---|
@@ -105,7 +105,7 @@ streams:
   - `@powersync/react-native` 2.3.x with the built-in op-sqlite factory, and `@op-engineering/op-sqlite` (peer range ≥17.1 <19).
   - **Remove `expo-sqlite`.** op-sqlite conflicts with it. MOB-11 reads the old file with op-sqlite.
   - Set `expo.updates.useThirdPartySQLitePod: true` through a config plugin, because `expo-updates` is installed.
-- **Database file.** One per user: `fieldmaps-{userId}.db`.
+- **Database file.** One per user: `decamark-{userId}.db`.
   - Signing out keeps the file, so pending work waits for that user.
   - "Remove account from this device" and account deletion delete it.
 - **Local-only tables:**

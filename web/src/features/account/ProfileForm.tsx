@@ -31,7 +31,7 @@ export type ProfileFormProps = {
 };
 
 /**
- * Profile (org-05): the full name, the observer initials and the locale, saved to the FieldMaps account
+ * Profile (org-05): the full name, the observer initials and the locale, saved to the DECA Mark account
  * with PATCH /v1/me through the `saveProfile` Server Action. The checks run here first and again on the
  * server. The confirmation is the saved state itself, announced; a refusal says what was not saved. The
  * fields stay editable while a save runs (disabling them would drop focus and hide the text from some
@@ -170,7 +170,7 @@ export function ProfileForm({ displayName, initials, locale, email }: ProfileFor
 				</div>
 				<div aria-live="polite" aria-atomic="true">
 					{answer.status === "saved" && (
-						<Note tone="saved" title="Profile saved to your FieldMaps account.">
+						<Note tone="saved" title="Profile saved to your DECA Mark account.">
 							{answer.saved?.initials && (
 								<>
 									New observations use the observer code{" "}

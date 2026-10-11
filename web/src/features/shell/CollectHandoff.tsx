@@ -15,7 +15,7 @@ export type CollectHandoffProps = {
 };
 
 /**
- * Where an observer who signs in on the web lands: collecting happens in the FieldMaps app, so this says
+ * Where an observer who signs in on the web lands: collecting happens in the DECA Mark app, so this says
  * which projects they are an observer on here and how to continue. It shows only what the person's own
  * workspace holds, and an install link only when one is configured.
  */
@@ -23,7 +23,7 @@ export function CollectHandoff({ organization, projects, androidUrl }: CollectHa
 	return (
 		<div className="flex flex-col gap-6">
 			<PageHeader
-				title="Collect with the FieldMaps app"
+				title="Collect with the DECA Mark app"
 				lead="Observers collect in the app. This site is for managers and viewers."
 			/>
 			<div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -33,8 +33,8 @@ export function CollectHandoff({ organization, projects, androidUrl }: CollectHa
 					flush={projects.length > 0}>
 					{projects.length === 0 ? (
 						<p className="type-body text-ink">
-							You are not an observer on any project in {organization}. Collecting happens in the
-							FieldMaps app, on the projects where you are an observer.
+							You are not an observer on any project in {organization}. Collecting happens in the DECA
+							Mark app, on the projects where you are an observer.
 						</p>
 					) : (
 						<ul className="divide-y divide-rule">
@@ -58,7 +58,7 @@ export function CollectHandoff({ organization, projects, androidUrl }: CollectHa
 				</Island>
 				<Island title="Next">
 					<p className="type-body text-ink">
-						Open the FieldMaps app, sign in with this account, and choose the project.
+						Open the DECA Mark app, sign in with this account, and choose the project.
 					</p>
 					{androidUrl && (
 						<div className="mt-5">

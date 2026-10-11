@@ -190,11 +190,11 @@ pnpm db:start
 if answers "$api_url/ready"; then
   say "API already answering at $api_url"
 else
-  port_busy 8001 && fail "Port 8001 is in use by something that is not a ready FieldMaps API."
+  port_busy 8001 && fail "Port 8001 is in use by something that is not a ready DECA Mark API."
   command -v uv >/dev/null 2>&1 || fail "uv is required to run the API."
   say "starting the API on $api_url (log: $state/api.log)"
   cd backend
-  start_detached "$state/api.log" env FIELDMAPS_CONFIG=config.auth-local.json \
+  start_detached "$state/api.log" env DECAMARK_CONFIG=config.auth-local.json \
     uv run --frozen uvicorn fieldmaps_api.main:create_app_from_config --factory --app-dir src \
     --host 127.0.0.1 --port 8001
   echo "$last_pid" >"$state/api.pid"
@@ -235,7 +235,7 @@ loopback "$supabase_url/" 54321
 unset NEXT_PUBLIC_FIELDMAPS_PROJECT_ID NEXT_PUBLIC_ANDROID_APP_URL NEXT_PUBLIC_PREVIEW_TOOLS
 export __NEXT_PROCESSED_ENV=true NEXT_TELEMETRY_DISABLED=1
 export NEXT_PUBLIC_SUPABASE_URL="$supabase_url" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$supabase_key"
-export FIELDMAPS_API_URL="$api_url" NEXT_PUBLIC_FIELDMAPS_API_URL="$api_url"
+export DECAMARK_API_URL="$api_url" NEXT_PUBLIC_DECAMARK_API_URL="$api_url"
 
 # ---- Web app -----------------------------------------------------------------------------------------------------
 start_web() { # dev|prod

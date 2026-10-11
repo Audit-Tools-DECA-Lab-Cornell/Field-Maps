@@ -19,14 +19,14 @@ Since WEB-27 (D30) there is one workspace: each page below reads and writes the 
 
 | Route | What it shows | State |
 |---|---|---|
-| `/` | Home page: what FieldMaps is, Sign in, the Android app link when `NEXT_PUBLIC_ANDROID_APP_URL` is set, Privacy | ✅ |
+| `/` | Home page: what DECA Mark is, Sign in, the Android app link when `NEXT_PUBLIC_ANDROID_APP_URL` is set, Privacy | ✅ |
 | `/sign-in`, `/sign-up`, `/verify`, `/forgot-password`, `/reset-password` | Email and password, with six-digit email codes | ✅ |
 | `/invite#t=…`, `/join` | Preview an invitation (link or 8-character code), then join | ✅ |
 | `/account` | Profile, password, sign out, delete account | ✅ |
 | `/o` | Opens the person's last project, their only project or their first organization; otherwise "You are not in a project yet" | ✅ |
 | `/o/[org]` | Projects, with "Create project" for owners and admins | ✅ |
 | `/o/[org]/members`, `/o/[org]/settings` | Organization members and invitations; name, web address, Transfer ownership. Owners and admins only | ✅ |
-| `/o/[org]/collect` | Observer handoff: the person's observer projects and how to open the FieldMaps app | ✅ |
+| `/o/[org]/collect` | Observer handoff: the person's observer projects and how to open the DECA Mark app | ✅ |
 | `/o/[org]/p/[project]` | Overview: field return, coverage, what needs attention, recent activity | ✅ |
 | `…/data`, `…/data/[observation]` | The newest 500 observations as a table and a plan, with filters and export; one record with its answers | ✅ |
 | `…/sites`, `…/sites/[site]`, `…/sites/[site]/packages` | Sites; a site's plan and current package; map package history, checks and upload from QGIS layers | ✅ |
@@ -186,7 +186,7 @@ The routes follow the expo-router tree in `mobile/PLAN.md` ("Target structure").
 (onboarding)
   profile                     Step 1 of 2: name + initials (the initials become the observer code)   🔴  MOB-06
   join                        Step 2 of 2: 8-character code, Scan QR, or the deep link   🔴  MOB-06
-  invitation/[code]           Confirm "Join {project}?"; deep link fieldmaps://join/CODE   🔴  MOB-06
+  invitation/[code]           Confirm "Join {project}?"; deep link decamark://join/CODE   🔴  MOB-06
 
 (app)/(tabs)   Projects · Observations · Account, in the floating tab dock. Tablets use the same dock, centred; no side rail.
   (projects)/index            Projects (home): every project, Training included; resume an unfinished observation   🟡 bundled → MOB-14, MOB-16

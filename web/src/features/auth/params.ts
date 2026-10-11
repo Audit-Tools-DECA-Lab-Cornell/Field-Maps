@@ -1,14 +1,14 @@
 /**
  * Reading the auth pages' URLs, and the rules their forms share. The signed-out forms post to the real
  * `authenticate` Server Action (src/lib/auth/actions.ts); where to go next is `safeNext` in
- * src/lib/auth/navigation.ts. The invitation and join screens call FieldMaps through their own actions
+ * src/lib/auth/navigation.ts. The invitation and join screens call DECA Mark through their own actions
  * (./actions.ts).
  */
 
 export type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /** The eyebrow over the sign-in and account titles, typed in sentence case (the mono label sets capitals). */
-export const AUTH_KICKER = "FieldMaps · Research in place";
+export const AUTH_KICKER = "DECA Mark · Research in place";
 
 /** The first value of a query parameter. */
 export function param(value: string | string[] | undefined): string | undefined {

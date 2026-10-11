@@ -111,8 +111,8 @@ export function SiteScreen({
 				/>
 				<NotAvailable
 					title="Device readiness"
-					reason="FieldMaps does not record which phones have downloaded this map."
-					instead="Ask observers to open the site in the FieldMaps app before they go out."
+					reason="DECA Mark does not record which phones have downloaded this map."
+					instead="Ask observers to open the site in the DECA Mark app before they go out."
 				/>
 				<NotAvailable
 					title="Deleting a site or a map package"
@@ -246,7 +246,7 @@ function PackageIsland({
 							)}
 						</div>
 						<p className="type-small text-ink-2">
-							Observers get this version the next time they make the site ready offline in the FieldMaps
+							Observers get this version the next time they make the site ready offline in the DECA Mark
 							app.
 						</p>
 					</>

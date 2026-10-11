@@ -2,7 +2,7 @@
  * Review switches for the collector: the sign-in gate, the data source and the screen theme.
  *
  * Development and review builds only — the (dev) layout sends a release build back to the start. Open it
- * from the gallery, or with the deep link fieldmaps://states. Every switch is stored on this device
+ * from the gallery, or with the deep link decamark://states. Every switch is stored on this device
  * (`fm.dev.gate`, `fm.dev.dataSource`, the screen preference) and none of them reaches the server.
  */
 import { router, useNavigation } from "expo-router";
@@ -71,7 +71,7 @@ const DATA_OPTIONS: readonly SegmentedOption<DataMode>[] = [
 
 const DATA_NOTES: Record<DataMode, string> = {
   device:
-    "Screens read the account and this phone: projects and the profile from /v1/me, join codes and profile edits through the FieldMaps API, and the SQLite queue, sync and the packages that ship with the app. Without a session or a connection, they say so.",
+    "Screens read the account and this phone: projects and the profile from /v1/me, join codes and profile edits through the DECA Mark API, and the SQLite queue, sync and the packages that ship with the app. Without a session or a connection, they say so.",
   preview:
     "Screens show the designed fixtures, including states the device cannot produce yet, such as Uploading or a download in progress. The join code DECA2026 opens the Play Study invitation. Nothing is sent to the server.",
 };

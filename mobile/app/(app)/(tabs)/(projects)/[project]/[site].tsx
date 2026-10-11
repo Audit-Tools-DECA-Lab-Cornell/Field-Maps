@@ -79,7 +79,7 @@ function siteStyles(t: Theme) {
  * session, and continues to "Before you begin".
  *
  * On device data a site is ready only when its package is on this phone, shipped with the app or
- * downloaded from the FieldMaps API (MOB-14), and the four parts are checked against that package. A
+ * downloaded from the DECA Mark API (MOB-14), and the four parts are checked against that package. A
  * hosted download is checked against the digest the server recorded before anything is kept. Preview
  * data simulates the designed download and removal.
  */
@@ -194,7 +194,7 @@ export default function SiteScreen() {
                 : "Download once. Verify here. Collect without signal."
             }
           />
-          <PreviewData>Sample download. Nothing is fetched from the FieldMaps server.</PreviewData>
+          <PreviewData>Sample download. Nothing is fetched from the DECA Mark server.</PreviewData>
         </View>
 
         {site.download.state === "ready" && PLANNED_SITES.has(site.id) ? (

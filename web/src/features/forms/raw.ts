@@ -67,7 +67,7 @@ export const STARTER_OPTIONS: readonly RawOption[] = [
 export const ACT_ORDER: readonly Act[] = ["Child", "Social", "Play", "Setting", "Climate", "Inventory", "Record"];
 
 /** Where a question added in the editor says it came from. It has no workbook row and no analysis column. */
-export const ADDED_SOURCE = "Added in FieldMaps — no workbook row";
+export const ADDED_SOURCE = "Added in DECA Mark — no workbook row";
 
 /**
  * A new question after the last one of its act (or after the last act that comes before it). It has no

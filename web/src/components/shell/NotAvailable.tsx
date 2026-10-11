@@ -11,7 +11,7 @@ export type NotAvailableProps = {
 };
 
 /**
- * A feature FieldMaps does not have yet, said plainly in place of a button that would not work:
+ * A feature DECA Mark does not have yet, said plainly in place of a button that would not work:
  * "Deleting a project is not available yet." Then why, and what to do instead.
  */
 export function NotAvailable({ title, reason, instead, className }: NotAvailableProps) {

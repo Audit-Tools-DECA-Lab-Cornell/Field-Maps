@@ -6,12 +6,12 @@ type ApiErrorCode = components["schemas"]["ErrorCode"];
 export type ErrorKind = "sign-in" | "retry" | "rejected";
 
 /**
- * FieldMaps' own words for every error code the API sends. A screen shows these, never the server's
+ * DECA Mark's own words for every error code the API sends. A screen shows these, never the server's
  * message, so nothing internal reaches a researcher. Written for people running a study: what did not
  * happen, why, and what to do next.
  */
 export const errorCopy = {
-	bad_request: "FieldMaps could not read what was sent. Check the values and try again.",
+	bad_request: "DECA Mark could not read what was sent. Check the values and try again.",
 	unauthenticated: "Sign in to continue.",
 	token_invalid: "You were signed out. Sign in again.",
 	account_deleted: "This account has been deleted. Sign in with an active account.",
@@ -29,12 +29,12 @@ export const errorCopy = {
 	validation_failed: "Check the values and try again.",
 	unsupported_operation: "This action is not available yet.",
 	rate_limited: "Too many tries. Wait a minute and try again.",
-	internal: "FieldMaps could not finish this. Try again in a few minutes.",
-	storage_unavailable: "FieldMaps cannot be reached right now. Try again in a few minutes."
+	internal: "DECA Mark could not finish this. Try again in a few minutes.",
+	storage_unavailable: "DECA Mark cannot be reached right now. Try again in a few minutes."
 } as const satisfies Readonly<Record<ApiErrorCode, string>>;
 
 /** The copy for an answer that could not be read at all (an HTML proxy page, a malformed envelope). */
-export const UNKNOWN_ERROR_COPY = "FieldMaps sent an answer this page could not read. Try again in a few minutes.";
+export const UNKNOWN_ERROR_COPY = "DECA Mark sent an answer this page could not read. Try again in a few minutes.";
 
 const envelopeSchema = z.object({
 	error: z.object({
@@ -192,7 +192,7 @@ export async function readApiError(response: Response): Promise<ApiError> {
 
 /**
  * A failed request as an ApiError: an ApiError passes through, an unreadable body is "unknown", and a
- * network failure or timeout means FieldMaps could not be reached. Anything else is a bug, or a Next.js
+ * network failure or timeout means DECA Mark could not be reached. Anything else is a bug, or a Next.js
  * redirect or not-found signal, and is rethrown untouched.
  */
 export function apiRequestError(error: unknown): ApiError {
@@ -203,12 +203,12 @@ export function apiRequestError(error: unknown): ApiError {
 	throw error;
 }
 
-/** What a change says when FieldMaps did not answer it, or answered with a failure of its own. */
+/** What a change says when DECA Mark did not answer it, or answered with a failure of its own. */
 export const UNCONFIRMED_CHANGE_COPY =
-	"FieldMaps could not confirm the change. Reload the page to check before you try again.";
+	"DECA Mark could not confirm the change. Reload the page to check before you try again.";
 
 /**
- * Whether FieldMaps answered a change with a refusal (any 4xx: signed out, no role, a conflict, an expired
+ * Whether DECA Mark answered a change with a refusal (any 4xx: signed out, no role, a conflict, an expired
  * invitation, a field problem, too many tries), so nothing changed. False for no answer at all (a timeout,
  * a lost connection, an unreadable reply) and for a failure on its side (5xx): the change may have landed.
  */

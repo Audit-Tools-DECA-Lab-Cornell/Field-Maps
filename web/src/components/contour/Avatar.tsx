@@ -26,7 +26,7 @@ const TONE = {
 	well: "bg-well text-ink"
 } as const;
 
-/** A person's initials in a circle. FieldMaps shows no photos. */
+/** A person's initials in a circle. DECA Mark shows no photos. */
 export function Avatar({ initials, tone = "well", size = "md", label, className }: AvatarProps) {
 	return (
 		<span

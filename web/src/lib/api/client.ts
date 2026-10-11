@@ -49,7 +49,7 @@ export const apiClient = cache(async () => {
 	const current = await session();
 	if (current.status === "unconfigured") throw new ApiError("storage_unavailable", "retry");
 	if (current.status === "signed-out") throw new ApiError("token_invalid", "sign-in");
-	const baseUrl = process.env.FIELDMAPS_API_URL;
+	const baseUrl = process.env.DECAMARK_API_URL;
 	if (!baseUrl) throw new ApiError("storage_unavailable", "retry");
 	return createClient<paths>({
 		baseUrl,

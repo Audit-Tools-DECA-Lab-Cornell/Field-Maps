@@ -8,7 +8,7 @@
  * request; confirm them with the lab and keep the systems consistent with them.
  */
 export const policy = {
-	appName: "FieldMaps",
+	appName: "DECA Mark",
 	/** The organisation responsible for the app and its data. */
 	operator: "DECA Lab at Cornell University" as string | null,
 	/** The researcher who leads the operator. */

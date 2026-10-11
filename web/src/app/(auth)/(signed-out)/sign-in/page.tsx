@@ -26,7 +26,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
 					? "Sign in to continue with your invitation."
 					: "Sign in to your research workspace."
 			}
-			footnote="Observers collect in the FieldMaps app. This site is for managers and viewers, and for joining a project.">
+			footnote="Observers collect in the DECA Mark app. This site is for managers and viewers, and for joining a project.">
 			{signInAvailable() ? <SignInForm next={next} carryNext={nextParam !== undefined} /> : <NotConfigured />}
 		</AuthPanel>
 	);

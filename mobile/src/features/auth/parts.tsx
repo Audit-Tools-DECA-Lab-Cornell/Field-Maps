@@ -89,7 +89,7 @@ export type AuthScreenProps = {
 };
 
 /**
- * The frame of the auth screens after welcome (Mobile 24–28): the back circle and the FieldMaps mark,
+ * The frame of the auth screens after welcome (Mobile 24–28): the back circle and the DECA Mark brand mark,
  * the title and lead, the form, the one primary action, and a foot that stays at the bottom of a tall
  * screen and scrolls on a short one.
  */

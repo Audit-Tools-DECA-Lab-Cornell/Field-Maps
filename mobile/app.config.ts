@@ -5,14 +5,17 @@ import { publicConfigSchema } from "./src/platform/config-schema.ts";
 const environment = process.env["APP_ENV"] ?? "development";
 if (!["development", "staging", "production"].includes(environment))
   throw new RangeError("Unknown APP_ENV");
+
 const connection = publicConfigSchema.parse(
   JSON.parse(readFileSync(`${__dirname}/config/${environment}.json`, "utf8")),
 );
+
 const base = {
-  name: "FieldMaps",
+  name: "DECA Mark",
   slug: "fieldmaps-mobile",
   version: "0.2.0",
-  scheme: "fieldmaps",
+  // DECA Mark links first; fieldmaps:// links from before the rename still open the app.
+  scheme: ["decamark", "fieldmaps"],
   orientation: "default",
   userInterfaceStyle: "automatic",
   icon: "./assets/icon.png",
@@ -58,7 +61,7 @@ const base = {
       "expo-location",
       {
         locationWhenInUsePermission:
-          "FieldMaps shows where you are on the site map while you collect, so you can find your place. Your location is never saved with an observation or sent anywhere.",
+          "DECA Mark shows where you are on the site map while you collect, so you can find your place. Your location is never saved with an observation or sent anywhere.",
         locationAlwaysAndWhenInUsePermission: false,
         locationAlwaysPermission: false,
         motionUsagePermission: false,
@@ -79,6 +82,7 @@ const base = {
     },
   },
 } satisfies ExpoConfig;
+
 export default {
   ...base,
   ios: { ...base.ios, bundleIdentifier: `com.fieldmaps.collector${connection.bundleIdSuffix}` },

@@ -81,7 +81,7 @@ function adapter(database: DatabaseSync): LocalDatabase {
 
 it("keeps only account A's records after a failed refresh and an app restart", async () => {
   // Given two accounts' queued records and a remembered signed-in account A.
-  device.directory = mkdtempSync(join(tmpdir(), "fieldmaps-session-"));
+  device.directory = mkdtempSync(join(tmpdir(), "decamark-session-"));
   const filename = join(device.directory, "observations.db");
   let database = new DatabaseSync(filename);
   try {
@@ -122,7 +122,7 @@ it("keeps only account A's records after a failed refresh and an app restart", a
 
 it("hides deliberately signed-out account records after restart but retains them for sign-in", async () => {
   // Given account A's records and persisted identity.
-  device.directory = mkdtempSync(join(tmpdir(), "fieldmaps-signout-"));
+  device.directory = mkdtempSync(join(tmpdir(), "decamark-signout-"));
   const filename = join(device.directory, "observations.db");
   let database = new DatabaseSync(filename);
   try {
@@ -185,7 +185,7 @@ it("offers email-prefilled recovery only for a retained account with a missing s
 
 it("retains account B when A's pending sign-out receives a later SIGNED_OUT", async () => {
   // Given A's sign-out in progress, followed by a new sign-in as B.
-  device.directory = mkdtempSync(join(tmpdir(), "fieldmaps-switch-"));
+  device.directory = mkdtempSync(join(tmpdir(), "decamark-switch-"));
   try {
     rememberAccount(accountA, issuer);
     let current: ReturnType<typeof sessionChange> = sessionChange(
@@ -224,7 +224,7 @@ it("retains account B when A's pending sign-out receives a later SIGNED_OUT", as
 
 it("preserves a real account-cache write failure across session loss until a durable retry", () => {
   // Given a filesystem conflict that prevents retaining account identity.
-  device.directory = mkdtempSync(join(tmpdir(), "fieldmaps-cache-error-"));
+  device.directory = mkdtempSync(join(tmpdir(), "decamark-cache-error-"));
   const blockedFile = join(device.directory, "auth", "last-account.json");
   mkdirSync(blockedFile, { recursive: true });
   try {

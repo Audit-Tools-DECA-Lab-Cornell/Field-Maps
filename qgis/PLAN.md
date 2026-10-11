@@ -1,11 +1,11 @@
 # QGIS plan: site packages in, typed layers out (`qgis/`)
 
-This file is part of the [FieldMaps production plan](../docs/plan/README.md) and defines the `GIS-*` tasks. It covers both directions between QGIS and FieldMaps. Several steps change code elsewhere, and those tasks are defined in other files:
+This file is part of the [DECA Mark production plan](../docs/plan/README.md) and defines the `GIS-*` tasks. It covers both directions between QGIS and DECA Mark. Several steps change code elsewhere, and those tasks are defined in other files:
 
 | Direction | What | Tasks |
 |---|---|---|
-| QGIS → FieldMaps | A manager exports site layers from a QGIS project and uploads them as a site package | BE-13 (Storage, zones, current pointer), WEB-08 (upload on the site page), MOB-14 (device download) |
-| FieldMaps → QGIS | Analysts read accepted observations as typed layers | **GIS-01 to GIS-04** (here), BE-15, WEB-12 |
+| QGIS → DECA Mark | A manager exports site layers from a QGIS project and uploads them as a site package | BE-13 (Storage, zones, current pointer), WEB-08 (upload on the site page), MOB-14 (device download) |
+| DECA Mark → QGIS | Analysts read accepted observations as typed layers | **GIS-01 to GIS-04** (here), BE-15, WEB-12 |
 | Later | Self-serve access with keys, richer formats, a publishing plugin | GIS-06 to GIS-08 (post-pilot) |
 
 Decision D10 in [decisions.md](../docs/plan/decisions.md) sets the pilot's access model: per-project read-only database logins, with OGC API Features plus keys after the pilot.
@@ -174,9 +174,9 @@ Done when: no object or doc references `sample_observations` or `fieldmaps_sampl
 Status: todo · Phase 3 · Size S · Depends: GIS-02 · Blocks: WEB-12
 Do:
 1. Turn `qgis/pg_service.conf` into a documented template.
-   - One `[fieldmaps_<org slug>_<project code>]` block per project. It is a local file, so readable names are fine; its `user` is the derived `fieldmaps_gis_p…` role.
+   - One `[decamark_<org slug>_<project code>]` block per project. It is a local file, so readable names are fine; its `user` is the derived `fieldmaps_gis_p…` role.
    - Public settings only, with a checkout-relative certificate path.
-2. Add `qgis/templates/fieldmaps-project.qgs`, a small project with the generic layer through `service=` and no credentials, plus the instructions for adding a typed layer.
+2. Add `qgis/templates/decamark-project.qgs`, a small project with the generic layer through `service=` and no credentials, plus the instructions for adding a typed layer.
 3. Update `qgis/README.md` for the new model and the launcher (`open-training.command`).
 
 Done when: following the README on a clean QGIS 4.2 install opens a project's typed layer.
@@ -201,7 +201,7 @@ Do:
 
 Done when: a GeoPackage in a local CRS becomes a ready package, and the device shows an imagery base offline.
 
-### GIS-08: "Publish to FieldMaps" QGIS plugin (post-pilot)
+### GIS-08: "Publish to DECA Mark" QGIS plugin (post-pilot)
 Status: todo · Post-pilot · Size L · Depends: GIS-07 · Blocks: none
 Do: build a QGIS Python plugin that exports the required layers from the open project and calls the package API with the manager's session (device-code or token paste). It shows the server's checks inside QGIS.
 

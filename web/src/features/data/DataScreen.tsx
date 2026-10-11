@@ -80,7 +80,7 @@ function markerLabel(record: DataRecord): string {
 
 /**
  * Observation data: the observations observers uploaded, in one table that the map, the count and the
- * export all follow. Site and round type load a different list from FieldMaps; zone, observer, days and
+ * export all follow. Site and round type load a different list from DECA Mark; zone, observer, days and
  * search narrow the list that loaded. The address always holds the view, so a copied link opens it again.
  */
 export function DataScreen({
@@ -217,7 +217,7 @@ export function DataScreen({
 		? "This project has no sites. Add a site and upload its map package, then observers can start collecting."
 		: !sites.some(site => site.hasPackage)
 			? "No site has a map package yet. Upload one, then observers can start collecting."
-			: "Observers upload observations from the FieldMaps app. Observations still on their devices are not listed here.";
+			: "Observers upload observations from the DECA Mark app. Observations still on their devices are not listed here.";
 
 	const body = noneYet ? (
 		<ScreenState

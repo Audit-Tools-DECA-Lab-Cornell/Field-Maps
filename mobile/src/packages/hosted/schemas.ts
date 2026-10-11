@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * What the FieldMaps API says about a project's sites, forms and packages, and what this device keeps of
+ * What the DECA Mark API says about a project's sites, forms and packages, and what this device keeps of
  * them. Every body is parsed here before use, as the identity client does: a server answer is never
  * trusted unread.
  */

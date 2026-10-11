@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 	robots: { index: false, follow: false }
 };
 
-/** Org 9. The address is posted to FieldMaps, never put in a URL. */
+/** Org 9. The address is posted to DECA Mark, never put in a URL. */
 export default async function ForgotPasswordPage({ searchParams }: { searchParams: SearchParams }) {
 	const query = await searchParams;
 	const nextParam = param(query.next);

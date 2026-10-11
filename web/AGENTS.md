@@ -1,6 +1,6 @@
-# FieldMaps web
+# DECA Mark web
 
-Next.js App Router management application for FieldMaps. Parent `AGENTS.md` contains product routing and operating rules; this folder's `README.md` describes the sections and the design rules. Root `DESIGN.md` and `PRODUCT.md` hold the design system and the product voice.
+Next.js App Router management application for DECA Mark. Parent `AGENTS.md` contains product routing and operating rules; this folder's `README.md` describes the sections and the design rules. Root `DESIGN.md` and `PRODUCT.md` hold the design system and the product voice.
 
 - Run app commands from `web/`, or use the product-root `pnpm web:*` aliases.
 - Dependencies and lockfile belong to this folder; do not hoist or merge with Expo dependencies.
@@ -18,12 +18,12 @@ Next.js App Router management application for FieldMaps. Parent `AGENTS.md` cont
 
 ## Honesty
 
-Everything on the web is live (D30). Every page under `/o/<org>/p/<project>` reads and writes the FieldMaps API for the signed-in person. There are no fixtures, no sample workspace, no Preview data marker and no session-only actions. A lint rule bans imports of `@/fixtures`, `@/data` and `@/lib/preview`. Do not work around it.
+Everything on the web is live (D30). Every page under `/o/<org>/p/<project>` reads and writes the DECA Mark API for the signed-in person. There are no fixtures, no sample workspace, no Preview data marker and no session-only actions. A lint rule bans imports of `@/fixtures`, `@/data` and `@/lib/preview`. Do not work around it.
 
 - **Say what is not built, once.** A feature with no backend shows `components/shell/NotAvailable.tsx`: "X is not available yet.", one sentence on why, and one on what to do instead. Never a disabled button, a fake button or a flag that pretends. Today that covers saved named views (links replace them), the rounds plan, the zone editor (edit zones in QGIS), record review and exclusion, device readiness, live QGIS database access, deleting projects, organizations, sites or packages, and resending invitations.
 - **A failed read is not an empty list.** A read that fails renders `components/shell/LoadFailure.tsx` (sign in again, no access, or try again). "No sites yet" must mean there are no sites. Pages pass the failure down from `settle()`; they never swallow it.
 - **Check the role before you read.** Manager-only pages check `projectAbilities(role).manage` or `orgAbilities(role).manage` (`lib/workspace/access.ts`) first, and render the no-access state when it fails. Never call a manager-only endpoint for someone without the role. Hiding a tab is not enough, because people open addresses directly.
 - **Say the cap.** The API returns at most the newest 500 observations. Every count, chart, table or export built from a list at that cap says "Based on the newest 500 observations."
-- **Say only what the API does.** Archiving a project marks it finished and does not stop uploads. FieldMaps does not send invitation emails: the link and the code are shown once, and the person who invites sends them. Dates are in the project's timezone (`lib/time.ts`), not the browser's.
+- **Say only what the API does.** Archiving a project marks it finished and does not stop uploads. DECA Mark does not send invitation emails: the link and the code are shown once, and the person who invites sends them. Dates are in the project's timezone (`lib/time.ts`), not the browser's.
 - **Write for researchers.** Readers are field researchers and a professor running a study. Use their words: sites, zones, map packages, forms, rounds, observations, observers, team. Never show: fixture, preview, sample, demo, API, endpoint, server, session, token, payload, 404, null, undefined, UUID, slug (say "web address"), or JSON (say "file", unless naming the .geojson or .json files the person picks). No filler and no exclamation marks. An error says what did not happen ("Nothing was saved.") and why.
 - **One primary action per screen.** Pass `variant` explicitly on every `Button`. Secondary actions are `ink` or `outline`.

@@ -37,7 +37,7 @@ function firstOf(value: string | string[] | undefined): string | undefined {
 
 /**
  * The project's Overview: what came back from the field, which zones have records in which rounds, what
- * needs attention and what happened recently. Everything is read from FieldMaps when the page loads, and a
+ * needs attention and what happened recently. Everything is read from DECA Mark when the page loads, and a
  * part that cannot be read says so instead of showing zero. Viewers see the same page without links to
  * manager pages.
  */

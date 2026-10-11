@@ -1,5 +1,8 @@
-const CACHE_PREFIX = "fieldmaps-public-";
-const CACHE_NAME = CACHE_PREFIX + "__FIELDMAPS_BUILD_ID__";
+const CACHE_PREFIX = "decamark-public-";
+// Caches written before the product was renamed from FieldMaps to DECA Mark.
+const LEGACY_CACHE = "fieldmaps-shell-v1";
+const LEGACY_PREFIX = "fieldmaps-public-";
+const CACHE_NAME = CACHE_PREFIX + "__DECAMARK_BUILD_ID__";
 const LANDING_URL = "/";
 
 function cacheable(url) {
@@ -57,7 +60,11 @@ self.addEventListener("activate", event => {
 			const keys = await caches.keys();
 			await Promise.all(
 				keys
-					.filter(key => (key === "fieldmaps-shell-v1" || key.startsWith(CACHE_PREFIX)) && key !== CACHE_NAME)
+					.filter(
+						key =>
+							(key === LEGACY_CACHE || key.startsWith(LEGACY_PREFIX) || key.startsWith(CACHE_PREFIX)) &&
+							key !== CACHE_NAME
+					)
 					.map(key => caches.delete(key))
 			);
 			await self.clients.claim();

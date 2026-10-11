@@ -12,7 +12,7 @@ export default function ProjectError({
 }) {
 	return (
 		<>
-			<title>Something went wrong · FieldMaps</title>
+			<title>Something went wrong · DECA Mark</title>
 			<ErrorView error={error} retry={unstable_retry} />
 		</>
 	);

@@ -18,7 +18,7 @@ export type LocationStatus =
   | "searching"
   /** Turned on and showing a fix. */
   | "on"
-  /** The observer declined location for FieldMaps; only Settings can change that now. */
+  /** The observer declined location for DECA Mark; only Settings can change that now. */
   | "denied"
   /** Location services are off for the whole device. */
   | "services-off"
@@ -132,7 +132,7 @@ export function turnLocationOff(): void {
   set({ status: "off", fix: null });
 }
 
-/** For a denied permission: the system's settings page for FieldMaps is the only place to change it. */
+/** For a denied permission: the system's settings page for DECA Mark is the only place to change it. */
 export function openLocationSettings(): void {
   void Linking.openSettings();
 }

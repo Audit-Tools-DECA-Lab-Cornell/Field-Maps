@@ -9,7 +9,7 @@ export type ProjectRole = "manager" | "observer" | "viewer";
 export type RoundType = "standard" | "reliability" | "inventory";
 
 /**
- * A read or write that did not happen, in words a researcher can act on. `message` is FieldMaps' own copy
+ * A read or write that did not happen, in words a researcher can act on. `message` is DECA Mark's own copy
  * (`errorCopy`), never the server's text. `fields` maps a form field id to its problem (422 only);
  * `retryAfter` is how many seconds to wait (429 only).
  */

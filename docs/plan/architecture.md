@@ -1,6 +1,6 @@
 # Architecture: target system, layering, security rules
 
-This file is part of the [FieldMaps production plan](README.md) and defines no tasks. It describes the shape that every task builds toward. When a task and this file disagree, stop and ask; do not quietly pick one.
+This file is part of the [DECA Mark production plan](README.md) and defines no tasks. It describes the shape that every task builds toward. When a task and this file disagree, stop and ask; do not quietly pick one.
 
 ## Current state (verified 2026-09-22)
 
@@ -58,7 +58,7 @@ flowchart LR
 ## Security rules
 
 1. **Every write goes through FastAPI.** Neither client writes to Postgres or Storage directly, except for uploading to a Storage URL the API has signed.
-2. **The Data API stays closed for FieldMaps schemas.**
+2. **The Data API stays closed for DECA Mark schemas.**
    - `fieldmaps`, `fieldmaps_private`, `fieldmaps_auth_hooks` and `gis` are never exposed or granted to `anon`, `authenticated` or `service_role`.
    - DB-04 adds the **global** default-privilege revoke for functions (a per-schema revoke is a no-op; verified), plus a coverage test.
 3. **There are three read paths, each with its own boundary:**

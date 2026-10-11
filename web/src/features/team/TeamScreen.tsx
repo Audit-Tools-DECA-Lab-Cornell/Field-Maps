@@ -23,7 +23,7 @@ const ROLE_OPTIONS: readonly RoleOption<TeamRole>[] = [
 	{
 		value: "observer",
 		label: stateOf("role", "observer").label,
-		hint: "Collects observations in the FieldMaps app."
+		hint: "Collects observations in the DECA Mark app."
 	},
 	{
 		value: "viewer",
@@ -54,7 +54,7 @@ export type TeamScreenProps = {
 
 /**
  * Project team (project-04, project-08): who is on the project and what each person can do, the
- * invitations still waiting, and Invite, which makes a link and a join code. FieldMaps does not send
+ * invitations still waiting, and Invite, which makes a link and a join code. DECA Mark does not send
  * email, so the manager sends them. Every list is a real read; a read that failed says so instead of
  * showing nobody.
  */

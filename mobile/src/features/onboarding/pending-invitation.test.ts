@@ -31,16 +31,17 @@ const NOW = Date.parse("2026-10-05T12:00:00Z");
 
 describe("join codes from links", () => {
   it("reads the code from every form the app is opened with", () => {
-    expect(joinCodeFromLink("fieldmaps://join/DECA2026")).toBe("DECA2026");
+    expect(joinCodeFromLink("decamark://join/DECA2026")).toBe("DECA2026");
     expect(joinCodeFromLink("/join/deca-2026")).toBe("DECA2026");
     expect(joinCodeFromLink("join/DECA%202026")).toBe("DECA2026");
-    expect(joinCodeFromLink("fieldmaps://join?code=deca2026")).toBe("DECA2026");
+    expect(joinCodeFromLink("decamark://join?code=deca2026")).toBe("DECA2026");
+    expect(joinCodeFromLink("fieldmaps://join/DECA2026")).toBe("DECA2026");
     expect(joinCodeFromLink("/join?code=DECA2026#top")).toBe("DECA2026");
     expect(joinCodeFromLink("exp://192.168.0.2:8081/--/join/DECA2026")).toBe("DECA2026");
   });
 
   it("ignores other links and codes that are not whole", () => {
-    expect(joinCodeFromLink("fieldmaps://gallery")).toBeNull();
+    expect(joinCodeFromLink("decamark://gallery")).toBeNull();
     expect(joinCodeFromLink("/play-study/riverside")).toBeNull();
     expect(joinCodeFromLink("/join/DECA")).toBeNull();
     expect(joinCodeFromLink("/join")).toBeNull();

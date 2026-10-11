@@ -32,7 +32,7 @@ import { hostedDownload, hostedPreviewSite } from "./hosted-sites";
 
 /**
  * Where the collector's screens read from. `device` uses the account and this phone: projects and the
- * profile from `/v1/me` (D24), join codes through the FieldMaps API, and the SQLite queue, sync and
+ * profile from `/v1/me` (D24), join codes through the DECA Mark API, and the SQLite queue, sync and
  * bundled packages; it says plainly when something needs the server. `preview` shows the designed
  * fixtures, including the states the device cannot produce yet ("Uploading", a download in progress),
  * and sends nothing. Preview is a review tool: release builds always read the device.
@@ -74,7 +74,7 @@ type DataSourceValue = {
   downloads: Record<string, SiteDownload>;
   /**
    * Whether this mode can fetch a package: preview simulates one; on the device a project's hosted
-   * site downloads from the FieldMaps API while signed in, and a bundled site is always on the device.
+   * site downloads from the DECA Mark API while signed in, and a bundled site is always on the device.
    */
   canDownload: boolean;
   startDownload: (siteId: string) => void;
@@ -356,7 +356,7 @@ function useHostedSiteList(): SiteWithDownload[] {
 
 /**
  * A project's sites: on device data, Training's practice sites ship with the app and every other
- * project's come from the FieldMaps API (MOB-14); preview shows the designed fixtures.
+ * project's come from the DECA Mark API (MOB-14); preview shows the designed fixtures.
  */
 export function useSites(projectId: string): SiteWithDownload[] {
   const { mode, downloads } = useDataSource();

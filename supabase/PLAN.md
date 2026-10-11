@@ -1,6 +1,6 @@
 # Data model and migrations plan (`supabase/` and `database/`)
 
-This file is part of the [FieldMaps production plan](../docs/plan/README.md). It defines the `DB-*` tasks, which cover:
+This file is part of the [DECA Mark production plan](../docs/plan/README.md). It defines the `DB-*` tasks, which cover:
 - the canonical migrations in `supabase/migrations/`;
 - the SQL tests and hosted scripts in `database/`;
 - every RLS policy and private function.
@@ -648,3 +648,18 @@ Read first: [Master plan](../docs/plan/zone-boundaries/README.md) and [component
 Do: Implement finalization, revision/idempotency, geometry rules and v2 observation constraints; prevent managed-site legacy bypass.
 Done when: Concurrency/replay/rollback/spatial checks pass under restricted role; old hashes/rows unchanged.
 Verify: pnpm db:test plus coordinated API concurrency cases.
+
+### DB-17: Rename the database's FieldMaps identifiers to DECA Mark
+Status: todo · Phase 4 · Size L · Depends: none · Blocks: BE-21
+Needs user: choose the window. The product was renamed to DECA Mark on 2026-10-10, but the database names stayed `fieldmaps` so that work in progress against them was not disturbed. Do this once the backend branches using those names have merged. Applying it to staging and production is a separate, authorized step.
+Read first: [decision 0001](../docs/decisions/0001-canonical-migrations.md); every file in `supabase/migrations/`; `database/hosted/verify.sql`; BE-21, which ships with this task.
+Do: add one forward migration, `rename_to_decamark`. Never edit an applied migration.
+1. **Schemas.** `ALTER SCHEMA … RENAME TO …` for `fieldmaps`, `fieldmaps_private`, `fieldmaps_auth_hooks` and `fieldmaps_meta` (to `decamark`, `decamark_private`, `decamark_auth_hooks`, `decamark_meta`). Postgres keeps PL/pgSQL bodies as text, so the rename does not reach them: `CREATE OR REPLACE` every function, trigger function and policy expression that names an old schema.
+2. **Roles.** `ALTER ROLE … RENAME TO …` for `fieldmaps_api`, `fieldmaps_sample_reader`, `fieldmaps_qgis_training` and, if GIS-01 has landed, `fieldmaps_gis_reader` and its `fieldmaps_gis_p…` logins. A rename clears an MD5 password, so confirm that each login uses SCRAM, or set a new password out-of-band.
+3. **Settings and jobs.** Move the `fieldmaps.request_user_id` and `fieldmaps.user_id` settings to `decamark.*` (BE-21 changes the API's side at the same time), and reschedule `fieldmaps_training_purge` as `decamark_training_purge`.
+4. **Names people see.** The seeded organizations "FieldMaps training" (`…0001`) and "FieldMaps Training" (`…0101`, slug `fieldmaps-training`) become "DECA Mark training" and "DECA Mark Training". Check whether `protect_organization_identity` allows the slug change before changing it.
+5. **Auth hook.** `supabase/config.toml` and the hosted dashboard's before-user-created hook move to `pg-functions://postgres/decamark_auth_hooks/before_user_created`.
+6. **Local tooling.** `supabase/config.toml` `project_id` (the `supabase_db_field-maps` container), `database/local-supabase.sh`, `database/Makefile`, `database/compose.hosted.yaml`, `database/hosted/*.sql`, `database/tests/*.sql`, the `@fieldmaps.test` and `@fieldmaps-test.invalid` fixtures with `FieldMaps-local-only-42!` (`database/seed-web-workspace.mjs`, `supabase/seed.sql`, `web/e2e/`), `scripts/api-role-password.mjs`, and the QGIS `pg_service.conf` user with `qgis/README.md`.
+7. Rename the old identifiers in the docs and PLAN files, keeping applied migrations and dated evidence as written.
+
+Done when: `pnpm db:test` passes on a fresh local stack and on one upgraded from the old names, and `grep -rni fieldmaps supabase database` finds only applied migrations and history. After the authorized apply, `database/hosted/verify.sql` passes on staging.

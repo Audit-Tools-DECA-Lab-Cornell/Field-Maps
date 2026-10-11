@@ -106,13 +106,13 @@ export function DeleteAccount({ organizations, projects, blockers }: DeleteAccou
 					</Button>
 				}
 				title="Delete your account?"
-				description="This removes your FieldMaps profile and every membership. It cannot be undone.">
+				description="This removes your DECA Mark profile and every membership. It cannot be undone.">
 				{state.status === "pending" ? (
 					<div className="flex flex-col gap-5">
 						<div ref={messageRef} tabIndex={-1} className="rounded-note">
 							<Note tone="waiting" title="Deletion is finishing." live="polite">
 								Your profile and memberships are removed. Removing your sign-in did not finish yet. It
-								is recorded, and the person who runs FieldMaps will complete it.
+								is recorded, and the person who runs DECA Mark will complete it.
 							</Note>
 						</div>
 						<form action={signOut} className="flex justify-end">

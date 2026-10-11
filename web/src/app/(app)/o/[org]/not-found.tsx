@@ -5,7 +5,7 @@ import { ShellMain } from "@/components/shell/ShellMain";
 export default function OrgNotFound() {
 	return (
 		<ShellMain>
-			<title>Page not found · FieldMaps</title>
+			<title>Page not found · DECA Mark</title>
 			<NotFoundView inShell />
 		</ShellMain>
 	);

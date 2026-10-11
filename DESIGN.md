@@ -1,6 +1,6 @@
-# Contour, the FieldMaps design system
+# Contour, the DECA Mark design system
 
-This file is the design source of truth for the web workspace and the mobile collector: how FieldMaps looks, moves and speaks on screen. Every screen is built against it. [PRODUCT.md](PRODUCT.md) owns who the product is for, the honesty rules, the register by audience and the glossary. Token values and the state vocabulary are data in [`contracts/contour.json`](contracts/contour.json). If a value here disagrees with that file, the file wins and this one is corrected.
+This file is the design source of truth for the web workspace and the mobile collector: how DECA Mark looks, moves and speaks on screen. Every screen is built against it. [PRODUCT.md](PRODUCT.md) owns who the product is for, the honesty rules, the register by audience and the glossary. Token values and the state vocabulary are data in [`contracts/contour.json`](contracts/contour.json). If a value here disagrees with that file, the file wins and this one is corrected.
 
 The designs are four PDFs: Contour system (12 pages), Project workspace (19), Organization, auth and public pages (19) and Mobile collector (31). A reference such as *System 4*, *Project 10*, *Org 13* or *Mobile 16* is a page in that order.
 
@@ -457,9 +457,9 @@ A pill with a verb + object label (`body` at 600 on the web, `answer` at 600 in 
 
 ### Navigation
 
-- **The brand mark** is the purple FieldMaps app icon, everywhere: the web header, favicon and install icon, the collector's headers, Welcome and loading screens, the phone's launcher and the store listing (D29). It is drawn as a rounded square, the shape a launcher gives the icon. It is artwork, not tokens, so it is the same in Day and Dusk. The web draws `web/public/icons/icon.svg`; the collector's `Logo` draws `mobile/src/ui/brand-artwork.ts`, which a test holds to `mobile/assets/icon-source/icon.svg`. Change the icon in `generate.py` first. There is no second mark.
+- **The brand mark** is the purple DECA Mark app icon, everywhere: the web header, favicon and install icon, the collector's headers, Welcome and loading screens, the phone's launcher and the store listing (D29). It is drawn as a rounded square, the shape a launcher gives the icon. It is artwork, not tokens, so it is the same in Day and Dusk. The web draws `web/public/icons/icon.svg`; the collector's `Logo` draws `mobile/src/ui/brand-artwork.ts`, which a test holds to `mobile/assets/icon-source/icon.svg`. Change the icon in `generate.py` first. There is no second mark.
 - **Web header.** 72 tall.
-  - Left: the brand mark (the purple app icon, 36 px) and "FieldMaps", then the org `Switcher`, "/" in `ink2`, and the project `Switcher`.
+  - Left: the brand mark (the purple app icon, 36 px) and "DECA Mark", then the org `Switcher`, "/" in `ink2`, and the project `Switcher`.
   - Right: the `CommandPalette` field, the `RoleLabel` ("MANAGER") and the `Avatar`, which opens the account menu with Day / Dusk.
   - The 404, error and observer-handoff pages show the org header without tabs.
 - **`InkTabs`** (web).
@@ -765,7 +765,7 @@ Motion conveys state, never decoration. Tokens are in `contour.json` → `motion
 - **Filters** update instantly. "14 of 14 shown" sits in a live region, and "Clear filters" returns focus to the first filter.
 - **New invitation.**
   - The link (`/invite#t=…`) and the 8-character code appear once, each with a Copy button. Copy turns into "Copied ✓" for `copied`.
-  - The note reads "FieldMaps does not send email. Send the link or the code yourself. It is shown only once."
+  - The note reads "DECA Mark does not send email. Send the link or the code yourself. It is shown only once."
 - **Publishing.** The confirm checkbox enables "Publish demo-v2", and the reason shows until it is ticked. Afterwards the version history updates.
 - **Map packages.**
   - The step lives in `?step=`, so Back works.

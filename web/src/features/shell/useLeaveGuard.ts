@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 /** The held navigation when it is the browser's Back button rather than a link. */
 const BACK = "back";
 /** Marks the copy of this page's history entry that sits on top while there are unsaved changes. */
-const GUARD = "__fieldmapsLeaveGuard";
+const GUARD = "__decamarkLeaveGuard";
 
 type HistoryState = Record<string, unknown> | null;
 

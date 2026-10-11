@@ -244,11 +244,11 @@ otp_expiry = 3600
 
 # Uncomment to customize email template
 [auth.email.template.confirmation]
-subject = "Your FieldMaps verification code"
+subject = "Your DECA Mark verification code"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Your FieldMaps password reset code"
+subject = "Your DECA Mark password reset code"
 content_path = "./supabase/templates/recovery.html"
 
 # [auth.email.template.invite]

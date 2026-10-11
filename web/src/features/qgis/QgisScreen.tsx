@@ -58,7 +58,7 @@ function failureMessage(error: unknown): string {
 }
 
 /**
- * QGIS: the two directions between QGIS and FieldMaps. Maps come in as packages made in QGIS and uploaded
+ * QGIS: the two directions between QGIS and DECA Mark. Maps come in as packages made in QGIS and uploaded
  * on a site's page; here every site's current package can be downloaded. Observations go out as files
  * QGIS can open, written in the browser from the records the page read, with each record's own form
  * version for its answer columns. There is no live connection to read from.
@@ -329,7 +329,7 @@ export function QgisScreen({
 
 			<NotAvailable
 				title="Connecting QGIS directly to the database"
-				reason="QGIS cannot read FieldMaps records live yet."
+				reason="QGIS cannot read DECA Mark records live yet."
 				instead="Download a file above and add it to QGIS. Download again when you want the newest records."
 			/>
 		</div>

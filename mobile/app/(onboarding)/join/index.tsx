@@ -35,9 +35,9 @@ import {
 
 /**
  * Onboarding step 2 of 2 (mobile-30): enter the eight-character join code, see the project before
- * joining, or skip and practise in Training. `fieldmaps://join?code=…` opens this step filled in.
+ * joining, or skip and practise in Training. `decamark://join?code=…` opens this step filled in.
  *
- * On device data "Preview project" asks the FieldMaps API what the code opens
+ * On device data "Preview project" asks the DECA Mark API what the code opens
  * (`POST /v1/invitations/preview`); preview data resolves only DECA2026. A code that opens nothing, or
  * has expired, is said under the field; a missing connection or a busy server is said beside it, and the
  * code stays in the field for another try.
@@ -109,7 +109,7 @@ export default function JoinStep() {
   function explainScan() {
     Alert.alert(
       "The camera is not connected in this build",
-      "FieldMaps opens the camera only after you tap Scan, and this build cannot scan yet. Type the eight-character code from the invitation instead. An invitation link from your coordinator opens this step by itself.",
+      "DECA Mark opens the camera only after you tap Scan, and this build cannot scan yet. Type the eight-character code from the invitation instead. An invitation link from your coordinator opens this step by itself.",
       [{ text: "Type the code", onPress: () => codeRef.current?.focus() }],
     );
   }

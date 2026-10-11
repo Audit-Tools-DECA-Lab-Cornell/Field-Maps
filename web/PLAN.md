@@ -1,6 +1,6 @@
 # Web workspace plan (`web/`)
 
-This file is part of the [FieldMaps production plan](../docs/plan/README.md) and defines the `WEB-*` tasks. Related plan files:
+This file is part of the [DECA Mark production plan](../docs/plan/README.md) and defines the `WEB-*` tasks. Related plan files:
 - **API shapes:** [contracts.md](../docs/plan/contracts.md).
 - **The API side:** [backend/PLAN.md](../backend/PLAN.md).
 - **User journeys:** J1, J3 and J4 in [product.md](../docs/plan/product.md#journeys-the-pilot-must-support).
@@ -81,7 +81,7 @@ Verify: `pnpm --dir web check`, plus a manual upload against staging recorded in
 
 ### WEB-02: Service worker, manifest and indexing safety
 Status: done · Phase 0 · Size S · Depends: none · Blocks: WEB-10
-Verified 2026-10-04: 30 auth/worker tests, web typecheck/lint and production builds passed under Node 24.18.0. Consecutive rebuilds rotated worker tokens from `703ee8d0-f836-4791-b0c7-05a36e4fdb12` to `5080ce95-4057-4789-861a-c2b5170f14fc`. The second build used a temporary deployment ID, confirming rotation even when Next ignores `generateBuildId`. On the local production server at port 3014, curl returned `Allow: /$`, `Allow: /privacy*`, `Disallow: /`; the manifest opened `/o`, and `/sw.js` returned JavaScript with `no-cache, no-store, must-revalidate`. Production startup preserved the worker token. Activation removes the legacy `fieldmaps-shell-v1` cache and older FieldMaps public caches while preserving unrelated caches. No hosted deployment or browser/device installation was verified.
+Verified 2026-10-04: 30 auth/worker tests, web typecheck/lint and production builds passed under Node 24.18.0. Consecutive rebuilds rotated worker tokens from `703ee8d0-f836-4791-b0c7-05a36e4fdb12` to `5080ce95-4057-4789-861a-c2b5170f14fc`. The second build used a temporary deployment ID, confirming rotation even when Next ignores `generateBuildId`. On the local production server at port 3014, curl returned `Allow: /$`, `Allow: /privacy*`, `Disallow: /`; the manifest opened `/o`, and `/sw.js` returned JavaScript with `no-cache, no-store, must-revalidate`. Production startup preserved the worker token. Activation removes the legacy `fieldmaps-shell-v1` cache and older DECA Mark public caches while preserving unrelated caches. No hosted deployment or browser/device installation was verified.
 
 Do:
 1. Changes to `public/sw.js`:
@@ -109,7 +109,7 @@ Done when: an unauthenticated visit to `/o` redirects to sign-in, and a signed-i
 
 ### WEB-04: Authentication pages
 Status: doing · Phase 1 · Size M · Depends: DB-02, WEB-03 · Blocks: WEB-06, WEB-15
-Verified 2026-10-04 against local Supabase and Mailpit: browser sign-up, resend, six-digit verification, live account and account-menu sign-out. The automated real Server Action flow additionally verifies unconfirmed-account errors, invalid codes, resend cooldown, recovery code plus password update, same-password rejection followed by successful retry without a new code, rejection of mismatched recovery user/session/email, rejection of the old password, acceptance of the new password, and safe fallback for an external `next`. Emails stay in httpOnly cookies. `FIELDMAPS_AUTH_LOCAL_TEST=1 pnpm --dir web test:auth:local` passed. No hosted auth verification or deployment is claimed.
+Verified 2026-10-04 against local Supabase and Mailpit: browser sign-up, resend, six-digit verification, live account and account-menu sign-out. The automated real Server Action flow additionally verifies unconfirmed-account errors, invalid codes, resend cooldown, recovery code plus password update, same-password rejection followed by successful retry without a new code, rejection of mismatched recovery user/session/email, rejection of the old password, acceptance of the new password, and safe fallback for an external `next`. Emails stay in httpOnly cookies. `DECAMARK_AUTH_LOCAL_TEST=1 pnpm --dir web test:auth:local` passed. No hosted auth verification or deployment is claimed.
 Remaining (2026-10-04): the `authenticate` and `signOut` Server Actions are done and tested; their first pages were plain. The Contour screens from WEB-21 replace those pages at the same URLs and now post to the same actions, with the same field names and messages. This task is done when the Contour screens pass the flows above. Password rule: 8 to 128 characters everywhere (D25).
 
 Do: wire these pages to Supabase Auth. WEB-21 builds them in Contour on fixtures; keep its layout, copy and 44 px targets:
@@ -126,14 +126,14 @@ Done when: every flow works against the local stack, with codes read from Mailpi
 
 ### WEB-05: Server-side API client
 Status: done · Phase 1 · Size M · Depends: BE-06, CON-03, CON-04, WEB-03 · Blocks: WEB-06, WEB-12, WEB-27
-WEB-27 (2026-10-09, D30): kept. `NEXT_PUBLIC_FIELDMAPS_API_URL` is not removed: the browser uses it to send map packages (up to 24 MiB) and fetch their archives straight from the API, as step 3 allowed. Server components and Server Actions use `FIELDMAPS_API_URL`. The client also gained cached reads (`lib/api/workspace.ts`), one function per write (`lib/api/mutations.ts`) and a 15-second timeout for each request.
+WEB-27 (2026-10-09, D30): kept. `NEXT_PUBLIC_DECAMARK_API_URL` is not removed: the browser uses it to send map packages (up to 24 MiB) and fetch their archives straight from the API, as step 3 allowed. Server components and Server Actions use `DECAMARK_API_URL`. The client also gained cached reads (`lib/api/workspace.ts`), one function per write (`lib/api/mutations.ts`) and a 15-second timeout for each request.
 Verified 2026-10-04: authenticated `/account` renders real `/v1/me` profile and membership counts from the local API, in both browser and automated HTTP acceptance. Generated endpoint types, runtime identity parsing, no-store requests and a 15-second timeout are in place. Large package uploads remain direct browser-to-API, retaining CORS and the public API origin to avoid introducing a web proxy body-size limit. `pnpm --dir web check`, `build`, `test:auth` (11 tests) and `test:api-errors` (31 tests including HTML 200 response handling) passed.
 
 Do:
-1. Create `src/lib/api/client.ts` and mark it `server-only`. It fetches `FIELDMAPS_API_URL` (a server environment variable, not `NEXT_PUBLIC_`) with the session's access token and `cache: 'no-store'`, typed by the generated `schema.d.ts`. It maps the error envelope to typed errors (`errors.ts`).
+1. Create `src/lib/api/client.ts` and mark it `server-only`. It fetches `DECAMARK_API_URL` (a server environment variable, not `NEXT_PUBLIC_`) with the session's access token and `cache: 'no-store'`, typed by the generated `schema.d.ts`. It maps the error envelope to typed errors (`errors.ts`).
 2. Mutations go through Server Actions that call this client. Each action checks auth itself.
 3. Make one exception: large package uploads may post from the browser directly to the API. They need CORS, which `browser_origins` already covers. Alternatively, the upload goes through a Route Handler proxy, which also needs a body-size decision. Record the choice in this task's notes.
-4. Remove `NEXT_PUBLIC_FIELDMAPS_API_URL` once nothing reads it.
+4. Remove `NEXT_PUBLIC_DECAMARK_API_URL` once nothing reads it.
 
 Done when: one server component renders `/v1/me` data, and the typecheck passes against the generated types.
 
@@ -165,14 +165,14 @@ Done when: J1 steps 1–2 work end to end against the local stack, and the old U
 
 ### WEB-07: Team page (members, invitations, join codes)
 Status: todo · Phase 1 · Size M · Depends: BE-07, WEB-06 · Blocks: WEB-15
-WEB-27 (2026-10-09, D30): delivered on live data for a project (Team) and for an organization (Members): the list, role change, remove, an invitation by link or by an 8-character code (shown once, with "FieldMaps does not send email"), pending invitations and revoke. Not built: the QR code (dropped), devices (DB-10) and resending an invitation ("not available yet"). Nobody becomes an owner by a role change; ownership moves only by Transfer ownership in the organization's Settings.
+WEB-27 (2026-10-09, D30): delivered on live data for a project (Team) and for an organization (Members): the list, role change, remove, an invitation by link or by an 8-character code (shown once, with "DECA Mark does not send email"), pending invitations and revoke. Not built: the QR code (dropped), devices (DB-10) and resending an invitation ("not available yet"). Nobody becomes an owner by a role change; ownership moves only by Transfer ownership in the organization's Settings.
 Do:
 1. List members with their role, and let a manager change a role or remove someone.
    - The UI blocks removing the last manager, and the API enforces it too.
    - On the organization page (`/o/[org]`), owners and admins manage org members the same way. Only owners see `admin` and `owner` controls, and ownership moves only through "Transfer ownership".
 2. Invitations, for a project (project roles) or, on the organization page, for the org (`member` or `admin`):
    - create one with a role, an optional email, a use limit and an expiry;
-   - show the link (`/invite#t=…`) and the 8-character code **once**, with copy buttons and a QR code of `fieldmaps://join?code=`;
+   - show the link (`/invite#t=…`) and the 8-character code **once**, with copy buttons and a QR code of `decamark://join?code=`;
    - list active invitations and revoke them.
 3. Observer devices come from DB-10 `devices`, once it exists.
 
@@ -378,7 +378,7 @@ Do:
 1. The `(app)` layouts: `/account` and `/o/[org]` with the header and no tabs; `(org)` with the org tabs (Projects, Members, Form library, Settings); `(project)` with the project tabs (Overview, Data, Sites, Forms, Team, QGIS, Reports, Settings).
 2. Header: the org and project switchers (menus with typeahead, role and state, Create project last); "Search or jump to" (⌘K) over tabs, projects, sites, zones, form versions, people and `OBS-` ids, with the actions Day · Dusk, map palette, Export current view and Invite member, and recent items; the account menu with Day · Dusk.
 3. InkTabs: the white current-tab pill slides inside the ink bar, with no slide on first paint; narrow screens scroll the tabs with edge fades. Shortcuts: `g` then `o/d/s/f/t/q/r`, `?` for the list, `/` for search. A skip link, and focus moves to the page heading on navigation.
-4. The Preview data marker, a mono pill in the header. Its popover reads "Everything here is sample data. Nothing is read from or written to the FieldMaps database." In dev and preview builds it also offers View as (`?as=viewer|observer`), Show state (`?preview-state=`) and Theme. One footer line says the same. Preview actions go into a `sessionStorage` store, take effect on screen, reset on reload and never claim a server round trip.
+4. The Preview data marker, a mono pill in the header. Its popover reads "Everything here is sample data. Nothing is read from or written to the DECA Mark database." In dev and preview builds it also offers View as (`?as=viewer|observer`), Show state (`?preview-state=`) and Theme. One footer line says the same. Preview actions go into a `sessionStorage` store, take effect on screen, reset on reload and never claim a server round trip.
 5. Redirects in `next.config.ts` (307, query string kept) from `/overview`, `/observations`, `/places`, `/basemaps`, `/instrument` and `/qgis` to the new routes.
 6. The org-level 404 and error pages (the org header without tabs; the error page with "What we know" and a reference), and the org Projects page.
 7. Delete `(workspace)`, `RailNav` and `StatusFooter`. Cached Nocturne pages are dropped by WEB-02's per-build worker cache, which replaced a manual `CACHE_NAME` bump.
@@ -407,7 +407,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 ### WEB-24: Project screens: places (sites, site, zone, zone editor, map packages)
 Status: todo · Phase 1 · Size L · Depends: WEB-22 · Blocks: none
 WEB-27 (2026-10-09, D30): delivered on live data: Sites, Site and Map packages (history, inspect, upload, download). Retired: the Zone page and the zone editor (U2; "Editing zones on the web is not available yet": edit zones in QGIS and upload a new package, and zone rows link to Data filtered by zone), Device readiness (not available yet) and "Activate" (the newest ready package is current).
-Added 2026-10-03. These screens run on fixtures. WEB-08 (sites and packages) and WEB-10 (zone data) later connect real data to them without changing their layout. The package upload stays real: it keeps `lib/packages.ts` and says "Sends this package to the FieldMaps API."
+Added 2026-10-03. These screens run on fixtures. WEB-08 (sites and packages) and WEB-10 (zone data) later connect real data to them without changing their layout. The package upload stays real: it keeps `lib/packages.ts` and says "Sends this package to the DECA Mark API."
 Read first: `DESIGN.md`, `PRODUCT.md`; designs: Project workspace pp. 6–10; `src/components/basemaps/PackageUpload.tsx`, `src/lib/packages.ts`.
 Do:
 1. Sites, and Site: zones on the `SitePlan`, coverage, packages and its data. Device readiness always reads "as last reported".
@@ -454,7 +454,7 @@ Verify: `pnpm --dir web check`, `pnpm --dir web build`, `pnpm tokens:check`, `pn
 
 ### WEB-27: One live workspace
 Status: done (2026-10-09) · Phase 1 · Size L · Depends: WEB-05, WEB-22 · Blocks: none
-Added 2026-10-09 (D30), as Janet started using FieldMaps. Her organization, `/o/deca-lab`, returned 404, while every page under `/o/deca` showed made-up data and a made-up person. This task makes every workspace page read and write the API for the signed-in person. It removes the sample workspace, the fixtures, the Preview data marker, the set-up flow and the session-only sample actions, and it puts the real name, email and initials in the header. The notes at the top of WEB-01 and WEB-05 to WEB-26 say which parts of them this task delivered or retired.
+Added 2026-10-09 (D30), as Janet started using DECA Mark. Her organization, `/o/deca-lab`, returned 404, while every page under `/o/deca` showed made-up data and a made-up person. This task makes every workspace page read and write the API for the signed-in person. It removes the sample workspace, the fixtures, the Preview data marker, the set-up flow and the session-only sample actions, and it puts the real name, email and initials in the header. The notes at the top of WEB-01 and WEB-05 to WEB-26 say which parts of them this task delivered or retired.
 Read first: D30 in `docs/plan/decisions.md`; the Honesty section of `web/AGENTS.md`; `contracts/openapi.json`; `backend/WEB-FLOW-HANDOFF.md`.
 Do:
 1. Data layer.

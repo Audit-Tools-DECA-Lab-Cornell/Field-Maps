@@ -16,7 +16,7 @@ import {
 } from "./invitation";
 
 /**
- * The join code calls (MOB-06). Device data asks the FieldMaps API with the signed-in account's token;
+ * The join code calls (MOB-06). Device data asks the DECA Mark API with the signed-in account's token;
  * preview data reads the fixtures and sends nothing. Without a session (an offline start) a lookup says
  * joining needs a connection, and keeps the code.
  */

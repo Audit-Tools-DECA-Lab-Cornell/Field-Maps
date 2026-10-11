@@ -42,7 +42,7 @@ function capitalised(word: string): string {
 }
 
 /**
- * Organization settings (org-04) for owners and admins: the name and web address, what FieldMaps holds
+ * Organization settings (org-04) for owners and admins: the name and web address, what DECA Mark holds
  * about the organization, Transfer ownership for owners, and Delete organization, which is not
  * available yet. Unsaved changes say so and leaving asks first. A new web address moves the person to
  * it once it is saved, since the old one stops working.

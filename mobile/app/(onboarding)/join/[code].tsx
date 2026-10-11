@@ -3,7 +3,7 @@ import { useProfile } from "../../../src/features/auth/profile-store";
 import { JOIN_CODE_LENGTH, joinCodeOf } from "../../../src/features/onboarding/invitation";
 
 /**
- * The invitation link, `fieldmaps://join/DECA2026` (expo-router maps the app scheme onto routes). It
+ * The invitation link, `decamark://join/DECA2026` (expo-router maps the app scheme onto routes). It
  * never joins anything by itself: a whole code opens the invitation to confirm, a partial one opens the
  * join step filled in, and an observer without a saved identity sets it first.
  */
