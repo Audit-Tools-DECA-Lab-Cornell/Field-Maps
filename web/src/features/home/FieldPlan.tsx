@@ -2,7 +2,7 @@ import { cx } from "@/lib/cx";
 import { MAP_PALETTES } from "@/lib/map-palette";
 
 /*
- * The home page's plan: the FieldMaps mark opened out into a site map. The zones, the path and the point
+ * The home page's plan: the DECA Mark opened out into a site map. The zones, the path and the point
  * keep the app icon's geometry (`mobile/src/ui/brand-artwork.ts`, in its 1024-unit space) and the plan is
  * drawn the way `components/map/SitePlan` draws a real site: Day palette, dashed zone edges, a path with
  * an outline, one selected observation. It names no site, zone or record, so nothing on it reads as

@@ -31,7 +31,7 @@ const STEPS: { id: string; label: ReactNode; detail: string }[] = [
 	{
 		id: "uploaded",
 		label: <StateBadge kind="queue" state="uploaded" />,
-		detail: "Only after FieldMaps has the record."
+		detail: "Only after DECA Mark has the record."
 	}
 ];
 

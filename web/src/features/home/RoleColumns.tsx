@@ -18,7 +18,7 @@ const ROLES: Role[] = [
 		id: "field",
 		title: "In the field",
 		icon: "smartphone",
-		lead: "The FieldMaps app on Android, for observers.",
+		lead: "The DECA Mark app on Android, for observers.",
 		items: [
 			{ icon: "crosshair", text: "Place a point where it happened, even with no signal." },
 			{ icon: "list", text: "Answer the form one question at a time. Only the questions that apply appear." },

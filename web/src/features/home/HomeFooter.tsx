@@ -4,7 +4,7 @@ import { BrandMark } from "@/components/shell/Brand";
 
 export type HomeFooterProps = { className?: string };
 
-/** Who runs FieldMaps, from the same facts the privacy policy prints, and the two policy pages. */
+/** Who runs DECA Mark, from the same facts the privacy policy prints, and the two policy pages. */
 export function HomeFooter({ className }: HomeFooterProps) {
 	return (
 		<footer className={className}>
@@ -13,8 +13,8 @@ export function HomeFooter({ className }: HomeFooterProps) {
 					<BrandMark size={24} />
 					<span>
 						{policy.operator
-							? `FieldMaps is run by the ${policy.operator}.`
-							: "FieldMaps is offline field collection for research teams."}
+							? `DECA Mark is run by the ${policy.operator}.`
+							: "DECA Mark is offline field collection for research teams."}
 					</span>
 				</p>
 				<nav aria-label="Policies" className="flex flex-wrap gap-x-6 type-small">

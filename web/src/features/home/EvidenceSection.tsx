@@ -42,7 +42,7 @@ const POINTS: { id: string; title: string; body: ReactNode }[] = [
 	}
 ];
 
-/** What FieldMaps will and will not claim (PRODUCT.md, Honesty), for the people who answer for the data. */
+/** What DECA Mark will and will not claim (PRODUCT.md, Honesty), for the people who answer for the data. */
 export function EvidenceSection() {
 	return (
 		<section
@@ -53,7 +53,7 @@ export function EvidenceSection() {
 					Evidence you can trace
 				</h2>
 				<p className="mt-4 max-w-xl type-lead text-ink-2">
-					FieldMaps holds research evidence, so every screen says only what it knows.
+					DECA Mark holds research evidence, so every screen says only what it knows.
 				</p>
 			</div>
 			<ul role="list">
