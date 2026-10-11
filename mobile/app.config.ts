@@ -5,9 +5,11 @@ import { publicConfigSchema } from "./src/platform/config-schema.ts";
 const environment = process.env["APP_ENV"] ?? "development";
 if (!["development", "staging", "production"].includes(environment))
   throw new RangeError("Unknown APP_ENV");
+
 const connection = publicConfigSchema.parse(
   JSON.parse(readFileSync(`${__dirname}/config/${environment}.json`, "utf8")),
 );
+
 const base = {
   name: "DECA Mark",
   slug: "fieldmaps-mobile",
@@ -80,6 +82,7 @@ const base = {
     },
   },
 } satisfies ExpoConfig;
+
 export default {
   ...base,
   ios: { ...base.ios, bundleIdentifier: `com.fieldmaps.collector${connection.bundleIdSuffix}` },
