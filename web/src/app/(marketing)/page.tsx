@@ -12,7 +12,7 @@ import { HomeFooter } from "@/features/home/HomeFooter";
 import { RoleColumns } from "@/features/home/RoleColumns";
 
 export const metadata: Metadata = {
-	title: { absolute: "FieldMaps · Offline field collection for research teams" },
+	title: { absolute: "DECA Mark · Offline field collection for research teams" },
 	description:
 		"Observers place each observation on a site map and answer the project's form, with or without signal. The research team prepares the maps, publishes the forms and reads what comes back."
 };
@@ -65,7 +65,7 @@ export default function HomePage() {
 							</p>
 							<p>
 								<strong className="font-semibold text-ink">Collecting in the field?</strong> Observers
-								use the FieldMaps app on Android. Your project manager sends the install link.
+								use the DECA Mark app on Android. Your project manager sends the install link.
 								{android && (
 									<>
 										{" "}
