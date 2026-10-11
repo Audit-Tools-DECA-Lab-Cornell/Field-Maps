@@ -63,6 +63,12 @@ export default defineConfig({
 	projects: [
 		{ name: "setup", testMatch: /auth\.setup\.ts$/, use: { viewport: desktop } },
 		{
+			name: "screenshots-retina-1728",
+			testMatch: /screenshots\.spec\.ts$/,
+			dependencies: ["setup"],
+			use: { viewport: { width: 1728, height: 1117 }, deviceScaleFactor: 2 }
+		},
+		{
 			name: "desktop-1440",
 			testMatch: /\.spec\.ts$/,
 			dependencies: ["setup"],
@@ -79,16 +85,16 @@ export default defineConfig({
 		// Screenshots for review at the in-between widths: the honesty scan only, without axe.
 		{
 			name: "tablet-1024",
-			testMatch: /honesty\.spec\.ts$/,
+			testMatch: /(honesty|screenshots)\.spec\.ts$/,
 			dependencies: ["setup"],
-			use: { viewport: { width: 1024, height: 768 } },
+			use: { viewport: { width: 1024, height: 768 }, deviceScaleFactor: 2 },
 			metadata: { axe: false }
 		},
 		{
 			name: "tablet-768",
-			testMatch: /honesty\.spec\.ts$/,
+			testMatch: /(honesty|screenshots)\.spec\.ts$/,
 			dependencies: ["setup"],
-			use: { viewport: { width: 768, height: 1024 } },
+			use: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 2 },
 			metadata: { axe: false }
 		}
 	]
